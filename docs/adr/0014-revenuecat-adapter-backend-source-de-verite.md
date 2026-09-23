@@ -3,7 +3,7 @@
 - Statut : Accepté
 - Date : 2026-09-22 (amendé le 2026-09-23 à la suite du verdict de spike de l'ADR 0013)
 
-> **Amendement du 2026-09-23.** Cet ADR a été rédigé en supposant que RevenueCat serait le chemin d'achat iOS. Le spike de l'ADR 0013 a montré que RevenueCat ne peut pas porter un `appAccountToken` par achat, ce qui le disqualifie pour les abonnements scopés par chaîne. **Les achats iOS passent désormais par StoreKit 2 en direct, validés par les App Store Server Notifications V2.** Les deux règles non négociables ci-dessous — et c'est tout l'intérêt de cet ADR — sont strictement inchangées : elles ne parlaient jamais de RevenueCat, mais de qui décide d'un droit. Seul le nom de l'adapter change.
+> **Note du 2026-09-23.** L'ADR 0013 a établi que RevenueCat ne peut pas porter un `appAccountToken` par achat. Après révision, **RevenueCat reste néanmoins le chemin d'achat des abonnements** : seul le transport de l'attribution change (attribut d'abonné + intent serveur, voir 0013). Cet ADR s'applique donc tel quel. Sa règle de fond ne parle de toute façon jamais d'un fournisseur, mais de **qui décide d'un droit** — et la réponse reste : l'API, jamais le client, jamais le fournisseur.
 - Décideurs : Muhammed Cavus
 
 ## Contexte et problématique
@@ -71,21 +71,22 @@ application/
     CreatePurchaseIntent, GrantEntitlement, RevokeEntitlement,
     CheckChannelEntitlement
 infrastructure/
-  AppStoreServerAdapter          (iOS — ASSN V2 + App Store Server API)
+  RevenueCatWebhookAdapter       (iOS — abonnements)
+  AppStoreServerAdapter          (iOS — consommables / bits, ADR 0015)
   StripeSubscriptionAdapter      (web, plus tard)
   StripeConnectPayoutAdapter
   PrismaEntitlementRepository
 ```
 
-Le fournisseur est un **adapter**, pas le modèle. Cette structure vient d'être validée par les faits : le verdict du spike de l'ADR 0013 a imposé de remplacer `RevenueCatWebhookAdapter` par `AppStoreServerAdapter`, et **aucune règle d'accès, aucun use-case et aucun invariant de domaine n'a bougé**. C'était l'hypothèse de conception ; elle a tenu à la première épreuve réelle. C'est aussi ce qui permettra d'ajouter les achats web plus tard au même coût.
+Le fournisseur est un **adapter**, pas le modèle. Cette structure a déjà servi : quand le verdict du spike de l'ADR 0013 a fait envisager un basculement complet vers Apple en direct, **aucune règle d'accès, aucun use-case et aucun invariant de domaine n'aurait bougé** — seul un adapter aurait changé. La décision finale a été de conserver RevenueCat, mais l'exercice a montré que la bascule restait à portée. C'est exactement ce que cette structure devait garantir, et c'est aussi ce qui permettra d'ajouter les achats web plus tard au même coût.
 
-RevenueCat n'est pas éliminé du projet pour autant : il conserve le rendu des paywalls en configuration distante (ADR 0016). Il n'est simplement plus sur le chemin de la vérité des droits.
+Deux adapters iOS coexistent délibérément : RevenueCat pour les abonnements, Apple en direct pour les consommables que RevenueCat ne modélise pas (ADR 0015).
 
 ### Contrat du webhook
 
-- **Authentification** : les App Store Server Notifications V2 sont des **JWS signés par Apple**. La vérification porte sur la signature et sur la chaîne de certificats jusqu'à la racine Apple — pas sur un secret partagé. Un en-tête partagé aurait été plus simple ; ce ne sont pas les règles d'Apple. Toute notification dont la chaîne ne valide pas est rejetée, archivée brute, et alertée.
-- **Idempotence obligatoire** : Apple rejoue jusqu'à obtention d'un `200`. Chaque notification est enregistrée dans une table `processed_webhook_events` clé sur le `notificationUUID`, avec insertion contrainte par unicité. Un doublon retourne `200` sans effet de bord. Ce n'est pas une optimisation : sans cela, un rejeu d'achat initial peut créer un second entitlement ou re-créditer un cadeau.
-- **Traitement asynchrone** : l'endpoint vérifie la signature, persiste la notification brute, publie sur une file, répond `200` en quelques millisecondes. Aucune logique métier en synchrone. Un timeout déclenche un rejeu, donc une charge en cascade exactement au pire moment.
+- **Authentification** : vérification de l'en-tête `Authorization` configuré côté RevenueCat, comparée en temps constant. Tout écart → `401`, corps archivé, alerte. Pour les consommables, la voie Apple directe (ADR 0015) vérifie en revanche la **signature JWS et la chaîne de certificats** : deux frontières, deux mécanismes d'authentification, à ne jamais confondre dans le code.
+- **Idempotence obligatoire** : RevenueCat rejoue. Chaque événement est enregistré dans une table `processed_webhook_events` clé sur l'`event.id` fournisseur (le `notificationUUID` pour la voie Apple), avec insertion contrainte par unicité. Un doublon retourne `200` sans effet de bord. Ce n'est pas une optimisation : sans cela, un rejeu d'achat initial peut créer un second entitlement ou re-créditer un cadeau.
+- **Traitement asynchrone** : l'endpoint authentifie, persiste l'événement brut, publie sur une file, répond `200` en quelques millisecondes. Aucune logique métier en synchrone. Un timeout déclenche un rejeu, donc une charge en cascade exactement au pire moment.
 - **Validation Zod stricte** en frontière. Un payload non conforme est archivé et alerté, jamais interprété partiellement.
 - **Désordre assumé** : les événements peuvent arriver dans le désordre. Toute application d'événement compare l'horodatage fournisseur à celui du dernier événement appliqué pour cet abonnement et ignore un événement antérieur.
 
@@ -93,7 +94,7 @@ RevenueCat n'est pas éliminé du projet pour autant : il conserve le rendu des 
 
 Traiter uniquement `INITIAL_PURCHASE` est le défaut classique : tout marche en démo, puis les droits dérivent en silence.
 
-Les noms ci-dessous sont ceux du **modèle de domaine**, pas ceux d'un fournisseur. La colonne Apple donne la correspondance avec les `notificationType` / `subtype` des ASSN V2 ; une correspondance Stripe s'ajoutera à l'identique pour le web, sans toucher au traitement.
+Les noms ci-dessous sont ceux du **modèle de domaine**, pas ceux d'un fournisseur — ils coïncident avec ceux de RevenueCat parce que c'est l'adapter principal, mais le domaine ne dépend pas de ce choix. La colonne Apple donne la correspondance avec les `notificationType` / `subtype` des ASSN V2, utile pour la voie consommables (ADR 0015) et comme documentation d'une éventuelle bascule ; une correspondance Stripe s'ajoutera à l'identique pour le web, sans toucher au traitement.
 
 | Événement de domaine | Apple (ASSN V2) | Traitement |
 |---|---|---|
@@ -152,7 +153,7 @@ Un `TRANSFER` survient quand un utilisateur restaure ses achats sur un autre com
 ### Risques et mitigations
 
 - **Webhook non reçu ou file en panne** → achat payé sans droit accordé. Mitigation : job de réconciliation périodique contre l'état fournisseur, endpoint client de re-synchronisation, alerte sur toute intent `PENDING` de plus de 30 minutes.
-- **Incertitude sur la sémantique exacte des notifications Apple.** Les couples `notificationType` / `subtype` sont nombreux et certaines sémantiques restent ambiguës à la seule lecture de la documentation — notamment les périodes de grâce, les changements de statut de renouvellement et la détection d'un transfert entre comptes applicatifs, pour laquelle Apple n'a pas d'événement dédié. Mitigation : la table de correspondance ci-dessus doit être **vérifiée en sandbox avant mise en production** ; toute notification dont le couple n'est pas explicitement traité est persistée, alertée et **ignorée plutôt que devinée**. Cette vérification est d'autant plus nécessaire que RevenueCat absorbait auparavant ces subtilités pour nous.
+- **Incertitude sur la sémantique exacte des événements.** Les charges utiles évoluent, et certaines sémantiques restent ambiguës à la seule lecture de la documentation — notamment `TRANSFER` et les périodes de grâce. Mitigation : la table ci-dessus doit être **vérifiée en sandbox avant mise en production** ; tout événement non explicitement traité est persisté, alerté et **ignoré plutôt que deviné**. C'est précisément la charge que RevenueCat absorbe pour nous sur les abonnements, et que nous assumons nous-mêmes sur les consommables.
 - **Politique de transfert contestable.** Révoquer côté origine est le choix sûr, mais il peut frustrer un utilisateur légitime qui a simplement changé de compte. Assumé sur un projet perso ; la journalisation permet un rattrapage manuel.
 - **Cache de droits du chat périmé** sur un entitlement révoqué en cours de session. Mitigation : invalidation par événement de domaine et TTL plafond sur l'entrée de cache.
 - **Oubli du `logOut()`** lors de l'ajout d'un nouveau chemin de déconnexion. Mitigation : la déconnexion passe par un point unique du code d'identité, et un test d'intégration iOS le couvre.

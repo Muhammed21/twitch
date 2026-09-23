@@ -48,11 +48,11 @@ Confier les bits à RevenueCat reviendrait à le forcer sur un terrain pour lequ
 
 | | Inbound iOS | Inbound web | Source de vérité |
 |---|---|---|---|
-| **Abonnement de chaîne** | StoreKit 2 + App Store Server API | Stripe | **l'API** (table d'entitlements, ADR 0014) |
+| **Abonnement de chaîne** | RevenueCat / IAP | Stripe | **l'API** (table d'entitlements, ADR 0014) |
 | **Bits (packs)** | IAP vérifié via App Store Server API | Stripe | **l'API** (ledger) |
 | **Payout streamer** | — | — | **Stripe Connect** |
 
-Les bits ne passent **pas** par RevenueCat : l'achat de pack est un consommable StoreKit vérifié en direct via l'**App Store Server API**. C'est plus de travail qu'un webhook RevenueCat, mais cela évite de dépendre d'un intermédiaire sur une fonctionnalité qu'il ne modélise pas. *Mise à jour du 2026-09-23 : le verdict de spike de l'ADR 0013 a étendu ce choix aux abonnements de chaîne. L'adapter Apple direct prévu ici pour les seuls consommables devient le chemin d'achat iOS unique.*
+Les bits ne passent **pas** par RevenueCat : l'achat de pack est un consommable StoreKit vérifié en direct via l'**App Store Server API**. C'est plus de travail qu'un webhook RevenueCat, mais cela évite de dépendre d'un intermédiaire sur une fonctionnalité qu'il ne modélise pas — ni solde, ni dépense, ni réconciliation.
 
 Les abonnements cadeaux (ADR 0013) sont des achats ponctuels : ils relèvent techniquement de ce chemin consommable, pas du chemin abonnement.
 
@@ -142,7 +142,7 @@ Soit **80 % de la somme partie avant même de payer la vidéo**, qui est le post
 
 ### Négatives
 
-- ~~Deux chemins d'achat iOS à maintenir~~ — **caduc depuis le 2026-09-23** : les abonnements ayant eux aussi basculé sur l'App Store Server API (ADR 0013), il n'existe plus qu'un seul chemin d'achat iOS et un seul jeu de tests sandbox. Ce qui était une conséquence négative de cet ADR est devenu son principal bénéfice.
+- **Deux chemins d'achat iOS à maintenir** : RevenueCat pour les abonnements (ADR 0013), App Store Server API pour les consommables. Donc deux mécanismes d'authentification de webhook, deux jeux de tests sandbox, et deux endroits où une sémantique d'événement peut être mal comprise. C'est le coût assumé de mettre chaque mécanique sur l'outil qui la modélise réellement — mais c'en est un, et il se paie à chaque évolution.
 - La vérification directe des reçus Apple (chaîne de certificats, JWS, notifications V2) est du travail que RevenueCat aurait masqué.
 - Le solde par agrégation impose une projection de lecture et son invalidation.
 - La politique de solde négatif fait porter le coût du remboursement à la plateforme.

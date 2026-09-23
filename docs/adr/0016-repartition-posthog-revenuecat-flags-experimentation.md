@@ -45,9 +45,7 @@ Cette ambiguïté ne se règle pas par une réconciliation a posteriori : elle s
 
 **Option C.**
 
-> **PostHog est la source de vérité des feature flags et de l'assignation des variantes.** RevenueCat sert **uniquement au rendu** du paywall (Paywalls en configuration distante).
->
-> *Amendement du 2026-09-23 :* la mention « et à la facturation » est retirée. Depuis le verdict de spike de l'ADR 0013, les achats iOS passent par StoreKit 2 en direct et RevenueCat n'est plus sur le chemin de la transaction. Son périmètre se réduit à la présentation — ce qui, paradoxalement, rend cet ADR plus simple : il n'y a plus deux systèmes en concurrence sur la donnée de revenu.
+> **PostHog est la source de vérité des feature flags et de l'assignation des variantes.** RevenueCat sert au **rendu** du paywall (Paywalls en configuration distante) et à la **facturation** des abonnements (ADR 0013).
 >
 > **Règle stricte : il est interdit de lancer une expérimentation RevenueCat en parallèle.** Aucune exception, y compris « juste pour tester ».
 
@@ -71,12 +69,13 @@ RevenueCat Paywalls reste utilisé, et c'est délibéré : modifier la présenta
 
 4. Corrélation revenu
    La variante est enregistrée sur la PurchaseIntent côté serveur (ADR 0013),
-   au moment où l'intent est créée — donc avant l'achat, par construction.
-   Elle est ensuite portée par l'entitlement créé à la validation Apple.
+   à sa création — donc avant l'achat, par construction. C'est l'attribution
+   qui fait foi. Elle voyage en outre dans le même attribut d'abonné que
+   l'intentId, par le mécanisme déjà mis en place par l'ADR 0013.
 
 5. Analyse
    Les événements de revenu sont émis par le backend depuis le handler de
-   notification Apple (ADR 0012, capture serveur), avec la variante lue sur
+   webhook RevenueCat (ADR 0012, capture serveur), avec la variante lue sur
    l'intent. Le funnel complet — vue, tap, achat, renouvellement, churn —
    s'analyse dans PostHog seul.
 ```
@@ -93,8 +92,9 @@ C'est le point qui casse en silence si on ne le traite pas.
 
 ### Attribution du revenu à la variante
 
-- **La variante est enregistrée sur la `PurchaseIntent` (ADR 0013)**, à sa création, donc nécessairement avant l'achat. C'est l'unique attribution, et elle fait foi : elle est serveur, ne dépend d'aucun SDK, et survit à la perte de n'importe quel événement analytics.
-- Le mécanisme initialement prévu — `subscriberAttribute` RevenueCat posé avant l'achat — est **abandonné** : sans transaction RevenueCat, il n'a plus de support. Bénéfice collatéral : il n'existe plus qu'une seule attribution, donc plus aucun risque de divergence entre deux sources.
+- **La variante est enregistrée sur la `PurchaseIntent` (ADR 0013)**, à sa création, donc nécessairement avant l'achat. C'est l'attribution qui **fait foi** : elle est serveur, ne dépend d'aucun SDK, et survit à la perte de n'importe quel événement analytics.
+- Elle est **en outre** placée dans l'attribut d'abonné RevenueCat, aux côtés de l'`intentId` — même appel, même synchronisation explicite, aucun mécanisme supplémentaire (ADR 0013). Cela donne un confort de lecture dans les tableaux de bord RevenueCat.
+- **En cas de divergence entre les deux, l'intent gagne**, sans discussion. L'attribut d'abonné est documenté comme « parfois » présent dans les webhooks ; il ne peut donc jamais servir d'autorité.
 - Les renouvellements héritent de la variante de l'achat initial : c'est ce qui permet de mesurer la valeur à long terme d'une variante, pas seulement sa conversion immédiate.
 
 ### Périmètre des flags
@@ -123,7 +123,7 @@ C'est le point qui casse en silence si on ne le traite pas.
 - **Mapping variante → offering désynchronisé.** Mitigation : mapping déclaré en un point unique côté serveur, et test de contrat vérifiant que chaque variante active correspond à un offering existant ; à défaut, fallback sur le paywall par défaut plutôt qu'un paywall vide (cf. ADR 0014 : un paywall vide est 100 % de perte).
 - **PostHog indisponible au `bootstrap`.** Mitigation : timeout court, valeurs par défaut des flags servies depuis un cache serveur, et aucune exposition comptée. La monétisation doit fonctionner sans expérimentation.
 - **Quelqu'un — moi — active RevenueCat Experiments « juste pour voir ».** C'est le risque le plus probable de cet ADR, parce que la fonctionnalité est à un clic dans le dashboard. Mitigation : la règle est écrite ici, et un contrôle est à ajouter à la checklist de revue avant toute campagne de paywall.
-- ~~Incertitude sur la restitution des `subscriberAttributes` dans les webhooks RevenueCat.~~ **Sans objet depuis le 2026-09-23** : RevenueCat n'étant plus sur le chemin de la transaction (ADR 0013), l'attribution repose entièrement sur la `PurchaseIntent` côté serveur. Le risque a disparu avec le mécanisme.
+- **Restitution des `subscriberAttributes` dans les webhooks : « parfois », selon la documentation RevenueCat.** Ce risque est désormais partagé avec l'ADR 0013, qui en fait son risque n°1 puisque l'attribution de chaîne repose sur le même canal. Ici, la conséquence est bien moindre : l'attribution de variante faisant foi est celle de l'intent, donc une restitution défaillante dégrade le confort de lecture, pas l'analyse.
 - **Contamination d'échantillon** si un utilisateur change d'ID (connexion, transfert, ADR 0014). Mitigation : l'assignation repose sur l'ID utilisateur stable du backend, et tout changement d'identité est journalisé pour exclusion éventuelle de l'analyse.
 
 ## Notes d'implémentation

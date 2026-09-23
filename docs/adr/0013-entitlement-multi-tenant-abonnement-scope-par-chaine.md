@@ -1,7 +1,7 @@
 # 0013 — Modèle d'entitlement multi-tenant : abonnement scopé par chaîne
 
 - Statut : Accepté
-- Date : 2026-09-22 (spike tranché le 2026-09-23 — voir « Verdict du spike »)
+- Date : 2026-09-22 (spike tranché le 2026-09-23, décision révisée le 2026-09-23 — voir « Verdict du spike » puis « Révision »)
 - Décideurs : Muhammed Cavus
 
 ## Contexte et problématique
@@ -71,29 +71,55 @@ Le spike portait sur une seule question : le SDK RevenueCat permet-il d'attacher
 
 La documentation et les réponses officielles de l'équipe RevenueCat sont sans ambiguïté : depuis la version 5.0.0 du SDK iOS, `appAccountToken` est **renseigné automatiquement à partir de l'App User ID**, à condition que celui-ci soit un UUID v4 valide. Ce n'est pas une option d'achat exposée au développeur : le SDK occupe le champ, et il l'occupe avec une valeur **stable par utilisateur** — exactement l'inverse de ce dont nous avons besoin, à savoir une valeur **unique par achat** portant le `channelId`. Par ailleurs, il n'existe pas de mécanisme généralement disponible pour attacher des métadonnées arbitraires à un achat intégré iOS et les voir ressortir dans les webhooks ; cette capacité existe côté Web Billing, pas côté App Store.
 
-Ce verdict correspond au cas « échec » prévu par cet ADR, dont la règle de décision était écrite d'avance : ne pas se rabattre sur l'option C, basculer sur l'option D. C'est ce qui est fait.
+Nuance importante : l'option B n'est pas fausse, elle est **inaccessible à travers le chemin d'achat RevenueCat**. En achetant directement avec StoreKit 2, c'est nous qui passons `Product.PurchaseOption.appAccountToken(_:)`.
 
-Nuance importante : l'option B n'est pas fausse, elle est **inaccessible à travers RevenueCat**. En achetant directement avec StoreKit 2, c'est nous qui passons `Product.PurchaseOption.appAccountToken(_:)`, et la valeur ressort dans le `JWSTransaction` des notifications serveur Apple. Le mécanisme est donc conservé ; seul l'intermédiaire disparaît.
+### Révision du 2026-09-23 — RevenueCat reste le chemin d'achat
 
-Reste à confirmer en sandbox, **sans que cela bloque quoi que ce soit** : le comportement de `appAccountToken` sur les **renouvellements** (est-il rattaché à chaque transaction de renouvellement ou seulement à l'achat initial ?) et sur les **restaurations**. C'est une vérification d'implémentation, plus une incertitude de conception.
+Le verdict ci-dessus conduisait à l'option D, c'est-à-dire à écrire nous-mêmes toute l'intégration Apple. **Décision revue : RevenueCat est conservé comme chemin d'achat.** Ce qui est abandonné, c'est le transport de l'attribution par `appAccountToken` — pas RevenueCat.
 
-### Flux d'achat cible
+Le raisonnement : ce que RevenueCat fournit n'est pas un confort, c'est le **cycle de vie complet de l'abonnement** — validation des reçus, renouvellements, périodes de grâce, changements de formule, remboursements, transferts entre comptes, sandbox, et la normalisation de tout cela entre Apple et Stripe le jour où le web arrivera. Réécrire cette machinerie représente plusieurs semaines pour un développeur solo, et elle n'a aucune valeur produit visible. Le problème d'attribution, lui, est un problème de **corrélation d'un identifiant**, soluble autrement et pour un coût sans commune mesure.
+
+Autrement dit : on ne renonce pas au moteur parce que le porte-étiquette ne convient pas.
+
+### Mécanisme d'attribution retenu
+
+Trois chemins, par ordre d'autorité décroissante, avec un invariant serveur qui rend l'ambiguïté structurellement impossible.
+
+**Invariant fondateur — une seule intent ouverte par utilisateur.** L'API refuse de créer une seconde `PurchaseIntent` tant qu'une intent non consommée et non expirée existe pour cet utilisateur. C'est ce qui distingue radicalement ce mécanisme de l'option C rejetée plus haut : il n'y a jamais de « choisir la plus récente », parce qu'il n'y en a jamais deux. L'achat est de toute façon un parcours modal côté client : on ne s'abonne pas à deux chaînes simultanément.
 
 ```
-1. Client  → API      : POST /v1/subscriptions/intents { channelId, tier }
-2. API                : crée une PurchaseIntent (userId, channelId, tier, uuid, expiresAt = now + 15 min)
-                        retourne { intentId: uuid }
-3. Client  → StoreKit : product.purchase(options: [.appAccountToken(uuid)])
-4. Apple   → API      : App Store Server Notification V2 (JWS signé)
-                        → vérification de la chaîne de certificats, décodage du JWSTransaction
-                        → lecture de appAccountToken → résolution de l'intent
-                        → création de l'Entitlement scopé (userId, channelId, tier, expiresAt)
-                        → intent marquée CONSUMED
-5. Client  → API      : POST /v1/subscriptions/sync  (chemin rapide, non autoritaire :
-                        accélère l'affichage, ne crée jamais un droit à lui seul)
+1. Client → API : POST /v1/subscriptions/intents { channelId, tier }
+   API           : refuse si une intent est déjà ouverte pour cet utilisateur
+                   sinon crée PurchaseIntent (userId, channelId, tier, intentId, TTL 15 min)
+
+2. Client       : Purchases.shared.attribution.setAttributes(["pending_intent_id": intentId])
+                  puis syncAttributesAndOfferingsIfNeeded()  ← attendu, pas lancé en arrière-plan
+                  puis purchase(package)
+
+3. RevenueCat → API (webhook INITIAL_PURCHASE)
+   a. subscriber_attributes.pending_intent_id présent
+      → résolution, vérification que l'intent appartient bien à app_user_id, entitlement créé.
+        CHEMIN NOMINAL, AUTORITAIRE.
+   b. absent
+      → entitlement créé en statut PENDING_ATTRIBUTION, rattaché à original_transaction_id.
+        Le paiement est acquis, la chaîne est inconnue. On ne devine pas.
+
+4. Client → API : POST /v1/subscriptions/attach { intentId, transactionId }
+   API           : vérifie que l'intent appartient à l'utilisateur authentifié, qu'elle est
+                   ouverte, et que la transaction existe et est active côté RevenueCat
+                   (GET /v1/subscribers/{app_user_id})
+                   → attribue l'entitlement PENDING_ATTRIBUTION. CHEMIN DE RATTRAPAGE.
+
+5. Filet : au-delà de 10 minutes en PENDING_ATTRIBUTION, si exactement une intent ouverte
+   existe pour cet utilisateur, résolution automatique + journalisation. Sinon, file de
+   réconciliation et invite in-app : « à quelle chaîne rattacher cet abonnement ? »
 ```
 
-L'intent a un **TTL de 15 minutes** et est **à usage unique**. Une intent expirée ou déjà consommée qui reçoit un achat déclenche une alerte et bascule sur la file de réconciliation manuelle : on ne devine jamais.
+**Renouvellements** : l'attribut n'est **jamais** relu après l'achat initial. Un renouvellement survenant un mois plus tard porterait la valeur courante de l'attribut, qui peut concerner une autre chaîne — c'est le piège de ce mécanisme, et il est évité en corrélant les renouvellements par `original_transaction_id`, stocké sur l'entitlement à sa création. L'attribut n'établit le lien qu'une fois ; `original_transaction_id` le maintient.
+
+**Pourquoi ce n'est pas l'option C déguisée.** L'option C devinait, silencieusement, en se fondant sur l'ordre d'arrivée. Ici : l'information voyage avec l'événement (3a), un second chemin indépendant existe (4), l'invariant d'intent unique supprime l'ambiguïté, et surtout **l'échec est un état explicite** (`PENDING_ATTRIBUTION`) qui s'alerte et se résout, au lieu d'une attribution fausse qu'on ne découvre jamais. Le système sait qu'il ne sait pas — c'est toute la différence.
+
+L'intent a un **TTL de 15 minutes** et est **à usage unique**. Une intent expirée ou déjà consommée qui reçoit un achat déclenche une alerte et bascule sur la file de réconciliation : on ne devine jamais.
 
 ### Modèle de données des entitlements
 
@@ -152,19 +178,19 @@ Entitlements de `source = PRIME` ou `PROMO`, créés par l'API sans aucune trans
 
 ### Risques et mitigations
 
-**Risque n°1 — charge de maintenance de l'intégration Apple directe.**
-C'est le coût assumé du verdict du spike. Vérification de la chaîne de certificats Apple, décodage et validation JWS, modélisation complète du cycle de vie d'un abonnement (renouvellement, grâce, expiration, changement de tier, remboursement), gestion de la sandbox : tout cela était fourni par RevenueCat et devient notre travail. Mitigation : cantonner strictement ce code à un adapter `AppStoreServerAdapter` derrière `PurchaseVerificationPort` (ADR 0014), et n'implémenter que les types de notification réellement utilisés, en rejetant explicitement les autres plutôt qu'en les ignorant. Incertitude honnête : c'est plusieurs jours de travail, pas quelques heures, et c'est la conséquence la plus coûteuse de tout le lot monétisation.
+**Risque n°1 — `subscriber_attributes` n'est pas garanti dans le webhook.**
+C'est le risque central du mécanisme retenu, et il est documenté par RevenueCat lui-même : le champ est présent « parfois », c'est-à-dire quand la donnée a été synchronisée à temps. Les attributs sont synchronisés à la configuration du SDK, à la mise en arrière-plan, et lors d'un achat — mais un attribut posé juste avant l'achat peut ne pas être remonté à temps. Mitigations, cumulatives : appel explicite à `syncAttributesAndOfferingsIfNeeded()` **attendu** avant de déclencher l'achat ; chemin de rattrapage client (étape 4) indépendant du webhook ; état `PENDING_ATTRIBUTION` explicite plutôt qu'une attribution devinée ; métrique sur le taux d'attribution nominale, avec alerte si elle descend sous 95 %. **Incertitude assumée : nous ne connaissons pas ce taux réel avant de l'avoir mesuré en sandbox puis en production.** C'est le principal point à instrumenter dès le premier achat.
 
-**Risque n°1 bis — `appAccountToken` sur les renouvellements.**
-Non vérifié en sandbox à ce jour. Si le champ n'est pas propagé aux transactions de renouvellement, la corrélation ne vaut que pour l'achat initial. Mitigation : ce n'est pas bloquant, car l'entitlement est créé à l'achat initial et le renouvellement se rattache à l'abonnement existant par `originalTransactionId`, qui est stable par construction. `appAccountToken` sert à établir le lien une fois ; `originalTransactionId` le maintient.
+**Risque n°2 — l'attribution dépend en partie du client.**
+Le chemin de rattrapage passe par un appel client, donc par un acteur non fiable. Ce n'est pas un risque financier : le paiement est prouvé par le webhook RevenueCat, le client ne peut pas fabriquer un droit. Le pire abus possible est qu'un utilisateur rattache **son propre abonnement payé** à une chaîne différente de celle qu'il avait choisie — ce qui déplace du revenu d'un streamer vers un autre. Mitigation : l'API vérifie que l'`intentId` présenté appartient à l'utilisateur authentifié et correspond à une intent ouverte ; il ne peut donc rattacher qu'à la chaîne qu'il a lui-même désignée avant l'achat.
 
-**Risque n°2 — intent expirée à l'arrivée de l'achat (Ask to Buy, paiement différé).**
+**Risque n°3 — intent expirée à l'arrivée de l'achat (Ask to Buy, paiement différé).**
 Mitigation : ne pas supprimer les intents expirées ; les conserver 90 jours en statut `EXPIRED` et permettre la résolution d'un achat tardif contre une intent expirée **si et seulement si** l'UUID correspond exactement. Le TTL de 15 minutes gouverne l'UX, pas la résolution.
 
-**Risque n°3 — webhook perdu : achat débité sans entitlement créé.**
+**Risque n°4 — webhook perdu : achat débité sans entitlement créé.**
 Mitigation : job de réconciliation périodique confrontant les intents `PENDING` anciennes aux transactions connues côté fournisseur, plus un endpoint client de re-synchronisation. Un utilisateur qui a payé et n'a pas son droit doit pouvoir se débloquer sans support.
 
-**Risque n°4 — divergence d'invariant sur les cadeaux.**
+**Risque n°5 — divergence d'invariant sur les cadeaux.**
 La prolongation de `expiresAt` par un cadeau alors qu'un abonnement payant est actif peut produire un double comptage côté revenu streamer. Mitigation : la prolongation modifie l'entitlement, mais les **événements de revenu restent distincts et non fusionnés** (cf. ledger, ADR 0015).
 
 ## Notes d'implémentation
@@ -176,9 +202,11 @@ La prolongation de `expiresAt` par un cadeau alors qu'un abonnement payant est a
 - `expiresAt` en UTC, stocké en `timestamptz`. Toute comparaison de droit se fait côté serveur, jamais avec une horloge client.
 - Index PostgreSQL : unique partiel sur `(userId, channelId) WHERE status IN ('ACTIVE','GRACE')`, et index sur `(channelId, status)` pour les vérifications du chat.
 - Les tests suivent le TDD strict : le cœur du domaine (invariants d'unicité, prolongation par cadeau, transitions de statut) se teste sans aucune infrastructure.
-- `originalTransactionId` est la clé de corrélation durable de l'abonnement ; `appAccountToken` n'établit le lien qu'à la première transaction. Les deux sont persistés sur l'entitlement.
-- Le premier code à écrire n'est pas l'intégration Apple mais le **décodeur de notification** (JWS → événement de domaine typé), testable hors ligne sur des payloads figés. C'est ce qui rend le TDD praticable sur ce périmètre.
-- Conserver les payloads de notification bruts, archivés, indéfiniment : ce sont les seules pièces justificatives en cas de litige sur un abonnement.
+- `original_transaction_id` est la clé de corrélation durable de l'abonnement. Il est persisté sur l'entitlement dès sa création et sert à rattacher tous les événements ultérieurs. L'attribut d'intent ne sert qu'une fois.
+- **L'invariant « une seule intent ouverte par utilisateur » est une contrainte d'unicité en base**, pas une vérification applicative : index unique partiel sur `(userId) WHERE status = 'OPEN'`. Une règle métier qui repose sur un `SELECT` puis un `INSERT` n'est pas une règle.
+- Le premier test à écrire est celui du **chemin dégradé** : webhook sans `subscriber_attributes` → entitlement en `PENDING_ATTRIBUTION` → appel d'attachement → entitlement attribué. C'est le chemin qui casse en production, donc celui qui mérite d'être écrit en premier.
+- Conserver les payloads de webhook bruts, archivés, indéfiniment : ce sont les seules pièces justificatives en cas de litige sur un abonnement.
+- L'App User ID RevenueCat doit être un **UUID v4** : le SDK le pose alors comme `appAccountToken` côté Apple, ce qui donne gratuitement une corrélation utilisateur (pas chaîne) exploitable en réconciliation.
 
 ## Liens
 
