@@ -85,7 +85,7 @@ Le trou classique : on branche `ZodValidationPipe` global sur le REST, on se dé
 1. **REST** — `ZodValidationPipe` global (body, query, params).
 2. **Messages WebSocket entrants** — chaque message client est parsé contre une union discriminée sur `type` avant tout traitement. Un message invalide est droppé avec incrément de compteur, jamais propagé.
 3. **Variables d'environnement** — un schéma par process, parsé au bootstrap. Un env invalide fait crasher au démarrage, pas à la première requête en production à 2h du matin.
-4. **Webhooks entrants** — Stripe Connect, RevenueCat, provider vidéo. Vérification de signature **d'abord** (sur le corps brut), parsing Zod ensuite. Le payload d'un webhook est un input hostile comme un autre.
+4. **Webhooks entrants** — Stripe Connect, RevenueCat, App Store Server Notifications, provider vidéo. **Authentification d'abord, sur le corps brut** ; parsing Zod ensuite. Le mécanisme d'authentification diffère selon l'émetteur — signature HMAC pour Stripe, en-tête partagé pour RevenueCat, signature JWS et chaîne de certificats pour Apple (ADR 0014) — et il ne faut surtout pas les confondre dans le code. Le payload d'un webhook est un input hostile comme un autre.
 5. **Réponses des adapters sortants** — l'API du provider vidéo et RevenueCat sont des frontières : leurs réponses sont parsées avant d'entrer dans le domaine.
 
 ### Garde-fou n°3 — Performance sur le hot path du chat

@@ -20,7 +20,7 @@ Un ADR n'est jamais modifié une fois accepté : il est **remplacé** par un nou
 | [0011](0011-architecture-presentation-ios-mv-observable.md) | Architecture de présentation iOS : MV avec `@Observable`, pas MVVM | Accepté | iOS |
 | [0012](0012-strategie-analytics-taxonomie-evenements-posthog.md) | Stratégie analytics et taxonomie d'événements (PostHog) | Accepté | Analytics |
 | [0013](0013-entitlement-multi-tenant-abonnement-scope-par-chaine.md) | Entitlement multi-tenant : abonnement scopé par chaîne | Accepté | Monétisation |
-| [0014](0014-revenuecat-adapter-backend-source-de-verite.md) | Backend source de vérité des droits, RevenueCat en simple adapter | Accepté | Monétisation |
+| [0014](0014-revenuecat-adapter-backend-source-de-verite.md) | Backend source de vérité des droits, le fournisseur en simple adapter | Accepté | Monétisation |
 | [0015](0015-separation-abonnements-consommables-ledger-monnaie-virtuelle.md) | Séparation abonnements / consommables et ledger de monnaie virtuelle | Accepté | Monétisation |
 | [0016](0016-repartition-posthog-revenuecat-flags-experimentation.md) | Répartition PostHog / RevenueCat sur les flags et l'expérimentation | Accepté | Analytics |
 | [0017](0017-modele-de-reversement-streamer.md) | Modèle de reversement aux streamers : split sur le net encaissé | **Proposé — canal web conditionné au cadre fiscal** | Monétisation |

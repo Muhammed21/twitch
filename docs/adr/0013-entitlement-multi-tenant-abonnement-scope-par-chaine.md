@@ -61,9 +61,18 @@ Le backend consomme les App Store Server Notifications V2 et interroge l'App Sto
 - **Avantages** : accès non filtré à `appAccountToken`, aucune couche d'interprétation tierce, contrôle total.
 - **Inconvénients** : charge de développement et de maintenance nettement supérieure (vérification de la chaîne de certificats, signature JWS, modélisation du cycle de vie des abonnements, sandbox), soit précisément ce que RevenueCat évitait. Perte des Paywalls remote config (cf. ADR 0016) pour ce périmètre.
 
+### Option E — Produits génériques + intent serveur transportée par un attribut d'abonné
+
+L'achat reste réalisé par RevenueCat. Le `channelId` ne voyage pas dans la transaction Apple mais dans un **attribut d'abonné** (`pending_intent_id`) posé et synchronisé avant l'achat, que RevenueCat restitue dans son webhook. Un chemin de rattrapage client et un invariant d'intent unique complètent le dispositif.
+
+- **Avantages** : nombre de produits constant ; RevenueCat conservé, donc tout le cycle de vie de l'abonnement reste géré (renouvellements, grâce, changements de formule, remboursements, transferts, sandbox, normalisation Apple/Stripe) ; l'échec d'attribution est un état explicite, pas une erreur silencieuse.
+- **Inconvénients** : l'attribution ne voyage plus avec la transaction elle-même ; RevenueCat documente `subscriber_attributes` comme présent « parfois » dans les webhooks, ce qui impose des chemins de secours ; une partie du rattrapage dépend d'un appel client.
+
 ## Décision
 
-**Le mécanisme de l'option B (intent serveur + `appAccountToken`) est retenu, mais mis en œuvre par le chemin de l'option D : achat StoreKit 2 en direct, validation par App Store Server Notifications V2 et App Store Server API.** Le chemin d'achat RevenueCat est écarté pour les abonnements de chaîne.
+**Option E retenue.** L'achat des abonnements de chaîne passe par **RevenueCat**. L'attribution à la chaîne est portée par une **intent serveur** dont l'identifiant voyage dans un attribut d'abonné, avec deux chemins de secours et un invariant d'unicité.
+
+L'option B — la plus élégante, puisqu'elle fait porter l'attribution par la transaction elle-même — est **inapplicable via RevenueCat**, pour la raison détaillée ci-dessous. L'option D, qui l'aurait rendue possible, a été retenue dans un premier temps puis abandonnée : voir « Révision ».
 
 ### Verdict du spike
 
@@ -166,15 +175,15 @@ Entitlements de `source = PRIME` ou `PROMO`, créés par l'API sans aucune trans
 - Nombre de produits App Store constant (3), onboarding d'un streamer instantané.
 - Le domaine `monetization` manipule un concept unique et scopé — l'`Entitlement` — quelle que soit l'origine du droit.
 - Les droits offerts, Prime et promotionnels sont modélisés dès le départ et non greffés après coup.
-- Le serveur est le seul à décider de la chaîne concernée : le client ne peut pas revendiquer un abonnement sur une chaîne qu'il n'a pas payée.
+- Le serveur reste seul à **accorder** un droit : le client ne peut jamais en fabriquer un, le paiement étant prouvé par le webhook. Le chemin de rattrapage lui laisse participer à l'**attribution**, mais uniquement vers une intent ouverte qu'il a lui-même créée et qui lui appartient — il ne peut donc désigner que la chaîne qu'il avait choisie avant de payer.
 - L'intent à usage unique et à TTL court donne un point d'observation net : toute divergence est détectable et alertable.
 
 ### Négatives
 
 - Un aller-retour réseau supplémentaire avant l'achat. En cas d'échec de la création d'intent, **on ne lance pas l'achat** — mieux vaut un achat empêché qu'un achat orphelin.
-- Dépendance à une fonctionnalité relativement avancée de StoreKit 2, dont la propagation par RevenueCat n'est pas garantie à ce jour.
+- **L'attribution ne voyage plus avec la transaction**, contrairement à l'option B. Elle dépend d'un attribut d'abonné que RevenueCat documente comme présent « parfois » dans ses webhooks, donc d'un dispositif à trois chemins plutôt que d'une garantie unique. C'est le prix payé pour conserver le cycle de vie géré par RevenueCat, et c'est le risque n°1 ci-dessous.
 - Une intent expirée pendant un parcours d'achat très lent (paiement Apple en attente d'approbation parentale, Ask to Buy) produit un achat sans intent résoluble. À traiter explicitement (voir risques).
-- Un second système d'identité (l'UUID d'intent) à observer et à purger.
+- Un second système d'identité (l'UUID d'intent) à observer et à purger, plus un état transitoire `PENDING_ATTRIBUTION` à surveiller — un droit payé mais non encore rattaché est une anomalie visible qu'il faut traiter, pas seulement journaliser.
 
 ### Risques et mitigations
 

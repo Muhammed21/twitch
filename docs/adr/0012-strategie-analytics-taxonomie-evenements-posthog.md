@@ -170,7 +170,7 @@ Si activé : masquage obligatoire de tous les champs de saisie et des écrans de
 - Génération de l'enum Swift par le même job CI que le client OpenAPI, avec échec du build si le généré diverge du commité.
 - Côté serveur : port `AnalyticsPort` par bounded context, adapter PostHog unique en infrastructure, événements émis depuis la couche application après succès du use-case (jamais avant, jamais depuis le domaine).
 - Côté iOS : `Core/Analytics` expose un protocole défini dans `Domain` ; le SDK PostHog est confiné à ce module (ADR 0010). Les features émettent des cas d'enum, jamais des chaînes.
-- Les événements de revenu sont émis par les handlers de webhooks Stripe Connect et RevenueCat, après vérification de signature (ADR 0009), avec une clé d'idempotence pour absorber les redéliveries.
+- Les événements de revenu sont émis par les handlers de webhooks Stripe Connect et RevenueCat, **après authentification du webhook** selon le mécanisme propre à chaque émetteur (ADR 0009, ADR 0014), avec une clé d'idempotence pour absorber les redéliveries.
 - Propriétés super globales côté client : version d'app, version d'OS, modèle d'appareil, locale, `X-Client-Version` — qui alimentent le suivi de dépréciation d'API (ADR 0009).
 - Le sous-domaine de proxy est déclaré dans l'`Info.plist` de pinning et dans la configuration du reverse proxy avec les mêmes contraintes TLS que l'API.
 - Convention de nommage et politique PII documentées en tête du fichier de schémas, là où on les lit au moment d'ajouter un événement.

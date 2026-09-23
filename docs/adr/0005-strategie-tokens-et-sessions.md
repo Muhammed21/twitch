@@ -94,7 +94,7 @@ Une **session** est une ligne durable identifiée par `sid` : `userId`, `familyI
 
 - Validation d'access token sans I/O : le chat et les endpoints de lecture supportent la charge sans dépendre de la disponibilité du store de sessions.
 - Un refresh token volé a une fenêtre d'exploitation courte et **s'auto-dénonce** : dès que le propriétaire légitime rafraîchit, la famille saute et il est prévenu.
-- L'identité vit dans notre PostgreSQL : `userId` est une clé étrangère utilisable, pas un identifiant externe à synchroniser.
+- L'identité vit dans notre PostgreSQL : `userId` est un identifiant que nous maîtrisons, pas un identifiant externe dont il faudrait maintenir un miroir local synchronisé pour chaque jointure métier. Il reste une **référence nue**, jamais une clé étrangère traversant un contexte — les ADR 0003 et 0008 l'interdisent, et cette interdiction est ce qui rend la séparation future possible.
 - Aucun coût par utilisateur actif, ce qui est décisif pour un produit d'audience.
 - `ThisDeviceOnly` rend la restauration d'une sauvegarde iCloud sur un appareil neuf inoffensive.
 - Un seul chemin de révocation, donc une seule chose à tester correctement.
