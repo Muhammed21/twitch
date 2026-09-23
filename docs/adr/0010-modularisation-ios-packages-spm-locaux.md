@@ -61,6 +61,8 @@ Non négociables, encodées dans `Package.swift` :
 4. **Une `Feature` ne dépend JAMAIS d'une autre `Feature`.** Règle centrale. `Chat` ne connaît pas `Player`, `Home` ne connaît pas `Channel`. Toute violation est une erreur de link.
 5. **`Core/*` ne dépendent pas entre eux**, à une exception nommée : `DesignSystem` est une feuille dont tout le monde peut dépendre, et qui ne dépend de rien.
 
+> **Amendé par l'ADR 0019.** La règle 5 protégeait l'absence de cycle et l'absence de métier, pas le nombre de dépendances. `DesignSystem` dépend désormais du package généré `DesignTokens`, qui devient le **plancher du graphe** — une feuille absolue, sans logique ni connaissance du projet. S'y ajoute une **règle 5 bis** : *aucun module autre que `Core/DesignSystem` n'importe `DesignTokens`*, sous peine de court-circuiter les composants et de perdre la capacité à changer un rendu en un seul point. Formulation faisant foi : ADR 0019.
+
 Ce qu'il faut voir : la règle 4 est celle qui apporte la valeur. Les trois autres sont du bon sens ; celle-là est la contrainte qui empêche l'app de redevenir un monolithe.
 
 ### Navigation inter-features sans couplage
@@ -143,7 +145,7 @@ Conséquences directes :
 - Ordre de création : `Domain` → `Core/DesignSystem` → `Core/Networking` → une première feature verticale complète (`Channel`), avant d'ouvrir les autres.
 - Le code Swift généré depuis `openapi.json` (ADR 0009) vit exclusivement dans `Core/Networking` ; il n'est jamais exposé publiquement — `Core/Networking` expose des types `Domain`.
 - `Core/Analytics` expose un protocole défini dans `Domain` ; le SDK PostHog est une implémentation confinée à ce module (ADR 0012).
-- `DesignSystem` porte tokens, typographie, composants et previews, et ne dépend de rien d'autre que SwiftUI.
+- `DesignSystem` porte typographie, composants et previews, et ne dépend que de SwiftUI et du package généré `DesignTokens` (ADR 0019). Il est le **seul** module autorisé à importer `DesignTokens`.
 - Une règle de CI (script de lint sur `Package.swift` + grep des `import`) vérifie l'absence d'import feature→feature, en complément de l'erreur de link.
 
 ## Liens

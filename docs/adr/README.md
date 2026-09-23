@@ -24,6 +24,8 @@ Un ADR n'est jamais modifié une fois accepté : il est **remplacé** par un nou
 | [0015](0015-separation-abonnements-consommables-ledger-monnaie-virtuelle.md) | Séparation abonnements / consommables et ledger de monnaie virtuelle | Accepté | Monétisation |
 | [0016](0016-repartition-posthog-revenuecat-flags-experimentation.md) | Répartition PostHog / RevenueCat sur les flags et l'expérimentation | Accepté | Analytics |
 | [0017](0017-modele-de-reversement-streamer.md) | Modèle de reversement aux streamers : split sur le net encaissé | **Proposé — canal web conditionné au cadre fiscal** | Monétisation |
+| [0018](0018-qualite-de-code-et-discipline-de-depot.md) | Qualité de code et discipline de dépôt : le lint comme mécanisme d'application des ADR | Accepté | Outillage |
+| [0019](0019-package-design-tokens.md) | Package de design tokens : source DTCG unique compilée en Swift et CSS | Accepté | Design |
 
 ## Dépendances principales
 
@@ -35,6 +37,8 @@ Un ADR n'est jamais modifié une fois accepté : il est **remplacé** par un nou
                      └── 0012 (analytics) ── 0016 (flags)
 0013 (entitlement) ── 0014 (RevenueCat) ── 0015 (subs / bits) ──┬── 0016
                                                                 └── 0017 (reversement)
+0018 (qualité / lint) ── applique mécaniquement 0002, 0007, 0009, 0010, 0012, 0019
+0019 (design tokens) ── 0010 (amende sa règle 5) ── 0011
 ```
 
 ## Points ouverts
@@ -53,6 +57,8 @@ Un ADR n'est jamais modifié une fois accepté : il est **remplacé** par un nou
 - **0004 ↔ 0006** (propagation des bans) : tranché en faveur de 0004. Règle désormais explicite — **Pub/Sub invalide un cache, Streams applique une sanction**. `authz.invalidated` reste en Pub/Sub best-effort pour rafraîchir les attributions ; les bans et timeouts passent par l'outbox transactionnelle (0002) puis Redis Streams avec consumer group et consommation idempotente. La durabilité est dépensée là où sa perte a un coût, et nulle part ailleurs.
 - **0013 — spike `appAccountToken` tranché (2026-09-23)** : RevenueCat **ne permet pas** de choisir l'`appAccountToken` d'un achat. Depuis son SDK iOS 5.0.0, le champ est renseigné automatiquement à partir de l'App User ID quand celui-ci est un UUID v4 — donc une valeur *stable par utilisateur*, quand il nous en faut une *unique par achat* portant le `channelId`. Conformément à la règle de décision écrite d'avance dans l'ADR, bascule sur l'option D : **achat StoreKit 2 en direct, validation par App Store Server Notifications V2**. RevenueCat est conservé pour le seul rendu des paywalls (0016). Cascade appliquée à 0014, 0015 et 0016 ; aucun invariant de domaine n'a bougé, ce qui valide la structure en ports/adapters.
 - **0008 — `multiSchema` n'est plus un preview feature** : la fonctionnalité est en disponibilité générale depuis **Prisma ORM 6.13.0**. Le risque et le repli associés sont retirés ; seul subsiste un plancher de version (Prisma >= 6.13).
+- **0010 ↔ 0019** (dépendances de `Core/DesignSystem`) : la règle 5 de l'ADR 0010 (« `DesignSystem` ne dépend de rien ») protégeait l'absence de cycle et de métier, pas le nombre de dépendances. `DesignTokens` devient le **plancher du graphe iOS** sous `DesignSystem`, et une **règle 5 bis** interdit à tout autre module de l'importer — sans quoi une feature court-circuiterait les composants. 0010 porte un renvoi vers 0019, qui fait foi.
+- **0018 ↔ 0019** (code généré) : les artefacts générés sont **exclus du lint et du formatage**, jamais de la vérification de fraîcheur. Formater un fichier généré le fait diverger de son générateur et fait échouer le gate au commit suivant.
 - **0006 ↔ 0013/0014** (statut d'abonné) : `subscriber` a été retiré des rôles attribués. Le statut d'abonné est dérivé d'un entitlement dont `monetization` est la seule source de vérité — le porter aussi comme rôle aurait créé deux vérités sur un droit payant.
 
 ## Convention
