@@ -1,6 +1,6 @@
 # 0017 — Modèle de reversement aux streamers : split sur le net encaissé
 
-- Statut : Proposé — principes arrêtés, mise en œuvre conditionnée au cadre fiscal
+- Statut : Proposé — principes arrêtés et implémentables ; ouverture du canal web conditionnée au cadre fiscal (voir « Questions à trancher avec un conseil fiscal »)
 - Date : 2026-09-23
 - Décideurs : Muhammed Cavus
 
@@ -132,6 +132,35 @@ Sans cette réconciliation, une divergence silencieuse s'accumule jusqu'au jour 
 - **Risque : rapports de règlement plus tardifs que prévu.** Si le rapport financier d'un canal arrive après la date de virement, des gains constatés glissent d'un cycle. Mitigation : le cycle de virement se déclenche sur la **disponibilité des rapports**, jamais sur une date calendaire fixe.
 - **Risque : incitation à contourner l'application iOS.** Le modèle rend l'achat web nettement plus intéressant pour le streamer, qui aura une raison directe d'y pousser son audience. Les règles encadrant les liens d'achat externes ont évolué (États-Unis 2025, DMA en Europe), sont juridictionnelles et continuent de bouger : **à vérifier dans les App Store Review Guidelines en vigueur au moment de l'implémentation**, sans se fier à une connaissance antérieure. Une communication imprudente sur ce point peut coûter la présence sur l'App Store.
 - **Risque : ce modèle n'a jamais été confronté à un vrai streamer.** Les taux, seuils et délais retenus sont des hypothèses raisonnables, pas des valeurs validées. Ils doivent rester des paramètres de configuration, pas des constantes dans le code.
+
+## Questions à trancher avec un conseil fiscal
+
+Ce qui bloque le passage en `Accepté` n'est pas technique et ne se résout pas en lisant de la documentation : cela dépend de la forme juridique, du pays d'établissement et du pays de résidence de chaque streamer. La liste ci-dessous est le brief, formulé pour qu'une seule séance suffise. **Aucune des réponses n'est supposée ici.**
+
+**A. Redevable de la TVA selon le canal**
+
+1. Pour les achats intégrés iOS, Apple intervient comme intermédiaire et gère la TVA à destination. Quelles obligations déclaratives cela laisse-t-il à notre charge, le cas échéant ?
+2. Pour les encaissements web via Stripe, Stripe n'est **pas** vendeur : la plateforme l'est. Cela déclenche-t-il une obligation de TVA dans le pays de chaque acheteur, et le guichet unique (OSS) est-il la bonne modalité ?
+3. Existe-t-il un seuil en dessous duquel ces obligations ne s'appliquent pas, et à partir de quel chiffre d'affaires bascule-t-on ?
+4. Faut-il, en pratique, retarder l'ouverture du canal web tant que ce cadre n'est pas en place ?
+
+**B. Nature de la relation avec le streamer**
+
+5. Le reversement est-il un achat de prestation au streamer, un partage de recettes, ou autre chose ? La réponse détermine qui facture qui, et si nous devons émettre un auto-facturation.
+6. Un streamer particulier non immatriculé peut-il être rémunéré, et à partir de quel montant doit-il se déclarer ?
+7. Quelle documentation devons-nous collecter et conserver — et Stripe Connect Express en couvre-t-il la totalité ou seulement une partie ?
+
+**C. Obligations déclaratives de plateforme**
+
+8. Sommes-nous un opérateur de plateforme au sens des obligations européennes de déclaration des revenus des vendeurs (type DAC7) ? L'activité de création de contenu entre-t-elle dans le périmètre visé ?
+9. Si oui, quelles informations devons-nous collecter dès l'inscription du streamer — car les collecter rétroactivement est bien plus coûteux que de les demander à l'onboarding.
+10. Stripe Connect produit-il les déclarations attendues, ou seulement les données sous-jacentes ?
+
+**D. Conséquence sur le calendrier**
+
+11. Laquelle de ces obligations doit être satisfaite **avant le premier euro encaissé**, et laquelle peut l'être avant le premier euro **reversé** ? L'écart entre les deux est d'au moins 45 jours (période de rétention), et c'est la marge dont nous disposons.
+
+Ce que la réponse change dans le code : essentiellement la collecte d'informations à l'onboarding streamer (question 9) et le moment d'ouverture du canal web (question 4). Le reste de cet ADR — formule de calcul sur le net, ledger, idempotence, rétention — ne dépend d'aucune de ces réponses et peut être construit dès maintenant.
 
 ## Notes d'implémentation
 

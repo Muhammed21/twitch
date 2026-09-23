@@ -1,7 +1,7 @@
 # 0013 — Modèle d'entitlement multi-tenant : abonnement scopé par chaîne
 
-- Statut : Proposé — bloqué par un spike technique
-- Date : 2026-09-22
+- Statut : Accepté
+- Date : 2026-09-22 (spike tranché le 2026-09-23 — voir « Verdict du spike »)
 - Décideurs : Muhammed Cavus
 
 ## Contexte et problématique
@@ -45,7 +45,7 @@ On part donc sur ~3 produits génériques — `channel_sub_tier1`, `channel_sub_
 Le client crée côté serveur une **intent d'achat** et attache l'UUID retourné à la transaction via `Product.PurchaseOption.appAccountToken(UUID)`. L'UUID ressort dans les notifications serveur Apple (`appAccountToken` du `JWSTransaction`) et, en principe, dans le webhook RevenueCat.
 
 - **Avantages** : nombre de produits constant ; corrélation explicite, portée par la transaction elle-même ; le serveur reste seul décideur ; résiste aux rejeux et à la concurrence puisque l'UUID est unique par intent.
-- **Inconvénients** : dépend de la capacité du SDK RevenueCat à propager cette purchase option **et** à la restituer dans le webhook. C'est exactement l'incertitude qui bloque cet ADR.
+- **Inconvénients** : dépend de la capacité du SDK RevenueCat à propager cette purchase option **et** à la restituer dans le webhook. **Vérification faite : ce n'est pas possible** — voir « Verdict du spike ». Le mécanisme reste valable en soi, mais pas via le chemin d'achat RevenueCat.
 
 ### Option C — Produits génériques + corrélation par intent ouverte la plus récente
 
@@ -63,18 +63,34 @@ Le backend consomme les App Store Server Notifications V2 et interroge l'App Sto
 
 ## Décision
 
-**Option B retenue, sous réserve d'un spike bloquant.** Cet ADR reste au statut *Proposé* tant que le spike n'a pas rendu son verdict.
+**Le mécanisme de l'option B (intent serveur + `appAccountToken`) est retenu, mais mis en œuvre par le chemin de l'option D : achat StoreKit 2 en direct, validation par App Store Server Notifications V2 et App Store Server API.** Le chemin d'achat RevenueCat est écarté pour les abonnements de chaîne.
+
+### Verdict du spike
+
+Le spike portait sur une seule question : le SDK RevenueCat permet-il d'attacher un `appAccountToken` choisi par nous à un achat, et de le récupérer dans le webhook ? **Non.**
+
+La documentation et les réponses officielles de l'équipe RevenueCat sont sans ambiguïté : depuis la version 5.0.0 du SDK iOS, `appAccountToken` est **renseigné automatiquement à partir de l'App User ID**, à condition que celui-ci soit un UUID v4 valide. Ce n'est pas une option d'achat exposée au développeur : le SDK occupe le champ, et il l'occupe avec une valeur **stable par utilisateur** — exactement l'inverse de ce dont nous avons besoin, à savoir une valeur **unique par achat** portant le `channelId`. Par ailleurs, il n'existe pas de mécanisme généralement disponible pour attacher des métadonnées arbitraires à un achat intégré iOS et les voir ressortir dans les webhooks ; cette capacité existe côté Web Billing, pas côté App Store.
+
+Ce verdict correspond au cas « échec » prévu par cet ADR, dont la règle de décision était écrite d'avance : ne pas se rabattre sur l'option C, basculer sur l'option D. C'est ce qui est fait.
+
+Nuance importante : l'option B n'est pas fausse, elle est **inaccessible à travers RevenueCat**. En achetant directement avec StoreKit 2, c'est nous qui passons `Product.PurchaseOption.appAccountToken(_:)`, et la valeur ressort dans le `JWSTransaction` des notifications serveur Apple. Le mécanisme est donc conservé ; seul l'intermédiaire disparaît.
+
+Reste à confirmer en sandbox, **sans que cela bloque quoi que ce soit** : le comportement de `appAccountToken` sur les **renouvellements** (est-il rattaché à chaque transaction de renouvellement ou seulement à l'achat initial ?) et sur les **restaurations**. C'est une vérification d'implémentation, plus une incertitude de conception.
 
 ### Flux d'achat cible
 
 ```
-1. Client  → API   : POST /v1/subscriptions/intents { channelId, tier }
-2. API             : crée une PurchaseIntent (userId, channelId, tier, uuid, expiresAt = now + 15 min)
-                     retourne { intentId: uuid }
-3. Client  → Apple : purchase(product, options: [.appAccountToken(uuid)])
-4. Apple   → RC    → API (webhook) : résolution de l'intent par uuid
-                     → création de l'Entitlement scopé (userId, channelId, tier, expiresAt)
-                     → intent marquée CONSUMED
+1. Client  → API      : POST /v1/subscriptions/intents { channelId, tier }
+2. API                : crée une PurchaseIntent (userId, channelId, tier, uuid, expiresAt = now + 15 min)
+                        retourne { intentId: uuid }
+3. Client  → StoreKit : product.purchase(options: [.appAccountToken(uuid)])
+4. Apple   → API      : App Store Server Notification V2 (JWS signé)
+                        → vérification de la chaîne de certificats, décodage du JWSTransaction
+                        → lecture de appAccountToken → résolution de l'intent
+                        → création de l'Entitlement scopé (userId, channelId, tier, expiresAt)
+                        → intent marquée CONSUMED
+5. Client  → API      : POST /v1/subscriptions/sync  (chemin rapide, non autoritaire :
+                        accélère l'affichage, ne crée jamais un droit à lui seul)
 ```
 
 L'intent a un **TTL de 15 minutes** et est **à usage unique**. Une intent expirée ou déjà consommée qui reçoit un achat déclenche une alerte et bascule sur la file de réconciliation manuelle : on ne devine jamais.
@@ -136,27 +152,11 @@ Entitlements de `source = PRIME` ou `PROMO`, créés par l'API sans aucune trans
 
 ### Risques et mitigations
 
-**Risque n°1 — bloquant : RevenueCat ne restitue pas `appAccountToken`.**
-C'est l'incertitude réelle de cet ADR, et la raison de son statut. Elle n'est pas levée par la documentation : elle doit l'être par un test.
+**Risque n°1 — charge de maintenance de l'intégration Apple directe.**
+C'est le coût assumé du verdict du spike. Vérification de la chaîne de certificats Apple, décodage et validation JWS, modélisation complète du cycle de vie d'un abonnement (renouvellement, grâce, expiration, changement de tier, remboursement), gestion de la sandbox : tout cela était fourni par RevenueCat et devient notre travail. Mitigation : cantonner strictement ce code à un adapter `AppStoreServerAdapter` derrière `PurchaseVerificationPort` (ADR 0014), et n'implémenter que les types de notification réellement utilisés, en rejetant explicitement les autres plutôt qu'en les ignorant. Incertitude honnête : c'est plusieurs jours de travail, pas quelques heures, et c'est la conséquence la plus coûteuse de tout le lot monétisation.
 
-*Protocole du spike :*
-
-1. Créer un produit d'abonnement de test dans un `StoreKit Configuration File` local, puis répliquer en sandbox Apple.
-2. Effectuer un achat via le SDK RevenueCat en passant explicitement l'`appAccountToken` (UUID connu, loggué côté client).
-3. Capturer le payload du webhook RevenueCat reçu par un endpoint de test, **brut**, sans transformation.
-4. Vérifier la présence de l'UUID dans le payload — champ dédié, `subscriber_attributes`, ou à défaut dans la transaction Apple récupérable via l'App Store Server API à partir du `transaction_id` transmis.
-5. Répéter sur un **renouvellement** en sandbox (l'UUID doit rester corrélable au-delà de l'achat initial) et sur une **restauration d'achats**.
-6. Répéter avec deux achats sur deux chaînes différentes lancés à moins de 5 secondes d'intervalle.
-
-*Critères de succès :* l'UUID est présent et exact dans 100 % des cas aux étapes 4, 5 et 6, sans recours à une heuristique temporelle.
-
-*Critères d'échec :* UUID absent, tronqué, réécrit, ou absent des événements de renouvellement. Une récupération indirecte obligatoire via l'App Store Server API compte comme un **succès partiel** : elle fonctionne, mais elle ajoute une dépendance directe à Apple qui affaiblit l'intérêt de RevenueCat sur ce périmètre.
-
-*Décision selon l'issue :*
-
-- **Succès** → cet ADR passe en `Accepté` sans modification.
-- **Succès partiel** → cet ADR passe en `Accepté` avec ajout explicite d'un adapter App Store Server API en complément du webhook RevenueCat.
-- **Échec** → **ne pas se rabattre sur l'option C en production.** L'option C (corrélation par intent la plus récente) est acceptable uniquement comme dépannage temporaire sur un volume faible, avec alerte systématique sur toute ambiguïté. Le vrai repli est l'**option D** : App Store Server API en direct pour les abonnements de chaîne, RevenueCat conservé pour les Paywalls et l'analytics. Cette bascule est rendue peu coûteuse par la structure en ports/adapters de l'ADR 0014 — c'est précisément sa justification.
+**Risque n°1 bis — `appAccountToken` sur les renouvellements.**
+Non vérifié en sandbox à ce jour. Si le champ n'est pas propagé aux transactions de renouvellement, la corrélation ne vaut que pour l'achat initial. Mitigation : ce n'est pas bloquant, car l'entitlement est créé à l'achat initial et le renouvellement se rattache à l'abonnement existant par `originalTransactionId`, qui est stable par construction. `appAccountToken` sert à établir le lien une fois ; `originalTransactionId` le maintient.
 
 **Risque n°2 — intent expirée à l'arrivée de l'achat (Ask to Buy, paiement différé).**
 Mitigation : ne pas supprimer les intents expirées ; les conserver 90 jours en statut `EXPIRED` et permettre la résolution d'un achat tardif contre une intent expirée **si et seulement si** l'UUID correspond exactement. Le TTL de 15 minutes gouverne l'UX, pas la résolution.
@@ -176,7 +176,9 @@ La prolongation de `expiresAt` par un cadeau alors qu'un abonnement payant est a
 - `expiresAt` en UTC, stocké en `timestamptz`. Toute comparaison de droit se fait côté serveur, jamais avec une horloge client.
 - Index PostgreSQL : unique partiel sur `(userId, channelId) WHERE status IN ('ACTIVE','GRACE')`, et index sur `(channelId, status)` pour les vérifications du chat.
 - Les tests suivent le TDD strict : le cœur du domaine (invariants d'unicité, prolongation par cadeau, transitions de statut) se teste sans aucune infrastructure.
-- Tant que cet ADR est `Proposé`, **aucun code de production d'achat d'abonnement ne doit être écrit**. Le spike est jetable par construction.
+- `originalTransactionId` est la clé de corrélation durable de l'abonnement ; `appAccountToken` n'établit le lien qu'à la première transaction. Les deux sont persistés sur l'entitlement.
+- Le premier code à écrire n'est pas l'intégration Apple mais le **décodeur de notification** (JWS → événement de domaine typé), testable hors ligne sur des payloads figés. C'est ce qui rend le TDD praticable sur ce périmètre.
+- Conserver les payloads de notification bruts, archivés, indéfiniment : ce sont les seules pièces justificatives en cas de litige sur un abonnement.
 
 ## Liens
 

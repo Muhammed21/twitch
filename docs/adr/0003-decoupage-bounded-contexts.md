@@ -187,7 +187,7 @@ Le choix d'inclure un fragment de `moderation` est délibéré : il force la rel
 ## Notes d'implémentation
 
 - Arborescence : `apps/api/src/modules/{identity,channel,stream,moderation,discovery}` pour la tranche 1. `chat` vit dans `apps/chat` (ADR 0004). `monetization` et `notification` ne sont pas créés.
-- Isolation physique des tables : **voir l'ADR 0008, qui fait autorité sur ce point**. Décision retenue : un schéma PostgreSQL par contexte via `multiSchema` de Prisma, avec repli documenté sur un schéma unique à tables préfixées par contexte (`identity_accounts`, `channel_channels`, `stream_sessions`…) si le statut *preview* de `multiSchema` se révèle bloquant.
+- Isolation physique des tables : **voir l'ADR 0008, qui fait autorité sur ce point**. Décision retenue : un schéma PostgreSQL par contexte via `multiSchema` de Prisma (disponibilité générale depuis la 6.13.0 ; plancher de version Prisma >= 6.13).
 - Aucune clé étrangère SQL ne traverse une frontière de contexte, y compris quand Prisma le permettrait et que ce serait pratique. C'est ce qui rendra la séparation de base possible.
 - **`authz` est un noyau partagé, pas un neuvième contexte** (ADR 0006). Il n'a ni langage métier propre ni décision à prendre : il stocke les attributions et évalue les politiques. L'écriture appartient aux contextes métier (`channel` pour les nominations, `moderation` pour les sanctions), la lecture est ouverte à tous. C'est la seule exception assumée à la règle « aucun module partagé entre contextes » ; toute autre demande d'exception doit être refusée.
 - Les contrats d'events vivent dans `packages/contracts/src/events/<context>/`, versionnés, avec un schéma Zod pour les événements franchissant un process.

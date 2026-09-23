@@ -19,11 +19,11 @@ Un ADR n'est jamais modifié une fois accepté : il est **remplacé** par un nou
 | [0010](0010-modularisation-ios-packages-spm-locaux.md) | Modularisation iOS en packages SPM locaux | Accepté | iOS |
 | [0011](0011-architecture-presentation-ios-mv-observable.md) | Architecture de présentation iOS : MV avec `@Observable`, pas MVVM | Accepté | iOS |
 | [0012](0012-strategie-analytics-taxonomie-evenements-posthog.md) | Stratégie analytics et taxonomie d'événements (PostHog) | Accepté | Analytics |
-| [0013](0013-entitlement-multi-tenant-abonnement-scope-par-chaine.md) | Entitlement multi-tenant : abonnement scopé par chaîne | **Proposé — bloqué par un spike** | Monétisation |
-| [0014](0014-revenuecat-adapter-backend-source-de-verite.md) | RevenueCat en adapter, backend source de vérité des droits | Accepté | Monétisation |
+| [0013](0013-entitlement-multi-tenant-abonnement-scope-par-chaine.md) | Entitlement multi-tenant : abonnement scopé par chaîne | Accepté | Monétisation |
+| [0014](0014-revenuecat-adapter-backend-source-de-verite.md) | Backend source de vérité des droits, fournisseur en simple adapter | Accepté | Monétisation |
 | [0015](0015-separation-abonnements-consommables-ledger-monnaie-virtuelle.md) | Séparation abonnements / consommables et ledger de monnaie virtuelle | Accepté | Monétisation |
 | [0016](0016-repartition-posthog-revenuecat-flags-experimentation.md) | Répartition PostHog / RevenueCat sur les flags et l'expérimentation | Accepté | Analytics |
-| [0017](0017-modele-de-reversement-streamer.md) | Modèle de reversement aux streamers : split sur le net encaissé | **Proposé — conditionné au cadre fiscal** | Monétisation |
+| [0017](0017-modele-de-reversement-streamer.md) | Modèle de reversement aux streamers : split sur le net encaissé | **Proposé — canal web conditionné au cadre fiscal** | Monétisation |
 
 ## Dépendances principales
 
@@ -39,9 +39,8 @@ Un ADR n'est jamais modifié une fois accepté : il est **remplacé** par un nou
 
 ## Points ouverts
 
-- **0013 est bloquant.** Le spike `appAccountToken` doit être joué avant toute ligne de code d'achat : son résultat décide si RevenueCat est utilisable pour les abonnements de chaîne.
-- **0017 est conditionné au cadre fiscal.** Qui est redevable de la TVA diffère selon le canal : Apple est vendeur pour les achats intégrés, la plateforme l'est pour les encaissements web. À trancher avec un conseil fiscal avant tout encaissement web réel.
-- **`multiSchema` de Prisma est un preview feature** (0008). À éprouver sur les 8 schémas dès le premier sprint ; repli sur schéma unique à tables préfixées.
+- **0017 — cadre fiscal, seul point réellement ouvert.** L'ouverture du canal web (Stripe) suppose de savoir qui est redevable de la TVA et quelles obligations déclaratives de plateforme s'appliquent. Ne se résout pas techniquement. L'ADR 0017 contient le brief en 11 questions à poser à un conseil fiscal, et isole ce qui est implémentable sans attendre — c'est-à-dire tout le reste de l'ADR.
+- **À confirmer en sandbox, non bloquant** : le comportement d'`appAccountToken` sur les renouvellements et les restaurations (0013). La corrélation durable repose de toute façon sur `originalTransactionId`.
 
 ## Divergences résolues
 
@@ -52,6 +51,8 @@ Un ADR n'est jamais modifié une fois accepté : il est **remplacé** par un nou
 - **Attributions corrigées** : `/v1/mobile/bootstrap` est défini par l'ADR 0009 (et non 0012) — 5 références rectifiées ; référence erronée à l'ADR 0001 dans 0005 ; contexte inexistant (« service de session de lecture ») dans 0012 ; `Core/Navigation` absent de l'arborescence de 0010.
 - **0004 ↔ 0005** (transport du token WebSocket) : tranché en faveur de 0005. Le token est présenté à la poignée de main dans `Sec-WebSocket-Protocol` et vérifié localement via JWKS, sans I/O ; une poignée de main non authentifiée est **refusée avant toute allocation**. La variante « premier message applicatif » est écartée et documentée comme telle : elle laissait vivre une socket anonyme quelques secondes, soit un vecteur d'épuisement de connexions. Il n'existe plus de message `auth` dans le protocole.
 - **0004 ↔ 0006** (propagation des bans) : tranché en faveur de 0004. Règle désormais explicite — **Pub/Sub invalide un cache, Streams applique une sanction**. `authz.invalidated` reste en Pub/Sub best-effort pour rafraîchir les attributions ; les bans et timeouts passent par l'outbox transactionnelle (0002) puis Redis Streams avec consumer group et consommation idempotente. La durabilité est dépensée là où sa perte a un coût, et nulle part ailleurs.
+- **0013 — spike `appAccountToken` tranché (2026-09-23)** : RevenueCat **ne permet pas** de choisir l'`appAccountToken` d'un achat. Depuis son SDK iOS 5.0.0, le champ est renseigné automatiquement à partir de l'App User ID quand celui-ci est un UUID v4 — donc une valeur *stable par utilisateur*, quand il nous en faut une *unique par achat* portant le `channelId`. Conformément à la règle de décision écrite d'avance dans l'ADR, bascule sur l'option D : **achat StoreKit 2 en direct, validation par App Store Server Notifications V2**. RevenueCat est conservé pour le seul rendu des paywalls (0016). Cascade appliquée à 0014, 0015 et 0016 ; aucun invariant de domaine n'a bougé, ce qui valide la structure en ports/adapters.
+- **0008 — `multiSchema` n'est plus un preview feature** : la fonctionnalité est en disponibilité générale depuis **Prisma ORM 6.13.0**. Le risque et le repli associés sont retirés ; seul subsiste un plancher de version (Prisma >= 6.13).
 - **0006 ↔ 0013/0014** (statut d'abonné) : `subscriber` a été retiré des rôles attribués. Le statut d'abonné est dérivé d'un entitlement dont `monetization` est la seule source de vérité — le porter aussi comme rôle aurait créé deux vérités sur un droit payant.
 
 ## Convention

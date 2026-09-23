@@ -173,5 +173,5 @@ Extraire seulement sur signal mesuré, jamais par principe :
 
 - Chaque module expose un `@Module()` NestJS unique, en un seul point d'entrée. Les providers internes ne sont pas exportés.
 - Les types d'events partagés vivent dans `packages/contracts/`, consommés aussi par le service de chat.
-- Les migrations Prisma sont globales (une seule base), mais **chaque contexte possède son propre schéma PostgreSQL** dès le premier jour — `multiSchema` de Prisma, l'ADR 0008 fait autorité sur ce point et documente le repli (schéma unique à tables préfixées) si le statut *preview* se révèle bloquant. C'est ce qui rendra l'étape 3 possible.
+- Les migrations Prisma sont globales (une seule base), mais **chaque contexte possède son propre schéma PostgreSQL** dès le premier jour — `multiSchema` de Prisma, en disponibilité générale depuis la 6.13.0 ; l'ADR 0008 fait autorité. C'est ce qui rendra l'étape 3 possible.
 - Test d'architecture en CI : aucune dépendance cyclique entre modules, et le graphe d'imports est vérifié — pas seulement linté.

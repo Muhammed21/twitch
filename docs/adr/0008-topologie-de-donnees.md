@@ -39,7 +39,7 @@ On retient **l'option C**.
 
 ### 1. PostgreSQL + Prisma, un schéma par bounded context
 
-`previewFeatures = ["multiSchema"]`, avec un schéma PostgreSQL par contexte : `identity`, `channel`, `stream`, `chat`, `moderation`, `discovery`, `monetization`, `notification`, plus trois schémas transverses : `authz` (noyau partagé des attributions de rôles, ADR 0006), `audit` (journal append-only, ADR 0006) et `cms` si Payload partage l'instance (ADR 0007).
+Un schéma PostgreSQL par contexte : `identity`, `channel`, `stream`, `chat`, `moderation`, `discovery`, `monetization`, `notification`, plus trois schémas transverses : `authz` (noyau partagé des attributions de rôles, ADR 0006), `audit` (journal append-only, ADR 0006) et `cms` si Payload partage l'instance (ADR 0007).
 
 Règles tranchées :
 
@@ -135,13 +135,13 @@ L'ordre des colonnes est intentionnel — égalités d'abord, tri ensuite. Tout 
 
 - Composer des données de plusieurs contextes demande plusieurs requêtes et du code applicatif là où une jointure aurait suffi ; certains écrans (profil de chaîne complet) en paieront le prix en latence.
 - L'absence de clés étrangères cross-contexte déplace l'intégrité référentielle dans le domaine, donc dans du code qu'il faut tester.
-- `multiSchema` est un *preview feature* Prisma : outillage et messages d'erreur moins mûrs.
+- Les schémas multiples restent moins balisés que le cas mono-schéma : moins d'exemples, messages d'erreur parfois obscurs sur les enums partagés.
 - Quatre systèmes de données à terme (PostgreSQL, Redis, OLAP, objet) pour une personne seule.
 - L'anonymisation plutôt que la suppression demande un inventaire précis, par contexte, de ce qui est personnel — travail fastidieux et facile à faire à moitié.
 
 ### Risques et mitigations
 
-- **Incertitude réelle : `multiSchema` reste en preview.** Un changement cassant ou une limitation découverte tardivement (notamment sur les enums partagés entre schémas et sur l'ombre de base en migration) coûterait cher. Mitigation : version de Prisma figée, migration de validation sur les 8 schémas dès le premier sprint pour lever le doute tôt, et repli documenté sur un schéma unique avec préfixes de tables (`identity_user`) — moins strict mais fonctionnellement équivalent.
+- **`multiSchema` n'est plus une incertitude.** La fonctionnalité était en Preview depuis Prisma 4.3.0 et est passée en **disponibilité générale en Prisma ORM 6.13.0** ; elle n'exige donc plus de `previewFeatures` et n'est plus exposée à un changement cassant de statut. **Plancher de version : Prisma >= 6.13.** Point de vigilance résiduel, de moindre gravité : les enums partagés entre schémas et la shadow database en migration restent les zones les moins balisées — une migration de validation sur les 11 schémas au premier sprint reste recommandée, non plus pour lever un doute sur la fonctionnalité, mais pour éprouver notre propre découpage.
 - **Contournement de la règle « pas de jointure cross-schéma » via `$queryRaw`.** Mitigation : droits PostgreSQL par rôle (le vrai garde-fou), plus une règle de lint interdisant `$queryRaw` hors d'un répertoire d'infrastructure explicitement revu.
 - **Dérive de performance sur la découverte de streams.** Mitigation : `pg_stat_statements` activé, budget de latence explicite sur la home (p95 < 150 ms côté base), et test de charge sur le seed « volume » avant chaque changement d'index.
 - **Redis traité par erreur comme une base durable.** C'est le glissement le plus probable (« juste ce compteur qu'on ne veut pas perdre »). Mitigation : revue systématique — toute nouvelle clé Redis doit pouvoir disparaître sans conséquence métier, sinon elle appartient à PostgreSQL.

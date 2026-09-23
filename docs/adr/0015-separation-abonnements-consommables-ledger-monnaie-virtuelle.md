@@ -48,11 +48,11 @@ Confier les bits à RevenueCat reviendrait à le forcer sur un terrain pour lequ
 
 | | Inbound iOS | Inbound web | Source de vérité |
 |---|---|---|---|
-| **Abonnement de chaîne** | RevenueCat / IAP | Stripe | **l'API** (table d'entitlements, ADR 0014) |
+| **Abonnement de chaîne** | StoreKit 2 + App Store Server API | Stripe | **l'API** (table d'entitlements, ADR 0014) |
 | **Bits (packs)** | IAP vérifié via App Store Server API | Stripe | **l'API** (ledger) |
 | **Payout streamer** | — | — | **Stripe Connect** |
 
-Les bits ne passent **pas** par RevenueCat : l'achat de pack est un consommable StoreKit vérifié en direct via l'**App Store Server API**. C'est plus de travail qu'un webhook RevenueCat, mais cela évite de dépendre d'un intermédiaire sur une fonctionnalité qu'il ne modélise pas, et cela met en place l'adapter Apple direct qui sert aussi de repli à l'ADR 0013.
+Les bits ne passent **pas** par RevenueCat : l'achat de pack est un consommable StoreKit vérifié en direct via l'**App Store Server API**. C'est plus de travail qu'un webhook RevenueCat, mais cela évite de dépendre d'un intermédiaire sur une fonctionnalité qu'il ne modélise pas. *Mise à jour du 2026-09-23 : le verdict de spike de l'ADR 0013 a étendu ce choix aux abonnements de chaîne. L'adapter Apple direct prévu ici pour les seuls consommables devient le chemin d'achat iOS unique.*
 
 Les abonnements cadeaux (ADR 0013) sont des achats ponctuels : ils relèvent techniquement de ce chemin consommable, pas du chemin abonnement.
 
@@ -142,7 +142,7 @@ Soit **80 % de la somme partie avant même de payer la vidéo**, qui est le post
 
 ### Négatives
 
-- Deux chemins d'achat iOS à maintenir (RevenueCat pour les abonnements, App Store Server API pour les consommables), donc deux jeux de tests sandbox.
+- ~~Deux chemins d'achat iOS à maintenir~~ — **caduc depuis le 2026-09-23** : les abonnements ayant eux aussi basculé sur l'App Store Server API (ADR 0013), il n'existe plus qu'un seul chemin d'achat iOS et un seul jeu de tests sandbox. Ce qui était une conséquence négative de cet ADR est devenu son principal bénéfice.
 - La vérification directe des reçus Apple (chaîne de certificats, JWS, notifications V2) est du travail que RevenueCat aurait masqué.
 - Le solde par agrégation impose une projection de lecture et son invalidation.
 - La politique de solde négatif fait porter le coût du remboursement à la plateforme.
@@ -168,5 +168,5 @@ Soit **80 % de la somme partie avant même de payer la vidéo**, qui est le post
 ## Liens
 
 - ADR 0013 — Modèle d'entitlement multi-tenant
-- ADR 0014 — RevenueCat comme adapter, backend source de vérité
+- ADR 0014 — Le backend comme source de vérité des droits, le fournisseur comme simple adapter
 - ADR 0016 — Répartition PostHog / RevenueCat
