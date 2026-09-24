@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveColorThemes } from "./resolve-themes.ts";
+import { resolveColorThemes, resolveSharedTokens } from "./resolve-themes.ts";
 
 const paths = (tokens: readonly { readonly path: readonly string[] }[]) =>
   tokens.map(({ path }) => path.join("."));
@@ -56,6 +56,38 @@ describe("resolveColorThemes, on the real token files", () => {
       [...light, ...dark].filter(
         ({ comment }) => comment === undefined || comment === "",
       ),
+    ).toEqual([]);
+  });
+});
+
+describe("resolveSharedTokens, on the real token files", () => {
+  it("resolves typography, spacing and radius, without any colour", async () => {
+    const tokens = await resolveSharedTokens();
+    const categories = new Set(tokens.map(({ path }) => path[0]));
+
+    expect([...categories].sort()).toEqual(["radius", "spacing", "typography"]);
+  });
+
+  it("never lets a core primitive out of the package", async () => {
+    const tokens = await resolveSharedTokens();
+
+    expect(tokens.filter(({ path }) => path[0] === "core")).toEqual([]);
+  });
+
+  it("resolves spacing aliases to their pixel value", async () => {
+    const tokens = await resolveSharedTokens();
+    const x8 = tokens.find(({ path }) => path.join(".") === "spacing.x8");
+
+    expect(x8).toEqual(
+      expect.objectContaining({ $type: "dimension", value: "8px" }),
+    );
+  });
+
+  it("gives every shared token a description", async () => {
+    const tokens = await resolveSharedTokens();
+
+    expect(
+      tokens.filter(({ comment }) => comment === undefined || comment === ""),
     ).toEqual([]);
   });
 });

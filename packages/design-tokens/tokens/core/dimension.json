@@ -1,0 +1,61 @@
+{
+  "core": {
+    "dimension": {
+      "1": {
+        "$type": "dimension",
+        "$value": "1px",
+        "$description": "Charte relevée sur twitch.tv (échelle d'espacement, base 1px)."
+      },
+      "2": {
+        "$type": "dimension",
+        "$value": "2px",
+        "$description": "Charte relevée sur twitch.tv (échelle d'espacement, base 1px)."
+      },
+      "3": {
+        "$type": "dimension",
+        "$value": "3px",
+        "$description": "Charte relevée sur twitch.tv (échelle d'espacement, base 1px)."
+      },
+      "4": {
+        "$type": "dimension",
+        "$value": "4px",
+        "$description": "Charte relevée sur twitch.tv (échelle d'espacement, base 1px)."
+      },
+      "5": {
+        "$type": "dimension",
+        "$value": "5px",
+        "$description": "Charte relevée sur twitch.tv (échelle d'espacement, base 1px)."
+      },
+      "6": {
+        "$type": "dimension",
+        "$value": "6px",
+        "$description": "Charte relevée sur twitch.tv (échelle d'espacement, base 1px)."
+      },
+      "8": {
+        "$type": "dimension",
+        "$value": "8px",
+        "$description": "Charte relevée sur twitch.tv (échelle d'espacement, base 1px)."
+      },
+      "10": {
+        "$type": "dimension",
+        "$value": "10px",
+        "$description": "Charte relevée sur twitch.tv (échelle d'espacement, base 1px)."
+      },
+      "12": {
+        "$type": "dimension",
+        "$value": "12px",
+        "$description": "Charte relevée sur twitch.tv (échelle d'espacement, base 1px)."
+      },
+      "15": {
+        "$type": "dimension",
+        "$value": "15px",
+        "$description": "Charte relevée sur twitch.tv (échelle d'espacement, base 1px)."
+      },
+      "full": {
+        "$type": "dimension",
+        "$value": "9999px",
+        "$description": "Convention : rayon assez grand pour arrondir entièrement n'importe quel composant (pill)."
+      }
+    }
+  }
+}

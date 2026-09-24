@@ -31,3 +31,10 @@ export const resolveColorThemes = async () => {
 
   return { light, dark };
 };
+
+export const resolveSharedTokens = (): Promise<readonly DesignToken[]> =>
+  resolvedSemanticTokens([
+    "tokens/core/**/*.json",
+    "tokens/semantic/typography.json",
+    "tokens/semantic/spacing.json",
+  ]);

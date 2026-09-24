@@ -223,3 +223,137 @@ export const formatThemedColors = (themes: ThemedTokens): string => {
     "",
   ].join("\n");
 };
+
+const toPoints = (value: unknown, path: readonly string[]): string => {
+  assertResolved(value, path);
+
+  if (typeof value === "number") {
+    return String(value);
+  }
+
+  const points =
+    typeof value === "string"
+      ? /^(-?[0-9]+(\.[0-9]+)?)(px)?$/.exec(value)
+      : null;
+
+  if (points === null) {
+    throw new Error(
+      `Token "${tokenId(path)}" is not a pixel dimension: ${String(value)}.`,
+    );
+  }
+
+  return String(Number(points[1]));
+};
+
+export const formatDimensions = (
+  tokens: readonly DesignToken[],
+  { namespace }: { readonly namespace: string },
+): string => {
+  const members = tokens.flatMap((token) => [
+    ...docComment(token.comment),
+    `    public static let ${swiftMemberName(token.path)}: CGFloat = ${toPoints(token.value, token.path)}`,
+  ]);
+
+  return [
+    GENERATED_HEADER,
+    `public enum ${namespace} {`,
+    ...members,
+    "}",
+    "",
+  ].join("\n");
+};
+
+const IOS_TEXT_STYLES = new Set([
+  "largeTitle",
+  "title",
+  "title2",
+  "title3",
+  "headline",
+  "subheadline",
+  "body",
+  "callout",
+  "footnote",
+  "caption",
+  "caption2",
+]);
+
+const FONT_WEIGHTS = new Map<number, string>([
+  [100, "ultraLight"],
+  [200, "thin"],
+  [300, "light"],
+  [400, "regular"],
+  [500, "medium"],
+  [600, "semibold"],
+  [700, "bold"],
+  [800, "heavy"],
+  [900, "black"],
+]);
+
+type TextStyleValue = {
+  readonly textStyle: string;
+  readonly fontWeight?: unknown;
+};
+
+const asTextStyle = (
+  value: unknown,
+  path: readonly string[],
+): TextStyleValue => {
+  assertResolved(value, path);
+
+  if (typeof value !== "object" || value === null || !("textStyle" in value)) {
+    throw new Error(`Token "${tokenId(path)}" is not an iOS text style value.`);
+  }
+
+  const { textStyle } = value as TextStyleValue;
+
+  if (!IOS_TEXT_STYLES.has(textStyle)) {
+    throw new Error(
+      `Token "${tokenId(path)}" uses "${textStyle}", which SwiftUI does not provide as a text style.`,
+    );
+  }
+
+  return value as TextStyleValue;
+};
+
+const toFontWeight = (value: unknown, path: readonly string[]): string => {
+  const weight = FONT_WEIGHTS.get(Number(value));
+
+  if (weight === undefined) {
+    throw new Error(
+      `Token "${tokenId(path)}" uses the unsupported font weight ${String(value)}.`,
+    );
+  }
+
+  return weight;
+};
+
+export const formatTextStyles = (tokens: readonly DesignToken[]): string => {
+  const members = tokens.flatMap((token) => {
+    const { textStyle, fontWeight } = asTextStyle(token.value, token.path);
+    const name = swiftMemberName(token.path);
+
+    if (IOS_TEXT_STYLES.has(name)) {
+      throw new Error(
+        `Token "${tokenId(token.path)}" maps to "${name}", which would shadow the SwiftUI Font member of the same name.`,
+      );
+    }
+
+    const weight =
+      fontWeight === undefined
+        ? ""
+        : `.weight(.${toFontWeight(fontWeight, token.path)})`;
+
+    return [
+      ...docComment(token.comment),
+      `    static let ${name} = Font.${textStyle}${weight}`,
+    ];
+  });
+
+  return [
+    GENERATED_HEADER,
+    "public extension Font {",
+    ...members,
+    "}",
+    "",
+  ].join("\n");
+};

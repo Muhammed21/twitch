@@ -1,0 +1,81 @@
+{
+  "spacing": {
+    "x1": {
+      "$type": "dimension",
+      "$value": "{core.dimension.1}",
+      "$description": "1 fois l'unité de base de la charte relevée (1 pt)."
+    },
+    "x2": {
+      "$type": "dimension",
+      "$value": "{core.dimension.2}",
+      "$description": "2 fois l'unité de base de la charte relevée (1 pt)."
+    },
+    "x3": {
+      "$type": "dimension",
+      "$value": "{core.dimension.3}",
+      "$description": "3 fois l'unité de base de la charte relevée (1 pt)."
+    },
+    "x4": {
+      "$type": "dimension",
+      "$value": "{core.dimension.4}",
+      "$description": "4 fois l'unité de base de la charte relevée (1 pt)."
+    },
+    "x5": {
+      "$type": "dimension",
+      "$value": "{core.dimension.5}",
+      "$description": "5 fois l'unité de base de la charte relevée (1 pt)."
+    },
+    "x6": {
+      "$type": "dimension",
+      "$value": "{core.dimension.6}",
+      "$description": "6 fois l'unité de base de la charte relevée (1 pt)."
+    },
+    "x8": {
+      "$type": "dimension",
+      "$value": "{core.dimension.8}",
+      "$description": "8 fois l'unité de base de la charte relevée (1 pt)."
+    },
+    "x10": {
+      "$type": "dimension",
+      "$value": "{core.dimension.10}",
+      "$description": "10 fois l'unité de base de la charte relevée (1 pt)."
+    },
+    "x12": {
+      "$type": "dimension",
+      "$value": "{core.dimension.12}",
+      "$description": "12 fois l'unité de base de la charte relevée (1 pt)."
+    },
+    "x15": {
+      "$type": "dimension",
+      "$value": "{core.dimension.15}",
+      "$description": "15 fois l'unité de base de la charte relevée (1 pt)."
+    }
+  },
+  "radius": {
+    "sm": {
+      "$type": "dimension",
+      "$value": "{core.dimension.2}",
+      "$description": "Charte relevée : rayon sm."
+    },
+    "md": {
+      "$type": "dimension",
+      "$value": "{core.dimension.4}",
+      "$description": "Charte relevée : rayon md, cartes et vignettes."
+    },
+    "lg": {
+      "$type": "dimension",
+      "$value": "{core.dimension.6}",
+      "$description": "Charte relevée : rayon lg."
+    },
+    "xl": {
+      "$type": "dimension",
+      "$value": "{core.dimension.8}",
+      "$description": "Charte relevée : rayon xl."
+    },
+    "pill": {
+      "$type": "dimension",
+      "$value": "{core.dimension.full}",
+      "$description": "Charte relevée : rayon pill, avatars et pastilles de catégorie."
+    }
+  }
+}
