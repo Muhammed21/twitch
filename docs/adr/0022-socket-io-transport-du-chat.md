@@ -1,6 +1,6 @@
 # 0022 — socket.io comme transport du chat, à la place de uWebSockets.js
 
-- Statut : Accepté — authentification (§3), révocation (§4), reconnexion (§5) et client iOS amendés par [0023](0023-client-ios-socketio-minimal-et-refus-http-au-handshake.md)
+- Statut : Accepté — authentification (§3), révocation (§4), reconnexion (§5) et client iOS amendés par [0023](0023-client-ios-socketio-minimal-et-refus-http-au-handshake.md) — backpressure (§8) et seuil de réévaluation (§9) amendés par [0027](0027-backpressure-et-dimensionnement-du-chat.md)
 - Date : 2026-09-24
 - Décideurs : Muhammed Cavus
 - Remplace partiellement : ADR 0004 (§1 choix du transport, §5 plafond de trame, §7 backpressure, heartbeat des notes d'implémentation)

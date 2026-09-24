@@ -1,6 +1,6 @@
 # 0018 — Qualité de code et discipline de dépôt : le lint comme mécanisme d'application des ADR
 
-- Statut : Accepté
+- Statut : Accepté — lint de schéma Prisma ajouté par [0025](0025-un-client-prisma-par-contexte.md)
 - Date : 2026-09-23
 - Décideurs : Muhammed Cavus
 

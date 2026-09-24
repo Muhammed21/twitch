@@ -1,6 +1,6 @@
 # 0002 — Monolithe modulaire hexagonal plutôt que microservices
 
-- Statut : Accepté
+- Statut : Accepté — table `outbox` par schéma amendée par [0025](0025-un-client-prisma-par-contexte.md)
 - Date : 2026-09-22
 - Décideurs : Muhammed Cavus
 

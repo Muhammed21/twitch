@@ -1,6 +1,6 @@
 # 0009 — Contrat API : Zod comme source de vérité, OpenAPI généré, client Swift généré
 
-- Statut : Accepté
+- Statut : Accepté — conventions de compatibilité, messages temps réel, `contract-check` amendés par [0024](0024-conventions-de-contrat-pour-la-compatibilite.md)
 - Date : 2026-09-22
 - Décideurs : Muhammed Cavus
 

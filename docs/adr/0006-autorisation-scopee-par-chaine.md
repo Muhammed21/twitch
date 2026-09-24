@@ -1,6 +1,6 @@
 # 0006 — Modèle d'autorisation scopé par chaîne (RBAC/ABAC)
 
-- Statut : Accepté
+- Statut : Accepté — portée du garde-fou en base amendée par [0025](0025-un-client-prisma-par-contexte.md)
 - Date : 2026-09-22
 - Décideurs : Muhammed Cavus
 

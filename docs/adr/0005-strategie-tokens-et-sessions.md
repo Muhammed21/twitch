@@ -1,6 +1,6 @@
 # 0005 — Stratégie de tokens et de sessions (better-auth)
 
-- Statut : Accepté — sessions WebSocket (support du token, codes `4401` / `4403`) amendées par [0022](0022-socket-io-transport-du-chat.md)
+- Statut : Accepté — sessions WebSocket (support du token, codes `4401` / `4403`) amendées par [0022](0022-socket-io-transport-du-chat.md) — détection de réutilisation, passkeys, clé de signature et JWKS amendés par [0026](0026-better-auth-oauth-provider-et-revocation-sur-reutilisation.md)
 - Date : 2026-09-22
 - Décideurs : Muhammed Cavus
 

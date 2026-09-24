@@ -30,6 +30,10 @@ Un ADR n'est jamais modifié une fois accepté : il est **remplacé** par un nou
 | [0021](0021-perimetre-fonctionnel-et-cartographie-des-entites.md)            | Périmètre fonctionnel : un propriétaire et un horizon pour chaque entité               | Accepté                                             | Domaine      |
 | [0022](0022-socket-io-transport-du-chat.md) | socket.io comme transport du chat, à la place de uWebSockets.js | Accepté | Chat |
 | [0023](0023-client-ios-socketio-minimal-et-refus-http-au-handshake.md) | Client iOS socket.io minimal et refus HTTP 401 / 403 au handshake | Accepté | Chat |
+| [0024](0024-conventions-de-contrat-pour-la-compatibilite.md) | Conventions de contrat pour la compatibilité ascendante (réponses ouvertes, enums ouverts, unions extensibles) | Accepté | Contrat |
+| [0025](0025-un-client-prisma-par-contexte.md) | Un client Prisma par contexte, et ce que la base ne protège pas | Accepté | Données |
+| [0026](0026-better-auth-oauth-provider-et-revocation-sur-reutilisation.md) | better-auth en serveur OAuth, révocation de tous les appareils sur réutilisation | Accepté | Auth |
+| [0027](0027-backpressure-et-dimensionnement-du-chat.md) | Clients lents, dimensionnement et filtrage des blocages dans le chat | Accepté | Chat |
 
 ## Dépendances principales
 
@@ -47,12 +51,19 @@ Un ADR n'est jamais modifié une fois accepté : il est **remplacé** par un nou
                           └── 0021 (cartographie des entités, contextes futurs media / engagement / messaging)
 0021 ── 0020 (le blocage clôt le follow)
 0004 ── 0022 (transport socket.io, amende 0005 et 0011) ── 0023 (client iOS minimal, refus 401 / 403, amende 0010)
+0009 ── 0024 (conventions de compatibilité, amende aussi 0023)
+0008 ── 0025 (un client Prisma par contexte, amende aussi 0002, 0006, 0018)
+0005 ── 0026 (better-auth + oauth-provider)
+0022 ── 0027 (clients lents, dimensionnement, amende aussi 0021)
 ```
 
 ## Points ouverts
 
 - **0017 — cadre fiscal, seul point réellement ouvert.** L'ouverture du canal web (Stripe) suppose de savoir qui est redevable de la TVA et quelles obligations déclaratives de plateforme s'appliquent. Ne se résout pas techniquement. L'ADR 0017 contient le brief en 11 questions à poser à un conseil fiscal, et isole ce qui est implémentable sans attendre — c'est-à-dire tout le reste de l'ADR.
 - **0023 — test sur iPhone réel avant la fin de la tranche 1.** Le spike du client socket.io minimal (`docs/spikes/2026-09-24-client-ios-socketio.md`) a tourné sur macOS : arrière-plan, bascule Wi-Fi / 4G et mode basse consommation restent à vérifier.
+- **0024 — schémas temps réel non référencés.** Vérifier au premier passage de `contract-check` que `swift-openapi-generator` génère les schémas `Realtime*` qu'aucun chemin ne référence ; sinon, repli sur un endpoint de documentation.
+- **0025 / 0026 — premier sprint `identity`.** Tester l'adapter Prisma de better-auth avec `multiSchema` et un client par contexte, et l'intégration NestJS, avant toute autre fonctionnalité d'authentification. La cohabitation des migrations Payload et Prisma dans `cms` n'est pas testée non plus.
+- **0027 — fan-out entre instances.** Mesurer `@socket.io/redis-adapter` avant de passer à plus d'une instance de chat : c'est le principal angle mort du spike de charge.
 - **À mesurer dès le premier achat (0013)** : le taux de présence de `subscriber_attributes` dans les webhooks RevenueCat, documenté comme « parfois » par le fournisseur. C'est le risque n°1 de l'ADR 0013 ; il est mitigé par trois chemins cumulatifs, mais son taux réel n'est connu de personne avant mesure. Alerte prévue sous 95 % d'attribution nominale.
 
 ## Divergences résolues
@@ -73,6 +84,7 @@ Un ADR n'est jamais modifié une fois accepté : il est **remplacé** par un nou
 - **0020 / 0021 — choix validés (2026-09-24)** : préférence de notification par chaîne dans `notification` (et non sur le `Follow`) ; blocage entre utilisateurs dans `moderation` ; catalogue des catégories dans `channel` ; raid dans `stream` et clips/VOD dans le futur `media` ; messages privés et prédictions hors scope.
 - **0004 → 0022** (transport du chat) : `uWebSockets.js` remplacé par socket.io, en WebSocket uniquement, dans le même process séparé. L'isolation des défaillances de 0004 est conservée ; seul le pari de performance est abandonné. Conséquences sur 0005 : le token passe de `Sec-WebSocket-Protocol` à l'en-tête `Authorization` de la requête d'upgrade, toujours vérifié avant toute allocation (hook `allowRequest`) ; les codes `4401` / `4403` deviennent un événement `session:revoked`.
 - **0022 → 0023** (spike client iOS, 2026-09-24) : le client Swift officiel de socket.io est écarté (non maintenu, perd le statut HTTP d'un refus) au profit d'un client minimal sur `URLSessionWebSocketTask` dans `Core/ChatTransport`. Côté serveur, `allowRequest` répond toujours `400` : le handshake est traité par un gestionnaire d'upgrade maison qui répond `401` / `403` avant de déléguer à `engine.handleUpgrade`.
+- **Spikes du 2026-09-24 → 0024 à 0027.** Quatre spikes (`docs/spikes/`) ont testé les fondations en conditions réelles. Contrat (0009 → 0024) : avec les réglages par défaut, 8 décodages sur 20 échouent à tort et le garde-fou n°4 était faux ; conventions et normalisation ajoutées, NestJS épinglé en 11. Données (0008 → 0025) : un client Prisma unique ne peut pas être restreint par rôle ; un client par contexte, plus de transaction entre contextes, une outbox par schéma. Auth (0005 → 0026) : better-auth tient avec `oauth-provider` ; une réutilisation révoque tous les appareils, accepté ; passkeys par la page web. Chat (0022 → 0027) : `volatile` perd des messages de clients sains avec le moteur `ws` ; garde manuelle et `except`, dimensionnement en livraisons par seconde. Le coût du parsing Zod (0009) est levé : négligeable.
 
 ## Convention
 

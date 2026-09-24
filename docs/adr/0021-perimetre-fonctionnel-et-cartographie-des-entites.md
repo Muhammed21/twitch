@@ -1,6 +1,6 @@
 # 0021 — Périmètre fonctionnel et cartographie des entités
 
-- Statut : Accepté
+- Statut : Accepté — filtrage des blocages dans la diffusion (§4) amendé par [0027](0027-backpressure-et-dimensionnement-du-chat.md)
 - Date : 2026-09-24
 - Décideurs : Muhammed Cavus
 - Complète : ADR 0003 (contextes futurs, propriétaires des entités non couvertes)

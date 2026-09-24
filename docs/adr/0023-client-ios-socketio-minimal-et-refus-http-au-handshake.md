@@ -1,6 +1,6 @@
 # 0023 — Client iOS socket.io minimal et refus HTTP au handshake
 
-- Statut : Accepté
+- Statut : Accepté — types des messages serveur amendés par [0024](0024-conventions-de-contrat-pour-la-compatibilite.md)
 - Date : 2026-09-24
 - Décideurs : Muhammed Cavus
 - Amende : ADR 0022 (§3 authentification, §4 révocation, §5 reconnexion, risque « bibliothèque cliente iOS »), ADR 0010 (nouveau module `Core/ChatTransport`)
