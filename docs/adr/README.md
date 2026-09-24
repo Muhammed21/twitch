@@ -26,6 +26,8 @@ Un ADR n'est jamais modifié une fois accepté : il est **remplacé** par un nou
 | [0017](0017-modele-de-reversement-streamer.md) | Modèle de reversement aux streamers : split sur le net encaissé | **Proposé — canal web conditionné au cadre fiscal** | Monétisation |
 | [0018](0018-qualite-de-code-et-discipline-de-depot.md) | Qualité de code et discipline de dépôt : le lint comme mécanisme d'application des ADR | Accepté | Outillage |
 | [0019](0019-package-design-tokens.md) | Package de design tokens : source DTCG unique compilée en Swift et CSS | Accepté | Design |
+| [0020](0020-modele-du-follow-et-graphe-social.md) | Modèle du follow : version monotone par paire, projections convergentes | **Proposé** | Social |
+| [0021](0021-perimetre-fonctionnel-et-cartographie-des-entites.md) | Périmètre fonctionnel : un propriétaire et un horizon pour chaque entité | **Proposé** | Domaine |
 
 ## Dépendances principales
 
@@ -39,12 +41,17 @@ Un ADR n'est jamais modifié une fois accepté : il est **remplacé** par un nou
                                                                 └── 0017 (reversement)
 0018 (qualité / lint) ── applique mécaniquement 0002, 0007, 0009, 0010, 0012, 0019
 0019 (design tokens) ── 0010 (amende sa règle 5) ── 0011
+0003 (bounded contexts) ──┬── 0020 (follow, amende ses consommations d'events) ── 0004, 0012
+                          └── 0021 (cartographie des entités, contextes futurs media / engagement / messaging)
+0021 ── 0020 (le blocage clôt le follow)
 ```
 
 ## Points ouverts
 
 - **0017 — cadre fiscal, seul point réellement ouvert.** L'ouverture du canal web (Stripe) suppose de savoir qui est redevable de la TVA et quelles obligations déclaratives de plateforme s'appliquent. Ne se résout pas techniquement. L'ADR 0017 contient le brief en 11 questions à poser à un conseil fiscal, et isole ce qui est implémentable sans attendre — c'est-à-dire tout le reste de l'ADR.
 - **À mesurer dès le premier achat (0013)** : le taux de présence de `subscriber_attributes` dans les webhooks RevenueCat, documenté comme « parfois » par le fournisseur. C'est le risque n°1 de l'ADR 0013 ; il est mitigé par trois chemins cumulatifs, mais son taux réel n'est connu de personne avant mesure. Alerte prévue sous 95 % d'attribution nominale.
+
+- **0020 et 0021 — proposés, à valider.** Choix structurants à confirmer : préférence de notification par chaîne dans `notification` (et non sur le `Follow`) ; blocage entre utilisateurs dans `moderation` ; catalogue des catégories dans `channel` ; messages privés et prédictions hors scope.
 
 ## Divergences résolues
 
