@@ -1,6 +1,6 @@
 # 0020 — Modèle du follow et graphe social
 
-- Statut : Proposé
+- Statut : Accepté
 - Date : 2026-09-24
 - Décideurs : Muhammed Cavus
 - Amende : ADR 0003 (consommations d'events de `chat`, `notification`, `discovery` ; agrégat `Follow` de `channel`)

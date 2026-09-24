@@ -5,29 +5,29 @@ Un ADR n'est jamais modifié une fois accepté : il est **remplacé** par un nou
 
 ## Index
 
-| # | Décision | Statut | Portée |
-|---|---|---|---|
-| [0001](0001-provider-video-manage.md) | Provider vidéo managé plutôt qu'ingest auto-hébergé | Accepté | Vidéo |
-| [0002](0002-monolithe-modulaire-hexagonal.md) | Monolithe modulaire hexagonal plutôt que microservices | Accepté | API |
-| [0003](0003-decoupage-bounded-contexts.md) | Découpage en 8 bounded contexts | Accepté | API |
-| [0004](0004-chat-process-separe-topologie-temps-reel.md) | Chat en process séparé, topologie temps réel à trois canaux | Accepté | Chat |
-| [0005](0005-strategie-tokens-et-sessions.md) | Stratégie de tokens et de sessions (better-auth) | Accepté | Auth |
-| [0006](0006-autorisation-scopee-par-chaine.md) | Modèle d'autorisation scopé par chaîne (RBAC/ABAC) | Accepté | Auth |
-| [0007](0007-payload-cms-et-console-admin-par-proxy.md) | Payload en CMS et console d'admin par proxy | Accepté | Back-office |
-| [0008](0008-topologie-de-donnees.md) | Topologie de données : PostgreSQL multi-schéma, Redis, OLAP, objet | Accepté | Données |
-| [0009](0009-contrat-api-zod-source-de-verite.md) | Contrat API : Zod source de vérité, OpenAPI et client Swift générés | Accepté | Contrat |
-| [0010](0010-modularisation-ios-packages-spm-locaux.md) | Modularisation iOS en packages SPM locaux | Accepté | iOS |
-| [0011](0011-architecture-presentation-ios-mv-observable.md) | Architecture de présentation iOS : MV avec `@Observable`, pas MVVM | Accepté | iOS |
-| [0012](0012-strategie-analytics-taxonomie-evenements-posthog.md) | Stratégie analytics et taxonomie d'événements (PostHog) | Accepté | Analytics |
-| [0013](0013-entitlement-multi-tenant-abonnement-scope-par-chaine.md) | Entitlement multi-tenant : abonnement scopé par chaîne | Accepté | Monétisation |
-| [0014](0014-revenuecat-adapter-backend-source-de-verite.md) | Backend source de vérité des droits, le fournisseur en simple adapter | Accepté | Monétisation |
-| [0015](0015-separation-abonnements-consommables-ledger-monnaie-virtuelle.md) | Séparation abonnements / consommables et ledger de monnaie virtuelle | Accepté | Monétisation |
-| [0016](0016-repartition-posthog-revenuecat-flags-experimentation.md) | Répartition PostHog / RevenueCat sur les flags et l'expérimentation | Accepté | Analytics |
-| [0017](0017-modele-de-reversement-streamer.md) | Modèle de reversement aux streamers : split sur le net encaissé | **Proposé — canal web conditionné au cadre fiscal** | Monétisation |
-| [0018](0018-qualite-de-code-et-discipline-de-depot.md) | Qualité de code et discipline de dépôt : le lint comme mécanisme d'application des ADR | Accepté | Outillage |
-| [0019](0019-package-design-tokens.md) | Package de design tokens : source DTCG unique compilée en Swift et CSS | Accepté | Design |
-| [0020](0020-modele-du-follow-et-graphe-social.md) | Modèle du follow : version monotone par paire, projections convergentes | **Proposé** | Social |
-| [0021](0021-perimetre-fonctionnel-et-cartographie-des-entites.md) | Périmètre fonctionnel : un propriétaire et un horizon pour chaque entité | **Proposé** | Domaine |
+| #                                                                            | Décision                                                                               | Statut                                              | Portée       |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------- | ------------ |
+| [0001](0001-provider-video-manage.md)                                        | Provider vidéo managé plutôt qu'ingest auto-hébergé                                    | Accepté                                             | Vidéo        |
+| [0002](0002-monolithe-modulaire-hexagonal.md)                                | Monolithe modulaire hexagonal plutôt que microservices                                 | Accepté                                             | API          |
+| [0003](0003-decoupage-bounded-contexts.md)                                   | Découpage en 8 bounded contexts                                                        | Accepté                                             | API          |
+| [0004](0004-chat-process-separe-topologie-temps-reel.md)                     | Chat en process séparé, topologie temps réel à trois canaux                            | Accepté                                             | Chat         |
+| [0005](0005-strategie-tokens-et-sessions.md)                                 | Stratégie de tokens et de sessions (better-auth)                                       | Accepté                                             | Auth         |
+| [0006](0006-autorisation-scopee-par-chaine.md)                               | Modèle d'autorisation scopé par chaîne (RBAC/ABAC)                                     | Accepté                                             | Auth         |
+| [0007](0007-payload-cms-et-console-admin-par-proxy.md)                       | Payload en CMS et console d'admin par proxy                                            | Accepté                                             | Back-office  |
+| [0008](0008-topologie-de-donnees.md)                                         | Topologie de données : PostgreSQL multi-schéma, Redis, OLAP, objet                     | Accepté                                             | Données      |
+| [0009](0009-contrat-api-zod-source-de-verite.md)                             | Contrat API : Zod source de vérité, OpenAPI et client Swift générés                    | Accepté                                             | Contrat      |
+| [0010](0010-modularisation-ios-packages-spm-locaux.md)                       | Modularisation iOS en packages SPM locaux                                              | Accepté                                             | iOS          |
+| [0011](0011-architecture-presentation-ios-mv-observable.md)                  | Architecture de présentation iOS : MV avec `@Observable`, pas MVVM                     | Accepté                                             | iOS          |
+| [0012](0012-strategie-analytics-taxonomie-evenements-posthog.md)             | Stratégie analytics et taxonomie d'événements (PostHog)                                | Accepté                                             | Analytics    |
+| [0013](0013-entitlement-multi-tenant-abonnement-scope-par-chaine.md)         | Entitlement multi-tenant : abonnement scopé par chaîne                                 | Accepté                                             | Monétisation |
+| [0014](0014-revenuecat-adapter-backend-source-de-verite.md)                  | Backend source de vérité des droits, le fournisseur en simple adapter                  | Accepté                                             | Monétisation |
+| [0015](0015-separation-abonnements-consommables-ledger-monnaie-virtuelle.md) | Séparation abonnements / consommables et ledger de monnaie virtuelle                   | Accepté                                             | Monétisation |
+| [0016](0016-repartition-posthog-revenuecat-flags-experimentation.md)         | Répartition PostHog / RevenueCat sur les flags et l'expérimentation                    | Accepté                                             | Analytics    |
+| [0017](0017-modele-de-reversement-streamer.md)                               | Modèle de reversement aux streamers : split sur le net encaissé                        | **Proposé — canal web conditionné au cadre fiscal** | Monétisation |
+| [0018](0018-qualite-de-code-et-discipline-de-depot.md)                       | Qualité de code et discipline de dépôt : le lint comme mécanisme d'application des ADR | Accepté                                             | Outillage    |
+| [0019](0019-package-design-tokens.md)                                        | Package de design tokens : source DTCG unique compilée en Swift et CSS                 | Accepté                                             | Design       |
+| [0020](0020-modele-du-follow-et-graphe-social.md)                            | Modèle du follow : version monotone par paire, projections convergentes                | Accepté                                             | Social       |
+| [0021](0021-perimetre-fonctionnel-et-cartographie-des-entites.md)            | Périmètre fonctionnel : un propriétaire et un horizon pour chaque entité               | Accepté                                             | Domaine      |
 
 ## Dépendances principales
 
@@ -51,8 +51,6 @@ Un ADR n'est jamais modifié une fois accepté : il est **remplacé** par un nou
 - **0017 — cadre fiscal, seul point réellement ouvert.** L'ouverture du canal web (Stripe) suppose de savoir qui est redevable de la TVA et quelles obligations déclaratives de plateforme s'appliquent. Ne se résout pas techniquement. L'ADR 0017 contient le brief en 11 questions à poser à un conseil fiscal, et isole ce qui est implémentable sans attendre — c'est-à-dire tout le reste de l'ADR.
 - **À mesurer dès le premier achat (0013)** : le taux de présence de `subscriber_attributes` dans les webhooks RevenueCat, documenté comme « parfois » par le fournisseur. C'est le risque n°1 de l'ADR 0013 ; il est mitigé par trois chemins cumulatifs, mais son taux réel n'est connu de personne avant mesure. Alerte prévue sous 95 % d'attribution nominale.
 
-- **0020 et 0021 — proposés, à valider.** Choix structurants à confirmer : préférence de notification par chaîne dans `notification` (et non sur le `Follow`) ; blocage entre utilisateurs dans `moderation` ; catalogue des catégories dans `channel` ; messages privés et prédictions hors scope.
-
 ## Divergences résolues
 
 - **0003 ↔ 0008** (stratégie de schémas) : 0008 fait autorité, 0003 y défère.
@@ -68,8 +66,10 @@ Un ADR n'est jamais modifié une fois accepté : il est **remplacé** par un nou
 - **0018 ↔ 0019** (code généré) : les artefacts générés sont **exclus du lint et du formatage**, jamais de la vérification de fraîcheur. Formater un fichier généré le fait diverger de son générateur et fait échouer le gate au commit suivant.
 - **0006 ↔ 0013/0014** (statut d'abonné) : `subscriber` a été retiré des rôles attribués. Le statut d'abonné est dérivé d'un entitlement dont `monetization` est la seule source de vérité — le porter aussi comme rôle aurait créé deux vérités sur un droit payant.
 
+- **0020 / 0021 — choix validés (2026-09-24)** : préférence de notification par chaîne dans `notification` (et non sur le `Follow`) ; blocage entre utilisateurs dans `moderation` ; catalogue des catégories dans `channel` ; raid dans `stream` et clips/VOD dans le futur `media` ; messages privés et prédictions hors scope.
+
 ## Convention
 
 - Nommage : `NNNN-titre-en-kebab-case.md`, numérotation continue, jamais réutilisée.
 - Statuts : `Proposé`, `Accepté`, `Remplacé par NNNN`, `Déprécié`.
-- Un ADR répond à *pourquoi*, pas à *comment*. Le *comment* vit dans le code et les plans.
+- Un ADR répond à _pourquoi_, pas à _comment_. Le _comment_ vit dans le code et les plans.

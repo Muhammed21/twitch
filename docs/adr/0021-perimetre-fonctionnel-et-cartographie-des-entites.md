@@ -1,6 +1,6 @@
 # 0021 — Périmètre fonctionnel et cartographie des entités
 
-- Statut : Proposé
+- Statut : Accepté
 - Date : 2026-09-24
 - Décideurs : Muhammed Cavus
 - Complète : ADR 0003 (contextes futurs, propriétaires des entités non couvertes)
