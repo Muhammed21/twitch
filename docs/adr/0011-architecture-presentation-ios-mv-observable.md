@@ -1,6 +1,6 @@
 # 0011 — Architecture de présentation iOS : MV avec `@Observable`, pas MVVM
 
-- Statut : Accepté
+- Statut : Accepté — protocole et reconnexion de `ChatSession` amendés par [0022](0022-socket-io-transport-du-chat.md)
 - Date : 2026-09-22
 - Décideurs : Muhammed Cavus
 

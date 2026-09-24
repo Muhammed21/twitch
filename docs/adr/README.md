@@ -10,7 +10,7 @@ Un ADR n'est jamais modifié une fois accepté : il est **remplacé** par un nou
 | [0001](0001-provider-video-manage.md)                                        | Provider vidéo managé plutôt qu'ingest auto-hébergé                                    | Accepté                                             | Vidéo        |
 | [0002](0002-monolithe-modulaire-hexagonal.md)                                | Monolithe modulaire hexagonal plutôt que microservices                                 | Accepté                                             | API          |
 | [0003](0003-decoupage-bounded-contexts.md)                                   | Découpage en 8 bounded contexts                                                        | Accepté                                             | API          |
-| [0004](0004-chat-process-separe-topologie-temps-reel.md)                     | Chat en process séparé, topologie temps réel à trois canaux                            | Accepté                                             | Chat         |
+| [0004](0004-chat-process-separe-topologie-temps-reel.md)                     | Chat en process séparé, topologie temps réel à trois canaux                            | Accepté — transport remplacé par 0022 | Chat         |
 | [0005](0005-strategie-tokens-et-sessions.md)                                 | Stratégie de tokens et de sessions (better-auth)                                       | Accepté                                             | Auth         |
 | [0006](0006-autorisation-scopee-par-chaine.md)                               | Modèle d'autorisation scopé par chaîne (RBAC/ABAC)                                     | Accepté                                             | Auth         |
 | [0007](0007-payload-cms-et-console-admin-par-proxy.md)                       | Payload en CMS et console d'admin par proxy                                            | Accepté                                             | Back-office  |
@@ -28,6 +28,7 @@ Un ADR n'est jamais modifié une fois accepté : il est **remplacé** par un nou
 | [0019](0019-package-design-tokens.md)                                        | Package de design tokens : source DTCG unique compilée en Swift et CSS                 | Accepté                                             | Design       |
 | [0020](0020-modele-du-follow-et-graphe-social.md)                            | Modèle du follow : version monotone par paire, projections convergentes                | Accepté                                             | Social       |
 | [0021](0021-perimetre-fonctionnel-et-cartographie-des-entites.md)            | Périmètre fonctionnel : un propriétaire et un horizon pour chaque entité               | Accepté                                             | Domaine      |
+| [0022](0022-socket-io-transport-du-chat.md) | socket.io comme transport du chat, à la place de uWebSockets.js | Accepté | Chat |
 
 ## Dépendances principales
 
@@ -44,11 +45,13 @@ Un ADR n'est jamais modifié une fois accepté : il est **remplacé** par un nou
 0003 (bounded contexts) ──┬── 0020 (follow, amende ses consommations d'events) ── 0004, 0012
                           └── 0021 (cartographie des entités, contextes futurs media / engagement / messaging)
 0021 ── 0020 (le blocage clôt le follow)
+0004 ── 0022 (transport socket.io, amende 0005 et 0011)
 ```
 
 ## Points ouverts
 
 - **0017 — cadre fiscal, seul point réellement ouvert.** L'ouverture du canal web (Stripe) suppose de savoir qui est redevable de la TVA et quelles obligations déclaratives de plateforme s'appliquent. Ne se résout pas techniquement. L'ADR 0017 contient le brief en 11 questions à poser à un conseil fiscal, et isole ce qui est implémentable sans attendre — c'est-à-dire tout le reste de l'ADR.
+- **0022 — spike client iOS socket.io avant la tranche 1.** État de maintenance du client Swift officiel et compatibilité avec la concurrence stricte (ADR 0010) non vérifiés. Repli prévu : client minimal du protocole au-dessus de `URLSessionWebSocketTask`.
 - **À mesurer dès le premier achat (0013)** : le taux de présence de `subscriber_attributes` dans les webhooks RevenueCat, documenté comme « parfois » par le fournisseur. C'est le risque n°1 de l'ADR 0013 ; il est mitigé par trois chemins cumulatifs, mais son taux réel n'est connu de personne avant mesure. Alerte prévue sous 95 % d'attribution nominale.
 
 ## Divergences résolues
@@ -67,6 +70,7 @@ Un ADR n'est jamais modifié une fois accepté : il est **remplacé** par un nou
 - **0006 ↔ 0013/0014** (statut d'abonné) : `subscriber` a été retiré des rôles attribués. Le statut d'abonné est dérivé d'un entitlement dont `monetization` est la seule source de vérité — le porter aussi comme rôle aurait créé deux vérités sur un droit payant.
 
 - **0020 / 0021 — choix validés (2026-09-24)** : préférence de notification par chaîne dans `notification` (et non sur le `Follow`) ; blocage entre utilisateurs dans `moderation` ; catalogue des catégories dans `channel` ; raid dans `stream` et clips/VOD dans le futur `media` ; messages privés et prédictions hors scope.
+- **0004 → 0022** (transport du chat) : `uWebSockets.js` remplacé par socket.io, en WebSocket uniquement, dans le même process séparé. L'isolation des défaillances de 0004 est conservée ; seul le pari de performance est abandonné. Conséquences sur 0005 : le token passe de `Sec-WebSocket-Protocol` à l'en-tête `Authorization` de la requête d'upgrade, toujours vérifié avant toute allocation (hook `allowRequest`) ; les codes `4401` / `4403` deviennent un événement `session:revoked`.
 
 ## Convention
 

@@ -1,6 +1,6 @@
 # 0004 — Chat en process séparé et topologie temps réel à trois canaux
 
-- Statut : Accepté
+- Statut : Accepté — transport (§1), plafond de trame (§5), backpressure (§7) et heartbeat remplacés par [0022](0022-socket-io-transport-du-chat.md)
 - Date : 2026-09-22
 - Décideurs : Muhammed Cavus
 
