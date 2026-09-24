@@ -1,6 +1,6 @@
 # 0022 — socket.io comme transport du chat, à la place de uWebSockets.js
 
-- Statut : Accepté
+- Statut : Accepté — authentification (§3), révocation (§4), reconnexion (§5) et client iOS amendés par [0023](0023-client-ios-socketio-minimal-et-refus-http-au-handshake.md)
 - Date : 2026-09-24
 - Décideurs : Muhammed Cavus
 - Remplace partiellement : ADR 0004 (§1 choix du transport, §5 plafond de trame, §7 backpressure, heartbeat des notes d'implémentation)

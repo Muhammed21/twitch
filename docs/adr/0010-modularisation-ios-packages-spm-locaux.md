@@ -1,6 +1,6 @@
 # 0010 — Modularisation iOS en packages SPM locaux
 
-- Statut : Accepté
+- Statut : Accepté — module `Core/ChatTransport` ajouté par [0023](0023-client-ios-socketio-minimal-et-refus-http-au-handshake.md)
 - Date : 2026-09-22
 - Décideurs : Muhammed Cavus
 
