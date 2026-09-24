@@ -1,0 +1,47 @@
+{
+  "color": {
+    "background": {
+      "primary": {
+        "$type": "color",
+        "$value": "{core.color.neutral.97}",
+        "$description": "Fond des écrans."
+      }
+    },
+    "surface": {
+      "primary": {
+        "$type": "color",
+        "$value": "{core.color.neutral.100}",
+        "$description": "Cartes, modales et conteneurs posés sur le fond."
+      }
+    },
+    "text": {
+      "primary": {
+        "$type": "color",
+        "$value": "{core.color.neutral.5}",
+        "$description": "Texte courant."
+      },
+      "secondary": {
+        "$type": "color",
+        "$value": "{core.color.purple.40}",
+        "$description": "Texte secondaire et libellés de catégorie. Violet, comme text-muted dans la charte relevée."
+      }
+    },
+    "accent": {
+      "default": {
+        "$type": "color",
+        "$value": "{core.color.purple.40}",
+        "$description": "Accent du produit hors contexte de chaîne : liens, états actifs, boutons d'action (ADR 0019 §3)."
+      },
+      "onAccent": {
+        "$type": "color",
+        "$value": "{core.color.neutral.100}",
+        "$description": "Texte ou glyphe posé sur une surface d'accent (ADR 0019 §3)."
+      },
+      "fallback": {
+        "$type": "color",
+        "$value": "{core.color.purple.40}",
+        "$description": "Repli quand la couleur d'accent d'une chaîne est inutilisable (ADR 0019 §3)."
+      }
+    }
+  }
+}

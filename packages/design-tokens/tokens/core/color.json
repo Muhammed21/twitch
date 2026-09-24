@@ -1,0 +1,50 @@
+{
+  "core": {
+    "color": {
+      "neutral": {
+        "5": {
+          "$type": "color",
+          "$value": "#0e0e10",
+          "$description": "Charte relevée sur twitch.tv (primary / text)."
+        },
+        "10": {
+          "$type": "color",
+          "$value": "#18181b",
+          "$description": "Convention : surface du thème sombre, un cran au-dessus du fond."
+        },
+        "90": {
+          "$type": "color",
+          "$value": "#efeff1",
+          "$description": "Convention : texte du thème sombre, légèrement en dessous du blanc pur."
+        },
+        "97": {
+          "$type": "color",
+          "$value": "#f7f7f8",
+          "$description": "Charte relevée sur twitch.tv (background)."
+        },
+        "100": {
+          "$type": "color",
+          "$value": "#ffffff",
+          "$description": "Charte relevée sur twitch.tv (surface / on-primary)."
+        }
+      },
+      "purple": {
+        "40": {
+          "$type": "color",
+          "$value": "#5c16c5",
+          "$description": "Charte relevée sur twitch.tv (accent / text-muted)."
+        },
+        "60": {
+          "$type": "color",
+          "$value": "#9147ff",
+          "$description": "Charte publique de la marque Twitch (violet de marque), absente du design system relevé."
+        },
+        "80": {
+          "$type": "color",
+          "$value": "#bf94ff",
+          "$description": "Convention : violet éclairci pour rester lisible en texte sur fond sombre."
+        }
+      }
+    }
+  }
+}
