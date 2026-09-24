@@ -1,0 +1,15 @@
+{
+  "extends": "@repo/typescript-config/base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "types": ["node"]
+  },
+  "include": [
+    "src/**/*.ts",
+    "scripts/**/*.ts",
+    "style-dictionary.config.ts",
+    "vitest.config.ts"
+  ],
+  "exclude": ["node_modules", "platforms"]
+}

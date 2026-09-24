@@ -1,0 +1,30 @@
+{
+  "name": "@repo/design-tokens",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "build": "node ./scripts/build.ts",
+    "tokens:check": "node ./scripts/check-generated.ts",
+    "check-contrast": "node ./scripts/check-contrast.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "mutation": "stryker run",
+    "lint": "eslint . --max-warnings=0",
+    "check-types": "tsc --noEmit",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@stryker-mutator/core": "10.0.0",
+    "@stryker-mutator/vitest-runner": "10.0.0",
+    "@types/node": "^26.6.2",
+    "@vitest/coverage-v8": "4.1.11",
+    "eslint": "10.9.1",
+    "style-dictionary": "5.5.5",
+    "typescript": "7.0.2",
+    "vitest": "4.1.11"
+  }
+}
