@@ -34,6 +34,7 @@ Un ADR n'est jamais modifié une fois accepté : il est **remplacé** par un nou
 | [0025](0025-un-client-prisma-par-contexte.md) | Un client Prisma par contexte, et ce que la base ne protège pas | Accepté | Données |
 | [0026](0026-better-auth-oauth-provider-et-revocation-sur-reutilisation.md) | better-auth en serveur OAuth, révocation de tous les appareils sur réutilisation | Accepté | Auth |
 | [0027](0027-backpressure-et-dimensionnement-du-chat.md) | Clients lents, dimensionnement et filtrage des blocages dans le chat | Accepté | Chat |
+| [0028](0028-conteneurisation-et-environnement-local-docker-compose.md) | Conteneurisation et environnement local Docker Compose (hébergement reporté) | Accepté | Infra |
 
 ## Dépendances principales
 
@@ -55,6 +56,7 @@ Un ADR n'est jamais modifié une fois accepté : il est **remplacé** par un nou
 0008 ── 0025 (un client Prisma par contexte, amende aussi 0002, 0006, 0018)
 0005 ── 0026 (better-auth + oauth-provider)
 0022 ── 0027 (clients lents, dimensionnement, amende aussi 0021)
+0002, 0008, 0025 ── 0028 (images, Compose local, ordre de déploiement, rôles provisionnés)
 ```
 
 ## Points ouverts
@@ -62,8 +64,9 @@ Un ADR n'est jamais modifié une fois accepté : il est **remplacé** par un nou
 - **0017 — cadre fiscal, seul point réellement ouvert.** L'ouverture du canal web (Stripe) suppose de savoir qui est redevable de la TVA et quelles obligations déclaratives de plateforme s'appliquent. Ne se résout pas techniquement. L'ADR 0017 contient le brief en 11 questions à poser à un conseil fiscal, et isole ce qui est implémentable sans attendre — c'est-à-dire tout le reste de l'ADR.
 - **0023 — test sur iPhone réel avant la fin de la tranche 1.** Le spike du client socket.io minimal (`docs/spikes/2026-09-24-client-ios-socketio.md`) a tourné sur macOS : arrière-plan, bascule Wi-Fi / 4G et mode basse consommation restent à vérifier.
 - **0024 — schémas temps réel non référencés.** Vérifier au premier passage de `contract-check` que `swift-openapi-generator` génère les schémas `Realtime*` qu'aucun chemin ne référence ; sinon, repli sur un endpoint de documentation.
-- **0025 / 0026 — premier sprint `identity`.** Tester l'adapter Prisma de better-auth avec `multiSchema` et un client par contexte, et l'intégration NestJS, avant toute autre fonctionnalité d'authentification. La cohabitation des migrations Payload et Prisma dans `cms` n'est pas testée non plus.
+- **0025 / 0026 — premier sprint `identity`.** Tester l'adapter Prisma de better-auth avec `multiSchema` et un client par contexte, et l'intégration NestJS, avant toute autre fonctionnalité d'authentification.
 - **0027 — fan-out entre instances.** Mesurer `@socket.io/redis-adapter` avant de passer à plus d'une instance de chat : c'est le principal angle mort du spike de charge.
+- **0028 — hébergement non choisi.** Reporté volontairement ; un ADR dédié devient nécessaire au premier besoin d'un backend joignable hors de la machine (bêta TestFlight, appareil hors réseau local).
 - **À mesurer dès le premier achat (0013)** : le taux de présence de `subscriber_attributes` dans les webhooks RevenueCat, documenté comme « parfois » par le fournisseur. C'est le risque n°1 de l'ADR 0013 ; il est mitigé par trois chemins cumulatifs, mais son taux réel n'est connu de personne avant mesure. Alerte prévue sous 95 % d'attribution nominale.
 
 ## Divergences résolues

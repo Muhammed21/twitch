@@ -1,6 +1,6 @@
 # 0007 — Payload comme CMS et console d'admin par proxy, pas comme second backend
 
-- Statut : Accepté
+- Statut : Accepté — base et migrations de Payload précisées par [0028](0028-conteneurisation-et-environnement-local-docker-compose.md)
 - Date : 2026-09-22
 - Décideurs : Muhammed Cavus
 

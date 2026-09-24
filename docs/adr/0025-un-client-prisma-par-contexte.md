@@ -1,6 +1,6 @@
 # 0025 — Un client Prisma par contexte, et ce que la base ne protège pas
 
-- Statut : Accepté
+- Statut : Accepté — provisionnement des rôles et relais de l'outbox précisés par [0028](0028-conteneurisation-et-environnement-local-docker-compose.md)
 - Date : 2026-09-24
 - Décideurs : Muhammed Cavus
 - Amende : ADR 0008 (client unique, transactions entre contextes, enums, migrations, notes d'implémentation), ADR 0002 (table `outbox`), ADR 0006 (portée du garde-fou en base), ADR 0018 (lint de schéma)
