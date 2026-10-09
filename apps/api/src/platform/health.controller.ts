@@ -1,4 +1,5 @@
 import { Controller, Get, Inject } from "@nestjs/common";
+import { ApiExcludeController } from "@nestjs/swagger";
 
 import { errorDetails, LOG_SINK, type LogSink, writeLog } from "./logging.ts";
 import { ProblemException } from "./problem.ts";
@@ -7,6 +8,7 @@ export type SchemaVersionCheck = () => Promise<void>;
 
 export const SCHEMA_VERSION_CHECK = Symbol("SCHEMA_VERSION_CHECK");
 
+@ApiExcludeController()
 @Controller("health")
 export class HealthController {
   constructor(

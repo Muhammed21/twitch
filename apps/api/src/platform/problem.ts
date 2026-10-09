@@ -8,7 +8,7 @@ import {
   Inject,
 } from "@nestjs/common";
 import type { Request, Response } from "express";
-import type { ZodError } from "zod";
+import { z } from "zod";
 
 import { errorDetails, LOG_SINK, type LogSink, writeLog } from "./logging.ts";
 
@@ -35,13 +35,18 @@ export class ProblemException extends Error {
 }
 
 export class InvalidRequestException extends Error {
-  readonly validation: ZodError;
+  readonly validation: z.core.$ZodError;
 
-  constructor(validation: ZodError) {
+  constructor(validation: z.core.$ZodError) {
     super(validation.message);
     this.validation = validation;
   }
 }
+
+export const toInvalidRequest = (error: unknown): Error =>
+  error instanceof z.core.$ZodError
+    ? new InvalidRequestException(error)
+    : new Error("Validation impossible : erreur de validation inattendue");
 
 const toProblem = (exception: unknown): Problem => {
   if (exception instanceof ProblemException) {
