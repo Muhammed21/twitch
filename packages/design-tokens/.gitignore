@@ -1,3 +1,4 @@
 reports
 .stryker-tmp
 stryker-setup-*.js
+bench-results.json

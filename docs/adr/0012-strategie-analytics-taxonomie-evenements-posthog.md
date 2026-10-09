@@ -11,6 +11,7 @@ PostHog est retenu comme plateforme d'analytics produit, de feature flags et d'e
 Le mode de panne de l'analytics n'est pas technique, il est organisationnel : l'instrumentation se fait au fil de l'eau, chaque surface nomme ses événements comme elle veut, et trois semaines plus tard la même action existe sous les noms `stream_view`, `streamView` et `view_stream`. Les funnels deviennent inexploitables, et le correctif rétroactif est coûteux — les données déjà ingérées ne se renomment pas proprement.
 
 Deux contraintes spécifiques à un produit vidéo live :
+
 - **Le volume.** Une session de visionnage d'une heure émettrait 3 600 événements si l'on capturait la progression à la seconde. Multiplié par le nombre de sessions, cela sature le quota et le budget pour des données que PostHog n'est pas conçu pour agréger.
 - **L'argent.** Les revenus transitent par Stripe Connect et RevenueCat. Une attribution de revenu fausse rend toute analyse de monétisation inutile.
 
@@ -44,15 +45,15 @@ La taxonomie est définie **une seule fois**, en Zod, dans `packages/contracts/a
 
 ```ts
 export const AnalyticsEvents = {
-  'stream:viewed': z.object({
+  "stream:viewed": z.object({
     channel_id: z.string(),
     category_id: z.string(),
     is_live: z.boolean(),
-    entry_point: z.enum(['home', 'search', 'category', 'deeplink', 'notification']),
+    entry_point: z.enum(["home", "search", "category", "deeplink", "notification"]),
   }),
-  'subscription:started': z.object({
+  "subscription:started": z.object({
     channel_id: z.string(),
-    tier: z.enum(['tier_1', 'tier_2', 'tier_3']),
+    tier: z.enum(["tier_1", "tier_2", "tier_3"]),
     amount_cents: z.number().int(),
     currency: z.string().length(3),
   }),
@@ -62,6 +63,7 @@ export const AnalyticsEvents = {
 Conséquence directe : **il devient impossible d'émettre un nom d'événement qui n'existe pas, ou des propriétés de forme incorrecte.** Ni côté serveur (types TypeScript), ni côté iOS (enum Swift exhaustif). C'est le seul mécanisme qui tienne dans la durée, parce qu'il ne repose pas sur la discipline.
 
 **Convention de nommage** — appliquée sans exception :
+
 - Événements : `objet:action_au_passé`, en `snake_case` — `stream:viewed`, `chat:message_sent`, `subscription:started`, `follow:added`. Le préfixe d'objet groupe naturellement dans l'UI PostHog.
 - Propriétés : `snake_case`, suffixées par unité quand c'est ambigu — `duration_ms`, `amount_cents`, jamais `amount` seul.
 - Identifiants : toujours `<entite>_id`.
@@ -85,12 +87,12 @@ L'appel `identify()` est encapsulé dans `Core/Analytics` (ADR 0010) et déclenc
 
 Règle de répartition :
 
-| Catégorie | Source | Raison |
-|---|---|---|
-| Monétisation (abonnement, don, paiement, remboursement) | **Serveur** | Source de vérité, non falsifiable, non perdu |
+| Catégorie                                                      | Source      | Raison                                        |
+| -------------------------------------------------------------- | ----------- | --------------------------------------------- |
+| Monétisation (abonnement, don, paiement, remboursement)        | **Serveur** | Source de vérité, non falsifiable, non perdu  |
 | Faits métier (stream démarré/terminé, follow, ban, modération) | **Serveur** | Le domaine sait ce qui s'est réellement passé |
-| Navigation, écrans, interactions UI | **Client** | Le serveur ne les voit pas |
-| Erreurs et performance client | **Client** | Idem |
+| Navigation, écrans, interactions UI                            | **Client**  | Le serveur ne les voit pas                    |
+| Erreurs et performance client                                  | **Client**  | Idem                                          |
 
 Trois raisons de mettre le métier côté serveur : c'est la source de vérité (le client peut mentir ou se tromper), ce n'est pas bloqué (ni bloqueur, ni ATT, ni coupure), et ce n'est pas perdu si l'app est tuée entre l'action et l'envoi.
 
@@ -103,6 +105,7 @@ Côté serveur, les événements sont émis depuis la couche application via un 
 Le SDK PostHog est servi derrière un sous-domaine propre (`https://t.<domaine>`), qui relaie vers l'ingestion PostHog.
 
 Deux bénéfices :
+
 - **Web / back-office** : les bloqueurs de publicité filtrent les domaines d'analytics connus, ce qui peut faire disparaître une part significative du trafic mesuré.
 - **iOS** : le certificate pinning (ADR 0011) devient possible sans épingler un certificat tiers dont on ne contrôle pas la rotation. Tout le trafic sortant sensible passe par des domaines maîtrisés.
 

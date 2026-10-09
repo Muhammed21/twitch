@@ -146,16 +146,16 @@ stream, channel, monetization ──▶ notification  (downstream pur, ne publie
 
 Objectif : un streamer lance un live, un viewer le regarde et chatte.
 
-| Contexte | Tranche 1 | Contenu minimal |
-|---|---|---|
-| `identity` | **Oui** | Inscription, connexion, session. Via better-auth. |
-| `channel` | **Oui** | Création automatique à l'inscription, slug, titre. Pas de follow. |
-| `stream` | **Oui** | Clé de stream, webhooks `started`/`ended`, URL de playback signée. |
-| `chat` | **Oui** | Salon par session, envoi/réception, rate limit basique. |
-| `moderation` | Minimal | Un seul use-case : le propriétaire du canal peut timeout un utilisateur. Suffit à valider le couple `chat ↔ moderation` et l'ACL qui va avec. |
-| `discovery` | Minimal | Une liste des lives en cours. Pas de recherche, pas de catégories, pas de reco. |
-| `monetization` | **Non** | Aucun code. Le module n'existe pas encore. |
-| `notification` | **Non** | Aucun code. |
+| Contexte       | Tranche 1 | Contenu minimal                                                                                                                               |
+| -------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `identity`     | **Oui**   | Inscription, connexion, session. Via better-auth.                                                                                             |
+| `channel`      | **Oui**   | Création automatique à l'inscription, slug, titre. Pas de follow.                                                                             |
+| `stream`       | **Oui**   | Clé de stream, webhooks `started`/`ended`, URL de playback signée.                                                                            |
+| `chat`         | **Oui**   | Salon par session, envoi/réception, rate limit basique.                                                                                       |
+| `moderation`   | Minimal   | Un seul use-case : le propriétaire du canal peut timeout un utilisateur. Suffit à valider le couple `chat ↔ moderation` et l'ACL qui va avec. |
+| `discovery`    | Minimal   | Une liste des lives en cours. Pas de recherche, pas de catégories, pas de reco.                                                               |
+| `monetization` | **Non**   | Aucun code. Le module n'existe pas encore.                                                                                                    |
+| `notification` | **Non**   | Aucun code.                                                                                                                                   |
 
 Le choix d'inclure un fragment de `moderation` est délibéré : il force la relation inter-contextes la plus risquée (décision asynchrone, application immédiate) à être exercée dès la première tranche, plutôt que découverte plus tard. Les deux contextes exclus le sont franchement : pas de dossier vide, pas de stub. Ils seront créés quand ils auront un use-case.
 

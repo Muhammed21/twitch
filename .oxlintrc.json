@@ -1,0 +1,74 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "typescript",
+    "react",
+    "nextjs",
+    "import",
+    "promise",
+    "unicorn",
+    "jsx-a11y",
+    "vitest"
+  ],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "rules": {
+    "no-console": "off",
+    "eqeqeq": [
+      "error",
+      "always",
+      {
+        "null": "ignore"
+      }
+    ],
+    "prefer-const": "error",
+    "no-var": "error",
+    "react/react-in-jsx-scope": "off",
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "error",
+    "no-floating-promises": "error",
+    "no-misused-promises": "error",
+    "promise/no-return-wrap": "error",
+    "no-promise-executor-return": "error",
+    "import/no-cycle": "error",
+    "typescript/no-explicit-any": "error",
+    "typescript/no-non-null-assertion": "error",
+    "typescript/consistent-type-imports": "error",
+    "typescript/no-deprecated": "error",
+    "typescript/no-unnecessary-type-assertion": "error",
+    "typescript/no-unsafe-type-assertion": "error",
+    "no-shadow": "error",
+    "preserve-caught-error": "error",
+    "unicorn/no-array-sort": "error",
+    "unicorn/no-array-reverse": "error",
+    "import/no-unassigned-import": [
+      "error",
+      {
+        "allow": ["**/*.css"]
+      }
+    ]
+  },
+  "ignorePatterns": [
+    "node_modules",
+    "dist",
+    "coverage",
+    "reports",
+    ".next",
+    ".turbo",
+    ".stryker-tmp",
+    "next-env.d.ts",
+    "packages/design-tokens/platforms/**"
+  ],
+  "overrides": [
+    {
+      "files": ["**/*.test.ts", "**/*.test.tsx", "**/__tests__/**"],
+      "rules": {
+        "typescript/no-non-null-assertion": "off",
+        "typescript/no-unsafe-type-assertion": "off",
+        "no-shadow": "off"
+      }
+    }
+  ]
+}

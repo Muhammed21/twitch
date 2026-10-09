@@ -12,11 +12,11 @@ La formulation naturelle — « le streamer touche 50 % » — est ambiguë, et 
 
 Chiffrage pour un abonnement à 4,99 € TTC (TVA 20 %, part streamer 50 %) :
 
-| Canal | Encaissé par la plateforme | Split sur le **brut payé** | Split sur le **net encaissé** |
-|---|---|---|---|
-| iOS, commission Apple 30 % | 2,91 € | streamer 2,50 € → **plateforme 0,41 €** | streamer 1,46 € → plateforme 1,46 € |
-| iOS, Small Business Program 15 % | 3,54 € | streamer 2,50 € → plateforme 1,04 € | streamer 1,77 € → plateforme 1,77 € |
-| Web, Stripe ≈ 1,5 % + 0,25 € | 3,85 € | streamer 2,50 € → plateforme 1,35 € | streamer 1,93 € → plateforme 1,92 € |
+| Canal                            | Encaissé par la plateforme | Split sur le **brut payé**              | Split sur le **net encaissé**       |
+| -------------------------------- | -------------------------- | --------------------------------------- | ----------------------------------- |
+| iOS, commission Apple 30 %       | 2,91 €                     | streamer 2,50 € → **plateforme 0,41 €** | streamer 1,46 € → plateforme 1,46 € |
+| iOS, Small Business Program 15 % | 3,54 €                     | streamer 2,50 € → plateforme 1,04 €     | streamer 1,77 € → plateforme 1,77 € |
+| Web, Stripe ≈ 1,5 % + 0,25 €     | 3,85 €                     | streamer 2,50 € → plateforme 1,35 €     | streamer 1,93 € → plateforme 1,92 € |
 
 La colonne « split sur le brut » sur la première ligne est le cœur du problème : **0,41 € pour couvrir l'ingest, le transcodage, la bande passante CDN et l'infrastructure** d'un abonné qui regarde potentiellement des dizaines d'heures par mois (ADR 0001). Selon la consommation réelle, cette ligne est au mieux à l'équilibre, au pire structurellement déficitaire — et elle se dégrade à mesure que le produit réussit, ce qui en fait le pire type de défaut économique.
 
@@ -53,7 +53,7 @@ part_streamer = (montant_brut − taxes − commission_du_canal) × taux_contrac
 
 Les trois déductions sont **constatées, jamais estimées** : elles proviennent du rapport de règlement du canal d'encaissement (rapport financier Apple, `balance_transaction` Stripe), pas d'un pourcentage supposé. Une commission estimée finit toujours par diverger du réel, et la divergence se découvre au moment de la réconciliation, c'est-à-dire trop tard.
 
-Conséquence assumée : **le gain n'est connu qu'au règlement du canal**, pas à l'achat. L'interface streamer affiche donc deux montants distincts — *estimé* (immédiat, marqué comme tel) et *acquis* (après règlement). Ne présenter qu'un seul chiffre serait un mensonge dans un sens ou dans l'autre.
+Conséquence assumée : **le gain n'est connu qu'au règlement du canal**, pas à l'achat. L'interface streamer affiche donc deux montants distincts — _estimé_ (immédiat, marqué comme tel) et _acquis_ (après règlement). Ne présenter qu'un seul chiffre serait un mensonge dans un sens ou dans l'autre.
 
 ### 2. Taux contractuel versionné
 

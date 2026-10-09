@@ -7,17 +7,11 @@ import {
   formatThemedColors,
   type DesignToken,
 } from "../src/formats/swift.ts";
-import {
-  resolveColorThemes,
-  resolveSharedTokens,
-} from "../src/resolve-themes.ts";
+import { resolveColorThemes, resolveSharedTokens } from "../src/resolve-themes.ts";
 
 const SWIFT_SOURCES = "platforms/swift/Sources/DesignTokens";
 
-const [themes, shared] = await Promise.all([
-  resolveColorThemes(),
-  resolveSharedTokens(),
-]);
+const [themes, shared] = await Promise.all([resolveColorThemes(), resolveSharedTokens()]);
 const inCategory = (category: string): readonly DesignToken[] =>
   shared.filter(({ path }) => path[0] === category);
 
@@ -34,7 +28,5 @@ const files: Readonly<Record<string, string>> = {
 
 await mkdir(SWIFT_SOURCES, { recursive: true });
 await Promise.all(
-  Object.entries(files).map(([name, contents]) =>
-    writeFile(join(SWIFT_SOURCES, name), contents),
-  ),
+  Object.entries(files).map(([name, contents]) => writeFile(join(SWIFT_SOURCES, name), contents)),
 );

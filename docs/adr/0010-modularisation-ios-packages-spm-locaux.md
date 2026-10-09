@@ -61,7 +61,7 @@ Non négociables, encodées dans `Package.swift` :
 4. **Une `Feature` ne dépend JAMAIS d'une autre `Feature`.** Règle centrale. `Chat` ne connaît pas `Player`, `Home` ne connaît pas `Channel`. Toute violation est une erreur de link.
 5. **`Core/*` ne dépendent pas entre eux**, à une exception nommée : `DesignSystem` est une feuille dont tout le monde peut dépendre, et qui ne dépend de rien.
 
-> **Amendé par l'ADR 0019.** La règle 5 protégeait l'absence de cycle et l'absence de métier, pas le nombre de dépendances. `DesignSystem` dépend désormais du package généré `DesignTokens`, qui devient le **plancher du graphe** — une feuille absolue, sans logique ni connaissance du projet. S'y ajoute une **règle 5 bis** : *aucun module autre que `Core/DesignSystem` n'importe `DesignTokens`*, sous peine de court-circuiter les composants et de perdre la capacité à changer un rendu en un seul point. Formulation faisant foi : ADR 0019.
+> **Amendé par l'ADR 0019.** La règle 5 protégeait l'absence de cycle et l'absence de métier, pas le nombre de dépendances. `DesignSystem` dépend désormais du package généré `DesignTokens`, qui devient le **plancher du graphe** — une feuille absolue, sans logique ni connaissance du projet. S'y ajoute une **règle 5 bis** : _aucun module autre que `Core/DesignSystem` n'importe `DesignTokens`_, sous peine de court-circuiter les composants et de perdre la capacité à changer un rendu en un seul point. Formulation faisant foi : ADR 0019.
 
 Ce qu'il faut voir : la règle 4 est celle qui apporte la valeur. Les trois autres sont du bon sens ; celle-là est la contrainte qui empêche l'app de redevenir un monolithe.
 
@@ -103,6 +103,7 @@ Décision ferme : **`swiftLanguageMode(.v6)` et concurrence stricte activés sur
 Justification : migrer une base existante vers la concurrence stricte est un chantier douloureux et transverse, parce que les annotations manquantes remontent en cascade à travers tout le graphe. Le coût initial est réel mais linéaire ; le coût différé est explosif. Sur un projet qui contient un player `AVPlayer` (callbacks hors main actor), un WebSocket et un cache disque, ce sont exactement les zones où les data races arrivent et où le compilateur doit aider.
 
 Conséquences directes :
+
 - `async/await` partout ; pas de completion handlers dans les API publiques des modules.
 - `actor` pour le cache (`Core/Persistence`) et la couche réseau (`Core/Networking`) : l'isolation est structurelle, pas conventionnelle.
 - Types `Domain` `Sendable` — trivialement satisfait par l'immutabilité et les `struct` déjà retenues.

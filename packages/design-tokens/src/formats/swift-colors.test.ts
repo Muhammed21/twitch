@@ -128,45 +128,36 @@ describe("formatThemedColors", () => {
           light: [colorToken({ path })],
           dark: [colorToken({ path })],
         }),
-      ).toThrowError(new RegExp(`"${keyword}", a reserved Swift keyword`));
+      ).toThrow(new RegExp(`"${keyword}", a reserved Swift keyword`));
     },
   );
 
   it("fails on a 7-digit hex", () => {
     const light = [colorToken({ value: "#fffffff" })];
 
-    expect(() => formatThemedColors(themes({ light }))).toThrowError(
-      /not a 6- or 8-digit hex/,
-    );
+    expect(() => formatThemedColors(themes({ light }))).toThrow(/not a 6- or 8-digit hex/);
   });
 
   it("fails on a hex colour preceded by other characters", () => {
     const light = [colorToken({ value: "a#ffffff" })];
 
-    expect(() => formatThemedColors(themes({ light }))).toThrowError(
-      /not a 6- or 8-digit hex/,
-    );
+    expect(() => formatThemedColors(themes({ light }))).toThrow(/not a 6- or 8-digit hex/);
   });
 
   it("fails on a non-string value that would stringify to a hex colour", () => {
     const light = [colorToken({ value: ["#ffffff"] })];
 
-    expect(() => formatThemedColors(themes({ light }))).toThrowError(
-      /not a 6- or 8-digit hex/,
-    );
+    expect(() => formatThemedColors(themes({ light }))).toThrow(/not a 6- or 8-digit hex/);
   });
 
   it("lists every missing role at once, separated", () => {
-    const light = [
-      colorToken(),
-      colorToken({ path: ["color", "text", "primary"] }),
-    ];
+    const light = [colorToken(), colorToken({ path: ["color", "text", "primary"] })];
     const dark = [
       colorToken({ value: "#0e0e10" }),
       colorToken({ path: ["color", "accent", "default"] }),
     ];
 
-    expect(() => formatThemedColors({ light, dark })).toThrowError(
+    expect(() => formatThemedColors({ light, dark })).toThrow(
       '"color.text.primary" is missing in the dark theme; "color.accent.default" is missing in the light theme.',
     );
   });
@@ -201,10 +192,7 @@ describe("formatThemedColors", () => {
     );
 
     expect(output).toContain(
-      [
-        "    /// Fond des écrans.",
-        "    /// clair #FFFFFF · sombre #0E0E10",
-      ].join("\n"),
+      ["    /// Fond des écrans.", "    /// clair #FFFFFF · sombre #0E0E10"].join("\n"),
     );
   });
 
@@ -231,9 +219,7 @@ describe("formatThemedColors", () => {
     ];
     const output = formatThemedColors({ light, dark });
 
-    expect(output.indexOf("static let backgroundPrimary =")).toBeGreaterThan(
-      -1,
-    );
+    expect(output.indexOf("static let backgroundPrimary =")).toBeGreaterThan(-1);
     expect(output.indexOf("static let textPrimary =")).toBeGreaterThan(
       output.indexOf("static let backgroundPrimary ="),
     );
@@ -262,23 +248,14 @@ describe("formatThemedColors", () => {
       }),
     );
 
-    expect(output).toContain(
-      "            : UIColor(red: 0, green: 0, blue: 0, alpha: 0.6)",
-    );
-    expect(output).toContain(
-      "            ? UIColor(red: 1, green: 1, blue: 1, alpha: 0.6)",
-    );
+    expect(output).toContain("            : UIColor(red: 0, green: 0, blue: 0, alpha: 0.6)");
+    expect(output).toContain("            ? UIColor(red: 1, green: 1, blue: 1, alpha: 0.6)");
   });
 
   it("fails when a role exists in the light theme only, naming the path and the theme", () => {
-    const light = [
-      colorToken(),
-      colorToken({ path: ["color", "text", "primary"] }),
-    ];
+    const light = [colorToken(), colorToken({ path: ["color", "text", "primary"] })];
 
-    expect(() => formatThemedColors(themes({ light }))).toThrowError(
-      /color\.text\.primary.*dark/,
-    );
+    expect(() => formatThemedColors(themes({ light }))).toThrow(/color\.text\.primary.*dark/);
   });
 
   it("fails when a role exists in the dark theme only, naming the path and the theme", () => {
@@ -287,15 +264,13 @@ describe("formatThemedColors", () => {
       colorToken({ path: ["color", "accent", "default"] }),
     ];
 
-    expect(() => formatThemedColors(themes({ dark }))).toThrowError(
-      /color\.accent\.default.*light/,
-    );
+    expect(() => formatThemedColors(themes({ dark }))).toThrow(/color\.accent\.default.*light/);
   });
 
   it("fails on an unresolved alias", () => {
     const dark = [colorToken({ value: "{core.color.neutral.5}" })];
 
-    expect(() => formatThemedColors(themes({ dark }))).toThrowError(
+    expect(() => formatThemedColors(themes({ dark }))).toThrow(
       /Unresolved alias.*color\.background\.primary/,
     );
   });
@@ -303,41 +278,33 @@ describe("formatThemedColors", () => {
   it("fails on a value that is not a 6- or 8-digit hex colour", () => {
     const light = [colorToken({ value: "#fff" })];
 
-    expect(() => formatThemedColors(themes({ light }))).toThrowError(
-      /color\.background\.primary.*#fff/,
-    );
+    expect(() => formatThemedColors(themes({ light }))).toThrow(/color\.background\.primary.*#fff/);
   });
 
   it("fails on a non-string value", () => {
     const light = [colorToken({ value: 42 })];
 
-    expect(() => formatThemedColors(themes({ light }))).toThrowError(
-      /not a 6- or 8-digit hex/,
-    );
+    expect(() => formatThemedColors(themes({ light }))).toThrow(/not a 6- or 8-digit hex/);
   });
 
   it("fails on a role whose Swift name would be a reserved keyword", () => {
     const light = [colorToken({ path: ["color", "default"] })];
     const dark = [colorToken({ path: ["color", "default"] })];
 
-    expect(() => formatThemedColors({ light, dark })).toThrowError(/reserved/i);
+    expect(() => formatThemedColors({ light, dark })).toThrow(/reserved/i);
   });
 
   it("fails on a role whose Swift name would start with a digit", () => {
     const light = [colorToken({ path: ["color", "2xl"] })];
     const dark = [colorToken({ path: ["color", "2xl"] })];
 
-    expect(() => formatThemedColors({ light, dark })).toThrowError(
-      /not a valid Swift identifier/,
-    );
+    expect(() => formatThemedColors({ light, dark })).toThrow(/not a valid Swift identifier/);
   });
 
   it("fails on a role with no segment left once its category is dropped", () => {
     const light = [colorToken({ path: ["color"] })];
     const dark = [colorToken({ path: ["color"] })];
 
-    expect(() => formatThemedColors({ light, dark })).toThrowError(
-      /no segment left/,
-    );
+    expect(() => formatThemedColors({ light, dark })).toThrow(/no segment left/);
   });
 });

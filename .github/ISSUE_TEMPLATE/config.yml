@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Décisions d'architecture (ADR)
+    url: https://github.com/Muhammed21/twitch/blob/main/docs/adr/README.md
+    about: Lire l'index des ADR avant d'ouvrir une issue qui touche une décision déjà prise.

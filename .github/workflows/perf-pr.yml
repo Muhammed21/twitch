@@ -1,0 +1,89 @@
+name: perf-pr
+
+# Runs the micro-benches on each PR that touches benched code, then posts a sticky comment
+# diffing median/p99 against the baseline from perf-main.yml. Informative only — never gates merge.
+
+on:
+  pull_request:
+    paths:
+      - "apps/**/src/**"
+      - "packages/**/src/**"
+      - "**/bench/**"
+      - "**/vitest.bench.config.ts"
+      - ".github/scripts/bench-collect.sh"
+      - ".github/scripts/perf-compare.mjs"
+      - ".github/workflows/perf-pr.yml"
+
+concurrency:
+  group: perf-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: read
+
+jobs:
+  bench:
+    name: Micro-bench (PR)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/install
+      - run: pnpm bench
+      - run: .github/scripts/bench-collect.sh bench-results.json
+      - name: Upload PR bench artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: bench-pr
+          path: bench-results.json
+          retention-days: 7
+          if-no-files-found: error
+
+  compare:
+    name: Compare vs main baseline
+    runs-on: ubuntu-latest
+    needs: [bench]
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+      - uses: actions/download-artifact@v7
+        with:
+          name: bench-pr
+          path: ./pr
+      - name: Download main baseline (latest successful perf-main run)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p ./baseline
+          RUN_ID=$(gh run list \
+            --repo "${{ github.repository }}" \
+            --workflow perf-main.yml \
+            --branch main \
+            --status success \
+            --limit 1 \
+            --json databaseId \
+            --jq '.[0].databaseId // empty' || true)
+          if [ -n "$RUN_ID" ]; then
+            gh run download "$RUN_ID" \
+              --repo "${{ github.repository }}" \
+              --name bench-baseline \
+              --dir ./baseline \
+              || echo "baseline download failed for run $RUN_ID"
+          else
+            echo "no successful perf-main run yet — comparator will render PR-only"
+          fi
+      - name: Build markdown diff
+        run: |
+          node .github/scripts/perf-compare.mjs ./pr/bench-results.json ./baseline/bench-results.json > diff.md || true
+          cat diff.md
+      - name: Post sticky PR comment
+        uses: marocchino/sticky-pull-request-comment@v3
+        with:
+          header: twitch-perf-compare
+          path: diff.md

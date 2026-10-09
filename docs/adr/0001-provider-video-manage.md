@@ -73,7 +73,11 @@ Bascule envisagée si : le coût par heure de visionnage devient le premier post
 export type LiveVideoProviderPort = {
   readonly provisionChannel: (input: { channelId: ChannelId }) => Promise<LiveChannelCredentials>;
   readonly revokeStreamKey: (input: { providerChannelId: string }) => Promise<void>;
-  readonly signPlaybackUrl: (input: { providerChannelId: string; viewerId: ViewerId; ttl: Duration }) => Promise<PlaybackUrl>;
+  readonly signPlaybackUrl: (input: {
+    providerChannelId: string;
+    viewerId: ViewerId;
+    ttl: Duration;
+  }) => Promise<PlaybackUrl>;
   readonly parseLifecycleWebhook: (raw: unknown) => Result<StreamLifecycleEvent, WebhookError>;
 };
 ```

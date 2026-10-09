@@ -11,7 +11,7 @@ L'app iOS est le livrable principal (ADR 0010, 0011). Son rendu repose sur un vo
 Trois contraintes rendent le problème plus dur que le cas générique.
 
 1. **L'app doit gérer un thème sombre et un thème clair.** Ce n'est pas un raffinement tardif : c'est ce qui double la surface de chaque décision de couleur et ce qui rend une constante statique fausse par construction. Une palette mono-thème peut se poser à la main ; deux palettes qui doivent rester en correspondance exacte ne le peuvent pas.
-2. **Une partie de la couleur est une donnée de runtime.** Un streamer personnalise l'identité de sa chaîne. La couleur d'accent affichée dépend donc de la chaîne consultée, valeur qui arrive par l'API et change d'un écran à l'autre. Un système de tokens compilé au build ne peut pas la contenir — mais il doit définir *où elle a le droit d'apparaître*.
+2. **Une partie de la couleur est une donnée de runtime.** Un streamer personnalise l'identité de sa chaîne. La couleur d'accent affichée dépend donc de la chaîne consultée, valeur qui arrive par l'API et change d'un écran à l'autre. Un système de tokens compilé au build ne peut pas la contenir — mais il doit définir _où elle a le droit d'apparaître_.
 3. **Le domaine du live a son propre vocabulaire visuel porteur de sens.** Le rouge « EN DIRECT », les badges de rôle du chat, les niveaux d'abonnement, les tailles d'emotes : ce sont des signifiants produit, pas de la décoration. S'ils sont écrits en dur dans les vues, ils divergeront, et une divergence sur un signifiant est un bug fonctionnel, pas un détail esthétique.
 
 S'ajoute une contrainte de contexte : **développeur solo**. Il n'y a pas de designer pour arbitrer, pas de reviewer pour refuser une couleur hors palette, et pas de recette manuelle pour repérer un texte gris sur fond gris. Tout garde-fou qui repose sur la vigilance ne tiendra pas six mois. Les seuls qui tiennent sont ceux que le build applique.
@@ -37,10 +37,10 @@ Coût initial nul. Mais avec deux thèmes, chaque couleur devient un `if` dans u
 L'option la plus tentante en solo : zéro outillage, zéro build, tout dans Xcode. Elle est écartée sur un point précis, pas par principe. Un fichier Swift écrit à la main ne peut vérifier **aucun** des invariants qui comptent ici : que tout rôle sémantique existe dans les deux thèmes ; que `text.primary` sur `background.primary` atteint 4.5:1 dans chacun d'eux ; qu'aucun token ne masque l'API `Font` de SwiftUI ; qu'un alias sémantique pointe bien vers un primitif existant. Écrire ces vérifications en Swift reviendrait à réécrire Style Dictionary dans un langage qui ne tourne pas en CI sans simulateur. Et la sortie serait mono-cible : rien pour le back-office. Écartée.
 
 **Option C — Asset catalog Xcode (`.xcassets`) comme source de vérité des couleurs.**
-C'est la voie native du dark mode : un `Color Set` porte nativement une valeur *Any* et une valeur *Dark*, plus les variantes *High Contrast*. Réellement séduisant sur le seul axe couleur. Écartée pour quatre raisons : l'accès se fait **par chaîne de caractères** (`Color("backgroundPrimary")`), donc une faute de frappe rend une couleur par défaut au runtime au lieu d'une erreur de compilation — exactement le piège déjà identifié dans l'ADR 0010 sur les assets par bundle ; un asset catalog ne porte ni typographie, ni espacements, ni durées ; son format sur disque est un arbre de dossiers et de JSON illisibles en diff ; et il n'est partageable avec aucune autre plateforme. Note importante : cette option est écartée **comme source de vérité**, pas comme cible de génération — elle reste un repli documenté ci-dessous si la résolution dynamique retenue pose problème.
+C'est la voie native du dark mode : un `Color Set` porte nativement une valeur _Any_ et une valeur _Dark_, plus les variantes _High Contrast_. Réellement séduisant sur le seul axe couleur. Écartée pour quatre raisons : l'accès se fait **par chaîne de caractères** (`Color("backgroundPrimary")`), donc une faute de frappe rend une couleur par défaut au runtime au lieu d'une erreur de compilation — exactement le piège déjà identifié dans l'ADR 0010 sur les assets par bundle ; un asset catalog ne porte ni typographie, ni espacements, ni durées ; son format sur disque est un arbre de dossiers et de JSON illisibles en diff ; et il n'est partageable avec aucune autre plateforme. Note importante : cette option est écartée **comme source de vérité**, pas comme cible de génération — elle reste un repli documenté ci-dessous si la résolution dynamique retenue pose problème.
 
 **Option D — Tokens Studio + synchronisation depuis un fichier Figma.**
-C'est le workflow du projet `netflix`, et c'est le bon workflow — quand il existe un fichier Figma source avec des Variables publiées. Ici, **il n'y en a pas**. Adopter le tooling de synchronisation avant d'avoir la source à synchroniser, c'est construire un pipeline vide. Écartée *pour l'instant*, et c'est une nuance qui compte : le format DTCG retenu est précisément celui qu'exporte Tokens Studio, donc la bascule ultérieure est une substitution de la manière dont `tokens/` est rempli, pas une réécriture du package.
+C'est le workflow du projet `netflix`, et c'est le bon workflow — quand il existe un fichier Figma source avec des Variables publiées. Ici, **il n'y en a pas**. Adopter le tooling de synchronisation avant d'avoir la source à synchroniser, c'est construire un pipeline vide. Écartée _pour l'instant_, et c'est une nuance qui compte : le format DTCG retenu est précisément celui qu'exporte Tokens Studio, donc la bascule ultérieure est une substitution de la manière dont `tokens/` est rempli, pas une réécriture du package.
 
 **Option E — Génération à la volée par une Run Script Phase Xcode.**
 Supprime le besoin de versionner le généré. Écartée fermement : elle impose Node et pnpm à toute compilation Xcode, rend les builds dépendants de l'état d'un `node_modules`, casse les previews SwiftUI (qui compilent sans jouer les phases de script de façon fiable), et transforme une erreur de token en échec de build opaque. Le généré versionné coûte un diff à relire ; celle-ci coûte la boucle de feedback, qui est justement ce que l'ADR 0010 protège.
@@ -139,7 +139,7 @@ Ce que cela achète : le site d'appel est identique au cas mono-thème (`.backgr
 
 Limite connue et assumée : un fournisseur dynamique ne se résout que dans un contexte qui porte des traits. Extrait vers un `CGColor`, passé à un `CALayer`, ou utilisé dans un `Canvas` hors hiérarchie de vues, il retombe sur la valeur par défaut sans prévenir. Mitigation : `Core/DesignSystem` expose un accès explicite `Color.backgroundPrimary.resolved(in: colorScheme)` pour ces cas, et les formatters génèrent aussi, pour chaque rôle, les deux valeurs statiques sous un type imbriqué `Color.Static` — jamais utilisées dans les vues, réservées aux contextes sans traits et aux tests.
 
-La variante *high contrast* (`accessibilityContrast`) n'est **pas** générée aujourd'hui. Le modèle la supporte sans changement de forme — ce serait un troisième et un quatrième fichier d'alias, et une branche supplémentaire dans le fournisseur. On ne l'ajoute pas avant d'avoir un écran réel qui échoue en contraste renforcé.
+La variante _high contrast_ (`accessibilityContrast`) n'est **pas** générée aujourd'hui. Le modèle la supporte sans changement de forme — ce serait un troisième et un quatrième fichier d'alias, et une branche supplémentaire dans le fournisseur. On ne l'ajoute pas avant d'avoir un écran réel qui échoue en contraste renforcé.
 
 ---
 
@@ -147,7 +147,7 @@ La variante *high contrast* (`accessibilityContrast`) n'est **pas** générée a
 
 C'est le point spécifique à ce produit, et il se tranche par une frontière nette.
 
-**Décision : la couleur d'accent d'une chaîne n'est pas un token. Les tokens définissent le *rôle* `color.accent.*` et sa valeur par défaut ; la couleur du streamer est une donnée de runtime qui *substitue* cette valeur dans un périmètre délimité.**
+**Décision : la couleur d'accent d'une chaîne n'est pas un token. Les tokens définissent le _rôle_ `color.accent.*` et sa valeur par défaut ; la couleur du streamer est une donnée de runtime qui _substitue_ cette valeur dans un périmètre délimité.**
 
 #### Pourquoi surtout pas un token par chaîne
 
@@ -157,10 +157,10 @@ Il faut le dire explicitement parce que c'est la mauvaise idée qui vient nature
 
 Les tokens déclarent un petit ensemble fermé de rôles :
 
-| Rôle | Rempli par |
-| --- | --- |
-| `color.accent.default` | Token. L'accent du produit, utilisé hors contexte de chaîne. |
-| `color.accent.onAccent` | Token. Le texte/glyphe posé sur une surface d'accent. |
+| Rôle                    | Rempli par                                                   |
+| ----------------------- | ------------------------------------------------------------ |
+| `color.accent.default`  | Token. L'accent du produit, utilisé hors contexte de chaîne. |
+| `color.accent.onAccent` | Token. Le texte/glyphe posé sur une surface d'accent.        |
 | `color.accent.fallback` | Token. Le repli quand la couleur de chaîne est inutilisable. |
 
 Côté Swift, `Core/DesignSystem` définit une valeur `ChannelTheme` immuable et `Sendable`, injectée dans l'environnement par la feature `Channel` :
@@ -201,12 +201,16 @@ Amélioration nette sur le dispositif `netflix`, et le garde-fou qui justifie le
 ```jsonc
 {
   "pairs": [
-    { "foreground": "color.text.primary",   "background": "color.background.primary", "min": 4.5 },
-    { "foreground": "color.text.secondary", "background": "color.surface.elevated",   "min": 4.5 },
-    { "foreground": "color.status.live",    "background": "color.background.primary", "min": 3.0,
-      "note": "SC 1.4.11 — indicateur non textuel" },
-    { "foreground": "color.chat.username.3", "background": "color.surface.chat",      "min": 4.5 }
-  ]
+    { "foreground": "color.text.primary", "background": "color.background.primary", "min": 4.5 },
+    { "foreground": "color.text.secondary", "background": "color.surface.elevated", "min": 4.5 },
+    {
+      "foreground": "color.status.live",
+      "background": "color.background.primary",
+      "min": 3.0,
+      "note": "SC 1.4.11 — indicateur non textuel",
+    },
+    { "foreground": "color.chat.username.3", "background": "color.surface.chat", "min": 4.5 },
+  ],
 }
 ```
 
@@ -218,7 +222,7 @@ Choix de fond :
 - **Le ratio est une fonction pure testée** (`src/contrast/`), contre les vecteurs de référence de la spécification WCAG — dont les cas dégénérés noir/blanc (21:1) et identiques (1:1).
 - **La même fonction existe côté Swift** dans `Core/DesignSystem` pour la validation runtime de l'accent de chaîne. Deux implémentations, donc un risque de dérive : le script `export-vectors` écrit un fichier de cas de test JSON dans le package SPM généré, et les tests Swift le consomment. Les deux implémentations sont ainsi tenues par le même jeu d'assertions.
 
-Ce que ce contrôle **ne** fait **pas**, et il faut le dire : il vérifie les paires *déclarées*, pas les paires réellement composées à l'écran. Une vue peut poser `text.secondary` sur `surface.chat` sans que le couple figure dans la liste. C'est traité en risques.
+Ce que ce contrôle **ne** fait **pas**, et il faut le dire : il vérifie les paires _déclarées_, pas les paires réellement composées à l'écran. Une vue peut poser `text.secondary` sur `surface.chat` sans que le couple figure dans la liste. C'est traité en risques.
 
 ---
 
@@ -226,17 +230,17 @@ Ce que ce contrôle **ne** fait **pas**, et il faut le dire : il vérifie les pa
 
 Le vocabulaire du live est ce qui distingue ce design system d'un système générique. La ligne de partage :
 
-| Élément | Nature | Justification |
-| --- | --- | --- |
-| Rouge « en direct » | **Token** `color.status.live` | Signifiant produit, cardinalité 1, doit être identique partout. |
-| État de chaîne (en ligne / hors ligne / rediffusion) | **Token** `color.status.online` / `.offline` / `.rerun` | Ensemble fermé de trois états définis par le produit. |
-| Niveaux d'abonnement 1/2/3 | **Token** `color.tier.one` / `.two` / `.three` | Cardinalité fermée, fixée par le catalogue de l'ADR 0015. Le *prix* et le *libellé* du tier sont des données ; son traitement visuel est un rôle. |
-| Badges de rôle du chat (broadcaster, modérateur, VIP, abonné) | **Token** `color.badge.*` | Ensemble fermé, aligné sur les rôles de l'ADR 0006. Un rôle d'autorisation qui apparaît dans l'UI a une couleur de rôle. |
-| **Palette** de couleurs de pseudo | **Token** `color.chatUsername.1…n` | Voir ci-dessous. |
-| **Choix** de couleur de pseudo d'un utilisateur | **Donnée** : un index dans la palette | Voir ci-dessous. |
-| Dimensions d'emotes et de badges | **Token** `dimension.emote.*` / `dimension.badge.*` | Métriques de mise en page, réutilisées à l'identique dans le chat, le sélecteur et la fiche. |
-| Couleur d'accent d'une chaîne | **Donnée** | Section 3. |
-| Nombre de viewers, durée du live, URL d'une emote, code d'une emote | **Donnée** | Aucune décision de design là-dedans. |
+| Élément                                                             | Nature                                                  | Justification                                                                                                                                     |
+| ------------------------------------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rouge « en direct »                                                 | **Token** `color.status.live`                           | Signifiant produit, cardinalité 1, doit être identique partout.                                                                                   |
+| État de chaîne (en ligne / hors ligne / rediffusion)                | **Token** `color.status.online` / `.offline` / `.rerun` | Ensemble fermé de trois états définis par le produit.                                                                                             |
+| Niveaux d'abonnement 1/2/3                                          | **Token** `color.tier.one` / `.two` / `.three`          | Cardinalité fermée, fixée par le catalogue de l'ADR 0015. Le _prix_ et le _libellé_ du tier sont des données ; son traitement visuel est un rôle. |
+| Badges de rôle du chat (broadcaster, modérateur, VIP, abonné)       | **Token** `color.badge.*`                               | Ensemble fermé, aligné sur les rôles de l'ADR 0006. Un rôle d'autorisation qui apparaît dans l'UI a une couleur de rôle.                          |
+| **Palette** de couleurs de pseudo                                   | **Token** `color.chatUsername.1…n`                      | Voir ci-dessous.                                                                                                                                  |
+| **Choix** de couleur de pseudo d'un utilisateur                     | **Donnée** : un index dans la palette                   | Voir ci-dessous.                                                                                                                                  |
+| Dimensions d'emotes et de badges                                    | **Token** `dimension.emote.*` / `dimension.badge.*`     | Métriques de mise en page, réutilisées à l'identique dans le chat, le sélecteur et la fiche.                                                      |
+| Couleur d'accent d'une chaîne                                       | **Donnée**                                              | Section 3.                                                                                                                                        |
+| Nombre de viewers, durée du live, URL d'une emote, code d'une emote | **Donnée**                                              | Aucune décision de design là-dedans.                                                                                                              |
 
 **Le cas des couleurs de pseudo mérite d'être argumenté**, parce qu'il est le plus ambigu et que la réponse naïve est mauvaise. Twitch permet historiquement à certains utilisateurs de choisir un hexadécimal libre. On l'écarte. Motif : une couleur libre ne peut pas être garantie lisible sur le fond du chat, dans les deux thèmes, et la corriger à l'exécution supposerait un calcul de contraste par message sur un flux qui peut monter à cinquante messages par seconde (ADR 0004, 0011). **La palette de pseudos est donc un ensemble fermé et ordonné de tokens, choisi pour franchir 4.5:1 sur `color.surface.chat` dans les deux thèmes** — chaque entrée est déclarée dans `contrast-pairs.json`, donc vérifiée au build. Le choix de l'utilisateur est un **index** dans cette palette, pas une couleur. La lisibilité devient une propriété du système au lieu d'une espérance.
 
@@ -290,7 +294,7 @@ Et une règle de design qui accompagne le token : **l'état « en direct » ne s
 
 ### 7. Cibles de sortie : Swift et CSS. Ni Android, ni JavaScript.
 
-**Décision tranchée : le package génère le package SPM Swift *et* un fichier de variables CSS. Rien d'autre.**
+**Décision tranchée : le package génère le package SPM Swift _et_ un fichier de variables CSS. Rien d'autre.**
 
 Le CSS n'est pas de l'anticipation : il a un consommateur réel et déjà décidé, le back-office Payload (ADR 0007), dont l'interface d'administration accepte une feuille de style. Sans tokens partagés, sa palette divergera de l'app — et la divergence sera invisible jusqu'au jour où quelqu'un compare deux captures.
 
@@ -335,16 +339,16 @@ Aucune règle de l'ADR 0010 n'est affaiblie : la règle 4 (aucune dépendance fe
 
 Reprise de la discipline de `netflix`, qui est le point le plus sous-estimé de son README. Chaque axe déclare **d'où vient sa valeur**, et chaque `$description` le rappelle au niveau du token.
 
-| Axe | Origine | Ce qu'on peut en faire |
-| --- | --- | --- |
-| Couleurs de marque et accent par défaut | Charte publique de la marque, relevée sur les surfaces officielles. | Ne pas toucher sans décision explicite. |
-| Palettes neutres clair / sombre | **Convention**, construite comme une échelle de luminance régulière, contrainte par les paires de contraste. | Retouchable, tant que le contrôle de contraste passe. |
-| Couleurs d'état du live et des badges | **Décision produit** : ce sont des signifiants, choisis pour être distinguables entre eux et des couleurs d'accent. | Retouchable, mais toute modification touche au sens. |
-| Palette de pseudos de chat | **Convention**, dimensionnée par la contrainte de contraste sur le fond du chat dans les deux thèmes. | Ajouter une entrée impose d'ajouter sa paire de contraste. |
-| Typographie | **Convention** : text styles système iOS. | Libre. |
-| Espacements et rayons | **Convention** : grille 8pt (Apple HIG). | Libre. |
-| Dimensions d'emotes et de badges | **Mesuré** : alignement sur la hauteur de capitale du corps de texte. | Toucher casse l'alignement vertical du chat. |
-| Durées de mouvement | **Convention**, calées sur les durées d'animation système iOS. | Libre. |
+| Axe                                     | Origine                                                                                                             | Ce qu'on peut en faire                                     |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Couleurs de marque et accent par défaut | Charte publique de la marque, relevée sur les surfaces officielles.                                                 | Ne pas toucher sans décision explicite.                    |
+| Palettes neutres clair / sombre         | **Convention**, construite comme une échelle de luminance régulière, contrainte par les paires de contraste.        | Retouchable, tant que le contrôle de contraste passe.      |
+| Couleurs d'état du live et des badges   | **Décision produit** : ce sont des signifiants, choisis pour être distinguables entre eux et des couleurs d'accent. | Retouchable, mais toute modification touche au sens.       |
+| Palette de pseudos de chat              | **Convention**, dimensionnée par la contrainte de contraste sur le fond du chat dans les deux thèmes.               | Ajouter une entrée impose d'ajouter sa paire de contraste. |
+| Typographie                             | **Convention** : text styles système iOS.                                                                           | Libre.                                                     |
+| Espacements et rayons                   | **Convention** : grille 8pt (Apple HIG).                                                                            | Libre.                                                     |
+| Dimensions d'emotes et de badges        | **Mesuré** : alignement sur la hauteur de capitale du corps de texte.                                               | Toucher casse l'alignement vertical du chat.               |
+| Durées de mouvement                     | **Convention**, calées sur les durées d'animation système iOS.                                                      | Libre.                                                     |
 
 Pourquoi cette discipline est ce qui rend le package maintenable : sans elle, six mois plus tard, on ne sait plus si modifier une valeur revient à **corriger une convention qu'on s'est donnée** (gratuit, à faire sans réfléchir) ou à **s'écarter d'une décision de design** (coûteux, à faire sciemment). En solo, cette mémoire n'existe nulle part ailleurs que dans le fichier.
 
@@ -396,8 +400,8 @@ Contreparties, qui sont ce qui empêche l'édition manuelle de dégénérer :
 
 ### Risques et mitigations
 
-- **Modéliser des rôles sémantiques faux, faute d'écrans réels.** C'est le risque principal, et il est probable, pas théorique. Construire une taxonomie sémantique avant d'avoir dessiné trois écrans produit des rôles qui décrivent des valeurs (`color.purple`) plutôt que des intentions, ou des rôles trop fins qui n'ont qu'un seul usage. Mitigations : ne créer que les tokens dont la **première feature verticale** (`Channel`, ordre fixé par l'ADR 0010) a besoin ; règle de relecture — *un token qui n'a toujours qu'un seul usage après trois écrans n'est pas un rôle, c'est une valeur*, il est fusionné ou supprimé ; accepter les renommages tant que le nombre d'usages reste faible, et considérer la taxonomie comme instable jusqu'au troisième écran livré.
-- **Fausse assurance du contrôle de contraste.** Il valide les paires *déclarées*, pas les paires réellement composées à l'écran. Une vue peut poser n'importe quel texte sur n'importe quelle surface sans que le couple soit dans la liste — et le build restera vert. Mitigations : déclarer les paires fait partie de la définition de fini d'un composant de `DesignSystem` ; audit ponctuel à l'Accessibility Inspector sur les écrans livrés ; à terme, envisager un lint qui repère les couples `foregroundStyle`/`background` non déclarés, sans surestimer sa faisabilité.
+- **Modéliser des rôles sémantiques faux, faute d'écrans réels.** C'est le risque principal, et il est probable, pas théorique. Construire une taxonomie sémantique avant d'avoir dessiné trois écrans produit des rôles qui décrivent des valeurs (`color.purple`) plutôt que des intentions, ou des rôles trop fins qui n'ont qu'un seul usage. Mitigations : ne créer que les tokens dont la **première feature verticale** (`Channel`, ordre fixé par l'ADR 0010) a besoin ; règle de relecture — _un token qui n'a toujours qu'un seul usage après trois écrans n'est pas un rôle, c'est une valeur_, il est fusionné ou supprimé ; accepter les renommages tant que le nombre d'usages reste faible, et considérer la taxonomie comme instable jusqu'au troisième écran livré.
+- **Fausse assurance du contrôle de contraste.** Il valide les paires _déclarées_, pas les paires réellement composées à l'écran. Une vue peut poser n'importe quel texte sur n'importe quelle surface sans que le couple soit dans la liste — et le build restera vert. Mitigations : déclarer les paires fait partie de la définition de fini d'un composant de `DesignSystem` ; audit ponctuel à l'Accessibility Inspector sur les écrans livrés ; à terme, envisager un lint qui repère les couples `foregroundStyle`/`background` non déclarés, sans surestimer sa faisabilité.
 - **Le modèle de contraste WCAG 2.1 est imparfait sur fond sombre**, où il surestime la lisibilité du texte clair. Mitigations : viser une marge au-dessus du seuil sur le corps de texte du thème sombre plutôt que le strict 4.5 ; suivre l'évolution d'APCA / WCAG 3, sans l'adopter tant que WCAG 2.1 reste le référentiel opposable (RGAA, EN 301 549).
 - **Dérive entre l'implémentation TypeScript et l'implémentation Swift du ratio.** Mitigation : vecteurs de test générés par le package et consommés par les tests Swift, incluant les cas limites. Si la dérive survient malgré tout, le repli est d'abandonner la validation runtime côté client et de s'appuyer uniquement sur la validation serveur — moins robuste, mais sans duplication.
 - **Une couleur d'accent hostile.** Un streamer choisit un rouge proche du rouge « en direct », ou un vert proche du badge modérateur : la correction de contraste ne détecte rien, puisque le problème est une collision de sens, pas de lisibilité. Mitigation : la règle d'usage — l'accent ne porte jamais un rôle signifiant — est la seule protection réelle. Complément possible si le cas se présente : refuser les teintes dans un intervalle autour des couleurs d'état.

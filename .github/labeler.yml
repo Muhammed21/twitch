@@ -1,0 +1,28 @@
+# Tier floors by changed path. Claude's review can raise the tier and never lower it; a PR that matches none starts low.
+# What each tier means: REVIEW.md § Tiers.
+review:critical:
+  - changed-files:
+      - any-glob-to-any-file:
+          - apps/api/src/modules/identity/**
+          - apps/api/src/modules/monetization/**
+          - apps/api/src/**/authz/**
+          - apps/api/src/**/auth/**
+          - apps/chat/src/**/auth/**
+          - "**/prisma/schema/**"
+          - "**/prisma/migrations/**"
+          - docker/postgres/**
+          - .oxlintrc.json
+          - packages/lint/**
+          - .github/workflows/**
+          - .github/scripts/**
+          - .github/actions/**
+
+review:standard:
+  - changed-files:
+      - any-glob-to-any-file:
+          - apps/**
+          - packages/**
+          - e2e/**
+          - docker/**
+          - compose.yaml
+          - docs/adr/**

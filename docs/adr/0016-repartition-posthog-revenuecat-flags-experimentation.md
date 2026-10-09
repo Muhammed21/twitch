@@ -6,7 +6,7 @@
 
 ## Contexte et problématique
 
-Le projet utilise **PostHog** pour l'analytics, les feature flags et l'expérimentation, et **RevenueCat** pour les achats iOS (ADR 0014). Or RevenueCat propose lui aussi un système d'expérimentation — *RevenueCat Experiments* — couplé à ses *Paywalls*.
+Le projet utilise **PostHog** pour l'analytics, les feature flags et l'expérimentation, et **RevenueCat** pour les achats iOS (ADR 0014). Or RevenueCat propose lui aussi un système d'expérimentation — _RevenueCat Experiments_ — couplé à ses _Paywalls_.
 
 Laisser les deux actifs garantit une collision :
 

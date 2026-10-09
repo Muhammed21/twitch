@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import type { DesignToken } from "../formats/swift.ts";
-import { checkContrast, contrastRatio, type ContrastPair } from "./contrast.ts";
+import { checkContrast, contrastRatio, parseContrastPairs, type ContrastPair } from "./contrast.ts";
+
+const onBlack = (hex: string) => contrastRatio(hex, "#000000");
 
 const colorToken = (path: string, value: string): DesignToken => ({
   path: path.split("."),
@@ -55,21 +57,19 @@ describe("contrastRatio", () => {
   });
 
   it("weights the green channel most, then red, then blue", () => {
-    const onBlack = (hex: string) => contrastRatio(hex, "#000000");
-
     expect(onBlack("#00ff00")).toBeCloseTo(15.3, 1);
     expect(onBlack("#ff0000")).toBeCloseTo(5.25, 2);
     expect(onBlack("#0000ff")).toBeCloseTo(2.44, 2);
   });
 
   it("names the foreground when it is not a 6- or 8-digit hex", () => {
-    expect(() => contrastRatio("#fff", "#000000")).toThrowError(
+    expect(() => contrastRatio("#fff", "#000000")).toThrow(
       "Foreground is not a 6- or 8-digit hex colour: #fff.",
     );
   });
 
   it("names the background when it is not a 6- or 8-digit hex", () => {
-    expect(() => contrastRatio("#000000", "white")).toThrowError(
+    expect(() => contrastRatio("#000000", "white")).toThrow(
       "Background is not a 6- or 8-digit hex colour: white.",
     );
   });
@@ -153,9 +153,9 @@ describe("checkContrast", () => {
   it("fails on a role that does not exist in a theme, naming the role and the theme", () => {
     const dark = [colorToken("color.background.primary", "#000000")];
 
-    expect(() =>
-      checkContrast({ pairs: [pair()], themes: themes({ dark }) }),
-    ).toThrowError(/color\.text\.primary.*dark/);
+    expect(() => checkContrast({ pairs: [pair()], themes: themes({ dark }) })).toThrow(
+      /color\.text\.primary.*dark/,
+    );
   });
 
   it("refuses a translucent foreground, since its ratio depends on an unknown backdrop", () => {
@@ -164,9 +164,9 @@ describe("checkContrast", () => {
       colorToken("color.background.primary", "#ffffff"),
     ];
 
-    expect(() =>
-      checkContrast({ pairs: [pair()], themes: themes({ light }) }),
-    ).toThrowError(/color\.text\.primary.*translucent.*light/);
+    expect(() => checkContrast({ pairs: [pair()], themes: themes({ light }) })).toThrow(
+      /color\.text\.primary.*translucent.*light/,
+    );
   });
 
   it("refuses a translucent background for the same reason", () => {
@@ -175,9 +175,9 @@ describe("checkContrast", () => {
       colorToken("color.background.primary", "#ffffff80"),
     ];
 
-    expect(() =>
-      checkContrast({ pairs: [pair()], themes: themes({ light }) }),
-    ).toThrowError(/color\.background\.primary.*translucent.*light/);
+    expect(() => checkContrast({ pairs: [pair()], themes: themes({ light }) })).toThrow(
+      /color\.background\.primary.*translucent.*light/,
+    );
   });
 
   it("accepts an 8-digit hex that is fully opaque", () => {
@@ -203,9 +203,9 @@ describe("checkContrast", () => {
       colorToken("color.background.primary", "#ffffff"),
     ];
 
-    expect(() =>
-      checkContrast({ pairs: [pair()], themes: themes({ light }) }),
-    ).toThrowError(/not a 6- or 8-digit hex/);
+    expect(() => checkContrast({ pairs: [pair()], themes: themes({ light }) })).toThrow(
+      /not a 6- or 8-digit hex/,
+    );
   });
 
   it("fails on a value that is not a hex colour", () => {
@@ -214,8 +214,44 @@ describe("checkContrast", () => {
       colorToken("color.background.primary", "#ffffff"),
     ];
 
-    expect(() =>
-      checkContrast({ pairs: [pair()], themes: themes({ light }) }),
-    ).toThrowError(/color\.text\.primary.*not a 6- or 8-digit hex.*black/);
+    expect(() => checkContrast({ pairs: [pair()], themes: themes({ light }) })).toThrow(
+      /color\.text\.primary.*not a 6- or 8-digit hex.*black/,
+    );
+  });
+});
+
+describe("parseContrastPairs", () => {
+  it("reads the pairs of a contrast-pairs file", () => {
+    const file = {
+      pairs: [
+        { foreground: "color.text.primary", background: "color.background.primary", min: 4.5 },
+        {
+          foreground: "color.text.muted",
+          background: "color.surface.primary",
+          min: 3,
+          note: "large",
+        },
+      ],
+    };
+
+    expect(parseContrastPairs(file)).toEqual(file.pairs);
+  });
+
+  it.each([
+    ["no pairs list", {}],
+    ["pairs that are not a list", { pairs: "nope" }],
+    ["a pair that is not an object", { pairs: [null] }],
+    ["a pair without a foreground", { pairs: [{ background: "b", min: 4.5 }] }],
+    ["a pair without a background", { pairs: [{ foreground: "f", min: 4.5 }] }],
+    [
+      "a pair whose min is not a number",
+      { pairs: [{ foreground: "f", background: "b", min: "4.5" }] },
+    ],
+    [
+      "a pair whose note is not a string",
+      { pairs: [{ foreground: "f", background: "b", min: 4.5, note: 1 }] },
+    ],
+  ])("refuses a file with %s", (_label, file) => {
+    expect(() => parseContrastPairs(file)).toThrow(/contrast-pairs/);
   });
 });

@@ -1,0 +1,134 @@
+name: CI
+
+# La CI est le seul arbitre (ADR 0018 §3) : elle rejoue tout, sans filtrage par diff ni dépendance aux hooks locaux.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/install
+      - run: pnpm lint
+      - run: pnpm fmt:check
+      - run: pnpm secrets
+
+  commits:
+    name: Commits
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/install
+      - run: pnpm exec commitlint --from "$BASE" --to "$HEAD" --verbose
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/install
+      - run: pnpm check-types
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/install
+      - run: pnpm test
+      - run: pnpm exec turbo run check-contrast
+
+  generated:
+    name: Generated artefacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/install
+      # Patron unique de l'ADR 0018 §5 : un générateur de plus = une tâche turbo `generate`, rien à changer ici.
+      - run: pnpm generate
+      - name: Committed artefacts match their generators
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git status --porcelain
+            git diff --stat
+            echo "::error::Artefact généré non régénéré. Lancez 'pnpm generate' et committez."
+            exit 1
+          fi
+
+  hygiene:
+    name: Repo hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/install
+      # .gitignore ne protège pas un fichier déjà indexé (ADR 0018 §6).
+      - name: No .env file is tracked
+        run: |
+          tracked=$(git ls-files | grep -E '(^|/)\.env($|\.)' | grep -vE '\.env\.example$' || true)
+          if [ -n "$tracked" ]; then
+            echo "$tracked"
+            echo "::error::Fichier .env versionné. Retirez-le avec 'git rm --cached' et faites tourner les secrets qu'il contient."
+            exit 1
+          fi
+      - run: pnpm audit --prod --audit-level=high
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/install
+      - run: pnpm build
+
+  infra:
+    name: Infra (Compose)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+      - name: Detect changes that reach this job
+        id: changes
+        run: |
+          if [ "${{ github.event_name }}" != pull_request ] || ! git diff --quiet HEAD^1 -- docker compose.yaml .env.example .github/workflows/ci.yml; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.changes.outputs.run == 'true'
+        run: ./docker/tests/infra.test.sh
+
+  e2e-web:
+    name: E2E Web
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    uses: ./.github/workflows/e2e-web.yml
+    with:
+      shards: '[{"project":"chromium","index":1,"total":1}]'
+
+  ci-result:
+    name: CI
+    if: always()
+    needs: [lint, commits, typecheck, test, generated, hygiene, build, infra, e2e-web]
+    runs-on: ubuntu-latest
+    steps:
+      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1

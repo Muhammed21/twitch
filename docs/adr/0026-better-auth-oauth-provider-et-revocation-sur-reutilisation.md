@@ -53,17 +53,17 @@ Le spike a testé better-auth 1.7.5 sur un vrai serveur, avec un client iOS simu
 
 Testée par des tests de caractérisation (§6), et jamais laissée aux valeurs par défaut :
 
-| Réglage | Valeur | Défaut constaté |
-|---|---|---|
-| `accessTokenExpiresIn` | 900 s | 3 600 s |
-| `generateRefreshToken` | 256 bits CSPRNG | environ 182 bits |
-| `refreshTokenExpiresIn` | 60 jours, glissant | — |
-| `refreshTokenReuseInterval` | 30 s | 0 |
-| `storeTokens` | fonction de hachage fournie par nous (SHA-256) | hachage interne |
-| `storeBackupCodes` | `"encrypted"` | en clair |
-| `jwt.rotationInterval` | 90 jours | — |
-| `jwt.gracePeriod` | 24 h | 30 jours |
-| Endpoint `/token` du plugin `jwt` | désactivé (`disabledPaths`) | actif, et renvoie l'objet utilisateur entier |
+| Réglage                           | Valeur                                         | Défaut constaté                              |
+| --------------------------------- | ---------------------------------------------- | -------------------------------------------- |
+| `accessTokenExpiresIn`            | 900 s                                          | 3 600 s                                      |
+| `generateRefreshToken`            | 256 bits CSPRNG                                | environ 182 bits                             |
+| `refreshTokenExpiresIn`           | 60 jours, glissant                             | —                                            |
+| `refreshTokenReuseInterval`       | 30 s                                           | 0                                            |
+| `storeTokens`                     | fonction de hachage fournie par nous (SHA-256) | hachage interne                              |
+| `storeBackupCodes`                | `"encrypted"`                                  | en clair                                     |
+| `jwt.rotationInterval`            | 90 jours                                       | —                                            |
+| `jwt.gracePeriod`                 | 24 h                                           | 30 jours                                     |
+| Endpoint `/token` du plugin `jwt` | désactivé (`disabledPaths`)                    | actif, et renvoie l'objet utilisateur entier |
 
 `refreshTokenReuseInterval` est nécessaire parce que la révocation touche désormais tous les appareils (§3) : pendant 30 s, rejouer le même refresh token renvoie la même réponse au lieu d'être traité comme un vol. Cela contient les faux positifs mobiles, où la réponse d'un refresh se perd sur le réseau. Le refresh reste sérialisé côté iOS (ADR 0005).
 

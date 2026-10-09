@@ -61,11 +61,11 @@ Problématique : quelle topologie temps réel, quel déploiement, et quelles gar
 
 Un seul canal pour tout est un anti-pattern. Nous en séparons trois, selon leur débit, leur criticité et leur direction.
 
-| Canal | Contenu | Transport | Direction | Criticité |
-|---|---|---|---|---|
-| 1 | Messages de chat | WebSocket (`uWebSockets.js`) | Bidirectionnel | Best-effort |
-| 2 | Compteur de viewers, statut live, raids | SSE (ou WS pub/sub) | Serveur → client | Important, pas critique |
-| 3 | Mise en ligne d'un streamer suivi | APNs | Push, hors app | Critique, hors session |
+| Canal | Contenu                                 | Transport                    | Direction        | Criticité               |
+| ----- | --------------------------------------- | ---------------------------- | ---------------- | ----------------------- |
+| 1     | Messages de chat                        | WebSocket (`uWebSockets.js`) | Bidirectionnel   | Best-effort             |
+| 2     | Compteur de viewers, statut live, raids | SSE (ou WS pub/sub)          | Serveur → client | Important, pas critique |
+| 3     | Mise en ligne d'un streamer suivi       | APNs                         | Push, hors app   | Critique, hors session  |
 
 **Canal 1 — chat.** Le seul qui soit réellement bidirectionnel. Haut débit, faible valeur unitaire.
 
@@ -112,7 +112,11 @@ Trou de sécurité classique et systématique : le projet valide rigoureusement 
 
 ```ts
 const IncomingMessage = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("message"), roomId: z.string().uuid(), body: z.string().min(1).max(500) }),
+  z.object({
+    type: z.literal("message"),
+    roomId: z.string().uuid(),
+    body: z.string().min(1).max(500),
+  }),
   z.object({ type: z.literal("join"), roomId: z.string().uuid() }),
   z.object({ type: z.literal("heartbeat") }),
 ]);

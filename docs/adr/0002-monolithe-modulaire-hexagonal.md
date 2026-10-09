@@ -67,9 +67,7 @@ Règle de dépendance, non négociable : `presentation → application → domai
 export type Channel = Readonly<{ id: ChannelId; ownerId: UserId; slug: Slug; isLive: boolean }>;
 
 export const goLive = (channel: Channel): Result<Channel, ChannelError> =>
-  channel.isLive
-    ? err({ kind: "AlreadyLive" })
-    : ok({ ...channel, isLive: true });
+  channel.isLive ? err({ kind: "AlreadyLive" }) : ok({ ...channel, isLive: true });
 ```
 
 ### Règle 1 — Communication inter-modules exclusivement par events
@@ -83,8 +81,11 @@ Le contrat d'event est un type partagé, versionné, appartenant au module **ém
 ```ts
 // stream/domain/events/stream-started.event.ts
 export type StreamStartedEvent = Readonly<{
-  name: "stream.started"; version: 1;
-  channelId: string; sessionId: string; startedAt: string;
+  name: "stream.started";
+  version: 1;
+  channelId: string;
+  sessionId: string;
+  startedAt: string;
 }>;
 ```
 
@@ -164,6 +165,7 @@ L'étape 2 est le vrai test. Tant qu'elle n'est pas faisable sans toucher au dom
 ### Déclencheurs d'extraction
 
 Extraire seulement sur signal mesuré, jamais par principe :
+
 - profil de scaling incompatible (le cas du chat, ADR 0004) ;
 - un module qui consomme durablement l'essentiel des ressources ;
 - une contrainte de conformité imposant l'isolation (données de paiement) ;

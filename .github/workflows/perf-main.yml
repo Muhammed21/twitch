@@ -1,0 +1,43 @@
+name: perf-main
+
+# Records a baseline bench-results.json on every push to main that touches benched code.
+# perf-pr.yml downloads the latest successful artifact and diffs against it.
+# Retention 30 days — long enough for any open PR to find a fresh baseline.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/**/src/**"
+      - "packages/**/src/**"
+      - "**/bench/**"
+      - "**/vitest.bench.config.ts"
+      - ".github/scripts/bench-collect.sh"
+      - ".github/scripts/perf-compare.mjs"
+      - ".github/workflows/perf-main.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: perf-main-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  bench:
+    name: Micro-bench (baseline)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/install
+      - run: pnpm bench
+      - run: .github/scripts/bench-collect.sh bench-results.json
+      - name: Upload bench baseline
+        uses: actions/upload-artifact@v6
+        with:
+          name: bench-baseline
+          path: bench-results.json
+          retention-days: 30
+          if-no-files-found: error

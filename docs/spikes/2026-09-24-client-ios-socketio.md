@@ -32,14 +32,14 @@ Le spike a aussi révélé **une erreur dans l'ADR 0022, côté serveur** : `all
 
 ### 1. Maintenance du client officiel
 
-| Indicateur | Valeur au 2026-09-24 |
-|---|---|
-| Dernière release | v16.1.1, 2024-10-01 (précédente : 2023-08) |
-| Dernier commit | 2024-10-01 |
-| Issues ouvertes | 259 |
-| Issue « Swift 6 Rewrite » (#1416) | Ouverte depuis 2022, sans suite |
-| Crash ouvert sur les acks en 16.1.1 (#1509, `handleAck`) | Ouvert depuis 2024-12, sans réponse |
-| Dépendance Starscream | Dernier commit 2024-05, dernière release 4.0.8 (2024-03) |
+| Indicateur                                               | Valeur au 2026-09-24                                     |
+| -------------------------------------------------------- | -------------------------------------------------------- |
+| Dernière release                                         | v16.1.1, 2024-10-01 (précédente : 2023-08)               |
+| Dernier commit                                           | 2024-10-01                                               |
+| Issues ouvertes                                          | 259                                                      |
+| Issue « Swift 6 Rewrite » (#1416)                        | Ouverte depuis 2022, sans suite                          |
+| Crash ouvert sur les acks en 16.1.1 (#1509, `handleAck`) | Ouvert depuis 2024-12, sans réponse                      |
+| Dépendance Starscream                                    | Dernier commit 2024-05, dernière release 4.0.8 (2024-03) |
 
 Deux ans sans commit, sur les deux étages de la pile.
 
@@ -49,15 +49,15 @@ Le code applicatif compile sans avertissement en mode Swift 6. Mais c'est parce 
 
 ### 3. Chemin nominal : OK
 
-| Exigence (ADR 0022) | Client officiel | Client minimal |
-|---|---|---|
-| Token dans `Authorization` à l'upgrade | OK (`.extraHeaders`) | OK (`URLRequest`) |
-| WebSocket uniquement | OK (`.forceWebsockets(true)`) | OK (par construction) |
-| Reconnexion de la bibliothèque désactivée | OK (`.reconnects(false)`) | Sans objet (aucune reconnexion intégrée) |
-| Message avec ack | OK | OK |
-| `session:revoked` reçu avant la déconnexion | OK | OK |
-| Message au-delà de 4 Ko coupé par le serveur | OK (déconnexion) | OK (fermeture `1009`, « message too big ») |
-| Refus au handshake : **statut HTTP lisible** | **Non** | **Oui** (`401` / `403` distingués) |
+| Exigence (ADR 0022)                          | Client officiel               | Client minimal                             |
+| -------------------------------------------- | ----------------------------- | ------------------------------------------ |
+| Token dans `Authorization` à l'upgrade       | OK (`.extraHeaders`)          | OK (`URLRequest`)                          |
+| WebSocket uniquement                         | OK (`.forceWebsockets(true)`) | OK (par construction)                      |
+| Reconnexion de la bibliothèque désactivée    | OK (`.reconnects(false)`)     | Sans objet (aucune reconnexion intégrée)   |
+| Message avec ack                             | OK                            | OK                                         |
+| `session:revoked` reçu avant la déconnexion  | OK                            | OK                                         |
+| Message au-delà de 4 Ko coupé par le serveur | OK (déconnexion)              | OK (fermeture `1009`, « message too big ») |
+| Refus au handshake : **statut HTTP lisible** | **Non**                       | **Oui** (`401` / `403` distingués)         |
 
 ### 4. Le client officiel perd le statut HTTP d'un refus
 
@@ -74,14 +74,21 @@ Avec `allowRequest`, **tout refus d'upgrade est renvoyé en `400 Bad Request`**,
 **Contournement validé** : ne pas attacher socket.io au serveur HTTP, et gérer soi-même l'événement `upgrade`. On vérifie le token, on répond `401` ou `403` en écrivant directement sur la socket TCP, puis on détruit la socket ; sinon, on passe la main à `engine.handleUpgrade`. Le refus a toujours lieu avant toute allocation Engine.IO : aucune connexion n'est créée, vérifié dans les logs du serveur.
 
 ```js
-const engine = new EngineServer({ transports: ["websocket"], maxHttpBufferSize: 4096, pingInterval: 30000, pingTimeout: 60000 });
+const engine = new EngineServer({
+  transports: ["websocket"],
+  maxHttpBufferSize: 4096,
+  pingInterval: 30000,
+  pingTimeout: 60000,
+});
 const io = new Server();
 io.bind(engine);
 
 httpServer.on("upgrade", (req, socket, head) => {
   const status = verifyUpgrade(req.headers.authorization); // JWKS local, sans I/O (ADR 0005)
   if (status !== 200) {
-    socket.write(`HTTP/1.1 ${status} ${status === 403 ? "Forbidden" : "Unauthorized"}\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`);
+    socket.write(
+      `HTTP/1.1 ${status} ${status === 403 ? "Forbidden" : "Unauthorized"}\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`,
+    );
     return socket.destroy();
   }
   engine.handleUpgrade(req, socket, head);
@@ -93,12 +100,14 @@ httpServer.on("upgrade", (req, socket, head) => {
 ### 6. Client minimal : ce que couvre le prototype
 
 Un `actor` Swift 6 d'environ 90 lignes, plus un parseur de trames pur d'environ 55 lignes. Il gère :
+
 - l'ouverture Engine.IO (`0`) et la connexion au namespace par défaut (`40`) ;
 - le ping/pong (`2` → `3`) ;
 - les événements (`42[...]`), l'émission avec ack (`42<id>[...]` / `43<id>[...]`) et la déconnexion serveur (`41`) ;
 - la lecture de `task.response.statusCode` sur un handshake refusé.
 
 Il ne gère pas encore, et devra gérer avant d'être utilisé :
+
 - **un chien de garde de ping** : fermer si aucun ping n'est reçu dans `pingInterval + pingTimeout`. C'est la détection des connexions mortes sur mobile ;
 - **un délai d'expiration sur les acks**, et l'échec des acks en attente quand la connexion se ferme. Le prototype laisse une continuation suspendue pour toujours, ce qui est un bug ;
 - **la validation des trames entrantes** contre les schémas `ServerMessage` générés (ADR 0009) ;

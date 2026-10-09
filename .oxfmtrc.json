@@ -1,0 +1,14 @@
+{
+  "printWidth": 100,
+  "tabWidth": 2,
+  "ignorePatterns": [
+    "pnpm-lock.yaml",
+    "packages/design-tokens/platforms/**",
+    "packages/design-tokens/reports/**"
+  ],
+  "sortImports": {
+    "ignoreCase": true,
+    "newlinesBetween": true,
+    "internalPattern": ["@repo/"]
+  }
+}

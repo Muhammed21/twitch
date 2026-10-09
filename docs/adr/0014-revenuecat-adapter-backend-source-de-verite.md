@@ -4,6 +4,7 @@
 - Date : 2026-09-22 (amendé le 2026-09-23 à la suite du verdict de spike de l'ADR 0013)
 
 > **Note du 2026-09-23.** L'ADR 0013 a établi que RevenueCat ne peut pas porter un `appAccountToken` par achat. Après révision, **RevenueCat reste néanmoins le chemin d'achat des abonnements** : seul le transport de l'attribution change (attribut d'abonné + intent serveur, voir 0013). Cet ADR s'applique donc tel quel. Sa règle de fond ne parle de toute façon jamais d'un fournisseur, mais de **qui décide d'un droit** — et la réponse reste : l'API, jamais le client, jamais le fournisseur.
+
 - Décideurs : Muhammed Cavus
 
 ## Contexte et problématique
@@ -96,17 +97,17 @@ Traiter uniquement `INITIAL_PURCHASE` est le défaut classique : tout marche en 
 
 Les noms ci-dessous sont ceux du **modèle de domaine**, pas ceux d'un fournisseur — ils coïncident avec ceux de RevenueCat parce que c'est l'adapter principal, mais le domaine ne dépend pas de ce choix. La colonne Apple donne la correspondance avec les `notificationType` / `subtype` des ASSN V2, utile pour la voie consommables (ADR 0015) et comme documentation d'une éventuelle bascule ; une correspondance Stripe s'ajoutera à l'identique pour le web, sans toucher au traitement.
 
-| Événement de domaine | Apple (ASSN V2) | Traitement |
-|---|---|---|
-| `INITIAL_PURCHASE` | `SUBSCRIBED` / `INITIAL_BUY` | Résolution de l'intent (ADR 0013) → création de l'entitlement scopé. |
-| `RENEWAL` | `DID_RENEW` | Prolongation de `expiresAt`. Ne recrée jamais l'entitlement. Événement de revenu émis pour le payout. |
-| `CANCELLATION` | `DID_CHANGE_RENEWAL_STATUS` / `AUTO_RENEW_DISABLED` | **≠ fin d'accès.** Marque l'auto-renouvellement comme désactivé. `status` reste `ACTIVE`, l'accès court jusqu'à `expiresAt`. Déclenche éventuellement une relance produit, jamais une révocation. |
-| `EXPIRATION` | `EXPIRED` | `status → EXPIRED`. Fin effective de l'accès. |
-| `BILLING_ISSUE` | `DID_FAIL_TO_RENEW` / `GRACE_PERIOD` | `status → GRACE`. **L'accès est maintenu** pendant la période de grâce, et une bannière non bloquante est affichée dans l'app. Couper l'accès ici transformerait un incident de carte bancaire en churn. |
-| `PRODUCT_CHANGE` | `DID_CHANGE_RENEWAL_PREF` | Changement de tier sur l'entitlement **existant** (invariant d'unicité de l'ADR 0013). Upgrade immédiat, downgrade appliqué à la date de renouvellement telle que communiquée par le fournisseur. |
-| `TRANSFER` | aucun équivalent direct — détecté par corrélation | Voir ci-dessous. |
-| `REFUND` | `REFUND` | Révocation de l'entitlement (`status → REVOKED`) et contre-écriture côté revenu streamer (cf. ADR 0015). |
-| `SUBSCRIPTION_PAUSED` | `DID_CHANGE_RENEWAL_STATUS` / pause | `status → EXPIRED` à la date de pause effective, ré-activation sur l'événement de reprise. |
+| Événement de domaine  | Apple (ASSN V2)                                     | Traitement                                                                                                                                                                                               |
+| --------------------- | --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `INITIAL_PURCHASE`    | `SUBSCRIBED` / `INITIAL_BUY`                        | Résolution de l'intent (ADR 0013) → création de l'entitlement scopé.                                                                                                                                     |
+| `RENEWAL`             | `DID_RENEW`                                         | Prolongation de `expiresAt`. Ne recrée jamais l'entitlement. Événement de revenu émis pour le payout.                                                                                                    |
+| `CANCELLATION`        | `DID_CHANGE_RENEWAL_STATUS` / `AUTO_RENEW_DISABLED` | **≠ fin d'accès.** Marque l'auto-renouvellement comme désactivé. `status` reste `ACTIVE`, l'accès court jusqu'à `expiresAt`. Déclenche éventuellement une relance produit, jamais une révocation.        |
+| `EXPIRATION`          | `EXPIRED`                                           | `status → EXPIRED`. Fin effective de l'accès.                                                                                                                                                            |
+| `BILLING_ISSUE`       | `DID_FAIL_TO_RENEW` / `GRACE_PERIOD`                | `status → GRACE`. **L'accès est maintenu** pendant la période de grâce, et une bannière non bloquante est affichée dans l'app. Couper l'accès ici transformerait un incident de carte bancaire en churn. |
+| `PRODUCT_CHANGE`      | `DID_CHANGE_RENEWAL_PREF`                           | Changement de tier sur l'entitlement **existant** (invariant d'unicité de l'ADR 0013). Upgrade immédiat, downgrade appliqué à la date de renouvellement telle que communiquée par le fournisseur.        |
+| `TRANSFER`            | aucun équivalent direct — détecté par corrélation   | Voir ci-dessous.                                                                                                                                                                                         |
+| `REFUND`              | `REFUND`                                            | Révocation de l'entitlement (`status → REVOKED`) et contre-écriture côté revenu streamer (cf. ADR 0015).                                                                                                 |
+| `SUBSCRIPTION_PAUSED` | `DID_CHANGE_RENEWAL_STATUS` / pause                 | `status → EXPIRED` à la date de pause effective, ré-activation sur l'événement de reprise.                                                                                                               |
 
 ### Politique de transfert (`TRANSFER`)
 

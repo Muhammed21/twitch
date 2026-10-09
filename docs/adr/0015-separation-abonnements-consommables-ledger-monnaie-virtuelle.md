@@ -46,11 +46,11 @@ Confier les bits à RevenueCat reviendrait à le forcer sur un terrain pour lequ
 
 ### Répartition des responsabilités
 
-| | Inbound iOS | Inbound web | Source de vérité |
-|---|---|---|---|
-| **Abonnement de chaîne** | RevenueCat / IAP | Stripe | **l'API** (table d'entitlements, ADR 0014) |
-| **Bits (packs)** | IAP vérifié via App Store Server API | Stripe | **l'API** (ledger) |
-| **Payout streamer** | — | — | **Stripe Connect** |
+|                          | Inbound iOS                          | Inbound web | Source de vérité                           |
+| ------------------------ | ------------------------------------ | ----------- | ------------------------------------------ |
+| **Abonnement de chaîne** | RevenueCat / IAP                     | Stripe      | **l'API** (table d'entitlements, ADR 0014) |
+| **Bits (packs)**         | IAP vérifié via App Store Server API | Stripe      | **l'API** (ledger)                         |
+| **Payout streamer**      | —                                    | —           | **Stripe Connect**                         |
 
 Les bits ne passent **pas** par RevenueCat : l'achat de pack est un consommable StoreKit vérifié en direct via l'**App Store Server API**. C'est plus de travail qu'un webhook RevenueCat, mais cela évite de dépendre d'un intermédiaire sur une fonctionnalité qu'il ne modélise pas — ni solde, ni dépense, ni réconciliation.
 
@@ -128,7 +128,7 @@ Soit **80 % de la somme partie avant même de payer la vidéo**, qui est le post
 1. Le split streamer devra à terme être calculé sur le **montant net encaissé**, pas sur le montant payé, sous peine de marge négative.
 2. Le chemin d'achat web (Stripe) n'est pas un confort : c'est la condition de viabilité économique, et l'architecture multi-adapter de l'ADR 0014 existe pour cela.
 
-**Sur les liens d'achat externes :** les règles App Store encadrant les liens vers un achat hors application et les commissions associées **ont beaucoup évolué récemment** — décision *Epic v. Apple* aux États-Unis en 2025, DMA dans l'Union européenne. L'état exact de ces règles est **juridictionnel** et mouvant. Cet ADR ne se prononce pas sur leur contenu actuel : **toute stratégie reposant sur un lien d'achat externe doit être vérifiée dans les App Store Review Guidelines en vigueur au moment de l'implémentation**, pays par pays, avant d'être codée. Concevoir le chemin web comme s'il était librement promouvable depuis l'app serait une hypothèse non vérifiée.
+**Sur les liens d'achat externes :** les règles App Store encadrant les liens vers un achat hors application et les commissions associées **ont beaucoup évolué récemment** — décision _Epic v. Apple_ aux États-Unis en 2025, DMA dans l'Union européenne. L'état exact de ces règles est **juridictionnel** et mouvant. Cet ADR ne se prononce pas sur leur contenu actuel : **toute stratégie reposant sur un lien d'achat externe doit être vérifiée dans les App Store Review Guidelines en vigueur au moment de l'implémentation**, pays par pays, avant d'être codée. Concevoir le chemin web comme s'il était librement promouvable depuis l'app serait une hypothèse non vérifiée.
 
 ## Conséquences
 

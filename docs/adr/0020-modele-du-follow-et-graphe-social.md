@@ -56,13 +56,13 @@ Problématique : définir le follow comme un modèle complet — invariants, eve
 
 Une ligne par paire `(followerId, channelId)`, clé unique composite :
 
-| Champ | Sens |
-|---|---|
-| `followerId` | Identifiant nu d'un `Account` (ADR 0003, règle 1) — aucune FK cross-schéma |
-| `channelId` | La chaîne suivie |
-| `state` | `FOLLOWING` ou `NOT_FOLLOWING` |
-| `followedAt` | Début du follow **en cours** ; `null` quand `state = NOT_FOLLOWING` |
-| `version` | Entier monotone par paire, incrémenté à chaque transition |
+| Champ         | Sens                                                                                                |
+| ------------- | --------------------------------------------------------------------------------------------------- |
+| `followerId`  | Identifiant nu d'un `Account` (ADR 0003, règle 1) — aucune FK cross-schéma                          |
+| `channelId`   | La chaîne suivie                                                                                    |
+| `state`       | `FOLLOWING` ou `NOT_FOLLOWING`                                                                      |
+| `followedAt`  | Début du follow **en cours** ; `null` quand `state = NOT_FOLLOWING`                                 |
+| `version`     | Entier monotone par paire, incrémenté à chaque transition                                           |
 | `endedReason` | `UNFOLLOWED`, `ACCOUNT_DELETED`, `CHANNEL_ARCHIVED`, `BLOCKED` — renseigné quand le follow s'arrête |
 
 Un re-follow **remet `followedAt` à l'instant présent**. Suivre une chaîne, la quitter puis la suivre à nouveau ne permet pas de contourner « follower depuis N minutes » (ADR 0004) — c'est précisément la manœuvre d'un compte de raid.
@@ -90,12 +90,12 @@ channel.unfollowed  { followerId, channelId, reason, version, occurredAt }
 
 ### 4. Consommateurs et projections
 
-| Contexte | Projection | Consomme | Usage |
-|---|---|---|---|
-| `channel` (lui-même) | `followerCount` par chaîne | ses propres events | Compteur public, en retard de quelques secondes, réconcilié par un job quotidien (`COUNT` par chaîne) |
-| `chat` | Ensemble Redis des followers par salon, avec `followedAt` | `followed`, `unfollowed` | Mode followers-only et « depuis N minutes » : `now - followedAt >= N`, sans I/O vers l'API (ADR 0004) |
-| `notification` | Followers par chaîne + `ChannelNotificationPreference` | `followed`, `unfollowed`, `stream.started` | Fan-out « X est en live » |
-| `discovery` | `FollowedChannelsView` par utilisateur | `followed`, `unfollowed`, `stream.started`, `stream.ended`, `channel.metadata.updated` | Page « Suivis », lives d'abord |
+| Contexte             | Projection                                                | Consomme                                                                               | Usage                                                                                                 |
+| -------------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `channel` (lui-même) | `followerCount` par chaîne                                | ses propres events                                                                     | Compteur public, en retard de quelques secondes, réconcilié par un job quotidien (`COUNT` par chaîne) |
+| `chat`               | Ensemble Redis des followers par salon, avec `followedAt` | `followed`, `unfollowed`                                                               | Mode followers-only et « depuis N minutes » : `now - followedAt >= N`, sans I/O vers l'API (ADR 0004) |
+| `notification`       | Followers par chaîne + `ChannelNotificationPreference`    | `followed`, `unfollowed`, `stream.started`                                             | Fan-out « X est en live »                                                                             |
+| `discovery`          | `FollowedChannelsView` par utilisateur                    | `followed`, `unfollowed`, `stream.started`, `stream.ended`, `channel.metadata.updated` | Page « Suivis », lives d'abord                                                                        |
 
 **Amendement de l'ADR 0003** : `discovery` consomme désormais `channel.followed` et `channel.unfollowed`, et `chat` comme `notification` consomment `channel.unfollowed`. La context map de 0003 est inchangée ; seules les listes de consommation s'allongent.
 

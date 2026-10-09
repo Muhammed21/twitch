@@ -76,15 +76,12 @@ const SWIFT_KEYWORDS = new Set([
 const tokenId = (path: readonly string[]): string => path.join(".");
 
 const swiftMemberName = (path: readonly string[]): string => {
-  const [, ...segments] = path;
+  const [, head, ...tail] = path;
 
-  if (segments.length === 0) {
-    throw new Error(
-      `Token "${tokenId(path)}" has no segment left once its category is dropped.`,
-    );
+  if (head === undefined) {
+    throw new Error(`Token "${tokenId(path)}" has no segment left once its category is dropped.`);
   }
 
-  const [head, ...tail] = segments as [string, ...string[]];
   const name =
     head.charAt(0).toLowerCase() +
     head.slice(1) +
@@ -97,9 +94,7 @@ const swiftMemberName = (path: readonly string[]): string => {
   }
 
   if (SWIFT_KEYWORDS.has(name)) {
-    throw new Error(
-      `Token "${tokenId(path)}" maps to "${name}", a reserved Swift keyword.`,
-    );
+    throw new Error(`Token "${tokenId(path)}" maps to "${name}", a reserved Swift keyword.`);
   }
 
   return name;
@@ -119,8 +114,9 @@ type SRGB = {
   readonly opacity: string;
 };
 
-const roundChannel = (value: number): string =>
-  String(Number(value.toFixed(3)));
+const roundChannel = (value: number): string => String(Number(value.toFixed(3)));
+
+const unit = (channel: number): string => roundChannel(channel / 255);
 
 const toSRGB = (value: unknown, path: readonly string[]): SRGB => {
   assertResolved(value, path);
@@ -132,8 +128,6 @@ const toSRGB = (value: unknown, path: readonly string[]): SRGB => {
       `Token "${tokenId(path)}" is not a 6- or 8-digit hex colour: ${String(value)}.`,
     );
   }
-
-  const unit = (channel: number): string => roundChannel(channel / 255);
 
   return {
     hex: color.hex,
@@ -160,31 +154,25 @@ const missingRoles = (
 ): readonly string[] =>
   from
     .filter((token) => !to.has(tokenId(token.path)))
-    .map(
-      (token) =>
-        `"${tokenId(token.path)}" is missing in the ${missingIn} theme`,
-    );
+    .map((token) => `"${tokenId(token.path)}" is missing in the ${missingIn} theme`);
 
 const pairRoles = ({ light, dark }: ThemedTokens) => {
   const darkByPath = new Map(dark.map((token) => [tokenId(token.path), token]));
-  const lightByPath = new Map(
-    light.map((token) => [tokenId(token.path), token]),
-  );
+  const lightByPath = new Map(light.map((token) => [tokenId(token.path), token]));
   const errors = [
     ...missingRoles(light, darkByPath, { missingIn: "dark" }),
     ...missingRoles(dark, lightByPath, { missingIn: "light" }),
   ];
 
   if (errors.length > 0) {
-    throw new Error(
-      `Themes are not structurally identical: ${errors.join("; ")}.`,
-    );
+    throw new Error(`Themes are not structurally identical: ${errors.join("; ")}.`);
   }
 
-  return light.map((lightToken) => ({
-    lightToken,
-    darkToken: darkByPath.get(tokenId(lightToken.path)) as DesignToken,
-  }));
+  return light.flatMap((lightToken) => {
+    const darkToken = darkByPath.get(tokenId(lightToken.path));
+
+    return darkToken === undefined ? [] : [{ lightToken, darkToken }];
+  });
 };
 
 export const formatThemedColors = (themes: ThemedTokens): string => {
@@ -231,15 +219,10 @@ const toPoints = (value: unknown, path: readonly string[]): string => {
     return String(value);
   }
 
-  const points =
-    typeof value === "string"
-      ? /^(-?[0-9]+(\.[0-9]+)?)(px)?$/.exec(value)
-      : null;
+  const points = typeof value === "string" ? /^(-?[0-9]+(\.[0-9]+)?)(px)?$/.exec(value) : null;
 
   if (points === null) {
-    throw new Error(
-      `Token "${tokenId(path)}" is not a pixel dimension: ${String(value)}.`,
-    );
+    throw new Error(`Token "${tokenId(path)}" is not a pixel dimension: ${String(value)}.`);
   }
 
   return String(Number(points[1]));
@@ -254,13 +237,7 @@ export const formatDimensions = (
     `    public static let ${swiftMemberName(token.path)}: CGFloat = ${toPoints(token.value, token.path)}`,
   ]);
 
-  return [
-    GENERATED_HEADER,
-    `public enum ${namespace} {`,
-    ...members,
-    "}",
-    "",
-  ].join("\n");
+  return [GENERATED_HEADER, `public enum ${namespace} {`, ...members, "}", ""].join("\n");
 };
 
 const IOS_TEXT_STYLES = new Set([
@@ -294,17 +271,19 @@ type TextStyleValue = {
   readonly fontWeight?: unknown;
 };
 
-const asTextStyle = (
-  value: unknown,
-  path: readonly string[],
-): TextStyleValue => {
+const asTextStyle = (value: unknown, path: readonly string[]): TextStyleValue => {
   assertResolved(value, path);
 
-  if (typeof value !== "object" || value === null || !("textStyle" in value)) {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    !("textStyle" in value) ||
+    typeof value.textStyle !== "string"
+  ) {
     throw new Error(`Token "${tokenId(path)}" is not an iOS text style value.`);
   }
 
-  const { textStyle } = value as TextStyleValue;
+  const { textStyle } = value;
 
   if (!IOS_TEXT_STYLES.has(textStyle)) {
     throw new Error(
@@ -312,16 +291,14 @@ const asTextStyle = (
     );
   }
 
-  return value as TextStyleValue;
+  return { ...value, textStyle };
 };
 
 const toFontWeight = (value: unknown, path: readonly string[]): string => {
   const weight = FONT_WEIGHTS.get(Number(value));
 
   if (weight === undefined) {
-    throw new Error(
-      `Token "${tokenId(path)}" uses the unsupported font weight ${String(value)}.`,
-    );
+    throw new Error(`Token "${tokenId(path)}" uses the unsupported font weight ${String(value)}.`);
   }
 
   return weight;
@@ -339,21 +316,10 @@ export const formatTextStyles = (tokens: readonly DesignToken[]): string => {
     }
 
     const weight =
-      fontWeight === undefined
-        ? ""
-        : `.weight(.${toFontWeight(fontWeight, token.path)})`;
+      fontWeight === undefined ? "" : `.weight(.${toFontWeight(fontWeight, token.path)})`;
 
-    return [
-      ...docComment(token.comment),
-      `    static let ${name} = Font.${textStyle}${weight}`,
-    ];
+    return [...docComment(token.comment), `    static let ${name} = Font.${textStyle}${weight}`];
   });
 
-  return [
-    GENERATED_HEADER,
-    "public extension Font {",
-    ...members,
-    "}",
-    "",
-  ].join("\n");
+  return [GENERATED_HEADER, "public extension Font {", ...members, "}", ""].join("\n");
 };

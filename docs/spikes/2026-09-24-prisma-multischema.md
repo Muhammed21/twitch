@@ -22,7 +22,7 @@ Le montage décrit par l'ADR 0008 fonctionne-t-il tel quel avec la version actue
 ## Montage
 
 - Prisma **7.10.0** : dernière version stable, 2026-08-25. Au 2026-09-24, le tag npm `latest` pointe par erreur sur `8.0.0-rc.15` : un `npm i prisma` sans version installe une release candidate. Il faut épingler.
-- Particularités de Prisma 7 prises en compte : configuration dans `prisma.config.ts` (URL de la base et chemin des migrations y vivent, plus dans le `datasource`) ; générateur `prisma-client` avec `output` obligatoire ; client qui exige un *driver adapter* (`@prisma/adapter-pg`) ; `migrate dev` ne génère plus le client, il faut lancer `prisma generate` à part.
+- Particularités de Prisma 7 prises en compte : configuration dans `prisma.config.ts` (URL de la base et chemin des migrations y vivent, plus dans le `datasource`) ; générateur `prisma-client` avec `output` obligatoire ; client qui exige un _driver adapter_ (`@prisma/adapter-pg`) ; `migrate dev` ne génère plus le client, il faut lancer `prisma generate` à part.
 - PostgreSQL 17 embarqué (`embedded-postgres`), sans Docker.
 - Rôles : `migrator` (propriétaire de la base, exécute les migrations), `app_<contexte>` pour chacun des 8 contextes, et `app_cms` pour le test d'enum.
 - Schéma Prisma découpé en 12 fichiers (`base.prisma` et un fichier par schéma), 11 schémas PostgreSQL, 14 modèles réalistes : `Follow` (ADR 0020), `RoleAssignment` (ADR 0006), `UserBlock` (ADR 0021), `AuditLog`, `LedgerEntry`, etc.
@@ -37,18 +37,18 @@ Le montage décrit par l'ADR 0008 fonctionne-t-il tel quel avec la version actue
 
 Chaque rôle de contexte ne reçoit `USAGE` que sur son schéma, plus `authz` en lecture et `audit` en ajout seul.
 
-| Vérification | Rôle | Résultat |
-|---|---|---|
-| Écrire dans son schéma, y compris une FK interne (`Follow` → `Channel`) | `app_channel` | Accepté |
-| Lire `identity` via le client Prisma | `app_channel` | Refusé : `42501 permission denied for schema identity` |
-| Jointure `channel` × `identity` en `$queryRaw` | `app_channel` | Refusé : `42501` |
-| Lire `channel` en `$queryRawUnsafe` | `app_chat` | Refusé : `42501` |
-| Lire `authz` (lecture ouverte, ADR 0006) | `app_chat` | Accepté |
-| Écrire dans `authz` | `app_chat` | Refusé |
-| Écrire dans `authz` (nominations et sanctions) | `app_moderation` | Accepté |
-| Supprimer dans `authz` | `app_moderation` | Refusé |
-| `INSERT` et `SELECT` dans `audit` | `app_chat` | Accepté |
-| `UPDATE` et `DELETE` dans `audit` | `app_chat` | Refusé |
+| Vérification                                                            | Rôle             | Résultat                                               |
+| ----------------------------------------------------------------------- | ---------------- | ------------------------------------------------------ |
+| Écrire dans son schéma, y compris une FK interne (`Follow` → `Channel`) | `app_channel`    | Accepté                                                |
+| Lire `identity` via le client Prisma                                    | `app_channel`    | Refusé : `42501 permission denied for schema identity` |
+| Jointure `channel` × `identity` en `$queryRaw`                          | `app_channel`    | Refusé : `42501`                                       |
+| Lire `channel` en `$queryRawUnsafe`                                     | `app_chat`       | Refusé : `42501`                                       |
+| Lire `authz` (lecture ouverte, ADR 0006)                                | `app_chat`       | Accepté                                                |
+| Écrire dans `authz`                                                     | `app_chat`       | Refusé                                                 |
+| Écrire dans `authz` (nominations et sanctions)                          | `app_moderation` | Accepté                                                |
+| Supprimer dans `authz`                                                  | `app_moderation` | Refusé                                                 |
+| `INSERT` et `SELECT` dans `audit`                                       | `app_chat`       | Accepté                                                |
+| `UPDATE` et `DELETE` dans `audit`                                       | `app_chat`       | Refusé                                                 |
 
 C'est exactement la promesse de l'ADR 0008 : la règle est appliquée par la base, pas par la revue de code, et une jointure sauvage échoue dès le développement.
 
