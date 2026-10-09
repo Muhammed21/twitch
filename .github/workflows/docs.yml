@@ -1,0 +1,38 @@
+name: Docs
+
+# The catalog's freshness is checked by the generated-artefacts gate of ci.yml (pnpm generate + git diff).
+# This workflow checks the internal links, which no generator covers.
+
+on:
+  pull_request:
+    paths:
+      - "**/*.md"
+      - ".github/workflows/docs.yml"
+  push:
+    branches: [main]
+
+concurrency:
+  group: docs-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  links:
+    name: Docs Links
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check internal links
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --offline
+            --no-progress
+            --root-dir ${{ github.workspace }}
+            'docs/**/*.md'
+            'README.md'
+            'REVIEW.md'
+            '.claude/**/*.md'
+          fail: true
