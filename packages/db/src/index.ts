@@ -13,3 +13,5 @@ export {
   type SqlExecutor,
   type TableRef,
 } from "./outbox.ts";
+export { LATEST_MIGRATION } from "./generated/latest-migration.ts";
+export { assertSchemaVersion } from "./schema-version/assert-schema-version.ts";

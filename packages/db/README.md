@@ -25,6 +25,8 @@ Le client est généré dans `src/generated/` par `pnpm generate`, que `check-ty
 | `pnpm migrate:dev`      | `prisma migrate dev` ; une migration qui ajoute des droits s'écrit avec `--create-only`  |
 | `pnpm test:integration` | Droits de chaque rôle contre la base locale migrée (`pnpm infra:up` puis `pnpm migrate`) |
 
+Dans Compose, le service `migrate` du profil `full` (image `packages/db/Dockerfile`) lance `pnpm migrate` après `db-init`. Une application n'applique jamais de migration au démarrage : elle appelle `assertSchemaVersion({ connectionString: DATABASE_URL_HEALTH, migration: LATEST_MIGRATION })`, qui refuse une base où cette migration n'est pas appliquée, terminée et non annulée (ADR 0008, ADR 0028 §8). `LATEST_MIGRATION` est généré par `pnpm generate` depuis `prisma/migrations/`.
+
 Les variables viennent du `.env` racine. Les droits vivent dans la migration `socle` : chaque `app_<contexte>` lit et écrit son schéma seul ; `audit` est en `INSERT` et `SELECT` pour tous ; `authz` est lu par tous et écrit par `channel` et `moderation`, sans `DELETE` (ADR 0006). Ils passent par des privilèges par défaut de `migrator` : toute table doit être créée par ce rôle.
 
 ## Lint du schéma

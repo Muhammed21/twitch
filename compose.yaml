@@ -50,6 +50,19 @@ services:
     entrypoint: ["sh", "/init-roles.sh"]
     restart: "no"
 
+  migrate:
+    profiles: [full]
+    build:
+      context: .
+      dockerfile: packages/db/Dockerfile
+      target: migrate
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL_MIGRATOR: postgresql://migrator:${PG_PASSWORD_MIGRATOR}@postgres:5432/app
+    restart: "no"
+
   redis:
     image: redis:8.8.3-alpine
     command: ["redis-server", "--appendonly", "yes"]

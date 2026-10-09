@@ -7,7 +7,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "generate": "prisma generate && node scripts/schema-lint.ts",
+    "generate": "prisma generate && node scripts/schema-lint.ts && node scripts/latest-migration.ts",
     "migrate": "node --env-file-if-exists=../../.env scripts/migrate.ts",
     "migrate:dev": "prisma migrate dev",
     "test": "vitest run",

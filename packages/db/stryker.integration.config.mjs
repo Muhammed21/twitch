@@ -6,7 +6,7 @@ export default {
   vitest: { configFile: "vitest.mutation.config.ts" },
   coverageAnalysis: "off",
   inPlace: true,
-  mutate: ["src/outbox.ts"],
+  mutate: ["src/outbox.ts", "src/schema-version/assert-schema-version.ts"],
   concurrency: 1,
   htmlReporter: { fileName: "reports/mutation-integration/index.html" },
 };
