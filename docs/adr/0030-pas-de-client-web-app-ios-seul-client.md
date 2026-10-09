@@ -63,6 +63,20 @@ Le streamer diffuse depuis OBS (ADR 0031) et gère sa chaîne depuis l'app iOS :
 - **0014, 0015** : il n'y a pas de canal d'achat web. Les abonnements et les bits passent uniquement par l'App Store, via RevenueCat. L'architecture multi-adapter de l'ADR 0014 est conservée : elle ne coûte rien et garde la porte ouverte.
 - **0017** : la condition qui le maintient `Proposé`, l'ouverture d'un canal web, disparaît. Les questions fiscales sur le reversement lui-même (statut du streamer, obligations déclaratives de plateforme) demeurent ; c'est à elles seules que tient désormais son passage à `Accepté`.
 
+### 4. Tests de bout en bout : Maestro pour l'app, Vitest pour les services
+
+Playwright pilote un navigateur ; sans client web, il n'a plus de cible. Les tests de bout en bout se répartissent ainsi :
+
+| Cible                    | Outil                                   | Ce qu'il couvre                                                                            |
+| ------------------------ | --------------------------------------- | ------------------------------------------------------------------------------------------ |
+| App iOS                  | **Maestro**, flows YAML, simulateur iOS | Parcours critiques (ADR 0011) : connexion, ouverture d'un live, envoi d'un message, follow |
+| API, chat, service vidéo | Vitest contre les services de Compose   | Intégration réelle : base, Redis, handshake du chat, webhooks du service vidéo             |
+| Domaine et modules iOS   | Swift Testing / XCTest                  | Tests unitaires, sans UI (ADR 0010)                                                        |
+
+- **Maestro est utilisé dans sa version gratuite** : la CLI open source (Apache 2.0) sur un runner GitHub macOS. Maestro Cloud, payant, n'est pas utilisé.
+- Maestro teste en boîte noire par la couche d'accessibilité : les éléments que touchent les flows portent un `.accessibilityIdentifier`, pour que les sélecteurs survivent à un changement de libellé.
+- **Maestro ne pilote que le simulateur.** Le test sur iPhone réel de l'ADR 0023 (arrière-plan, bascule Wi-Fi / 4G) reste un test manuel.
+
 ## Conséquences
 
 ### Positives
@@ -80,12 +94,13 @@ Le streamer diffuse depuis OBS (ADR 0031) et gère sa chaîne depuis l'app iOS :
 ### Risques et mitigations
 
 - **Risque : un client web revient par une PR « juste pour tester ».** Mitigation : la règle de l'ADR 0021 (§10) s'applique : une surface hors scope revient par un ADR, qui devra traiter l'authentification du chat dans un navigateur.
+- **Risque : un flow Maestro instable en CI** (simulateur lent au démarrage, animation non terminée). Mitigation : les flows attendent un élément par son identifiant plutôt qu'un délai, et le job Maestro démarre non bloquant jusqu'à ce qu'il ait tourné vert sur dix PR d'affilée.
 - **Risque : démonstration impossible le jour J.** Mitigation : TestFlight, ouvert par le compte Apple Developer, distribue l'app aux enseignants ; le simulateur reste le repli.
 
 ## Notes d'implémentation
 
 - Une PR `chore` supprime `apps/web`, `apps/docs` et `packages/ui`, et retire leurs références : `pnpm-workspace.yaml`, `turbo.json`, workflows de CI, `README.md` racine, `.github/labeler.yml`.
-- Le package `e2e/` (Playwright) cible `apps/web` sur le port 3000 : il est retiré avec lui, ainsi que `.github/workflows/e2e-web.yml` et le job `e2e-web` de `ci.yml`. Les tests de bout en bout de l'API passent par Vitest contre Compose, et ceux de l'app par XCUITest.
+- Le package `e2e/` (Playwright) cible `apps/web` sur le port 3000 : il est retiré avec lui, ainsi que `.github/workflows/e2e-web.yml` et le job `e2e-web` de `ci.yml`. Les tests de bout en bout prennent la forme décrite au §4.
 
 ## Liens
 
