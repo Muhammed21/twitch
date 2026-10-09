@@ -1,6 +1,6 @@
 # 0018 — Qualité de code et discipline de dépôt : le lint comme mécanisme d'application des ADR
 
-- Statut : Accepté — lint de schéma Prisma ajouté par [0025](0025-un-client-prisma-par-contexte.md)
+- Statut : Accepté — lint de schéma Prisma ajouté par [0025](0025-un-client-prisma-par-contexte.md) ; ESLint et Prettier remplacés par oxlint et oxfmt dans [0029](0029-oxlint-et-oxfmt-a-la-place-d-eslint-et-prettier.md)
 - Date : 2026-09-23
 - Décideurs : Muhammed Cavus
 
@@ -22,7 +22,7 @@ Le projet frère `netflix` dispose d'un dispositif utilisable, déjà éprouvé 
 2. Son hook de pre-commit lance `pnpm -w lint` et `pnpm -w check-types` sur l'intégralité du workspace. Tenable à trois fichiers, insupportable à six mois — et un hook lent est un hook qu'on contourne.
 3. Il ne contient pas une ligne de Swift, alors que l'app iOS native est un livrable de premier plan de ce projet.
 
-Contraintes propres : développeur solo (pas de revue par un tiers, donc l'outillage *est* le reviewer), TDD strict, trois livrables hétérogènes dans un monorepo Turborepo + pnpm, des artefacts générés mais versionnés, et des secrets réels (Stripe, Apple, PostHog, AWS/IVS).
+Contraintes propres : développeur solo (pas de revue par un tiers, donc l'outillage _est_ le reviewer), TDD strict, trois livrables hétérogènes dans un monorepo Turborepo + pnpm, des artefacts générés mais versionnés, et des secrets réels (Stripe, Apple, PostHog, AWS/IVS).
 
 Problématique : quel dispositif minimal fait appliquer mécaniquement les décisions déjà prises, sans devenir un péage qu'on finit par contourner avec `--no-verify` ?
 
@@ -76,11 +76,11 @@ Le formatage appartient entièrement à Prettier (`printWidth: 100`, comme `netf
 
 Le corollaire est une discipline de gradation. Trois niveaux, appliqués volontairement :
 
-| Niveau | Ce qui y va | Exemples |
-|---|---|---|
+| Niveau  | Ce qui y va                                                               | Exemples                                                            |
+| ------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------- |
 | `error` | Toute règle qui matérialise un ADR, plus les fautes de correction avérées | frontières d'imports, `no-floating-promises`, `no-misused-promises` |
-| `warn` | Signaux de qualité sans décision derrière | complexité, préférences stylistiques résiduelles |
-| `off` | Ce que `tsc` fait mieux | `no-unused-vars`, `no-undef` sur du TS |
+| `warn`  | Signaux de qualité sans décision derrière                                 | complexité, préférences stylistiques résiduelles                    |
+| `off`   | Ce que `tsc` fait mieux                                                   | `no-unused-vars`, `no-undef` sur du TS                              |
 
 Un `warn` qui traîne depuis trois mois doit devenir `error` ou `off`. Un avertissement permanent est du bruit, et le bruit détruit la valeur des vrais signaux.
 
@@ -200,8 +200,16 @@ commitlint avec `@commitlint/config-conventional`, plus une liste de scopes ferm
 
 ```js
 // commitlint.config.mjs
-const contexts = ["identity", "channel", "stream", "chat",
-                  "moderation", "discovery", "monetization", "notification"];
+const contexts = [
+  "identity",
+  "channel",
+  "stream",
+  "chat",
+  "moderation",
+  "discovery",
+  "monetization",
+  "notification",
+];
 const surfaces = ["ios", "api", "payload", "tokens", "adr", "ci", "deps"];
 
 export default {
