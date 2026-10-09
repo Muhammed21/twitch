@@ -1,0 +1,27 @@
+name: PR review reminder
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  checks: read
+
+jobs:
+  remind:
+    name: Stalled PR reminder
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: .github/scripts/review-labels.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+      - run: .github/scripts/review-reminder.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}

@@ -1,0 +1,69 @@
+name: Release
+
+# A v*.*.* tag on a commit of main publishes a GitHub Release with generated notes and the built artefacts.
+# Deployment is not part of it yet: the hosting is not chosen (ADR 0028).
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+jobs:
+  review-check:
+    name: Review gate before release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      checks: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: The tag points at a commit of main
+        run: |
+          git fetch --no-tags --quiet origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main \
+            || { echo "::error::$GITHUB_REF_NAME does not point at a commit of main."; exit 1; }
+      - run: .github/scripts/release-review-check.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+
+  design-tokens:
+    name: Design tokens (Swift package)
+    needs: [review-check]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/install
+      - run: pnpm generate
+      - name: Committed artefacts match their generators
+        run: git diff --exit-code
+      - run: pnpm exec turbo run check-contrast
+      - name: Package the Swift sources
+        working-directory: packages/design-tokens/platforms
+        run: zip -r "$RUNNER_TEMP/design-tokens-swift-$GITHUB_REF_NAME.zip" swift
+      - uses: actions/upload-artifact@v6
+        with:
+          name: design-tokens-swift
+          path: ${{ runner.temp }}/design-tokens-swift-${{ github.ref_name }}.zip
+          if-no-files-found: error
+
+  github-release:
+    name: Create GitHub Release
+    needs: [design-tokens]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v7
+        with:
+          path: artifacts
+      - name: Create Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: artifacts/**/*
+          generate_release_notes: true
