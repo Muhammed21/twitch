@@ -85,6 +85,21 @@ check "envoi SMTP accepté" curl -sf "smtp://127.0.0.1:${MAILPIT_SMTP_PORT}" --m
 check "message visible dans l'API de Mailpit" sh -c "curl -sf 'http://127.0.0.1:${MAILPIT_UI_PORT}/api/v1/messages' | grep -q infra-test"
 rm -f "$MAIL"
 
+echo "Job de migration (profil full)"
+migrate() { compose --profile full run --rm migrate; }
+migrate_alone() { compose --profile full run --rm --no-deps migrate; }
+applied_migrations() { psql_admin "SELECT count(*) FROM _prisma_migrations WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL"; }
+psql_admin "REVOKE CONNECT ON DATABASE app FROM app_video; DROP ROLE app_video" >/dev/null 2>&1
+check_not "migrate échoue si un rôle attendu manque" migrate_alone
+check "la base n'est pas touchée quand un rôle manque" test "$(psql_admin "SELECT to_regclass('public._prisma_migrations') IS NULL")" = "t"
+check "db-init relancé recrée le rôle manquant" env ENV_FILE="$ENV_FILE" "$ROOT/docker/up.sh"
+check "migrate applique les migrations sur une base neuve" migrate
+check "les 11 schémas existent après migrate" test "$(psql_admin "SELECT count(*) FROM pg_namespace WHERE nspname IN ('identity','channel','stream','chat','moderation','discovery','monetization','notification','video','authz','audit')")" = "11"
+applied="$(applied_migrations)"
+check "au moins une migration appliquée" test "$applied" -ge 1
+check "migrate rejoué réussit" migrate
+check "migrate rejoué n'applique rien de plus" test "$(applied_migrations)" = "$applied"
+
 echo "Ports publiés sur 127.0.0.1 uniquement"
 published="$(docker ps --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME" --format '{{.Ports}}' | tr ',' '\n' | grep -- '->' || true)"
 check "au moins un port publié" test -n "$published"
