@@ -1,0 +1,11 @@
+datasource db {
+  provider = "postgresql"
+  schemas  = ["video", "chat"]
+}
+
+model ChatMessage {
+  id       String @id
+  authorId String
+
+  @@schema("chat")
+}

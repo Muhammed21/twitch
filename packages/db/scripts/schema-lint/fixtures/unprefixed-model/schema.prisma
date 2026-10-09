@@ -1,0 +1,10 @@
+datasource db {
+  provider = "postgresql"
+  schemas  = ["video", "chat"]
+}
+
+model Stream {
+  id String @id
+
+  @@schema("video")
+}

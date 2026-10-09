@@ -1,0 +1,8 @@
+model ChatMessage {
+  id       String @id
+  /// Auteur du message
+  /// @personal
+  authorId String
+
+  @@schema("chat")
+}
