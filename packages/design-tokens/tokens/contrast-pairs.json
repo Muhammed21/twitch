@@ -1,0 +1,48 @@
+{
+  "pairs": [
+    {
+      "foreground": "color.text.primary",
+      "background": "color.background.primary",
+      "min": 4.5
+    },
+    {
+      "foreground": "color.text.primary",
+      "background": "color.surface.primary",
+      "min": 4.5
+    },
+    {
+      "foreground": "color.text.secondary",
+      "background": "color.background.primary",
+      "min": 4.5
+    },
+    {
+      "foreground": "color.text.secondary",
+      "background": "color.surface.primary",
+      "min": 4.5
+    },
+    {
+      "foreground": "color.accent.onAccent",
+      "background": "color.accent.default",
+      "min": 4.5,
+      "note": "Libellé d'un bouton d'action"
+    },
+    {
+      "foreground": "color.accent.onAccent",
+      "background": "color.accent.fallback",
+      "min": 4.5,
+      "note": "Libellé posé sur l'accent de repli"
+    },
+    {
+      "foreground": "color.accent.default",
+      "background": "color.background.primary",
+      "min": 3.0,
+      "note": "SC 1.4.11 — composant interactif non textuel"
+    },
+    {
+      "foreground": "color.accent.default",
+      "background": "color.surface.primary",
+      "min": 3.0,
+      "note": "SC 1.4.11 — composant interactif non textuel"
+    }
+  ]
+}

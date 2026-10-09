@@ -1,0 +1,28 @@
+{
+  "typography": {
+    "displayText": {
+      "$type": "iosTextStyle",
+      "$value": {
+        "textStyle": "headline",
+        "fontWeight": 600
+      },
+      "$description": "Titres de section (display de la charte, 14 px / 600). Convention : text style iOS headline, pour le Dynamic Type."
+    },
+    "headingText": {
+      "$type": "iosTextStyle",
+      "$value": {
+        "textStyle": "subheadline",
+        "fontWeight": 600
+      },
+      "$description": "Titres de carte et sous-sections (heading de la charte, 13 px / 600). Convention : text style iOS subheadline."
+    },
+    "bodyText": {
+      "$type": "iosTextStyle",
+      "$value": {
+        "textStyle": "footnote",
+        "fontWeight": 600
+      },
+      "$description": "Texte courant, titres de stream, métadonnées (body de la charte, 12 px / 600). Convention : text style iOS footnote."
+    }
+  }
+}
