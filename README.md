@@ -2,6 +2,10 @@
 
 This Turborepo starter is maintained by the Turborepo core team.
 
+## Documentation
+
+Decisions, spikes and where to write: [`docs/README.md`](docs/README.md). Every page in one line: [`docs/CATALOG.md`](docs/CATALOG.md).
+
 ## Using this example
 
 Run the following command:

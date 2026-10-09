@@ -1,0 +1,22 @@
+{
+  "name": "@repo/docs-catalog",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "node ./scripts/generate.ts",
+    "check": "node ./scripts/generate.ts --check",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check-types": "tsc --noEmit",
+    "mutation": "stryker run"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "@stryker-mutator/core": "10.0.0",
+    "@stryker-mutator/vitest-runner": "10.0.0",
+    "@types/node": "^26.6.2",
+    "typescript": "7.0.2",
+    "vitest": "4.1.11"
+  }
+}

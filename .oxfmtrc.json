@@ -4,7 +4,9 @@
   "ignorePatterns": [
     "pnpm-lock.yaml",
     "packages/design-tokens/platforms/**",
-    "packages/design-tokens/reports/**"
+    "packages/design-tokens/reports/**",
+    "docs/CATALOG.md",
+    "packages/docs-catalog/reports/**"
   ],
   "sortImports": {
     "ignoreCase": true,
