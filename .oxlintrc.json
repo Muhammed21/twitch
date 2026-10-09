@@ -47,6 +47,12 @@
           }
         ]
       }
+    ],
+    "typescript/no-extraneous-class": [
+      "error",
+      {
+        "allowWithDecorator": true
+      }
     ]
   },
   "ignorePatterns": [
