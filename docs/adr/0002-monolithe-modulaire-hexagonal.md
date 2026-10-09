@@ -1,6 +1,6 @@
 # 0002 — Monolithe modulaire hexagonal plutôt que microservices
 
-- Statut : Accepté — table `outbox` par schéma amendée par [0025](0025-un-client-prisma-par-contexte.md)
+- Statut : Accepté — table `outbox` par schéma amendée par [0025](0025-un-client-prisma-par-contexte.md) — second process séparé (`apps/video`) ajouté par [0031](0031-service-video-maison-a-la-maniere-d-ivs.md)
 - Date : 2026-09-22
 - Décideurs : Muhammed Cavus
 

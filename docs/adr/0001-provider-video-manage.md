@@ -1,6 +1,6 @@
 # 0001 — Provider vidéo managé plutôt qu'ingest auto-hébergé
 
-- Statut : Accepté
+- Statut : Accepté — choix d'IVS, bascules envisagées et kill switch budgétaire remplacés par [0031](0031-service-video-maison-a-la-maniere-d-ivs.md)
 - Date : 2026-09-22
 - Décideurs : Muhammed Cavus
 

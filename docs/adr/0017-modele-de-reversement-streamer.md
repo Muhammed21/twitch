@@ -1,6 +1,6 @@
 # 0017 — Modèle de reversement aux streamers : split sur le net encaissé
 
-- Statut : Proposé — principes arrêtés et implémentables ; ouverture du canal web conditionnée au cadre fiscal (voir « Questions à trancher avec un conseil fiscal »)
+- Statut : Proposé — principes arrêtés et implémentables ; canal web retiré par [0030](0030-pas-de-client-web-app-ios-seul-client.md) ; passage à `Accepté` conditionné aux questions fiscales sur le reversement (voir « Questions à trancher avec un conseil fiscal »)
 - Date : 2026-09-23
 - Décideurs : Muhammed Cavus
 

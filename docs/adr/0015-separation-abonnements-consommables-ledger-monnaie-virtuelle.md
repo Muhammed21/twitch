@@ -1,6 +1,6 @@
 # 0015 — Séparation abonnements / consommables et ledger de monnaie virtuelle
 
-- Statut : Accepté
+- Statut : Accepté — chemin d'achat web retiré par [0030](0030-pas-de-client-web-app-ios-seul-client.md)
 - Date : 2026-09-22
 - Décideurs : Muhammed Cavus
 

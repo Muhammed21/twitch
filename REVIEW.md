@@ -40,6 +40,7 @@ Un finding Important casse un comportement, perd ou fuit des données, ou enfrei
 - **ADR 0006** : une action sur une chaîne sans vérification d'autorisation scopée à cette chaîne.
 - **ADR 0018** : un `oxlint-disable` sur une règle d'architecture. Une exception se discute dans un ADR.
 - **ADR 0018** : un artefact généré (`packages/design-tokens/platforms/`, `docs/CATALOG.md`, `openapi.json`, client Swift, taxonomie analytics) modifié à la main, ou un générateur modifié sans l'artefact régénéré.
+- **ADR 0031** : `apps/video` lance ffmpeg avant d'avoir vérifié la clé de stream, ou lit un champ du flux RTMP sans plafond de taille.
 - Un fichier change de place, et un chemin qui le nomme ne suit pas : `.oxlintrc.json`, `.github/labeler.yml`, `turbo.json`, ADR. Une règle sur un ancien chemin ne vérifie plus rien et reste verte.
 - Un ADR accepté est réécrit au lieu d'être remplacé par un nouvel ADR. Seuls la ligne de statut, les liens et le formatage peuvent changer.
 - La logique principale de la PR n'a aucun test qui échouerait si cette logique changeait. Nomme le changement qu'aucun test n'attrape.

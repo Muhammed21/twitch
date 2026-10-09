@@ -1,6 +1,6 @@
 # 0028 — Conteneurisation et environnement local Docker Compose
 
-- Statut : Accepté
+- Statut : Accepté — service vidéo ajouté par [0031](0031-service-video-maison-a-la-maniere-d-ivs.md)
 - Date : 2026-09-24
 - Décideurs : Muhammed Cavus
 - Complète : ADR 0002 (« un `docker compose up` pour l'environnement complet »), ADR 0007 (base de Payload), ADR 0008 (Docker Compose local, ordre du pipeline, stockage objet local), ADR 0025 (provisionnement des rôles, relais de l'outbox)

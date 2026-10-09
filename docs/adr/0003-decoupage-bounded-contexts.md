@@ -1,6 +1,6 @@
 # 0003 — Découpage en bounded contexts
 
-- Statut : Accepté
+- Statut : Accepté — transcodage et distribution de `stream` amendés par [0031](0031-service-video-maison-a-la-maniere-d-ivs.md) — cycle de vie du salon de chat amendé par [0032](0032-salon-de-chat-permanent-par-chaine.md)
 - Date : 2026-09-22
 - Décideurs : Muhammed Cavus
 
