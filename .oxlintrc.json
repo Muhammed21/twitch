@@ -1,6 +1,7 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["typescript", "import", "promise", "unicorn", "vitest"],
+  "jsPlugins": ["./packages/lint/src/index.ts"],
   "categories": {
     "correctness": "error",
     "suspicious": "warn"
@@ -53,7 +54,10 @@
       {
         "allowWithDecorator": true
       }
-    ]
+    ],
+    "twitch/module-boundaries": "error",
+    "twitch/layer-dependencies": "error",
+    "twitch/no-disable-architecture": "error"
   },
   "ignorePatterns": [
     "node_modules",
@@ -67,7 +71,7 @@
   ],
   "overrides": [
     {
-      "files": ["**/*.test.ts", "**/__tests__/**"],
+      "files": ["**/*.test.ts"],
       "rules": {
         "typescript/no-non-null-assertion": "off",
         "typescript/no-unsafe-type-assertion": "off",
@@ -78,6 +82,28 @@
       "files": ["packages/db/scripts/schema-lint/read-prisma-schema.ts"],
       "rules": {
         "no-restricted-imports": "off"
+      }
+    },
+    {
+      "files": ["apps/api/src/modules/*/domain/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@prisma/internals",
+                "message": "API interne de Prisma : passer par packages/db/scripts/schema-lint/read-prisma-schema.ts (ADR 0025 §5)."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@nestjs/*", "nestjs-zod", "@prisma/*", "zod", "zod/*", "@repo/db"],
+                "message": "Le domaine ne dépend ni de NestJS, ni de Prisma, ni de Zod, ni de @repo/db : ces dépendances vivent dans infrastructure et presentation (ADR 0002, ADR 0009). La couche application recevra la même règle avec son premier fichier."
+              }
+            ]
+          }
+        ]
       }
     }
   ]
