@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { Client } from "pg";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
 import { LATEST_MIGRATION } from "./generated/latest-migration.ts";
 import { assertSchemaVersion } from "./index.ts";
@@ -40,6 +40,18 @@ const withFakeMigration = async (
     await client.end();
   }
 };
+
+beforeAll(async () => {
+  const client = new Client({ connectionString: urlOf("DATABASE_URL_MIGRATOR") });
+  await client.connect();
+  try {
+    await client.query(
+      "DELETE FROM _prisma_migrations WHERE migration_name LIKE '29991231000000\\_fake\\_%'",
+    );
+  } finally {
+    await client.end();
+  }
+});
 
 describe("assertSchemaVersion", () => {
   it("accepte une base où la dernière migration du code est appliquée", async () => {

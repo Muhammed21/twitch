@@ -1,1 +1,15 @@
-[]
+[
+  "identity.IdentityAccount.accessToken",
+  "identity.IdentityAccount.accountId",
+  "identity.IdentityAccount.idToken",
+  "identity.IdentityAccount.password",
+  "identity.IdentityAccount.refreshToken",
+  "identity.IdentityAccount.userId",
+  "identity.IdentitySession.ipAddress",
+  "identity.IdentitySession.userAgent",
+  "identity.IdentitySession.userId",
+  "identity.IdentityUser.email",
+  "identity.IdentityUser.image",
+  "identity.IdentityUser.name",
+  "identity.IdentityVerification.identifier"
+]

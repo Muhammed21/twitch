@@ -7,5 +7,10 @@
     "emitDecoratorMetadata": true,
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "vitest.config.ts", "vitest.integration.config.ts"]
+  "include": [
+    "src/**/*.ts",
+    "vitest.config.ts",
+    "vitest.integration.config.ts",
+    "vitest.mutation.config.ts"
+  ]
 }

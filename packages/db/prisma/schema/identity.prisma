@@ -1,0 +1,79 @@
+// Tables du noyau de better-auth (ADR 0005, ADR 0026), renommées par modelName.
+
+model IdentityUser {
+  id            String            @id
+  /// @personal
+  name          String
+  /// @personal
+  email         String            @unique
+  /// @not-personal
+  emailVerified Boolean           @default(false)
+  /// @personal
+  image         String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  sessions      IdentitySession[]
+  accounts      IdentityAccount[]
+
+  @@schema("identity")
+}
+
+model IdentitySession {
+  id        String       @id
+  expiresAt DateTime
+  token     String       @unique
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  /// @personal
+  ipAddress String?
+  /// @personal
+  userAgent String?
+  /// @personal
+  userId    String
+  user      IdentityUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@schema("identity")
+}
+
+model IdentityAccount {
+  id                    String       @id
+  /// Identifiant du compte chez le fournisseur ; l'identifiant de l'utilisateur pour le fournisseur credential.
+  /// @personal
+  accountId             String
+  providerId            String
+  /// @personal
+  userId                String
+  user                  IdentityUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// @personal
+  accessToken           String?
+  /// @personal
+  refreshToken          String?
+  /// @personal
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  /// Empreinte du mot de passe.
+  /// @personal
+  password              String?
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  @@index([userId])
+  @@schema("identity")
+}
+
+model IdentityVerification {
+  id         String   @id
+  /// Destinataire de la vérification, en général un e-mail.
+  /// @personal
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@schema("identity")
+}

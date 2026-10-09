@@ -4,14 +4,23 @@ import { loadEnv } from "./env.ts";
 
 const HEALTH_URL = "postgresql://app_health:secret@127.0.0.1:5432/app";
 
+const AUTH_SECRET = "s".repeat(32);
+
 const makeEnv = (overrides: Record<string, string | undefined> = {}) => ({
   DATABASE_URL_HEALTH: HEALTH_URL,
+  BETTER_AUTH_SECRET: AUTH_SECRET,
+  BETTER_AUTH_URL: "http://127.0.0.1:3000",
   ...overrides,
 });
 
 describe("loadEnv", () => {
   it("lit la configuration, avec le port 3000 par défaut", () => {
-    expect(loadEnv(makeEnv())).toEqual({ port: 3000, databaseUrlHealth: HEALTH_URL });
+    expect(loadEnv(makeEnv())).toEqual({
+      port: 3000,
+      databaseUrlHealth: HEALTH_URL,
+      authSecret: AUTH_SECRET,
+      authBaseUrl: "http://127.0.0.1:3000",
+    });
   });
 
   it("lit le port", () => {
@@ -31,9 +40,20 @@ describe("loadEnv", () => {
 
   it("nomme toutes les variables invalides à la fois", () => {
     expect(() => loadEnv({ API_PORT: "abc" })).toThrow(
-      "Configuration invalide, variables à corriger : API_PORT, DATABASE_URL_HEALTH",
+      "Configuration invalide, variables à corriger : API_PORT, DATABASE_URL_HEALTH, BETTER_AUTH_SECRET, BETTER_AUTH_URL",
     );
   });
+
+  it.each([undefined, "", "trop-court"])("refuse BETTER_AUTH_SECRET %j en la nommant", (secret) => {
+    expect(() => loadEnv(makeEnv({ BETTER_AUTH_SECRET: secret }))).toThrow("BETTER_AUTH_SECRET");
+  });
+
+  it.each([undefined, "", "pas une url", "ftp://h", "xhttp://h", "https2://h"])(
+    "refuse BETTER_AUTH_URL %j en la nommant",
+    (url) => {
+      expect(() => loadEnv(makeEnv({ BETTER_AUTH_URL: url }))).toThrow("BETTER_AUTH_URL");
+    },
+  );
 
   it("accepte une URL postgres:// courte", () => {
     expect(loadEnv(makeEnv({ DATABASE_URL_HEALTH: "postgres://h/app" })).databaseUrlHealth).toBe(
