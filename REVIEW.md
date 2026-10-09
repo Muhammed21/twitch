@@ -39,7 +39,7 @@ Un finding Important casse un comportement, perd ou fuit des données, ou enfrei
 - **ADR 0008** : une migration destructrice en une étape (`NOT NULL` sans défaut ni backfill, colonne supprimée que le code déployé lit encore, renommage direct, index sans `CONCURRENTLY` sur une table chaude), ou une migration lancée au démarrage de l'API.
 - **ADR 0006** : une action sur une chaîne sans vérification d'autorisation scopée à cette chaîne.
 - **ADR 0018** : un `oxlint-disable` sur une règle d'architecture. Une exception se discute dans un ADR.
-- **ADR 0018** : un artefact généré (`packages/design-tokens/platforms/`, `openapi.json`, client Swift, taxonomie analytics) modifié à la main, ou un générateur modifié sans l'artefact régénéré.
+- **ADR 0018** : un artefact généré (`packages/design-tokens/platforms/`, `docs/CATALOG.md`, `openapi.json`, client Swift, taxonomie analytics) modifié à la main, ou un générateur modifié sans l'artefact régénéré.
 - Un fichier change de place, et un chemin qui le nomme ne suit pas : `.oxlintrc.json`, `.github/labeler.yml`, `turbo.json`, ADR. Une règle sur un ancien chemin ne vérifie plus rien et reste verte.
 - Un ADR accepté est réécrit au lieu d'être remplacé par un nouvel ADR. Seuls la ligne de statut, les liens et le formatage peuvent changer.
 - La logique principale de la PR n'a aucun test qui échouerait si cette logique changeait. Nomme le changement qu'aucun test n'attrape.
@@ -56,7 +56,7 @@ Tout le reste est au plus un Nit.
 ## Ne pas signaler
 
 - Les erreurs de lint, de format et de types : la CI les lance.
-- `pnpm-lock.yaml` et `packages/design-tokens/platforms/` : ils sont générés.
+- `pnpm-lock.yaml`, `packages/design-tokens/platforms/` et `docs/CATALOG.md` : ils sont générés.
 - Une préférence de style ou de nommage qu'aucun ADR n'énonce.
 
 ## Avant de poster

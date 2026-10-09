@@ -36,7 +36,8 @@
   "lint-staged": {
     "*": "secretlint",
     "*.{ts,tsx,js,jsx,mjs,cjs,json,md,yml,yaml,css}": "oxfmt --write --no-error-on-unmatched-pattern",
-    "*.{ts,tsx,js,jsx,mjs,cjs}": "oxlint"
+    "*.{ts,tsx,js,jsx,mjs,cjs}": "oxlint",
+    "docs/**/*.md": "sh -c 'pnpm --filter @repo/docs-catalog generate && git add docs/CATALOG.md' --"
   },
   "engines": {
     "node": ">=24 <25"

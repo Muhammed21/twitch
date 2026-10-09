@@ -1,7 +1,10 @@
 # Décisions d'architecture (ADR)
 
+**Type:** reference
+
 Registre des décisions structurantes du projet. Format [MADR](https://adr.github.io/madr/).
 Un ADR n'est jamais modifié une fois accepté : il est **remplacé** par un nouvel ADR qui le référence.
+Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes.md`](../../.claude/rules/adr-et-spikes.md).
 
 ## Index
 

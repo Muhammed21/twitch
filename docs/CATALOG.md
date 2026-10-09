@@ -1,0 +1,52 @@
+# Catalogue de la documentation
+
+<!-- Généré par packages/docs-catalog. Ne pas modifier à la main : lancer `pnpm generate`. -->
+
+**Type:** reference
+
+Chaque page de `docs/`, une ligne chacune : titre, [mode](README.md#carte), statut et objet. La ligne situe la page ; la page elle-même fait foi.
+
+## Charte
+
+- [Documentation](README.md) — _reference_ — Comment la documentation est organisée, où la lire et où écrire.
+
+## ADR — décisions durables
+
+- [0001 — Provider vidéo managé plutôt qu'ingest auto-hébergé](adr/0001-provider-video-manage.md) — _explanation · Accepté_ — Comment obtenir une chaîne live complète et fiable sans en assumer l'exploitation, tout en gardant la possibilité de changer d'avis plus tard ?
+- [0002 — Monolithe modulaire hexagonal plutôt que microservices](adr/0002-monolithe-modulaire-hexagonal.md) — _explanation · Accepté_ — Comment obtenir la simplicité opérationnelle d'un déploiement unique et des frontières internes suffisamment strictes pour qu'un module puisse être extrait plus tard sans…
+- [0003 — Découpage en bounded contexts](adr/0003-decoupage-bounded-contexts.md) — _explanation · Accepté_ — Découper le domaine en contextes autonomes, avec un langage propre à chacun, des relations explicites, et une règle claire de référencement croisé.
+- [0004 — Chat en process séparé et topologie temps réel à trois canaux](adr/0004-chat-process-separe-topologie-temps-reel.md) — _explanation · Accepté_ — Quelle topologie temps réel, quel déploiement, et quelles garanties de sécurité sur un canal qui échappe aux réflexes du REST ?
+- [0005 — Stratégie de tokens et de sessions (better-auth)](adr/0005-strategie-tokens-et-sessions.md) — _explanation · Accepté_ — La plateforme expose trois surfaces d'accès : une app iOS native (Swift/SwiftUI), une API NestJS et un back-office Payload.
+- [0006 — Modèle d'autorisation scopé par chaîne (RBAC/ABAC)](adr/0006-autorisation-scopee-par-chaine.md) — _explanation · Accepté_ — L'ADR 0005 répond à « qui es-tu ». Il reste « as-tu le droit », et sur une plateforme de live la réponse n'est presque jamais globale : elle dépend de la chaîne concernée.
+- [0007 — Payload comme CMS et console d'admin par proxy, pas comme second backend](adr/0007-payload-cms-et-console-admin-par-proxy.md) — _explanation · Accepté_ — La seconde capacité est exactement ce qu'il ne faut pas utiliser ici.
+- [0008 — Topologie de données : PostgreSQL multi-schéma, Redis, OLAP, stockage objet](adr/0008-topologie-de-donnees.md) — _explanation · Accepté_ — L'API est un monolithe modulaire hexagonal découpé en 8 bounded contexts (ADR 0002, ADR 0003).
+- [0009 — Contrat API : Zod comme source de vérité, OpenAPI généré, client Swift généré](adr/0009-contrat-api-zod-source-de-verite.md) — _explanation · Accepté_ — Le projet expose une API NestJS consommée par trois clients hétérogènes : une app iOS native Swift/SwiftUI, un back-office Payload, et un process WebSocket séparé pour le chat.
+- [0010 — Modularisation iOS en packages SPM locaux](adr/0010-modularisation-ios-packages-spm-locaux.md) — _explanation · Accepté_ — L'app iOS couvre des surfaces hétérogènes : accueil et découverte, page de chaîne, player live, chat temps réel, profil, authentification, monétisation.
+- [0011 — Architecture de présentation iOS : MV avec `@Observable`, pas MVVM](adr/0011-architecture-presentation-ios-mv-observable.md) — _explanation · Accepté_ — Il faut trancher l'architecture de présentation de l'app iOS SwiftUI.
+- [0012 — Stratégie analytics et taxonomie d'événements (PostHog)](adr/0012-strategie-analytics-taxonomie-evenements-posthog.md) — _explanation · Accepté_ — PostHog est retenu comme plateforme d'analytics produit, de feature flags et d'expérimentation.
+- [0013 — Modèle d'entitlement multi-tenant : abonnement scopé par chaîne](adr/0013-entitlement-multi-tenant-abonnement-scope-par-chaine.md) — _explanation · Accepté_ — C'est un droit multi-tenant : il est scopé par chaîne, un même utilisateur pouvant détenir N abonnements actifs simultanément sur N chaînes différentes, à des tiers différents et…
+- [0014 — Le backend comme source de vérité des droits, le fournisseur comme simple adapter](adr/0014-revenuecat-adapter-backend-source-de-verite.md) — _explanation · Accepté_ — L'ADR 0013 définit un entitlement scopé par chaîne.
+- [0015 — Séparation abonnements / consommables et ledger de monnaie virtuelle](adr/0015-separation-abonnements-consommables-ledger-monnaie-virtuelle.md) — _explanation · Accepté_ — RevenueCat est un outil d'abonnement. Or c'est exactement ce que demande une monnaie virtuelle : achat, solde, dépense, remboursement, audit.
+- [0016 — Répartition des responsabilités PostHog / RevenueCat sur les flags et l'expérimentation](adr/0016-repartition-posthog-revenuecat-flags-experimentation.md) — _explanation · Accepté_ — Le projet utilise PostHog pour l'analytics, les feature flags et l'expérimentation, et RevenueCat pour les achats iOS (ADR 0014).
+- [0017 — Modèle de reversement aux streamers : split sur le net encaissé](adr/0017-modele-de-reversement-streamer.md) — _explanation · Proposé_ — L'ADR 0015 établit que les abonnements de chaîne et les bits transitent par des canaux d'encaissement différents selon la plateforme, chacun prélevant sa propre commission.
+- [0018 — Qualité de code et discipline de dépôt : le lint comme mécanisme d'application des ADR](adr/0018-qualite-de-code-et-discipline-de-depot.md) — _explanation · Accepté_ — Quel dispositif minimal fait appliquer mécaniquement les décisions déjà prises, sans devenir un péage qu'on finit par contourner avec `--no-verify` ?
+- [0019 — Package de design tokens : source unique DTCG compilée en Swift et en CSS](adr/0019-package-design-tokens.md) — _explanation · Accepté_ — L'app iOS est le livrable principal (ADR 0010, 0011).
+- [0020 — Modèle du follow et graphe social](adr/0020-modele-du-follow-et-graphe-social.md) — _explanation · Accepté_ — Définir le follow comme un modèle complet — invariants, events, projections, cycle de vie — sans le transformer en neuvième contexte ni coupler `channel` au vocabulaire des…
+- [0021 — Périmètre fonctionnel et cartographie des entités](adr/0021-perimetre-fonctionnel-et-cartographie-des-entites.md) — _explanation · Accepté_ — Pour chaque entité significative d'une plateforme de live, dire qui la possède, quand elle arrive, et ce qui est hors scope — sans créer aujourd'hui un seul contexte vide.
+- [0022 — socket.io comme transport du chat, à la place de uWebSockets.js](adr/0022-socket-io-transport-du-chat.md) — _explanation · Accepté_ — Pour un projet de cette taille, le gain mémoire de `uWebSockets.js` vaut-il le code d'infrastructure qu'il impose ?
+- [0023 — Client iOS socket.io minimal et refus HTTP au handshake](adr/0023-client-ios-socketio-minimal-et-refus-http-au-handshake.md) — _explanation · Accepté_ — Comment tenir les garanties de l'ADR 0022 — rejet avant toute allocation, et sémantique `401` / `403` exploitable par l'app — avec un client iOS maintenable ?
+- [0024 — Conventions de contrat pour la compatibilité ascendante](adr/0024-conventions-de-contrat-pour-la-compatibilite.md) — _explanation · Accepté_ — L'ADR 0009 fait de Zod la source de vérité, génère `openapi.json` avec `nestjs-zod`, puis le client Swift avec `swift-openapi-generator`.
+- [0025 — Un client Prisma par contexte, et ce que la base ne protège pas](adr/0025-un-client-prisma-par-contexte.md) — _explanation · Accepté_ — L'ADR 0008 décide un schéma PostgreSQL par contexte, via `multiSchema` de Prisma, et un rôle PostgreSQL par contexte qui n'a `USAGE` que sur son schéma.
+- [0026 — better-auth en serveur OAuth, et révocation de tous les appareils sur réutilisation](adr/0026-better-auth-oauth-provider-et-revocation-sur-reutilisation.md) — _explanation · Accepté_ — L'ADR 0005 retient better-auth, hébergé dans l'API, pour émettre des access tokens JWT courts et des refresh tokens opaques et rotatifs, avec une détection de réutilisation par…
+- [0027 — Clients lents, dimensionnement et filtrage des blocages dans le chat](adr/0027-backpressure-et-dimensionnement-du-chat.md) — _explanation · Accepté_ — L'ADR 0022 protège le chat contre les clients lents en diffusant avec `volatile` et en surveillant `socket.conn.writeBuffer`.
+- [0028 — Conteneurisation et environnement local Docker Compose](adr/0028-conteneurisation-et-environnement-local-docker-compose.md) — _explanation · Accepté_ — Comment conteneuriser l'API, le relais d'outbox, le chat et Payload, et outiller un environnement local qui exerce l'ordre de déploiement réel, sans figer un hébergeur ?
+- [0029 — oxlint et oxfmt à la place d'ESLint et Prettier](adr/0029-oxlint-et-oxfmt-a-la-place-d-eslint-et-prettier.md) — _explanation · Accepté_ — Quel outillage tient le contrat de l'ADR 0018 — des règles d'architecture bloquantes et un lint typé — sur TypeScript 7 ?
+- [Décisions d'architecture (ADR)](adr/README.md) — _reference_ — Registre des décisions structurantes du projet. Format MADR.
+
+## Spikes — recherche bornée
+
+- [Spike — better-auth face à l'ADR 0005](spikes/2026-09-24-better-auth.md) — _explanation_ — Avec la version actuelle de better-auth, qu'est-ce qui est fourni tel quel, qu'est-ce qui se configure, et qu'est-ce qu'il faudra écrire nous-mêmes pour tenir chaque exigence de…
+- [Spike — charge du service de chat socket.io](spikes/2026-09-24-charge-socketio.md) — _explanation_ — Combien de mémoire coûte une connexion socket.io configurée comme l'ADR 0022, et le seuil de réévaluation du §9 (2 Go ou 10 000 connexions par instance) est-il le bon ?
+- [Spike — client iOS socket.io](spikes/2026-09-24-client-ios-socketio.md) — _explanation_ — Le client Swift officiel de socket.io peut-il servir de base à `ChatSession` (ADR 0011), avec les exigences de l'ADR 0022 : WebSocket uniquement, token dans l'en-tête…
+- [Spike — chaîne du contrat Zod → OpenAPI → Swift](spikes/2026-09-24-contrat-zod-swift.md) — _explanation_ — La chaîne prescrite par l'ADR 0009 produit-elle, sur les cas difficiles du projet, du Swift correct, compilé en Swift 6 strict, et qui respecte la politique de compatibilité de…
+- [Spike — Prisma multiSchema et rôles PostgreSQL](spikes/2026-09-24-prisma-multischema.md) — _explanation_ — Le montage décrit par l'ADR 0008 fonctionne-t-il tel quel avec la version actuelle de Prisma : un schéma PostgreSQL par contexte, un schéma Prisma découpé en plusieurs fichiers,…
