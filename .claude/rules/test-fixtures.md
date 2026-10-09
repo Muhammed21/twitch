@@ -6,7 +6,6 @@ paths:
   - "packages/**/*.test.ts"
   - "packages/**/*.test.tsx"
   - "packages/**/__tests__/**"
-  - "e2e/**"
 ---
 
 # Fixtures de test

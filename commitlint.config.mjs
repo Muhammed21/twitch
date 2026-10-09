@@ -8,19 +8,7 @@ const contexts = [
   "monetization",
   "notification",
 ];
-const surfaces = [
-  "ios",
-  "api",
-  "payload",
-  "web",
-  "ui",
-  "tokens",
-  "adr",
-  "infra",
-  "ci",
-  "deps",
-  "tooling",
-];
+const surfaces = ["ios", "api", "payload", "ui", "tokens", "adr", "infra", "ci", "deps", "tooling"];
 
 export default {
   extends: ["@commitlint/config-conventional"],

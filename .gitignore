@@ -37,6 +37,3 @@ yarn-error.log*
 .DS_Store
 *.pem
 
-# Playwright
-e2e/test-results
-e2e/playwright-report
