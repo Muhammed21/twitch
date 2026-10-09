@@ -28,7 +28,7 @@ Ce plan pose ce que **tous** les contextes réutilisent : la fabrique de clients
 
 - Prisma épinglé en `7.10.x` (jamais `latest`, ADR 0025 §8) : `prisma`, `@prisma/client`, `@prisma/adapter-pg`. `prisma.config.ts`, schéma multi-fichiers dans `packages/db/prisma/schema/`, générateur `prisma-client` avec `output` explicite. Le client généré n'est pas versionné : `prisma generate` tourne dans la tâche Turborepo `generate`.
 - Fabrique `createContextClient({ context })` (ADR 0025, §1) : lit `DATABASE_URL_<CONTEXTE>`, la valide par un schéma Zod, et refuse un contexte inconnu. Aucune instance exportée.
-- Liste fermée des contextes : les huit de l'ADR 0003 plus `video` (ADR 0031). Ajouter un contexte est une modification de cette liste, relue en palier `critical`.
+- Liste fermée des contextes : les huit de l'ADR 0003 plus `video` (ADR 0031). Ajouter un contexte est une modification de cette liste : la PR ajoute le chemin de son fichier aux globs `review:critical` de `.github/labeler.yml`, pour que toute modification soit relue en palier `critical`.
 - **Tests d'abord** : contexte inconnu refusé à la compilation et à l'exécution ; variable absente → erreur qui nomme la variable ; URL mal formée refusée ; deux contextes donnent deux clients distincts. Mutation sur la fabrique.
 
 ### PR 2 — Première migration : schémas, rôles et droits (jalon D1)

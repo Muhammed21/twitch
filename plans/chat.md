@@ -30,7 +30,7 @@ apps/chat/src/
 | Schéma `chat` et client du contexte ; outbox et idempotence               | [Socle de la base](socle-db.md), PR 1, 2 et 4 |
 | Events `channel.created` et `moderation.user.timed_out` sur Redis Streams | [API](api.md), PR 9 et 13                     |
 
-Les PR 1 à 3 ci-dessous n'ont besoin que de `packages/contracts` ; elles peuvent avancer pendant le sprint `identity` de l'API.
+Les PR 1 et 2 ci-dessous n'ont besoin que de `packages/contracts` : elles peuvent avancer pendant le sprint `identity` de l'API. La PR 3 attend la PR 7 de l'API (`AccessTokenVerifier`).
 
 ## Jalons
 
