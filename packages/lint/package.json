@@ -22,6 +22,7 @@
     "@stryker-mutator/vitest-runner": "10.0.0",
     "@types/node": "^26.6.2",
     "@vitest/coverage-v8": "4.1.11",
+    "oxc-parser": "0.151.0",
     "oxlint": "1.87.0",
     "typescript": "7.0.2",
     "vitest": "4.1.11"

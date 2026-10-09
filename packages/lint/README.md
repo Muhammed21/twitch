@@ -11,3 +11,5 @@ Plugin oxlint local des règles d'architecture (ADR 0029), chargé par `jsPlugin
 Dans `.oxlintrc.json`, `no-restricted-imports` interdit à `domain/` NestJS, `nestjs-zod`, Prisma, Zod et `@repo/db` (ADR 0002, ADR 0009). La couche `application` reçoit la même règle avec son premier fichier.
 
 Une règle arrive avec le code qu'elle protège : `src/config.test.ts` vérifie que chaque motif `files` des `overrides` correspond à au moins un fichier du dépôt, puis lance le vrai `oxlint` avec la vraie configuration sur une arborescence temporaire. `pnpm mutation` mute les règles contre leurs tests `RuleTester`.
+
+Une directive `-line` désactive aussi le signalement de `twitch/no-disable-architecture`, qui tombe sur la même ligne : aucune règle oxlint ne peut voir ce que sa propre suppression cache. `src/repository.test.ts` refait donc ce contrôle hors d'oxlint, sur tous les fichiers suivis par git : il lit les vrais commentaires avec `oxc-parser`, et une chaîne qui cite une directive n'est pas prise pour un commentaire.
