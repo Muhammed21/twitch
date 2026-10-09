@@ -1,5 +1,7 @@
 # Documentation
 
+**Type:** reference
+
 Comment la documentation est organisée, où la lire et où écrire.
 
 Les surfaces générées font foi sur la prose : la forme de l'API vit dans ses schémas Zod et l'`openapi.json` généré (ADR 0009), la forme des données dans les schémas Prisma de chaque contexte (ADR 0025), les design tokens dans `packages/design-tokens/tokens/` (ADR 0019). Le Markdown pointe vers elles, il ne les recopie pas.
