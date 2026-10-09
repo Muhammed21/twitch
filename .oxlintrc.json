@@ -36,6 +36,17 @@
       {
         "allow": ["**/*.css"]
       }
+    ],
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "@prisma/internals",
+            "message": "API interne de Prisma : passer par packages/db/scripts/schema-lint/read-prisma-schema.ts (ADR 0025 §5)."
+          }
+        ]
+      }
     ]
   },
   "ignorePatterns": [
@@ -55,6 +66,12 @@
         "typescript/no-non-null-assertion": "off",
         "typescript/no-unsafe-type-assertion": "off",
         "no-shadow": "off"
+      }
+    },
+    {
+      "files": ["packages/db/scripts/schema-lint/read-prisma-schema.ts"],
+      "rules": {
+        "no-restricted-imports": "off"
       }
     }
   ]

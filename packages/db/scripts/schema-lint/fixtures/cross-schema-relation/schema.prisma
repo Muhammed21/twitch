@@ -1,0 +1,19 @@
+datasource db {
+  provider = "postgresql"
+  schemas  = ["video", "chat"]
+}
+
+model VideoStream {
+  id     String    @id
+  room   ChatRoom? @relation(fields: [roomId], references: [id])
+  roomId String?
+
+  @@schema("video")
+}
+
+model ChatRoom {
+  id      String        @id
+  streams VideoStream[]
+
+  @@schema("chat")
+}

@@ -1,0 +1,1 @@
+Fichier non Prisma : le lecteur du schéma l’ignore.

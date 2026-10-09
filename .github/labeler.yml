@@ -9,6 +9,8 @@ review:critical:
           - apps/api/src/**/auth/**
           - apps/chat/src/**/auth/**
           - packages/db/src/contexts.ts
+          - packages/db/src/schema-lint/**
+          - packages/db/scripts/schema-lint/**
           - "**/prisma/schema/**"
           - "**/prisma/migrations/**"
           - docker/postgres/**

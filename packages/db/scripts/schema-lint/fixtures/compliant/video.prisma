@@ -1,0 +1,28 @@
+model VideoStream {
+  id       String         @id
+  state    VideoState
+  sessions VideoSession[]
+  /// @personal
+  viewerId String
+  /// @not-personal
+  ownerId  String
+
+  @@schema("video")
+}
+
+model VideoSession {
+  id       String      @id
+  stream   VideoStream @relation(fields: [streamId], references: [id])
+  streamId String
+
+  @@schema("video")
+}
+
+enum VideoState {
+  LIVE
+  ENDED
+
+  @@schema("video")
+}
+
+// enum VideoState { LIVE @@schema("chat") }

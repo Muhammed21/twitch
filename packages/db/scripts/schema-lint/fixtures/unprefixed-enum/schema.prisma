@@ -1,0 +1,17 @@
+datasource db {
+  provider = "postgresql"
+  schemas  = ["video", "chat"]
+}
+
+model VideoStream {
+  id    String @id
+  state State
+
+  @@schema("video")
+}
+
+enum   State   {
+  LIVE
+
+  @@schema("video")
+}

@@ -3,8 +3,14 @@
   "extends": ["//"],
   "tasks": {
     "generate": {
-      "inputs": ["prisma/schema/**", "prisma.config.ts"],
-      "outputs": ["src/generated/**"]
+      "inputs": [
+        "prisma/schema/**",
+        "prisma.config.ts",
+        "scripts/schema-lint.ts",
+        "scripts/schema-lint/*.ts",
+        "src/schema-lint/**"
+      ],
+      "outputs": ["src/generated/**", "personal-fields.json"]
     },
     "check-types": {
       "dependsOn": ["generate", "^check-types"]
