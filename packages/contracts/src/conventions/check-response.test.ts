@@ -149,6 +149,78 @@ describe("checkResponseSchema", () => {
     });
   });
 
+  describe("enveloppes", () => {
+    it.each([
+      ["readonly", z.looseObject({ a: z.object({}).readonly() }), "closed-object Dto.a"],
+      ["default", z.looseObject({ a: z.enum(["x"]).default("x") }), "bare-enum Dto.a"],
+      ["catch", z.looseObject({ a: z.enum(["x"]).catch("x") }), "bare-enum Dto.a"],
+      ["lazy", z.looseObject({ a: z.lazy(() => z.object({})) }), "closed-object Dto.a"],
+      ["record", z.looseObject({ a: z.record(z.string(), z.object({})) }), "closed-object Dto.a{}"],
+      ["tuple", z.looseObject({ a: z.tuple([z.int(), z.enum(["x"])]) }), "bare-enum Dto.a[1]"],
+      [
+        "reste d'un tuple",
+        z.looseObject({ a: z.tuple([z.int()], z.enum(["x"])) }),
+        "bare-enum Dto.a[...]",
+      ],
+      [
+        "la droite d'une intersection",
+        z.looseObject({ a: z.intersection(z.looseObject({}), z.object({})) }),
+        "closed-object Dto.a&1",
+      ],
+      [
+        "la gauche d'une intersection",
+        z.looseObject({ a: z.intersection(z.object({}), z.looseObject({})) }),
+        "closed-object Dto.a&0",
+      ],
+      ["pipe", z.looseObject({ a: z.string().pipe(z.enum(["x"])) }), "bare-enum Dto.a"],
+    ])("descend dans %s", (_name, schema, expected) => {
+      expect(rules(schema)).toEqual([expected]);
+    });
+
+    it("garde la position d'une propriété du DTO à travers une enveloppe", () => {
+      expect(rules(z.looseObject({ a: z.string().nullable().default(null) }))).toEqual([
+        "root-nullable Dto.a",
+      ]);
+    });
+
+    it("garde la racine du DTO à travers une enveloppe", () => {
+      expect(rules(z.looseObject({ a: z.int().nullable() }).readonly())).toEqual([
+        "root-nullable Dto.a",
+      ]);
+    });
+
+    it("parcourt un schéma récursif sans boucler", () => {
+      type Node = { label: string; children: Node[] };
+      const TreeNode: z.ZodType<Node> = z.lazy(() =>
+        z.looseObject({ label: z.string(), children: z.array(TreeNode) }),
+      );
+
+      expect(rules(z.looseObject({ tree: TreeNode }))).toEqual([]);
+    });
+
+    it.each([
+      ["une transformation", z.looseObject({ a: z.string().transform((value) => value.length) })],
+      ["une date JavaScript", z.looseObject({ a: z.date() })],
+      ["un any", z.looseObject({ a: z.any() })],
+    ])("refuse un type qu'il ne sait pas vérifier : %s", (_name, schema) => {
+      expect(rules(schema)).toContain("unsupported Dto.a");
+    });
+
+    it.each([
+      ["chaîne", z.string()],
+      ["date ISO", z.iso.datetime()],
+      ["UUID", z.uuid()],
+      ["entier", z.int()],
+      ["nombre", z.number()],
+      ["booléen", z.boolean()],
+      ["littéral", z.literal("x")],
+      ["null", z.null()],
+      ["inconnu", z.unknown()],
+    ])("accepte une feuille %s", (_name, leaf) => {
+      expect(rules(z.looseObject({ a: leaf }))).toEqual([]);
+    });
+  });
+
   it.each([
     [
       "closed-object",
@@ -174,6 +246,11 @@ describe("checkResponseSchema", () => {
       "nullish",
       z.looseObject({ a: z.int().nullish() }),
       "Dto.a : .nullish() est interdit (ADR 0024 §5)",
+    ],
+    [
+      "unsupported",
+      z.looseObject({ a: z.date() }),
+      "Dto.a : type de schéma que le garde ne sait pas vérifier, à lui apprendre avant de l'exporter",
     ],
   ])("explique la violation %s", (rule, schema, message) => {
     expect(checkResponseSchema("Dto", schema)).toEqual([

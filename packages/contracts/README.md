@@ -18,5 +18,6 @@ Un schéma de réponse s'exporte depuis `src/responses/`, nommé par `.meta({ id
 - une union sans variante de repli en dernière position, sauf `.meta({ closed: true })` justifié en revue ;
 - un `.nullable()` posé directement sur une propriété du DTO : `.optional()`, ou un schéma nommé imbriqué ;
 - un `.nullish()`, où qu'il soit.
+- un type qu'il ne sait pas vérifier (transformation, `z.date()`, `z.any()`…) : le garde descend dans les enveloppes (`readonly`, `default`, `catch`, `lazy`, `pipe`, intersection, `record`, `tuple`) et ne laisse passer en silence aucun autre type.
 
 Les schémas de requête restent en `z.object` strict : refuser un champ inconnu est le bon comportement côté serveur.
