@@ -1,2 +1,2 @@
 export { contexts, type Context } from "./contexts.ts";
-export { createContextClient, readContextDatabaseConfig } from "./create-context-client.ts";
+export { createContextClient, contextPoolConfig } from "./create-context-client.ts";

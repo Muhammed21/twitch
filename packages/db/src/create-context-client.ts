@@ -39,12 +39,16 @@ const parseVariable = <T>({
   return parsed.data;
 };
 
-export const readContextDatabaseConfig = ({ context, env }: { context: Context; env: Env }) => {
+export const contextPoolConfig = ({ context, env }: { context: Context; env: Env }) => {
   const suffix = parseContext(context).toUpperCase();
   const poolVariable = `DATABASE_POOL_MAX_${suffix}`;
   return {
-    url: parseVariable({ env, variable: `DATABASE_URL_${suffix}`, schema: postgresUrlSchema }),
-    poolMax:
+    connectionString: parseVariable({
+      env,
+      variable: `DATABASE_URL_${suffix}`,
+      schema: postgresUrlSchema,
+    }),
+    max:
       env[poolVariable] === undefined
         ? DEFAULT_POOL_MAX
         : parseVariable({ env, variable: poolVariable, schema: poolMaxSchema }),
@@ -58,6 +62,5 @@ export const createContextClient = ({
   context: Context;
   env?: Env;
 }): PrismaClient => {
-  const { url, poolMax } = readContextDatabaseConfig({ context, env });
-  return new PrismaClient({ adapter: new PrismaPg({ connectionString: url, max: poolMax }) });
+  return new PrismaClient({ adapter: new PrismaPg(contextPoolConfig({ context, env })) });
 };
