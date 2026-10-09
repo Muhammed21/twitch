@@ -42,7 +42,7 @@ check_not "docker/up.sh échoue si db-init échoue (mauvais mot de passe)" env E
 check "docker/up.sh relancé avec la bonne configuration réussit" env ENV_FILE="$ENV_FILE" "$ROOT/docker/up.sh"
 
 echo "Rôles et bases"
-ROLES="migrator app_identity app_channel app_stream app_chat app_moderation app_discovery app_monetization app_notification app_outbox_relay app_health payload"
+ROLES="migrator app_identity app_channel app_stream app_chat app_moderation app_discovery app_monetization app_notification app_video app_outbox_relay app_health payload"
 for role in $ROLES; do
   check "le rôle $role existe" test "$(psql_admin "SELECT count(*) FROM pg_roles WHERE rolname = '$role' AND rolcanlogin")" = "1"
 done

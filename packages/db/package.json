@@ -8,7 +8,10 @@
   },
   "scripts": {
     "generate": "prisma generate",
+    "migrate": "node --env-file-if-exists=../../.env scripts/migrate.ts",
+    "migrate:dev": "prisma migrate dev",
     "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "check-types": "tsc --noEmit",
@@ -17,6 +20,7 @@
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",
     "@prisma/client": "7.10.0",
+    "pg": "8.23.1",
     "zod": "4.6.5"
   },
   "devDependencies": {
@@ -24,6 +28,7 @@
     "@stryker-mutator/core": "10.0.0",
     "@stryker-mutator/vitest-runner": "10.0.0",
     "@types/node": "^26.6.2",
+    "@types/pg": "8.23.1",
     "@vitest/coverage-v8": "4.1.11",
     "prisma": "7.10.0",
     "typescript": "7.0.2",

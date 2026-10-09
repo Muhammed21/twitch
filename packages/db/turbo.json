@@ -11,6 +11,10 @@
     },
     "test": {
       "dependsOn": ["generate", "^build"]
+    },
+    "test:integration": {
+      "dependsOn": ["generate"],
+      "cache": false
     }
   }
 }

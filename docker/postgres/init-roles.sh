@@ -36,7 +36,7 @@ SQL
 }
 
 ensure_role migrator "$PG_PASSWORD_MIGRATOR" CREATEDB
-for context in identity channel stream chat moderation discovery monetization notification; do
+for context in identity channel stream chat moderation discovery monetization notification video; do
   variable="PG_PASSWORD_APP_$(echo "$context" | tr '[:lower:]' '[:upper:]')"
   eval "password=\${$variable}"
   ensure_role "app_$context" "$password" NOCREATEDB
@@ -48,7 +48,7 @@ ensure_role payload "$PG_PASSWORD_PAYLOAD" NOCREATEDB
 ensure_database app migrator
 ensure_database payload payload
 
-for role in migrator app_identity app_channel app_stream app_chat app_moderation app_discovery app_monetization app_notification app_outbox_relay app_health; do
+for role in migrator app_identity app_channel app_stream app_chat app_moderation app_discovery app_monetization app_notification app_video app_outbox_relay app_health; do
   grant_connect app "$role"
 done
 grant_connect payload payload
