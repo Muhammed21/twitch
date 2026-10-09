@@ -68,7 +68,7 @@ jobs:
             --status success \
             --limit 1 \
             --json databaseId \
-            --jq '.[0].databaseId // empty')
+            --jq '.[0].databaseId // empty' || true)
           if [ -n "$RUN_ID" ]; then
             gh run download "$RUN_ID" \
               --repo "${{ github.repository }}" \
