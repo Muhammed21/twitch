@@ -4,6 +4,7 @@
   "ignorePatterns": [
     "pnpm-lock.yaml",
     "packages/design-tokens/platforms/**",
+    "packages/db/src/generated/**",
     "packages/design-tokens/reports/**",
     "docs/CATALOG.md",
     "packages/docs-catalog/reports/**"

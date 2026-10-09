@@ -1,0 +1,16 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "generate": {
+      "inputs": ["prisma/schema/**", "prisma.config.ts"],
+      "outputs": ["src/generated/**"]
+    },
+    "check-types": {
+      "dependsOn": ["generate", "^check-types"]
+    },
+    "test": {
+      "dependsOn": ["generate", "^build"]
+    }
+  }
+}
