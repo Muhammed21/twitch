@@ -12,21 +12,13 @@ const resolvedSemanticTokens = async (
   });
   const { allTokens } = await dictionary.getPlatformTokens("resolved");
 
-  return allTokens
-    .filter((token) => token.path[0] !== "core")
-    .map(toDesignToken);
+  return allTokens.filter((token) => token.path[0] !== "core").map(toDesignToken);
 };
 
 export const resolveColorThemes = async () => {
   const [light, dark] = await Promise.all([
-    resolvedSemanticTokens([
-      "tokens/core/**/*.json",
-      "tokens/semantic/color.light.json",
-    ]),
-    resolvedSemanticTokens([
-      "tokens/core/**/*.json",
-      "tokens/semantic/color.dark.json",
-    ]),
+    resolvedSemanticTokens(["tokens/core/**/*.json", "tokens/semantic/color.light.json"]),
+    resolvedSemanticTokens(["tokens/core/**/*.json", "tokens/semantic/color.dark.json"]),
   ]);
 
   return { light, dark };

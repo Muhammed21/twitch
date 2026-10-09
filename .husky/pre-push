@@ -1,0 +1,3 @@
+base=$(git merge-base HEAD origin/main 2>/dev/null || echo HEAD)
+pnpm lint
+pnpm exec turbo run check-types test --filter="...[$base]"

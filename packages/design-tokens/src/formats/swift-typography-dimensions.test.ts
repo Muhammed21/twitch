@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  formatDimensions,
-  formatTextStyles,
-  type DesignToken,
-} from "./swift.ts";
+import { formatDimensions, formatTextStyles, type DesignToken } from "./swift.ts";
 
 const textStyleToken = (overrides: Partial<DesignToken> = {}): DesignToken => ({
   path: ["typography", "bodyText"],
@@ -44,9 +40,7 @@ const SWIFTUI_TEXT_STYLES = [
 
 describe("formatTextStyles", () => {
   it("generates the complete Swift file, mapping a token to a system text style and a weight", () => {
-    const output = formatTextStyles([
-      textStyleToken({ comment: "Texte courant." }),
-    ]);
+    const output = formatTextStyles([textStyleToken({ comment: "Texte courant." })]);
 
     expect(output).toBe(
       [
@@ -71,48 +65,33 @@ describe("formatTextStyles", () => {
     [800, "heavy"],
     [900, "black"],
   ])("maps the CSS weight %i to .%s", (fontWeight, swiftWeight) => {
-    const output = formatTextStyles([
-      textStyleToken({ value: { textStyle: "body", fontWeight } }),
-    ]);
+    const output = formatTextStyles([textStyleToken({ value: { textStyle: "body", fontWeight } })]);
 
-    expect(output).toContain(
-      `static let bodyText = Font.body.weight(.${swiftWeight})`,
-    );
+    expect(output).toContain(`static let bodyText = Font.body.weight(.${swiftWeight})`);
   });
 
   it("keeps the system weight when the token declares none", () => {
-    const output = formatTextStyles([
-      textStyleToken({ value: { textStyle: "headline" } }),
-    ]);
+    const output = formatTextStyles([textStyleToken({ value: { textStyle: "headline" } })]);
 
     expect(output).toContain("    static let bodyText = Font.headline\n");
   });
 
-  it.each(SWIFTUI_TEXT_STYLES)(
-    "accepts the SwiftUI text style %s",
-    (textStyle) => {
-      const output = formatTextStyles([
-        textStyleToken({ value: { textStyle } }),
-      ]);
+  it.each(SWIFTUI_TEXT_STYLES)("accepts the SwiftUI text style %s", (textStyle) => {
+    const output = formatTextStyles([textStyleToken({ value: { textStyle } })]);
 
-      expect(output).toContain(`static let bodyText = Font.${textStyle}`);
-    },
-  );
+    expect(output).toContain(`static let bodyText = Font.${textStyle}`);
+  });
 
   it("omits the doc comment when the token has no description", () => {
     const output = formatTextStyles([textStyleToken()]);
 
-    expect(output).toContain(
-      ["public extension Font {", "    static let bodyText ="].join("\n"),
-    );
+    expect(output).toContain(["public extension Font {", "    static let bodyText ="].join("\n"));
   });
 
   it.each(SWIFTUI_TEXT_STYLES)(
     "refuses a token named %s, which would shadow the SwiftUI Font member",
     (name) => {
-      expect(() =>
-        formatTextStyles([textStyleToken({ path: ["typography", name] })]),
-      ).toThrowError(
+      expect(() => formatTextStyles([textStyleToken({ path: ["typography", name] })])).toThrow(
         new RegExp(`"${name}", which would shadow the SwiftUI Font member`),
       );
     },
@@ -120,18 +99,14 @@ describe("formatTextStyles", () => {
 
   it("refuses a text style SwiftUI does not provide", () => {
     expect(() =>
-      formatTextStyles([
-        textStyleToken({ value: { textStyle: "display", fontWeight: 600 } }),
-      ]),
-    ).toThrowError(/"display", which SwiftUI does not provide/);
+      formatTextStyles([textStyleToken({ value: { textStyle: "display", fontWeight: 600 } })]),
+    ).toThrow(/"display", which SwiftUI does not provide/);
   });
 
   it("refuses an unsupported font weight", () => {
     expect(() =>
-      formatTextStyles([
-        textStyleToken({ value: { textStyle: "body", fontWeight: 650 } }),
-      ]),
-    ).toThrowError(/unsupported font weight 650/);
+      formatTextStyles([textStyleToken({ value: { textStyle: "body", fontWeight: 650 } })]),
+    ).toThrow(/unsupported font weight 650/);
   });
 
   it.each([
@@ -139,26 +114,23 @@ describe("formatTextStyles", () => {
     ["null", null],
     ["an object without a text style", { fontWeight: 600 }],
   ])("refuses %s as a text style value", (_label, value) => {
-    expect(() => formatTextStyles([textStyleToken({ value })])).toThrowError(
+    expect(() => formatTextStyles([textStyleToken({ value })])).toThrow(
       /typography\.bodyText.*not an iOS text style value/,
     );
   });
 
   it("refuses an unresolved alias", () => {
-    expect(() =>
-      formatTextStyles([textStyleToken({ value: "{typography.base}" })]),
-    ).toThrowError(/Unresolved alias.*typography\.bodyText/);
+    expect(() => formatTextStyles([textStyleToken({ value: "{typography.base}" })])).toThrow(
+      /Unresolved alias.*typography\.bodyText/,
+    );
   });
 });
 
 describe("formatDimensions", () => {
   it("generates the complete Swift file, as CGFloat points in a namespace", () => {
-    const output = formatDimensions(
-      [dimensionToken({ comment: "Charte relevée." })],
-      {
-        namespace: "Spacing",
-      },
-    );
+    const output = formatDimensions([dimensionToken({ comment: "Charte relevée." })], {
+      namespace: "Spacing",
+    });
 
     expect(output).toBe(
       [
@@ -192,9 +164,7 @@ describe("formatDimensions", () => {
       namespace: "Spacing",
     });
 
-    expect(output).toContain(
-      ["public enum Spacing {", "    public static let x8"].join("\n"),
-    );
+    expect(output).toContain(["public enum Spacing {", "    public static let x8"].join("\n"));
   });
 
   it.each([
@@ -205,9 +175,9 @@ describe("formatDimensions", () => {
     ["an object", { value: 8 }],
     ["a non-string value that would stringify to a dimension", ["8px"]],
   ])("refuses %s", (_label, value) => {
-    expect(() =>
-      formatDimensions([dimensionToken({ value })], { namespace: "Spacing" }),
-    ).toThrowError(/spacing\.x8.*not a pixel dimension/);
+    expect(() => formatDimensions([dimensionToken({ value })], { namespace: "Spacing" })).toThrow(
+      /spacing\.x8.*not a pixel dimension/,
+    );
   });
 
   it("refuses an unresolved alias", () => {
@@ -215,6 +185,6 @@ describe("formatDimensions", () => {
       formatDimensions([dimensionToken({ value: "{core.dimension.8}" })], {
         namespace: "Spacing",
       }),
-    ).toThrowError(/Unresolved alias.*spacing\.x8/);
+    ).toThrow(/Unresolved alias.*spacing\.x8/);
   });
 });

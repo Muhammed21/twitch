@@ -7,16 +7,13 @@ export type HexColor = {
 };
 
 export const parseHexColor = (value: unknown): HexColor | undefined => {
-  const match =
-    typeof value === "string"
-      ? /^#([0-9a-fA-F]{6}([0-9a-fA-F]{2})?)$/.exec(value)
-      : null;
+  const digits =
+    typeof value === "string" ? /^#([0-9a-fA-F]{6}([0-9a-fA-F]{2})?)$/.exec(value)?.[1] : undefined;
 
-  if (match === null) {
+  if (digits === undefined) {
     return undefined;
   }
 
-  const digits = match[1] as string;
   const channel = (index: number): number =>
     Number.parseInt(digits.slice(index * 2, index * 2 + 2), 16);
 

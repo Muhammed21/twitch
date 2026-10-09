@@ -36,3 +36,7 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+
+# Playwright
+e2e/test-results
+e2e/playwright-report

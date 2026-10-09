@@ -4,21 +4,42 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
-    "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "generate": "turbo run generate",
+    "lint": "oxlint --type-aware .",
+    "fmt": "oxfmt --write .",
+    "fmt:check": "oxfmt --check .",
     "check-types": "turbo run check-types",
+    "test": "turbo run test",
+    "bench": "turbo run bench",
+    "e2e:install": "pnpm --filter @repo/e2e exec playwright install --with-deps chromium webkit",
+    "e2e:all": "pnpm --filter @repo/e2e exec playwright test",
+    "secrets": "secretlint \"**/*\"",
     "infra:up": "./docker/up.sh",
     "infra:down": "docker compose down",
     "infra:reset": "docker compose down -v && ./docker/up.sh",
-    "test:infra": "./docker/tests/infra.test.sh"
+    "test:infra": "./docker/tests/infra.test.sh",
+    "prepare": "husky"
   },
   "devDependencies": {
-    "prettier": "3.9.6",
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
+    "@secretlint/secretlint-rule-preset-recommend": "^13.0.7",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
+    "oxfmt": "^0.72.0",
+    "oxlint": "^1.87.0",
+    "oxlint-tsgolint": "^7.0.2003",
+    "secretlint": "^13.0.7",
     "turbo": "^2.11.2",
     "typescript": "7.0.2"
   },
-  "packageManager": "pnpm@11.25.0",
+  "lint-staged": {
+    "*": "secretlint",
+    "*.{ts,tsx,js,jsx,mjs,cjs,json,md,yml,yaml,css}": "oxfmt --write --no-error-on-unmatched-pattern",
+    "*.{ts,tsx,js,jsx,mjs,cjs}": "oxlint"
+  },
   "engines": {
-    "node": ">=24"
-  }
+    "node": ">=24 <25"
+  },
+  "packageManager": "pnpm@11.25.0"
 }

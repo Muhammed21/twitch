@@ -31,34 +31,24 @@ const parseOrThrow = (value: unknown, label: string): HexColor => {
   const color = parseHexColor(value);
 
   if (color === undefined) {
-    throw new Error(
-      `${label} is not a 6- or 8-digit hex colour: ${String(value)}.`,
-    );
+    throw new Error(`${label} is not a 6- or 8-digit hex colour: ${String(value)}.`);
   }
 
   return color;
 };
 
 const ratioBetween = (foreground: HexColor, background: HexColor): number => {
-  const [lighter, darker] = [
-    relativeLuminance(foreground),
-    relativeLuminance(background),
-  ].sort((first, second) => second - first) as [number, number];
+  const luminances = [relativeLuminance(foreground), relativeLuminance(background)];
+  const lighter = Math.max(...luminances);
+  const darker = Math.min(...luminances);
 
   return (lighter + 0.05) / (darker + 0.05);
 };
 
 export const contrastRatio = (foreground: string, background: string): number =>
-  ratioBetween(
-    parseOrThrow(foreground, "Foreground"),
-    parseOrThrow(background, "Background"),
-  );
+  ratioBetween(parseOrThrow(foreground, "Foreground"), parseOrThrow(background, "Background"));
 
-const opaqueColor = (
-  tokens: readonly DesignToken[],
-  role: string,
-  theme: Theme,
-): HexColor => {
+const opaqueColor = (tokens: readonly DesignToken[], role: string, theme: Theme): HexColor => {
   const token = tokens.find((candidate) => candidate.path.join(".") === role);
 
   if (token === undefined) {
@@ -95,3 +85,27 @@ export const checkContrast = ({
       return { ...pair, theme, ratio, passes: ratio >= pair.min };
     }),
   );
+
+const isContrastPair = (value: unknown): value is ContrastPair =>
+  typeof value === "object" &&
+  value !== null &&
+  "foreground" in value &&
+  typeof value.foreground === "string" &&
+  "background" in value &&
+  typeof value.background === "string" &&
+  "min" in value &&
+  typeof value.min === "number" &&
+  (!("note" in value) || typeof value.note === "string");
+
+export const parseContrastPairs = (file: unknown): readonly ContrastPair[] => {
+  const pairs: unknown =
+    typeof file === "object" && file !== null && "pairs" in file ? file.pairs : undefined;
+
+  if (!Array.isArray(pairs) || !pairs.every(isContrastPair)) {
+    throw new Error(
+      "contrast-pairs.json must hold { pairs: [{ foreground, background, min, note? }] }.",
+    );
+  }
+
+  return pairs;
+};

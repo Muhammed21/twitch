@@ -16,11 +16,9 @@ describe("resolveColorThemes, on the real token files", () => {
   it("never lets a core primitive out of the package", async () => {
     const { light, dark } = await resolveColorThemes();
 
-    expect(
-      [...paths(light), ...paths(dark)].filter((path) =>
-        path.startsWith("core."),
-      ),
-    ).toEqual([]);
+    expect([...paths(light), ...paths(dark)].filter((path) => path.startsWith("core."))).toEqual(
+      [],
+    );
   });
 
   it("resolves every alias to a hex value", async () => {
@@ -28,17 +26,14 @@ describe("resolveColorThemes, on the real token files", () => {
 
     expect(
       [...light, ...dark].filter(
-        ({ value }) =>
-          !/^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/.test(String(value)),
+        ({ value }) => !/^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/.test(String(value)),
       ),
     ).toEqual([]);
   });
 
   it("carries the DTCG type and description of each role", async () => {
     const { light } = await resolveColorThemes();
-    const background = light.find(
-      ({ path }) => path.join(".") === "color.background.primary",
-    );
+    const background = light.find(({ path }) => path.join(".") === "color.background.primary");
 
     expect(background).toEqual(
       expect.objectContaining({
@@ -53,9 +48,7 @@ describe("resolveColorThemes, on the real token files", () => {
     const { light, dark } = await resolveColorThemes();
 
     expect(
-      [...light, ...dark].filter(
-        ({ comment }) => comment === undefined || comment === "",
-      ),
+      [...light, ...dark].filter(({ comment }) => comment === undefined || comment === ""),
     ).toEqual([]);
   });
 });
@@ -63,9 +56,13 @@ describe("resolveColorThemes, on the real token files", () => {
 describe("resolveSharedTokens, on the real token files", () => {
   it("resolves typography, spacing and radius, without any colour", async () => {
     const tokens = await resolveSharedTokens();
-    const categories = new Set(tokens.map(({ path }) => path[0]));
+    const categories = new Set(tokens.flatMap(({ path }) => path.slice(0, 1)));
 
-    expect([...categories].sort()).toEqual(["radius", "spacing", "typography"]);
+    expect([...categories].toSorted((first, second) => first.localeCompare(second))).toEqual([
+      "radius",
+      "spacing",
+      "typography",
+    ]);
   });
 
   it("never lets a core primitive out of the package", async () => {
@@ -78,16 +75,12 @@ describe("resolveSharedTokens, on the real token files", () => {
     const tokens = await resolveSharedTokens();
     const x8 = tokens.find(({ path }) => path.join(".") === "spacing.x8");
 
-    expect(x8).toEqual(
-      expect.objectContaining({ $type: "dimension", value: "8px" }),
-    );
+    expect(x8).toEqual(expect.objectContaining({ $type: "dimension", value: "8px" }));
   });
 
   it("gives every shared token a description", async () => {
     const tokens = await resolveSharedTokens();
 
-    expect(
-      tokens.filter(({ comment }) => comment === undefined || comment === ""),
-    ).toEqual([]);
+    expect(tokens.filter(({ comment }) => comment === undefined || comment === "")).toEqual([]);
   });
 });
