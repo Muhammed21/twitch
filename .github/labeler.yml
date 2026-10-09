@@ -8,6 +8,7 @@ review:critical:
           - apps/api/src/**/authz/**
           - apps/api/src/**/auth/**
           - apps/chat/src/**/auth/**
+          - packages/db/src/contexts.ts
           - "**/prisma/schema/**"
           - "**/prisma/migrations/**"
           - docker/postgres/**

@@ -1,3 +1,13 @@
 packages:
   - "apps/*"
   - "packages/*"
+
+allowBuilds:
+  "@prisma/engines": true
+  prisma: true
+
+# Dépendances du CLI prisma 7.10.0 corrigées par GHSA-3f6p-5ww8-9rcr et GHSA-ggr8-5vv4-36mx.
+# À retirer quand une version de prisma les embarque.
+overrides:
+  "prisma>mysql2": 3.24.5
+  "@prisma/config>deepmerge-ts": 8.0.2

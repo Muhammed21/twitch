@@ -22,6 +22,8 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/install
+      # Le lint type-aware résout les types des clients générés (Prisma), non versionnés.
+      - run: pnpm generate
       - run: pnpm lint
       - run: pnpm fmt:check
       - run: pnpm secrets

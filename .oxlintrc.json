@@ -45,7 +45,8 @@
     "reports",
     ".turbo",
     ".stryker-tmp",
-    "packages/design-tokens/platforms/**"
+    "packages/design-tokens/platforms/**",
+    "packages/db/src/generated/**"
   ],
   "overrides": [
     {
