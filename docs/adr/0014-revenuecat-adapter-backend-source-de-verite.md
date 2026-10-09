@@ -1,6 +1,6 @@
 # 0014 — Le backend comme source de vérité des droits, le fournisseur comme simple adapter
 
-- Statut : Accepté
+- Statut : Accepté — canal d'achat web retiré par [0030](0030-pas-de-client-web-app-ios-seul-client.md)
 - Date : 2026-09-22 (amendé le 2026-09-23 à la suite du verdict de spike de l'ADR 0013)
 
 > **Note du 2026-09-23.** L'ADR 0013 a établi que RevenueCat ne peut pas porter un `appAccountToken` par achat. Après révision, **RevenueCat reste néanmoins le chemin d'achat des abonnements** : seul le transport de l'attribution change (attribut d'abonné + intent serveur, voir 0013). Cet ADR s'applique donc tel quel. Sa règle de fond ne parle de toute façon jamais d'un fournisseur, mais de **qui décide d'un droit** — et la réponse reste : l'API, jamais le client, jamais le fournisseur.
