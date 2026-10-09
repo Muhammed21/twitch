@@ -73,6 +73,31 @@ describe("stripOutputSuffix", () => {
     expect(stripOutputSuffix(document)).toEqual(document);
   });
 
+  it("échoue quand un schéma de sortie prendrait le nom d'un schéma différent", () => {
+    expect(() =>
+      stripOutputSuffix({
+        components: {
+          schemas: {
+            Page: { type: "object", properties: { size: { type: "integer" } } },
+            Page_Output: {
+              type: "object",
+              properties: { size: { type: "integer" } },
+              required: ["size"],
+            },
+          },
+        },
+      }),
+    ).toThrow("Page");
+  });
+
+  it("fusionne un schéma de sortie identique à son homonyme", () => {
+    expect(
+      stripOutputSuffix({
+        components: { schemas: { Page: { type: "string" }, Page_Output: { type: "string" } } },
+      }),
+    ).toEqual({ components: { schemas: { Page: { type: "string" } } } });
+  });
+
   it("garde une référence externe intacte", () => {
     const document = { a: { $ref: "https://example.com/schemas/Live_Output" } };
 
@@ -83,6 +108,21 @@ describe("stripOutputSuffix", () => {
 describe("openResponseRoots", () => {
   it.each(["201", "2XX"])("rouvre aussi la racine d'une réponse %s", (status) => {
     expect(openResponseRoots(documentWith({ type: "object" }, status))).toMatchObject({
+      components: { schemas: { LiveDto: { additionalProperties: {} } } },
+    });
+  });
+
+  it("rouvre la racine des éléments d'une réponse en liste", () => {
+    const document = {
+      paths: {
+        "/v1/lives": {
+          get: { responses: { "200": jsonResponse({ type: "array", items: ref("LiveDto") }) } },
+        },
+      },
+      components: { schemas: { LiveDto: { type: "object" } } },
+    };
+
+    expect(openResponseRoots(document)).toMatchObject({
       components: { schemas: { LiveDto: { additionalProperties: {} } } },
     });
   });

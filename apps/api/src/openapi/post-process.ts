@@ -1,3 +1,5 @@
+import { isDeepStrictEqual } from "node:util";
+
 import { z } from "zod";
 
 type JsonObject = { readonly [key: string]: unknown };
@@ -80,11 +82,19 @@ const mapOperations = (
   };
 };
 
+const mergeRenamed = (renamed: JsonObject, [name, schema]: [string, unknown]): JsonObject => {
+  const target = withoutOutputSuffix(name);
+  if (target in renamed && !isDeepStrictEqual(renamed[target], schema)) {
+    throw new Error(
+      `Schémas en collision : ${name} et ${target} diffèrent, et porteraient le même nom dans le contrat`,
+    );
+  }
+  return { ...renamed, [target]: schema };
+};
+
 export const stripOutputSuffix = (document: JsonObject): JsonObject =>
   mapSchemas(renameRefsIn(document), (schemas) =>
-    Object.fromEntries(
-      Object.entries(schemas).map(([name, schema]) => [withoutOutputSuffix(name), schema]),
-    ),
+    Object.entries(schemas).reduce<JsonObject>(mergeRenamed, {}),
   );
 
 export const withDefaultProblem = (document: JsonObject): JsonObject =>
@@ -97,10 +107,11 @@ export const withDefaultProblem = (document: JsonObject): JsonObject =>
   }));
 
 const schemaNameOf = (response: unknown): string | undefined => {
-  const target = child(
-    child(child(child(response, "content"), "application/json"), "schema"),
-    "$ref",
-  );
+  const schema = child(child(child(response, "content"), "application/json"), "schema");
+  const target =
+    child(schema, "type") === "array"
+      ? child(child(schema, "items"), "$ref")
+      : child(schema, "$ref");
   return typeof target === "string" && target.startsWith(SCHEMA_REF)
     ? target.slice(SCHEMA_REF.length)
     : undefined;
