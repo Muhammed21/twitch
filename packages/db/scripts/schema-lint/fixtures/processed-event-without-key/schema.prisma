@@ -1,0 +1,13 @@
+datasource db {
+  provider = "postgresql"
+  schemas  = ["video"]
+}
+
+model VideoProcessedEvent {
+  id          String   @id
+  eventId     String
+  handlerName String
+  processedAt DateTime
+
+  @@schema("video")
+}

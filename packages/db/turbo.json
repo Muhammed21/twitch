@@ -6,9 +6,11 @@
       "inputs": [
         "prisma/schema/**",
         "prisma.config.ts",
-        "scripts/schema-lint.ts",
+        "src/schema-lint/**",
+        "scripts/*.ts",
         "scripts/schema-lint/*.ts",
-        "src/schema-lint/**"
+        "src/schema-version/**",
+        "prisma/migrations/**"
       ],
       "outputs": ["src/generated/**", "personal-fields.json"]
     },

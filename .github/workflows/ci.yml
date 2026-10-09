@@ -127,7 +127,7 @@ jobs:
       - name: Detect changes that reach this job
         id: changes
         run: |
-          if [ "${{ github.event_name }}" != pull_request ] || ! git diff --quiet HEAD^1 -- docker compose.yaml .env.example .github/workflows/ci.yml; then
+          if [ "${{ github.event_name }}" != pull_request ] || ! git diff --quiet HEAD^1 -- docker compose.yaml .env.example .github/workflows/ci.yml packages/db pnpm-lock.yaml; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           fi
       - if: steps.changes.outputs.run == 'true'
