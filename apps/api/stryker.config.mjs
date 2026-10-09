@@ -9,6 +9,7 @@ export default {
     "src/**/*.ts",
     "!src/**/*.test.ts",
     "!src/main.ts",
+    "!src/openapi/generate.ts",
     "!src/create-app.ts",
     "!src/app.module.ts",
   ],

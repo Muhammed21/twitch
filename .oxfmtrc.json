@@ -8,6 +8,7 @@
     "packages/db/personal-fields.json",
     "packages/design-tokens/reports/**",
     "docs/CATALOG.md",
+    "apps/api/openapi.json",
     "packages/docs-catalog/reports/**"
   ],
   "sortImports": {
