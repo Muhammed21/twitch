@@ -1,0 +1,22 @@
+name: Install
+description: Set up pnpm and Node, then restore node_modules from the cache or install them.
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v5
+    - uses: actions/setup-node@v5
+      with:
+        node-version-file: .node-version
+        package-manager-cache: false
+    - id: node-modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          node_modules
+          apps/*/node_modules
+          packages/*/node_modules
+          ~/.cache/pnpm/lockfile-verified.jsonl
+        key: node-modules-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', '.node-version') }}
+    - if: steps.node-modules.outputs.cache-hit != 'true'
+      shell: bash
+      run: pnpm install --frozen-lockfile
