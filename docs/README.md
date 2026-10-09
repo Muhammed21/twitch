@@ -27,6 +27,7 @@ Le mode est le type [Diátaxis](https://diataxis.fr/) de la page : tutorial, how
 | Une recherche qui doit aboutir à une décision | `spikes/AAAA-MM-JJ-sujet.md`                                       |
 | Une table de routes, une liste de colonnes    | **Nulle part.** Un lien vers le schéma Zod ou Prisma               |
 | Une procédure d'exploitation (déployer, …)    | `runbooks/`, créé avec la première procédure                       |
+| Un plan de travail découpé en PR              | `plans/`, hors de `docs/` ; supprimé une fois livré                |
 
 ## En-tête des pages
 

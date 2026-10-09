@@ -32,6 +32,7 @@ jobs:
             --no-progress
             --root-dir ${{ github.workspace }}
             'docs/**/*.md'
+            'plans/**/*.md'
             'README.md'
             'REVIEW.md'
             '.claude/**/*.md'
