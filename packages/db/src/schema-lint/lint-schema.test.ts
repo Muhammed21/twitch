@@ -20,6 +20,7 @@ const makeModel = (overrides: Partial<SchemaModel> = {}): SchemaModel => ({
   name: "VideoStream",
   schema: "video",
   fields: [makeField({ name: "id" })],
+  uniqueKeys: [],
   ...overrides,
 });
 
@@ -249,6 +250,99 @@ describe("lintSchema", () => {
 
       expect(lintSchema(schema)).toEqual([]);
     });
+  });
+});
+
+const OUTBOX_FIELDS: readonly (readonly [string, string])[] = [
+  ["id", "String"],
+  ["name", "String"],
+  ["version", "Int"],
+  ["payload", "Json"],
+  ["occurredAt", "DateTime"],
+  ["publishedAt", "DateTime"],
+  ["attempts", "Int"],
+  ["nextAttemptAt", "DateTime"],
+  ["lastError", "String"],
+];
+
+const PROCESSED_FIELDS: readonly (readonly [string, string])[] = [
+  ["eventId", "String"],
+  ["handlerName", "String"],
+  ["processedAt", "DateTime"],
+];
+
+const fieldsOf = (shape: readonly (readonly [string, string])[]) =>
+  shape.map(([name, type]) => makeField({ name, type }));
+
+describe("lintSchema, tables techniques", () => {
+  const makeOutbox = (overrides: Partial<SchemaModel> = {}) =>
+    makeModel({ name: "VideoOutbox", fields: fieldsOf(OUTBOX_FIELDS), ...overrides });
+
+  const makeProcessedEvent = (overrides: Partial<SchemaModel> = {}) =>
+    makeModel({
+      name: "VideoProcessedEvent",
+      fields: fieldsOf(PROCESSED_FIELDS),
+      uniqueKeys: [["eventId", "handlerName"]],
+      ...overrides,
+    });
+
+  it("accepte une outbox et une table de traitement conformes", () => {
+    expect(lintSchema(makeSchema({ models: [makeOutbox(), makeProcessedEvent()] }))).toEqual([]);
+  });
+
+  it.each(OUTBOX_FIELDS)("refuse une outbox sans le champ %s de type %s", (name, type) => {
+    const outbox = makeOutbox({
+      fields: fieldsOf(OUTBOX_FIELDS.filter(([field]) => field !== name)),
+    });
+
+    expect(lintSchema(makeSchema({ models: [outbox] }))).toEqual([
+      { rule: "technical-shape", message: `video.VideoOutbox : champ attendu ${name} ${type}` },
+    ]);
+  });
+
+  it("refuse un champ d'outbox du mauvais type", () => {
+    const outbox = makeOutbox({
+      fields: fieldsOf(
+        OUTBOX_FIELDS.map(([name, type]) => [name, name === "payload" ? "String" : type] as const),
+      ),
+    });
+
+    expect(messages(makeSchema({ models: [outbox] }))).toEqual([
+      "video.VideoOutbox : champ attendu payload Json",
+    ]);
+  });
+
+  it.each(PROCESSED_FIELDS)("refuse une table de traitement sans le champ %s", (name, type) => {
+    const processed = makeProcessedEvent({
+      fields: fieldsOf(PROCESSED_FIELDS.filter(([field]) => field !== name)),
+    });
+
+    expect(messages(makeSchema({ models: [processed] }))).toContain(
+      `video.VideoProcessedEvent : champ attendu ${name} ${type}`,
+    );
+  });
+
+  it.each([[[]], [[["eventId"]]], [[["handlerName", "eventId", "processedAt"]]]])(
+    "refuse une table de traitement sans unicité sur (eventId, handlerName) : %j",
+    (uniqueKeys) => {
+      expect(messages(makeSchema({ models: [makeProcessedEvent({ uniqueKeys })] }))).toEqual([
+        "video.VideoProcessedEvent : unicité attendue sur (eventId, handlerName)",
+      ]);
+    },
+  );
+
+  it("accepte l'unicité déclarée dans l'autre ordre", () => {
+    expect(
+      lintSchema(
+        makeSchema({ models: [makeProcessedEvent({ uniqueKeys: [["handlerName", "eventId"]] })] }),
+      ),
+    ).toEqual([]);
+  });
+
+  it("ne vérifie pas la forme d'un modèle qui ne fait que contenir le mot", () => {
+    expect(lintSchema(makeSchema({ models: [makeModel({ name: "VideoOutboxPolicy" })] }))).toEqual(
+      [],
+    );
   });
 });
 

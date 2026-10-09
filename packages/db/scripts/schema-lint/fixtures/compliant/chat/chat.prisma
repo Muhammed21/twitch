@@ -6,3 +6,13 @@ model ChatMessage {
 
   @@schema("chat")
 }
+
+model ChatProcessedEvent {
+  id          String   @id
+  eventId     String
+  handlerName String
+  processedAt DateTime @default(now())
+
+  @@unique([handlerName, eventId])
+  @@schema("chat")
+}

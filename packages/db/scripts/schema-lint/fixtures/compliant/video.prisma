@@ -26,3 +26,27 @@ enum VideoState {
 }
 
 // enum VideoState { LIVE @@schema("chat") }
+
+model VideoOutbox {
+  id            String    @id @db.Uuid
+  name          String
+  version       Int
+  payload       Json
+  occurredAt    DateTime
+  publishedAt   DateTime?
+  attempts      Int       @default(0)
+  nextAttemptAt DateTime  @default(now())
+  lastError     String?
+
+  @@index([publishedAt, nextAttemptAt])
+  @@schema("video")
+}
+
+model VideoProcessedEvent {
+  eventId     String   @db.Uuid
+  handlerName String
+  processedAt DateTime @default(now())
+
+  @@id([eventId, handlerName])
+  @@schema("video")
+}

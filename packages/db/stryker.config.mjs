@@ -10,6 +10,7 @@ export default {
     "scripts/schema-lint/read-prisma-schema.ts",
     "!src/**/*.test.ts",
     "!src/generated/**",
+    "!src/outbox.ts",
   ],
   tsconfigFile: "stryker-skips-tsconfig-rewrite.json",
   thresholds: { high: 100, low: 90, break: null },

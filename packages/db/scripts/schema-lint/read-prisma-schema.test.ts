@@ -25,6 +25,10 @@ describe("lint d'un schéma Prisma réel", () => {
     ["unprefixed-model", ["video.Stream : le nom doit commencer par Video"]],
     ["unprefixed-enum", ["video.State : le nom doit commencer par Video"]],
     [
+      "processed-event-without-key",
+      ["video.VideoProcessedEvent : unicité attendue sur (eventId, handlerName)"],
+    ],
+    [
       "unannotated-personal",
       ["chat.ChatMessage.authorId : ajouter /// @personal ou /// @not-personal"],
     ],

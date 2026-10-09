@@ -41,6 +41,7 @@ export const readPrismaSchema = async (directory: string): Promise<PrismaSchema>
         type: field.type,
         documentation: field.documentation,
       })),
+      uniqueKeys: [...model.uniqueFields, ...(model.primaryKey ? [model.primaryKey.fields] : [])],
     })),
     enums: datamodel.enums.map((item) => ({
       name: item.name,

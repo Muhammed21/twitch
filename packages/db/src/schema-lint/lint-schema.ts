@@ -9,6 +9,7 @@ export type SchemaModel = {
   readonly name: string;
   readonly schema: string;
   readonly fields: readonly SchemaField[];
+  readonly uniqueKeys: readonly (readonly string[])[];
 };
 
 export type SchemaEnum = {
@@ -26,7 +27,8 @@ export type Violation = {
     | "cross-schema-relation"
     | "cross-schema-enum"
     | "context-prefix"
-    | "personal-annotation";
+    | "personal-annotation"
+    | "technical-shape";
   readonly message: string;
 };
 
@@ -136,6 +138,59 @@ const fieldViolations = (
   return [];
 };
 
+const OUTBOX_SHAPE: readonly (readonly [string, string])[] = [
+  ["id", "String"],
+  ["name", "String"],
+  ["version", "Int"],
+  ["payload", "Json"],
+  ["occurredAt", "DateTime"],
+  ["publishedAt", "DateTime"],
+  ["attempts", "Int"],
+  ["nextAttemptAt", "DateTime"],
+  ["lastError", "String"],
+];
+
+const PROCESSED_EVENT_SHAPE: readonly (readonly [string, string])[] = [
+  ["eventId", "String"],
+  ["handlerName", "String"],
+  ["processedAt", "DateTime"],
+];
+
+const PROCESSED_EVENT_KEY = "eventId,handlerName";
+
+const shapeViolation = (model: SchemaModel, detail: string): Violation => ({
+  rule: "technical-shape",
+  message: `${model.schema}.${model.name} : ${detail}`,
+});
+
+const missingFields = (
+  model: SchemaModel,
+  shape: readonly (readonly [string, string])[],
+): readonly Violation[] =>
+  shape
+    .filter(
+      ([name, type]) => !model.fields.some((field) => field.name === name && field.type === type),
+    )
+    .map(([name, type]) => shapeViolation(model, `champ attendu ${name} ${type}`));
+
+const hasProcessedEventKey = (model: SchemaModel): boolean =>
+  model.uniqueKeys.some((key) => key.toSorted().join(",") === PROCESSED_EVENT_KEY);
+
+const shapeViolations = (model: SchemaModel): readonly Violation[] => {
+  if (model.name.endsWith("Outbox")) {
+    return missingFields(model, OUTBOX_SHAPE);
+  }
+  if (!model.name.endsWith("ProcessedEvent")) {
+    return [];
+  }
+  return [
+    ...missingFields(model, PROCESSED_EVENT_SHAPE),
+    ...(hasProcessedEventKey(model)
+      ? []
+      : [shapeViolation(model, "unicité attendue sur (eventId, handlerName)")]),
+  ];
+};
+
 export const lintSchema = (schema: PrismaSchema): readonly Violation[] => {
   const schemaOfType = new Map(
     [...schema.models, ...schema.enums].map((item) => [item.name, item.schema]),
@@ -143,6 +198,7 @@ export const lintSchema = (schema: PrismaSchema): readonly Violation[] => {
   return [
     ...schema.models.flatMap((model) => [
       ...prefixViolation(model),
+      ...shapeViolations(model),
       ...model.fields.flatMap((field) => fieldViolations(model, field, schemaOfType)),
     ]),
     ...schema.enums.flatMap(prefixViolation),
