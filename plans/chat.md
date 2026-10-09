@@ -22,13 +22,13 @@ apps/chat/src/
 
 ## Point de départ et dépendances
 
-| Il faut d'abord                                                           | Plan                                          |
-| ------------------------------------------------------------------------- | --------------------------------------------- |
-| `packages/contracts` et ses conventions                                   | [API](api.md), PR 2                           |
-| `packages/auth-verifier` (JWT via JWKS, liste de révocation)              | [API](api.md), PR 7                           |
-| `packages/authorization` (rôles par chaîne)                               | [API](api.md), PR 8                           |
-| Schéma `chat` et client du contexte ; outbox et idempotence               | [Socle de la base](socle-db.md), PR 1, 2 et 4 |
-| Events `channel.created` et `moderation.user.timed_out` sur Redis Streams | [API](api.md), PR 9 et 13                     |
+| Il faut d'abord                                                           | Plan                                      |
+| ------------------------------------------------------------------------- | ----------------------------------------- |
+| `packages/contracts` et ses conventions                                   | [API](api.md), PR 2                       |
+| `packages/auth-verifier` (JWT via JWKS, liste de révocation)              | [API](api.md), PR 7                       |
+| `packages/authorization` (rôles par chaîne)                               | [API](api.md), PR 8                       |
+| Schéma `chat` et client du contexte ; outbox et idempotence               | [`packages/db`](../packages/db/README.md) |
+| Events `channel.created` et `moderation.user.timed_out` sur Redis Streams | [API](api.md), PR 9 et 13                 |
 
 Les PR 1 et 2 ci-dessous n'ont besoin que de `packages/contracts` : elles peuvent avancer pendant le sprint `identity` de l'API. La PR 3 attend la PR 7 de l'API (`AccessTokenVerifier`).
 

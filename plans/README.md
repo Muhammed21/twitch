@@ -6,7 +6,6 @@ Un plan découpe une décision des ADR en PR livrables une par une, chacune en T
 
 | Plan                              | Composant                             | Tranche |
 | --------------------------------- | ------------------------------------- | ------- |
-| [Socle de la base](socle-db.md)   | `packages/db`, schémas, outbox        | T1      |
 | [API](api.md)                     | `apps/api`, architecture et contextes | T1      |
 | [Service vidéo](service-video.md) | `apps/video`                          | T1      |
 | [Chat](chat.md)                   | `apps/chat`                           | T1      |
@@ -18,17 +17,16 @@ Un plan découpe une décision des ADR en PR livrables une par une, chacune en T
 Objectif de la tranche 1 (ADR 0003) : un streamer lance un live depuis OBS, un viewer le regarde dans l'app iOS et chatte. Les flèches sont des dépendances entre PR ; tout ce qui n'est pas relié avance en parallèle.
 
 ```
-socle-db 1-2 ──▶ api 1 ──▶ api 2-3 ──▶ api 4 ──▶ api 5-7 (identity) ──▶ api 8 (authz)
-                   │          │                        │                    │
-                   │          ├──▶ chat 1 ──▶ chat 2-3 ◀┘                    ▼
-                   │          └──▶ ios 3                              api 9-13 (contextes)
-socle-db 3-4 ──────┴─────────────────────────────────────────────────▶ api 9, chat 4-6
-video 1-3 ──▶ video 4-5 (après socle-db 1-4) ──▶ api 11 (adapter)
+api 1 ──▶ api 2-3 ──▶ api 4 ──▶ api 5-7 (identity) ──▶ api 8 (authz)
+             │                         │                   │
+             ├──▶ chat 1 ──▶ chat 2-3 ◀┘                   ▼
+             └──▶ ios 3                                api 9-13 (contextes)
+video 1-3 ──▶ video 4-5 ──▶ api 11 (adapter)
 video 6-12 (ingest, ffmpeg, HLS, LL-HLS) ─────▶ ios 6 (player)
 ios 1-2 dès maintenant ──▶ ios 4 (après api 7) ──▶ ios 5-10 ──▶ ios 11 (Maestro)
 ```
 
-Points de départ sans dépendance : socle-db PR 1, video PR 1 à 3, ios PR 1 et 2.
+Points de départ sans dépendance : api PR 1, video PR 1 à 5, ios PR 1 et 2. La persistance (clients par contexte, schémas et droits, lint de schéma, outbox, job de migration) est fournie par [`packages/db`](../packages/db/README.md).
 
 ## Jalons de bout en bout
 

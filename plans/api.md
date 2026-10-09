@@ -2,7 +2,7 @@
 
 L'architecture ci-dessous n'est pas nouvelle : elle rassemble ce que les ADR décident, pour qu'on la lise d'un seul tenant. En cas d'écart, l'ADR fait foi. Une fois le socle livré (PR 1 à 4), cette section devient une page de référence dans `docs/`, qui décrit le code existant ; le plan, lui, est supprimé une fois livré.
 
-Plans liés : [socle de la base](socle-db.md), [service vidéo](service-video.md).
+Plans liés : [service vidéo](service-video.md). Persistance : [`packages/db`](../packages/db/README.md).
 
 ## Architecture cible
 
@@ -80,8 +80,8 @@ Zod dans `packages/contracts` → `nestjs-zod` → `openapi.json` en OpenAPI 3.1
 
 ## Point de départ
 
-- `apps/` est vide ; pas encore de `packages/contracts` ni de `packages/db`.
-- Dépendances externes à ce plan : PR 1 à 2 du [socle de la base](socle-db.md) avant la PR 1 ci-dessous ; PR 4 du socle (outbox) avant la PR 9 ; PR 3 du [service vidéo](service-video.md) avant la PR 11.
+- `apps/` est vide ; `packages/contracts` arrive avec la PR 2. [`packages/db`](../packages/db/README.md) fournit les clients par contexte, l'outbox et `assertSchemaVersion`.
+- Dépendance externe à ce plan : PR 3 du [service vidéo](service-video.md) avant la PR 11.
 - Chaque PR suit le TDD (RED, GREEN, mutation, REFACTOR), reste sous le plafond de revue, et liste ses tests à écrire en premier.
 
 ## Jalons
@@ -97,7 +97,7 @@ Zod dans `packages/contracts` → `nestjs-zod` → `openapi.json` en OpenAPI 3.1
 
 ### Socle
 
-**PR 1 — Squelette `apps/api`.** NestJS 11 épinglé, `main.ts` qui parse l'environnement par Zod avant de créer l'application, préfixe `/v1`, filtre d'erreurs RFC 9457, `correlationId` par requête, logs JSON qui ne contiennent jamais `Authorization` ni un cookie. Sondes `/health/live` et `/health/ready` ; la seconde appelle `assertSchemaVersion` du socle de la base. `packages/result`. Scope de commit `api` déjà présent.
+**PR 1 — Squelette `apps/api`.** NestJS 11 épinglé, `main.ts` qui parse l'environnement par Zod avant de créer l'application, préfixe `/v1`, filtre d'erreurs RFC 9457, `correlationId` par requête, logs JSON qui ne contiennent jamais `Authorization` ni un cookie. Sondes `/health/live` et `/health/ready` ; la seconde appelle `assertSchemaVersion` de `packages/db`. `packages/result`. Scope de commit `api` déjà présent.
 _Tests d'abord_ : variable d'environnement invalide → arrêt au démarrage en nommant la variable ; erreur de domaine → corps `application/problem+json` ; en-tête `Authorization` absent des logs ; `/health/ready` en échec si la base est en retard.
 
 **PR 2 — `packages/contracts` et conventions.** `openEnum`, `Uuid`, helper de variante de repli, schéma d'erreur RFC 9457. Règles de lint propres au package : `z.object` interdit dans `responses/`, `z.enum` nu interdit en réponse, `.nullable()` à la racine d'un DTO et `.nullish()` interdits (ADR 0024).

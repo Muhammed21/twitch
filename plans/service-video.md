@@ -5,7 +5,7 @@ Décision de référence : [ADR 0031](../docs/adr/0031-service-video-maison-a-la
 ## Point de départ
 
 - Aucun code serveur : `apps/` est vide. Compose fournit PostgreSQL 17, Redis 8, la passerelle S3 SeaweedFS et Mailpit (ADR 0028).
-- La persistance s'appuie sur le [socle de la base](socle-db.md) : fabrique de clients, schéma `video` et rôle `app_video`, lint de schéma, outbox. Les PR 1 à 3 de ce plan n'en dépendent pas ; la PR 4 attend les PR 1 à 3 du socle, et la PR 5 sa PR 4.
+- La persistance s'appuie sur [`packages/db`](../packages/db/README.md) : fabrique de clients, schéma `video` et rôle `app_video`, lint de schéma, outbox.
 - Conséquence : `apps/video` se construit **seul**, contre un client de test qui joue le rôle de l'API. L'adapter `LiveVideoProviderPort` de `stream` (ADR 0001) arrive avec le module `stream` de `apps/api`, dans son propre plan.
 
 ## Principes communs à toutes les PR
@@ -47,16 +47,14 @@ Décision de référence : [ADR 0031](../docs/adr/0031-service-video-maison-a-la
 
 ### PR 4 — Persistance dans le schéma `video`
 
-Dépend des PR 1 à 3 du [socle de la base](socle-db.md).
-
-- Modèles du schéma `video` : `VideoChannel`, `StreamKey` (chiffrée en AES-256-GCM, clé de chiffrement par variable d'environnement), `IngestSession`. Noms et enums préfixés (`VideoSessionState`), conformes au lint du socle.
+- Modèles du schéma `video` : `VideoChannel`, `VideoStreamKey` (chiffrée en AES-256-GCM, clé de chiffrement par variable d'environnement), `VideoIngestSession`. Noms et enums préfixés (`VideoSessionState`), conformes au lint du socle.
 - Client obtenu par `createContextClient({ context: "video" })`, injecté dans l'adapter.
 - Adapter Prisma du dépôt de la PR 3, qui passe les mêmes tests de contrat que l'adapter en mémoire.
 - **Tests d'abord** (intégration, contre Compose) : une clé est illisible en base sans la clé de chiffrement ; mêmes tests de contrat de dépôt pour les deux adapters ; le lint de schéma passe.
 
 ### PR 5 — Événements sortants : outbox et webhooks signés
 
-- Table `VideoOutbox` et écriture par `appendToOutbox` dans la transaction qui change l'état d'une session (ADR 0002, règle 2), selon la PR 4 du [socle de la base](socle-db.md), qui fournit aussi la boucle du relais.
+- Table `VideoOutbox` et écriture par `appendToOutbox` dans la transaction qui change l'état d'une session (ADR 0002, règle 2), avec [`packages/db`](../packages/db/README.md). La migration qui crée `VideoOutbox` accorde `SELECT, UPDATE` à `app_outbox_relay`. La boucle du relais (intervalle, arrêt sur `SIGTERM`) appelle `relayOutboxBatch`.
 - Adapter de publication du relais : envoi HTTP signé HMAC-SHA256 sur le corps brut, horodaté, fenêtre de 5 minutes (comme l'ADR 0007), identifiant d'événement pour l'idempotence ; backoff exponentiel avec gigue jusqu'à un `2xx`.
 - **Tests d'abord** : signature vérifiable par un récepteur de test, refusée si un octet change ; événement réémis après un `500` puis marqué publié après un `200` ; un redémarrage du relais ne perd rien.
 
