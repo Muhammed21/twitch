@@ -4,13 +4,13 @@ Tokens DTCG compilés en package SPM Swift (ADR 0019). `tokens/` fait foi et s'�
 
 ## Commandes
 
-| Commande | Rôle |
-|---|---|
-| `pnpm build` | Régénère `platforms/swift/Sources/DesignTokens/` |
-| `pnpm tokens:check` | Régénère, puis échoue si le résultat diffère de la version indexée (CI) |
-| `pnpm check-contrast` | Vérifie chaque paire de `tokens/contrast-pairs.json` dans les deux thèmes |
+| Commande                           | Rôle                                                                          |
+| ---------------------------------- | ----------------------------------------------------------------------------- |
+| `pnpm build`                       | Régénère `platforms/swift/Sources/DesignTokens/`                              |
+| `pnpm tokens:check`                | Régénère, puis échoue si le résultat diffère de la version indexée (CI)       |
+| `pnpm check-contrast`              | Vérifie chaque paire de `tokens/contrast-pairs.json` dans les deux thèmes     |
 | `pnpm test` / `pnpm test:coverage` | Tests des formatters, du contraste et du pipeline ; couverture exigée à 100 % |
-| `pnpm mutation` | Mutation testing (Stryker) |
+| `pnpm mutation`                    | Mutation testing (Stryker)                                                    |
 
 ## Règles d'édition (ADR 0019 §10)
 

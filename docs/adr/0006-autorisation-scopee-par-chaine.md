@@ -64,12 +64,12 @@ Une seule table, dans un schéma **`authz`** dédié (ADR 0008).
 
 **L'écriture reste la propriété des contextes métier, seule la lecture est partagée :**
 
-| Attribution | Contexte propriétaire de l'écriture | Règles métier associées |
-|---|---|---|
-| `owner`, `editor`, `vip` | `channel` | qui peut nommer qui, plafonds par chaîne |
-| `moderator` | `moderation` | publie `moderation.moderator.appointed` (ADR 0003) |
-| `banned`, timeout | `moderation` | durée, motif, appel, escalade |
-| `admin`, `staff`, `support` | attribution manuelle, hors application | 2FA obligatoire, journalisation |
+| Attribution                 | Contexte propriétaire de l'écriture    | Règles métier associées                            |
+| --------------------------- | -------------------------------------- | -------------------------------------------------- |
+| `owner`, `editor`, `vip`    | `channel`                              | qui peut nommer qui, plafonds par chaîne           |
+| `moderator`                 | `moderation`                           | publie `moderation.moderator.appointed` (ADR 0003) |
+| `banned`, timeout           | `moderation`                           | durée, motif, appel, escalade                      |
+| `admin`, `staff`, `support` | attribution manuelle, hors application | 2FA obligatoire, journalisation                    |
 
 Aucun contexte n'écrit dans `authz` en direct : il le fait via son propre use-case, qui porte les invariants. `authz` n'expose qu'un moteur d'évaluation et un accès en lecture. C'est ce qui réconcilie la table unique (nécessaire : les attributions traversent les contextes et une décision doit être prise en une lecture) avec la règle de l'ADR 0003 (les invariants d'une sanction appartiennent à `moderation`, ceux d'une nomination à `channel`).
 
@@ -107,10 +107,18 @@ Points tranchés :
 
 ```ts
 // application/moderation/ban-user.use-case.ts
-const banUser = async (cmd: BanUserCommand, ctx: AuthzContext): Promise<Result<Ban, DomainError>> => {
+const banUser = async (
+  cmd: BanUserCommand,
+  ctx: AuthzContext,
+): Promise<Result<Ban, DomainError>> => {
   const ability = await ctx.abilityFor(cmd.actorId);
-  if (ability.cannot('ban', subject('ChannelMember', { channelId: cmd.channelId, targetId: cmd.targetId }))) {
-    return err({ kind: 'Forbidden', action: 'ban', scope: cmd.channelId });
+  if (
+    ability.cannot(
+      "ban",
+      subject("ChannelMember", { channelId: cmd.channelId, targetId: cmd.targetId }),
+    )
+  ) {
+    return err({ kind: "Forbidden", action: "ban", scope: cmd.channelId });
   }
   // ...
 };
@@ -134,12 +142,12 @@ Charger les attributions à chaque message de chat est irréaliste. On cache **l
 
 Deux canaux distincts, et la distinction est la décision :
 
-| Canal | Transport | Garantie | Rôle |
-|---|---|---|---|
-| `authz.invalidated` | Redis **Pub/Sub** | best-effort | rafraîchir un cache (nomination, VIP, retrait de rôle) |
-| `moderation.user.banned` / `moderation.user.timed_out` | Redis **Streams** | at-least-once, durable | **appliquer une sanction** |
+| Canal                                                  | Transport         | Garantie               | Rôle                                                   |
+| ------------------------------------------------------ | ----------------- | ---------------------- | ------------------------------------------------------ |
+| `authz.invalidated`                                    | Redis **Pub/Sub** | best-effort            | rafraîchir un cache (nomination, VIP, retrait de rôle) |
+| `moderation.user.banned` / `moderation.user.timed_out` | Redis **Streams** | at-least-once, durable | **appliquer une sanction**                             |
 
-**Une sanction ne transite jamais par Pub/Sub.** Les bans et timeouts sont écrits dans l'outbox transactionnelle (ADR 0002) par le use-case de `moderation`, puis publiés sur Redis Streams et consommés par le process chat via un *consumer group* — ce qui les rejoue après un redémarrage ou une déconnexion, contrairement à Pub/Sub. C'est le mécanisme décrit par l'ADR 0004, §4.2, et il fait autorité.
+**Une sanction ne transite jamais par Pub/Sub.** Les bans et timeouts sont écrits dans l'outbox transactionnelle (ADR 0002) par le use-case de `moderation`, puis publiés sur Redis Streams et consommés par le process chat via un _consumer group_ — ce qui les rejoue après un redémarrage ou une déconnexion, contrairement à Pub/Sub. C'est le mécanisme décrit par l'ADR 0004, §4.2, et il fait autorité.
 
 À réception d'un événement de sanction, le chat vide l'entrée de cache locale et **ferme immédiatement la participation** de l'utilisateur sur la chaîne concernée : sortie de la room, suppression optionnelle de ses messages récents, notification aux modérateurs. La consommation est idempotente (table `processed_events`, ADR 0002) : rejouer un ban déjà appliqué est sans effet.
 
@@ -176,7 +184,7 @@ L'écriture de l'audit se fait **dans la même transaction** que l'effet métier
 
 ### Risques et mitigations
 
-- **Risque principal : le cache mémoire du process chat.** C'est l'endroit où un ban peut silencieusement ne pas s'appliquer (worker redémarré au mauvais moment, room non indexée, consommateur Streams bloqué). Le passage des sanctions sur Redis Streams (section 6) retire la cause la plus probable — la perte de message — mais ne supprime pas le risque : un consumer group en retard applique le ban tard. Mitigations : surveillance du *lag* du consumer group avec alerte, revalidation opportuniste des attributions à chaque revalidation de session WebSocket (5 min, ADR 0005), test d'intégration bout-en-bout « ban → socket fermée » traité comme un test critique et non optionnel, métrique PostHog sur le délai ban → déconnexion avec alerte au-delà de 5 s.
+- **Risque principal : le cache mémoire du process chat.** C'est l'endroit où un ban peut silencieusement ne pas s'appliquer (worker redémarré au mauvais moment, room non indexée, consommateur Streams bloqué). Le passage des sanctions sur Redis Streams (section 6) retire la cause la plus probable — la perte de message — mais ne supprime pas le risque : un consumer group en retard applique le ban tard. Mitigations : surveillance du _lag_ du consumer group avec alerte, revalidation opportuniste des attributions à chaque revalidation de session WebSocket (5 min, ADR 0005), test d'intégration bout-en-bout « ban → socket fermée » traité comme un test critique et non optionnel, métrique PostHog sur le délai ban → déconnexion avec alerte au-delà de 5 s.
 - **Redis Pub/Sub est fire-and-forget**, et le reste pour `authz.invalidated`. Un process chat déconnecté perd les invalidations émises pendant sa coupure et sert alors des attributions périmées jusqu'à 300 s. Mitigation : au démarrage et après toute reconnexion Redis, le process chat **vide entièrement** son cache local. C'est suffisant parce que la conséquence se limite à un rôle affiché en retard — les sanctions, elles, ne dépendent pas de ce canal (section 6).
 - **Dérive des permissions** (des `can` dispersés, des règles divergentes selon le use-case). Mitigation : une définition d'ability unique dans un `packages/authorization` partagé entre l'API et le chat, et des tests de matrice — pour chaque couple (rôle, action), un test qui affirme autorisé/refusé.
 - **Escalade de privilèges par la portée** : un `editor@channel:123` qui s'attribuerait un rôle sur `channel:456`. Mitigation : toute écriture de `RoleAssignment` passe par un use-case qui vérifie que l'acteur a le droit **sur la portée cible**, et un test dédié couvre explicitement cette tentative.

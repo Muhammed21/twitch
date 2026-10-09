@@ -21,7 +21,7 @@ Problématique : comment tenir les garanties de l'ADR 0022 — rejet avant toute
 - **Sémantique de refus exploitable** : sans elle, `ChatSession` retente inutilement après chaque ban, ou ne se remet jamais d'un token expiré.
 - **Swift 6 strict réel** (ADR 0010), pas obtenu en compilant une dépendance en Swift 5.
 - **Maintenabilité** : ne pas dépendre de deux bibliothèques arrêtées dans le chemin le plus sollicité de l'app.
-- **Taille du protocole réellement utilisé** : l'ADR 0022 exclut long-polling, binaire et *connection state recovery*. Le sous-ensemble restant est petit.
+- **Taille du protocole réellement utilisé** : l'ADR 0022 exclut long-polling, binaire et _connection state recovery_. Le sous-ensemble restant est petit.
 - **Ne pas remettre en cause socket.io côté serveur** : salons, adapter Redis et heartbeat y apportent ce pour quoi il a été choisi.
 
 ## Options envisagées
@@ -62,7 +62,7 @@ Nouveau package SPM local **`Core/ChatTransport`** (amende la liste des modules 
 - Implémente un protocole de `Domain` (par exemple `ChatConnection`) ; aucun type de transport ne sort du module (ADR 0010, règle 2).
 - Ne dépend que de `Domain` (règle 5 de l'ADR 0010 respectée). Le token lui est fourni par un protocole de `Domain`, implémenté par `Core/Networking` et injecté par la racine de composition. `Core/ChatTransport` n'importe pas `Core/Networking`.
 - Un `actor` possède la `URLSessionWebSocketTask` ; l'isolation est structurelle, comme pour `Core/Networking` (ADR 0010).
-- **Sous-ensemble du protocole implémenté, et rien d'autre** : Engine.IO v4 en WebSocket (ouverture `0`, ping `2` / pong `3`, fermeture) et socket.io v5 sur le namespace par défaut (connexion `40`, déconnexion `41`, événement `42`, ack `43`). Pas de long-polling, pas de binaire, pas de namespaces multiples, pas de *connection state recovery* — tous exclus par l'ADR 0022.
+- **Sous-ensemble du protocole implémenté, et rien d'autre** : Engine.IO v4 en WebSocket (ouverture `0`, ping `2` / pong `3`, fermeture) et socket.io v5 sur le namespace par défaut (connexion `40`, déconnexion `41`, événement `42`, ack `43`). Pas de long-polling, pas de binaire, pas de namespaces multiples, pas de _connection state recovery_ — tous exclus par l'ADR 0022.
 - **Le parseur de trames est une fonction pure** `String → ServerFrame`, testée sans réseau. Les charges utiles sont validées contre les types `ServerMessage` générés depuis `packages/contracts` (ADR 0009) ; une trame invalide est ignorée et comptée, jamais propagée.
 - **Chien de garde de ping** : si aucun ping serveur n'est reçu dans `pingInterval + pingTimeout` (valeurs lues dans le paquet d'ouverture, pas codées en dur), la connexion est déclarée morte et fermée.
 - **Acks** : délai d'expiration obligatoire. Tous les acks en attente échouent à la fermeture de la connexion, aucune continuation ne reste suspendue.
@@ -72,14 +72,14 @@ Nouveau package SPM local **`Core/ChatTransport`** (amende la liste des modules 
 
 `ChatSession` (ADR 0011) reste seul responsable de la reconnexion (ADR 0022, §5). Ce paragraphe précise le §5 de l'ADR 0022, qui parlait de la « reconnexion de la bibliothèque » : il n'y a plus de bibliothèque.
 
-| Signal | Action |
-|---|---|
-| Handshake `401` | Rafraîchir le token, puis reconnecter immédiatement ; un second `401` consécutif avec un token neuf passe en backoff |
-| Handshake `403` | Arrêt définitif, état « accès refusé » affiché |
-| `session:revoked { action: "refresh_and_reconnect" }` | Comme `401` |
-| `session:revoked { action: "stop" }` | Comme `403` |
-| Erreur réseau, fermeture sans `session:revoked`, chien de garde de ping | Backoff exponentiel avec gigue, token rafraîchi s'il expire avant la tentative |
-| Fermeture `1009` (message trop gros) | Pas de reconnexion automatique : c'est un bug client, journalisé |
+| Signal                                                                  | Action                                                                                                               |
+| ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Handshake `401`                                                         | Rafraîchir le token, puis reconnecter immédiatement ; un second `401` consécutif avec un token neuf passe en backoff |
+| Handshake `403`                                                         | Arrêt définitif, état « accès refusé » affiché                                                                       |
+| `session:revoked { action: "refresh_and_reconnect" }`                   | Comme `401`                                                                                                          |
+| `session:revoked { action: "stop" }`                                    | Comme `403`                                                                                                          |
+| Erreur réseau, fermeture sans `session:revoked`, chien de garde de ping | Backoff exponentiel avec gigue, token rafraîchi s'il expire avant la tentative                                       |
+| Fermeture `1009` (message trop gros)                                    | Pas de reconnexion automatique : c'est un bug client, journalisé                                                     |
 
 ## Conséquences
 

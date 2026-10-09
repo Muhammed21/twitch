@@ -57,7 +57,7 @@ Concrètement, ces collections Payload sont déclarées sans stockage propre —
 
 ### Cache et invalidation du contenu éditorial
 
-- L'API cache les réponses éditoriales dans Redis, clé `cms:{collection}:{slug}:{locale}`, **TTL 300 s**, avec un pattern *stale-while-revalidate* : en cas d'indisponibilité de Payload, la dernière valeur connue est servie jusqu'à 24 h plutôt que de renvoyer une home vide.
+- L'API cache les réponses éditoriales dans Redis, clé `cms:{collection}:{slug}:{locale}`, **TTL 300 s**, avec un pattern _stale-while-revalidate_ : en cas d'indisponibilité de Payload, la dernière valeur connue est servie jusqu'à 24 h plutôt que de renvoyer une home vide.
 - Invalidation **par webhook** : les hooks `afterChange`/`afterDelete` de Payload appellent un endpoint interne de l'API qui purge les clés concernées. Webhook signé (HMAC partagé, horodaté, fenêtre de 5 minutes) pour éviter qu'un tiers ne vide le cache à volonté.
 - Le TTL reste le filet de sécurité si un webhook se perd : pire cas 5 minutes, ce qui est parfaitement acceptable pour une bannière (contrairement à un ban, ADR 0006).
 - **Le fallback est obligatoire** : si Payload est indisponible et le cache froid, l'API sert une home par défaut compilée dans le code (catégories les plus regardées), jamais une erreur. Le CMS ne doit pas être un point de défaillance unique du produit.
@@ -97,8 +97,8 @@ Concrètement, ces collections Payload sont déclarées sans stockage propre —
 ```ts
 // apps/payload/src/endpoints/ban-user.ts — coquille, aucune règle métier ici
 export const banUser: Endpoint = {
-  path: '/actions/ban-user',
-  method: 'post',
+  path: "/actions/ban-user",
+  method: "post",
   handler: async (req) => {
     const result = await apiClient.moderation.banUser({
       channelId: req.data.channelId,

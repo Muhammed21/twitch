@@ -79,7 +79,7 @@ Ces trois points sont des erreurs déjà identifiées, et chacune a une contrepa
 ```ts
 const page = await prisma.stream.findMany({
   where: { isLive: true, categoryId },
-  orderBy: [{ viewerCount: 'desc' }, { id: 'asc' }], // tri total, sinon curseur instable
+  orderBy: [{ viewerCount: "desc" }, { id: "asc" }], // tri total, sinon curseur instable
   take: 25,
   ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
 });

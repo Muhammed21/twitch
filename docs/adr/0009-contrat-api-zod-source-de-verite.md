@@ -11,6 +11,7 @@ Le projet expose une API NestJS consommée par trois clients hétérogènes : un
 Le mode de panne classique en solo est la dérive silencieuse : le serveur renomme un champ, l'app iOS continue de compiler, le bug n'apparaît qu'au runtime chez l'utilisateur. Écrire à la main les DTO NestJS, la spec OpenAPI et les modèles Swift, c'est maintenir trois vérités qui divergent dès la deuxième semaine.
 
 Contraintes :
+
 - Développeur solo : aucune tolérance pour un contrat maintenu manuellement en plusieurs endroits.
 - TypeScript strict + TDD : la validation doit produire des types, pas seulement lever des exceptions.
 - Architecture hexagonale sur 8 bounded contexts : la validation ne doit pas contaminer le domaine.
@@ -58,6 +59,7 @@ Le contrat change à un seul endroit : le schéma Zod. Tout le reste est régén
 Un `z.infer<typeof StreamDtoSchema>` est une forme de données de transport. Un `Stream` du bounded context `stream` est un type qui porte des invariants métier : on ne peut pas passer `live` sans `startedAt`, un `ChannelSlug` respecte un format et une liste de réservés, un `ViewerCount` est un entier positif. `z.string()` ne garantit rien de tout ça.
 
 Si le domaine consomme directement des `z.infer` :
+
 - le domaine dépend de la couche transport, ce qui inverse la dépendance hexagonale ;
 - les invariants deviennent des validations de forme, et les règles métier se dispersent dans les controllers ;
 - versionner l'API (`/v1` → `/v2`) force à toucher le domaine.
@@ -68,7 +70,7 @@ Le mapping est explicite et vit dans la couche `presentation` de chaque contexte
 // presentation/http/channel/create-channel.mapper.ts
 const toCommand = (dto: CreateChannelDto): Result<CreateChannelCommand, ValidationError> =>
   Result.all({
-    slug: ChannelSlug.create(dto.slug),        // invariant métier
+    slug: ChannelSlug.create(dto.slug), // invariant métier
     displayName: DisplayName.create(dto.displayName),
     ownerId: UserId.create(dto.ownerId),
   });
@@ -93,6 +95,7 @@ Le trou classique : on branche `ZodValidationPipe` global sur le REST, on se dé
 Zod v4 pour les gains de perf du nouveau moteur. Mais sur le chat à haut débit, la validation par message peut devenir mesurable.
 
 Règle : **mesurer avant d'optimiser.** On instrumente le parse WebSocket (p50/p99, messages/s par process) dès le premier jour. On n'optimise que si les chiffres le justifient, et dans cet ordre :
+
 1. Schémas plats et minimaux sur le hot path (pas de `.refine()`, pas de transform, pas d'union profonde).
 2. Schéma précompilé / validateur spécialisé pour le seul message `chat.send`.
 3. En dernier recours, validation manuelle écrite à la main pour ce message unique, avec un test de propriété qui vérifie qu'elle accepte exactement le même langage que le schéma Zod de référence.
@@ -105,14 +108,14 @@ Toutes les routes sont préfixées `/v1` dès maintenant. Raison non négociable
 
 Politique de compatibilité :
 
-| Changement | Autorisé en v1 ? |
-|---|---|
-| Ajouter un champ optionnel en réponse | Oui |
-| Ajouter un champ optionnel en requête | Oui |
-| Ajouter une valeur à un enum | **Non** sans décodage tolérant côté client |
-| Renommer / supprimer un champ | Non |
-| Restreindre une validation existante | Non |
-| Élargir une validation existante | Oui |
+| Changement                            | Autorisé en v1 ?                           |
+| ------------------------------------- | ------------------------------------------ |
+| Ajouter un champ optionnel en réponse | Oui                                        |
+| Ajouter un champ optionnel en requête | Oui                                        |
+| Ajouter une valeur à un enum          | **Non** sans décodage tolérant côté client |
+| Renommer / supprimer un champ         | Non                                        |
+| Restreindre une validation existante  | Non                                        |
+| Élargir une validation existante      | Oui                                        |
 
 Corollaire côté iOS : **tout enum transporté se décode avec un cas `unknown(String)` de repli.** Un enum Swift strict transforme l'ajout d'une valeur serveur en crash de décodage sur les anciens binaires.
 
@@ -125,6 +128,7 @@ Kill switch : un endpoint de bootstrap renvoie une version minimale supportée, 
 L'écran d'accueil a besoin des chaînes suivies, des lives en cours, des catégories recommandées, du profil, des flags et de l'état d'abonnement. En REST pur c'est 8 allers-retours ; sur un réseau mobile à 150 ms de RTT, c'est le temps de démarrage perçu de l'app qui se joue là. Un client mobile ne doit pas orchestrer 8 appels pour peindre un écran.
 
 Deux endpoints d'agrégation dédiés :
+
 - `GET /v1/mobile/bootstrap` — session, profil, flags évalués côté serveur, config, version minimale supportée. Un seul appel au lancement.
 - `GET /v1/mobile/home` — la composition complète du flux d'accueil.
 

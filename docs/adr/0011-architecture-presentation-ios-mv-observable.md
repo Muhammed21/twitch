@@ -48,6 +48,7 @@ L'argumentaire suit, parce que cette décision va contre la convention par défa
 Le débat est régulièrement pollué par cette confusion. Ce n'est pas la position retenue ici.
 
 MV signifie **View + Model**, où :
+
 - le `Model` est un objet `@Observable`, injecté, propriétaire d'un état ;
 - la **logique métier vit dans la couche domaine** — value objects, use-cases, protocoles de repositories, c'est-à-dire le module `Domain` de l'ADR 0010 ;
 - la vue lit le modèle et déclenche des intentions.
@@ -59,13 +60,14 @@ Le désaccord avec MVVM porte sur **un point unique et précis** : faut-il un ob
 MVVM vient de WPF, puis a été porté sur UIKit. Dans ces frameworks, la vue est **un objet mutable à longue durée de vie, incapable d'observer un modèle**. Un `UIViewController` existe pendant des minutes, détient des `UILabel` qu'il faut mettre à jour à la main, et n'a aucun mécanisme natif pour réagir à un changement de modèle.
 
 Le ViewModel existait pour trois raisons, toutes techniques :
+
 1. exposer des propriétés observables (KVO, bindings, `@Published`) ;
 2. détenir l'état de vue, que le contrôleur ne savait pas gérer proprement ;
 3. formater modèle → affichage, pour éviter de le faire dans le contrôleur.
 
 SwiftUI fournit les trois nativement : `@Observable` pour l'observation, `@State` / `@Binding` pour l'état de vue, et le corps de la vue lui-même pour le formatage.
 
-L'argument plus fondamental, et le plus souvent manqué : **la `struct View` de SwiftUI EST déjà un view model.** C'est un type valeur, recréé à chaque changement d'état, qui ne fait que *décrire* ce qu'il faut afficher. Ce n'est pas la vue au sens UIKit — la vue réelle est l'arbre de rendu que SwiftUI construit et maintient, auquel le code n'a pas accès.
+L'argument plus fondamental, et le plus souvent manqué : **la `struct View` de SwiftUI EST déjà un view model.** C'est un type valeur, recréé à chaque changement d'état, qui ne fait que _décrire_ ce qu'il faut afficher. Ce n'est pas la vue au sens UIKit — la vue réelle est l'arbre de rendu que SwiftUI construit et maintient, auquel le code n'a pas accès.
 
 Autrement dit, un `ChannelViewModel` placé derrière une `ChannelView`, c'est **un view model derrière un view model**. La couche que MVVM ajoute pour combler un manque du framework, SwiftUI l'a déjà fournie. On la paie deux fois.
 
@@ -103,7 +105,7 @@ En MV, le découpage ne suit pas l'écran, **il suit la fréquence de changement
 
 Chacun est injecté via `@Environment` et lu **uniquement par les feuilles concernées**. Un burst de messages n'invalide que la liste de chat. Le header ne sait même pas que le chat existe.
 
-**Note honnête, et elle compte** : rien dans MVVM n'interdit ce découpage. On peut parfaitement avoir un `ChatViewModel`, un `PlayerViewModel` et un `ChannelHeaderViewModel`. Mais dès qu'on fait ça, on n'a plus « un ViewModel par vue » : on a des modèles observables scopés par domaine, injectés et partagés. C'est-à-dire exactement MV, sous un autre nom. La question n'est donc pas « MVVM ou MV » dans l'absolu, mais : est-ce que la règle par défaut est *un objet par écran* ou *un objet par capacité* ? Le premier produit le problème d'invalidation ci-dessus ; le second l'évite par construction.
+**Note honnête, et elle compte** : rien dans MVVM n'interdit ce découpage. On peut parfaitement avoir un `ChatViewModel`, un `PlayerViewModel` et un `ChannelHeaderViewModel`. Mais dès qu'on fait ça, on n'a plus « un ViewModel par vue » : on a des modèles observables scopés par domaine, injectés et partagés. C'est-à-dire exactement MV, sous un autre nom. La question n'est donc pas « MVVM ou MV » dans l'absolu, mais : est-ce que la règle par défaut est _un objet par écran_ ou _un objet par capacité_ ? Le premier produit le problème d'invalidation ci-dessus ; le second l'évite par construction.
 
 ### 4. L'argument de testabilité ne tient pas dans cette architecture
 
@@ -125,6 +127,7 @@ func load() async {
 Tester ça, c'est vérifier qu'un `await` a assigné une variable. Le test est vrai par construction, il ne peut attraper qu'une faute de frappe, et il casse à chaque renommage. C'est du coverage, pas du filet de sécurité — et au regard du principe « tester le comportement, pas l'implémentation », c'est précisément le type de test à ne pas écrire.
 
 Le vrai filet, ici :
+
 - **tests de comportement sur le domaine** — nombreux, rapides, stables, sans UI ;
 - **quelques tests d'interaction UI sur les parcours critiques** — lancement, lecture d'un live, envoi d'un message, souscription. Ceux-là attrapent ce que les tests de VM n'attrapent jamais : le câblage réel entre écrans, l'injection, la navigation.
 
@@ -147,6 +150,7 @@ La position n'est pas dogmatique. Trois cas où un objet d'état dédié est la 
 - **Formulaires multi-étapes** — onboarding, configuration de monétisation : état intermédiaire réel, validation progressive, qui n'appartient ni au domaine ni à une vue isolée.
 
 **La différence avec MVVM n'est pas l'existence de ces objets, c'est leur portée et leur nombre** :
+
 - scopés à une **capacité** (chat, player), pas à un écran ;
 - durée de vie parfois **supérieure à celle de l'écran** (le player survit en PiP, la session de chat survit à une rotation) ;
 - ils **possèdent** leur état au lieu de le refléter — un `PlayerController` est la source de vérité de l'état de lecture, il ne reformate pas un modèle situé ailleurs.

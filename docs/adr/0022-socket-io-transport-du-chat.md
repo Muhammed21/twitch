@@ -47,7 +47,7 @@ Le process séparé `apps/chat`, les trois canaux temps réel, le compteur de vi
 - **Pas de NestJS** dans `apps/chat` (ADR 0004). socket.io est monté sur un serveur HTTP Node nu.
 - **Salons** : un salon socket.io par salon de chat (`room:<roomId>`), et un salon par utilisateur (`user:<userId>`) pour cibler toutes ses sockets lors d'un ban ou d'une révocation.
 - **Fan-out entre instances** : `@socket.io/redis-adapter`, qui repose sur Redis Pub/Sub. Même choix que l'ADR 0004 : le fan-out de chat est best-effort. Les sanctions continuent de passer par Redis Streams et l'outbox (ADR 0002, 0004) ; l'adapter ne transporte que la diffusion.
-- **Pas de *connection state recovery*** (la fonctionnalité de rejeu des messages manqués après reconnexion) : un message de chat manqué n'est pas rejoué (ADR 0004, §7).
+- **Pas de _connection state recovery_** (la fonctionnalité de rejeu des messages manqués après reconnexion) : un message de chat manqué n'est pas rejoué (ADR 0004, §7).
 
 ### 3. Authentification : rejet avant l'ouverture de la WebSocket
 

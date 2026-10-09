@@ -25,41 +25,41 @@ S'y ajoutent : les dates émises par `Date.toISOString()` (toujours en milliseco
 
 ## Montage
 
-| Élément | Version |
-|---|---|
-| `zod` | 4.6.5 |
-| `nestjs-zod` | 5.5.0 (release 2026-07-25) |
-| NestJS (`@nestjs/core`, `common`, `swagger`) | 11.2.6 / 11.4.7 ; contrôle en 12.1.0 / 12.0.2 |
-| `swift-openapi-generator` | 1.13.1 (release 2026-09-01) |
-| `swift-openapi-runtime` | 1.12.1 |
-| Toolchain | Swift 6.3.3, Xcode 26.6, `swiftLanguageMode(.v6)`, macOS 14 |
+| Élément                                      | Version                                                     |
+| -------------------------------------------- | ----------------------------------------------------------- |
+| `zod`                                        | 4.6.5                                                       |
+| `nestjs-zod`                                 | 5.5.0 (release 2026-07-25)                                  |
+| NestJS (`@nestjs/core`, `common`, `swagger`) | 11.2.6 / 11.4.7 ; contrôle en 12.1.0 / 12.0.2               |
+| `swift-openapi-generator`                    | 1.13.1 (release 2026-09-01)                                 |
+| `swift-openapi-runtime`                      | 1.12.1                                                      |
+| Toolchain                                    | Swift 6.3.3, Xcode 26.6, `swiftLanguageMode(.v6)`, macOS 14 |
 
 - Côté serveur : des schémas Zod réalistes (`ChannelSummary`, `ChannelPage` avec curseur, `EntitlementState` avec `PENDING_ATTRIBUTION`, `ServerMessage` du chat, `Problem` RFC 9457), des contrôleurs NestJS décorés par `@ZodResponse`, puis `SwaggerModule.createDocument` et `cleanupOpenApiDoc`, compilés avec `tsc`.
 - Côté iOS : le document généré est placé dans une cible SPM avec le plugin `OpenAPIGenerator` (`types` + `client`, `namingStrategy: idiomatic`, `accessModifier: public`). Le client est appelé à travers un faux `ClientTransport` qui renvoie des JSON d'exemple : on exerce donc le vrai chemin de décodage du client généré, dates comprises.
 
 ## Résultats de la première sonde (réglages par défaut)
 
-| Cas | Résultat | Remarque |
-|---|---|---|
-| Canal nominal | OK | |
-| Entier ±2⁵³ (`z.int()`) | OK | `Swift.Int` ; `9007199254740991` passe |
-| Date ISO 8601 **sans** millisecondes | OK | `Foundation.Date` |
-| **Date avec millisecondes** (`2026-09-24T10:00:00.123Z`) | **FAIL** | `Expected date string to be ISO8601-formatted` |
-| `title` nullable, valeur `null` | OK | `String?` |
-| `title` nullable **requis, mais absent** | OK, à tort | Décodé en `nil` : « nul » et « absent » ne se distinguent pas côté client |
-| `categoryId` optionnel présent | OK | |
-| **`nextCursor` réel (chaîne)** | **FAIL** | Le type généré attend un tableau (voir constat 2) |
-| **`nextCursor` `null` (dernière page)** | **FAIL** | Idem |
-| **`lastLiveAt` (`.nullish()`) présent** | **FAIL** | Le champ a disparu du type, puis est rejeté comme propriété inconnue |
-| **Champ ajouté côté serveur (`isPartner`)** | **FAIL** | `Additional properties are not allowed` |
-| **Valeur d'enum inconnue (`status: "hibernating"`)** | **FAIL** | L'enum est `@frozen`, sans cas de repli |
-| UUID mal formé | OK, à tort | `format: uuid` devient `Swift.String` : aucune validation |
-| Union `ACTIVE`, `PENDING_ATTRIBUTION` | OK | Décodage par essais successifs, correct |
-| **Statut d'entitlement inconnu (`GRACE_PERIOD`)** | **FAIL** | `The oneOf structure did not decode into any child schema` |
-| Union : `status: ACTIVE` avec la forme `EXPIRED` | FAIL, à juste titre | Le littéral devient un enum à une seule valeur : bonne rigueur |
-| `ServerMessage` `session.revoked`, `room.mode` | OK | |
-| **`ServerMessage` de type inconnu (`raid.incoming`)** | **FAIL** | Toute la charge est rejetée |
-| Erreur 400 `application/problem+json` | OK | Après déclaration explicite du type de contenu (voir constat 8) |
+| Cas                                                      | Résultat            | Remarque                                                                  |
+| -------------------------------------------------------- | ------------------- | ------------------------------------------------------------------------- |
+| Canal nominal                                            | OK                  |                                                                           |
+| Entier ±2⁵³ (`z.int()`)                                  | OK                  | `Swift.Int` ; `9007199254740991` passe                                    |
+| Date ISO 8601 **sans** millisecondes                     | OK                  | `Foundation.Date`                                                         |
+| **Date avec millisecondes** (`2026-09-24T10:00:00.123Z`) | **FAIL**            | `Expected date string to be ISO8601-formatted`                            |
+| `title` nullable, valeur `null`                          | OK                  | `String?`                                                                 |
+| `title` nullable **requis, mais absent**                 | OK, à tort          | Décodé en `nil` : « nul » et « absent » ne se distinguent pas côté client |
+| `categoryId` optionnel présent                           | OK                  |                                                                           |
+| **`nextCursor` réel (chaîne)**                           | **FAIL**            | Le type généré attend un tableau (voir constat 2)                         |
+| **`nextCursor` `null` (dernière page)**                  | **FAIL**            | Idem                                                                      |
+| **`lastLiveAt` (`.nullish()`) présent**                  | **FAIL**            | Le champ a disparu du type, puis est rejeté comme propriété inconnue      |
+| **Champ ajouté côté serveur (`isPartner`)**              | **FAIL**            | `Additional properties are not allowed`                                   |
+| **Valeur d'enum inconnue (`status: "hibernating"`)**     | **FAIL**            | L'enum est `@frozen`, sans cas de repli                                   |
+| UUID mal formé                                           | OK, à tort          | `format: uuid` devient `Swift.String` : aucune validation                 |
+| Union `ACTIVE`, `PENDING_ATTRIBUTION`                    | OK                  | Décodage par essais successifs, correct                                   |
+| **Statut d'entitlement inconnu (`GRACE_PERIOD`)**        | **FAIL**            | `The oneOf structure did not decode into any child schema`                |
+| Union : `status: ACTIVE` avec la forme `EXPIRED`         | FAIL, à juste titre | Le littéral devient un enum à une seule valeur : bonne rigueur            |
+| `ServerMessage` `session.revoked`, `room.mode`           | OK                  |                                                                           |
+| **`ServerMessage` de type inconnu (`raid.incoming`)**    | **FAIL**            | Toute la charge est rejetée                                               |
+| Erreur 400 `application/problem+json`                    | OK                  | Après déclaration explicite du type de contenu (voir constat 8)           |
 
 La compilation en Swift 6 strict passe dans tous les cas. Les seuls avertissements portent sur des `public import` inutilisés dans le code généré.
 
@@ -80,7 +80,9 @@ Conséquence : **ajouter un champ à une réponse fait échouer le décodage che
 ### 2. `.nullable()` à la racine d'un DTO devient un tableau — FAUX, bloquant
 
 ```ts
-class ChannelPageDto extends createZodDto(z.object({ items: z.array(ChannelSummary), nextCursor: z.string().nullable() })) {}
+class ChannelPageDto extends createZodDto(
+  z.object({ items: z.array(ChannelSummary), nextCursor: z.string().nullable() }),
+) {}
 ```
 
 produit dans l'OpenAPI :
@@ -171,18 +173,18 @@ C'est l'issue amont `nestjs-zod` #474, ouverte. **Il faut rester en OpenAPI 3.1*
 
 Schémas de réponse en `looseObject`, enums ouverts, `nextCursor` optionnel, normalisation des `anyOf` nullables, `Uuid` nommé avec `typeOverrides`, transcodeur tolérant.
 
-| Cas | Résultat |
-|---|---|
-| Nominal | OK |
-| Champ ajouté côté serveur | OK, conservé dans `additionalProperties` |
-| Enum ouvert, valeur inconnue | OK, `value2 == "hibernating"` |
-| `lastLiveAt` (date nullable) : valeur, `null`, absent | OK |
-| `peakViewers` (entier nullable) | OK |
-| `nextCursor` absent (dernière page) | OK |
-| Dates avec et sans millisecondes mélangées, transcodeur tolérant | OK |
-| UUID mal formé avec `typeOverrides` | Rejeté, à juste titre |
-| Variante d'union connue (`ACTIVE`, `PENDING_ATTRIBUTION`) | OK |
-| Variante d'union inconnue avec variante de repli | OK |
+| Cas                                                              | Résultat                                 |
+| ---------------------------------------------------------------- | ---------------------------------------- |
+| Nominal                                                          | OK                                       |
+| Champ ajouté côté serveur                                        | OK, conservé dans `additionalProperties` |
+| Enum ouvert, valeur inconnue                                     | OK, `value2 == "hibernating"`            |
+| `lastLiveAt` (date nullable) : valeur, `null`, absent            | OK                                       |
+| `peakViewers` (entier nullable)                                  | OK                                       |
+| `nextCursor` absent (dernière page)                              | OK                                       |
+| Dates avec et sans millisecondes mélangées, transcodeur tolérant | OK                                       |
+| UUID mal formé avec `typeOverrides`                              | Rejeté, à juste titre                    |
+| Variante d'union connue (`ACTIVE`, `PENDING_ATTRIBUTION`)        | OK                                       |
+| Variante d'union inconnue avec variante de repli                 | OK                                       |
 
 ## Ce que le spike n'a pas vérifié
 

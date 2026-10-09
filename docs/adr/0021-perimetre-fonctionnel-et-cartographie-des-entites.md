@@ -37,90 +37,90 @@ Problématique : pour chaque entité significative d'une plateforme de live, dir
 
 ### 1. Horizons
 
-| Horizon | Sens |
-|---|---|
-| **T1** | Tranche verticale n°1 (ADR 0003) : un streamer lance un live, un viewer le regarde et chatte |
-| **T2** | Plateforme sociale minimale : follow, modération complète, notifications |
-| **T3** | Monétisation et engagement de la chaîne : abonnements, bits, emotes, raids |
-| **Plus tard** | Voulu, mais sans échéance ; son propriétaire est fixé ici pour que son arrivée ne soit pas un débat |
-| **Hors scope** | Décision explicite de ne pas le faire ; revenir dessus exige un nouvel ADR |
+| Horizon        | Sens                                                                                                |
+| -------------- | --------------------------------------------------------------------------------------------------- |
+| **T1**         | Tranche verticale n°1 (ADR 0003) : un streamer lance un live, un viewer le regarde et chatte        |
+| **T2**         | Plateforme sociale minimale : follow, modération complète, notifications                            |
+| **T3**         | Monétisation et engagement de la chaîne : abonnements, bits, emotes, raids                          |
+| **Plus tard**  | Voulu, mais sans échéance ; son propriétaire est fixé ici pour que son arrivée ne soit pas un débat |
+| **Hors scope** | Décision explicite de ne pas le faire ; revenir dessus exige un nouvel ADR                          |
 
 ### 2. Cartographie
 
 #### Comptes, chaînes, diffusion
 
-| Entité | Propriétaire | Horizon | Note |
-|---|---|---|---|
-| Compte, session, profil | `identity` | T1 | ADR 0003, 0005 |
-| Chaîne (slug, titre, bannière) | `channel` | T1 | ADR 0003 |
-| Session de diffusion, clé de stream | `stream` | T1 | ADR 0001, 0003 |
-| Catégorie de la chaîne, tags | `channel` | T2 | Tags libres, normalisés (minuscules, sans accents), plafonnés à 10 par chaîne |
-| **Catalogue des catégories** | `channel` | T2 | Voir §3 |
-| Planning de diffusion | `channel` | Plus tard | Un `ScheduleSegment` est une propriété de la chaîne permanente, pas d'une session ; `notification` consomme pour les rappels |
-| Historique titre / catégorie d'une session | `stream` | T2 | Échantillonné au changement ; utile à la VOD et aux analytics |
+| Entité                                     | Propriétaire | Horizon   | Note                                                                                                                         |
+| ------------------------------------------ | ------------ | --------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Compte, session, profil                    | `identity`   | T1        | ADR 0003, 0005                                                                                                               |
+| Chaîne (slug, titre, bannière)             | `channel`    | T1        | ADR 0003                                                                                                                     |
+| Session de diffusion, clé de stream        | `stream`     | T1        | ADR 0001, 0003                                                                                                               |
+| Catégorie de la chaîne, tags               | `channel`    | T2        | Tags libres, normalisés (minuscules, sans accents), plafonnés à 10 par chaîne                                                |
+| **Catalogue des catégories**               | `channel`    | T2        | Voir §3                                                                                                                      |
+| Planning de diffusion                      | `channel`    | Plus tard | Un `ScheduleSegment` est une propriété de la chaîne permanente, pas d'une session ; `notification` consomme pour les rappels |
+| Historique titre / catégorie d'une session | `stream`     | T2        | Échantillonné au changement ; utile à la VOD et aux analytics                                                                |
 
 #### Social
 
-| Entité | Propriétaire | Horizon | Note |
-|---|---|---|---|
-| Follow | `channel` | T2 | ADR 0020 |
-| Page « Suivis » | `discovery` | T2 | Projection, ADR 0020 |
-| **Blocage entre utilisateurs** | `moderation` | T2 | Voir §4 |
-| Messages privés (whispers) | futur `messaging` | **Hors scope** | Voir §5 |
+| Entité                         | Propriétaire      | Horizon        | Note                 |
+| ------------------------------ | ----------------- | -------------- | -------------------- |
+| Follow                         | `channel`         | T2             | ADR 0020             |
+| Page « Suivis »                | `discovery`       | T2             | Projection, ADR 0020 |
+| **Blocage entre utilisateurs** | `moderation`      | T2             | Voir §4              |
+| Messages privés (whispers)     | futur `messaging` | **Hors scope** | Voir §5              |
 
 #### Chat et modération
 
-| Entité | Propriétaire | Horizon | Note |
-|---|---|---|---|
-| Salon, message, présence | `chat` | T1 | ADR 0004 |
-| Timeout par le propriétaire | `moderation` | T1 | ADR 0003 |
-| Ban, mots interdits, filtrage automatique | `moderation` | T2 | ADR 0003 |
-| Signalement | `moderation` | T2 | Signalement de message, de chaîne ou de compte |
-| Modes de salon (slow, followers-only, sub-only) | `chat` | T2 | ADR 0004, 0020 |
-| Liste des chatters présents | `chat` | T2 | Présence Redis, ADR 0004 |
-| Rôles `moderator`, `vip`, `editor` | écrits par `channel` / `moderation`, stockés dans `authz` | T2 | ADR 0006. Le VIP n'a pas de règle métier propre : c'est un rôle, pas une entité |
-| Message épinglé, annonce | `chat` | Plus tard | État éphémère du salon, meurt avec la session |
-| Historique complet du chat, replay du chat | — | **Hors scope** | ADR 0003 : coût de rétention disproportionné |
+| Entité                                          | Propriétaire                                              | Horizon        | Note                                                                            |
+| ----------------------------------------------- | --------------------------------------------------------- | -------------- | ------------------------------------------------------------------------------- |
+| Salon, message, présence                        | `chat`                                                    | T1             | ADR 0004                                                                        |
+| Timeout par le propriétaire                     | `moderation`                                              | T1             | ADR 0003                                                                        |
+| Ban, mots interdits, filtrage automatique       | `moderation`                                              | T2             | ADR 0003                                                                        |
+| Signalement                                     | `moderation`                                              | T2             | Signalement de message, de chaîne ou de compte                                  |
+| Modes de salon (slow, followers-only, sub-only) | `chat`                                                    | T2             | ADR 0004, 0020                                                                  |
+| Liste des chatters présents                     | `chat`                                                    | T2             | Présence Redis, ADR 0004                                                        |
+| Rôles `moderator`, `vip`, `editor`              | écrits par `channel` / `moderation`, stockés dans `authz` | T2             | ADR 0006. Le VIP n'a pas de règle métier propre : c'est un rôle, pas une entité |
+| Message épinglé, annonce                        | `chat`                                                    | Plus tard      | État éphémère du salon, meurt avec la session                                   |
+| Historique complet du chat, replay du chat      | —                                                         | **Hors scope** | ADR 0003 : coût de rétention disproportionné                                    |
 
 #### Monétisation
 
-| Entité | Propriétaire | Horizon | Note |
-|---|---|---|---|
-| Abonnement, entitlement, cadeau d'abonnement | `monetization` | T3 | ADR 0013, 0014 |
-| Bits (monnaie virtuelle) | `monetization` | T3 | ADR 0015 |
-| Reversement streamer | `monetization` | T3 | ADR 0017 |
-| **Emotes de chaîne** | `channel` | T3 | Voir §6 |
-| Badges (abonné, modérateur, VIP) | `chat` les dérive | T3 | ADR 0003 : dérivés d'events, jamais stockés comme donnée de référence. Les visuels de badge par chaîne appartiennent à `channel`, comme les emotes |
-| Publicité, drops | — | **Hors scope** | Écosystème d'annonceurs et de partenaires hors de portée |
+| Entité                                       | Propriétaire      | Horizon        | Note                                                                                                                                               |
+| -------------------------------------------- | ----------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Abonnement, entitlement, cadeau d'abonnement | `monetization`    | T3             | ADR 0013, 0014                                                                                                                                     |
+| Bits (monnaie virtuelle)                     | `monetization`    | T3             | ADR 0015                                                                                                                                           |
+| Reversement streamer                         | `monetization`    | T3             | ADR 0017                                                                                                                                           |
+| **Emotes de chaîne**                         | `channel`         | T3             | Voir §6                                                                                                                                            |
+| Badges (abonné, modérateur, VIP)             | `chat` les dérive | T3             | ADR 0003 : dérivés d'events, jamais stockés comme donnée de référence. Les visuels de badge par chaîne appartiennent à `channel`, comme les emotes |
+| Publicité, drops                             | —                 | **Hors scope** | Écosystème d'annonceurs et de partenaires hors de portée                                                                                           |
 
 #### Vidéo à la demande
 
-| Entité | Propriétaire | Horizon | Note |
-|---|---|---|---|
-| **VOD, clips** | futur `media` | Plus tard | Voir §7 |
+| Entité              | Propriétaire  | Horizon   | Note                       |
+| ------------------- | ------------- | --------- | -------------------------- |
+| **VOD, clips**      | futur `media` | Plus tard | Voir §7                    |
 | Marqueurs de stream | futur `media` | Plus tard | N'a de sens qu'avec la VOD |
 
 #### Engagement
 
-| Entité | Propriétaire | Horizon | Note |
-|---|---|---|---|
-| **Raid** | `stream` | T3 | Voir §8 |
-| Host mode | — | **Hors scope** | Fonctionnalité abandonnée par les plateformes établies au profit du raid |
-| Points de chaîne, récompenses | futur `engagement` | Plus tard | Voir §9 |
-| Sondages | futur `engagement` | Plus tard | Voir §9 |
-| Hype train | futur `engagement` | Plus tard | Projection d'events de `monetization` |
-| Prédictions | — | **Hors scope** | Voir §9 |
+| Entité                        | Propriétaire       | Horizon        | Note                                                                     |
+| ----------------------------- | ------------------ | -------------- | ------------------------------------------------------------------------ |
+| **Raid**                      | `stream`           | T3             | Voir §8                                                                  |
+| Host mode                     | —                  | **Hors scope** | Fonctionnalité abandonnée par les plateformes établies au profit du raid |
+| Points de chaîne, récompenses | futur `engagement` | Plus tard      | Voir §9                                                                  |
+| Sondages                      | futur `engagement` | Plus tard      | Voir §9                                                                  |
+| Hype train                    | futur `engagement` | Plus tard      | Projection d'events de `monetization`                                    |
+| Prédictions                   | —                  | **Hors scope** | Voir §9                                                                  |
 
 #### Découverte et plateforme
 
-| Entité | Propriétaire | Horizon | Note |
-|---|---|---|---|
-| Liste des lives | `discovery` | T1 | ADR 0003 |
-| Recherche, recommandation | `discovery` | T3 | Projections uniquement, ADR 0003 |
-| Home curatée, catégories mises en avant | Payload (éditorial) | T2 | ADR 0007 : référence un identifiant de catégorie, ne possède pas la catégorie |
-| Notification push | `notification` | T2 | ADR 0003, 0020 |
-| Équipes (teams) | — | **Hors scope** | Valeur faible, modèle d'appartenance entier à construire |
-| Extensions tierces | — | **Hors scope** | Suppose une plateforme développeur (SDK, revue, sandbox) : un produit à part entière |
+| Entité                                  | Propriétaire        | Horizon        | Note                                                                                 |
+| --------------------------------------- | ------------------- | -------------- | ------------------------------------------------------------------------------------ |
+| Liste des lives                         | `discovery`         | T1             | ADR 0003                                                                             |
+| Recherche, recommandation               | `discovery`         | T3             | Projections uniquement, ADR 0003                                                     |
+| Home curatée, catégories mises en avant | Payload (éditorial) | T2             | ADR 0007 : référence un identifiant de catégorie, ne possède pas la catégorie        |
+| Notification push                       | `notification`      | T2             | ADR 0003, 0020                                                                       |
+| Équipes (teams)                         | —                   | **Hors scope** | Valeur faible, modèle d'appartenance entier à construire                             |
+| Extensions tierces                      | —                   | **Hors scope** | Suppose une plateforme développeur (SDK, revue, sandbox) : un produit à part entière |
 
 ### 3. Le catalogue des catégories appartient à `channel`
 
