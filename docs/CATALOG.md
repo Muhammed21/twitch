@@ -41,12 +41,12 @@ Chaque page de `docs/`, une ligne chacune : titre, [mode](README.md#carte), stat
 - [0027 — Clients lents, dimensionnement et filtrage des blocages dans le chat](adr/0027-backpressure-et-dimensionnement-du-chat.md) — _explanation · Accepté_ — L'ADR 0022 protège le chat contre les clients lents en diffusant avec `volatile` et en surveillant `socket.conn.writeBuffer`.
 - [0028 — Conteneurisation et environnement local Docker Compose](adr/0028-conteneurisation-et-environnement-local-docker-compose.md) — _explanation · Accepté_ — Comment conteneuriser l'API, le relais d'outbox, le chat et Payload, et outiller un environnement local qui exerce l'ordre de déploiement réel, sans figer un hébergeur ?
 - [0029 — oxlint et oxfmt à la place d'ESLint et Prettier](adr/0029-oxlint-et-oxfmt-a-la-place-d-eslint-et-prettier.md) — _explanation · Accepté_ — Quel outillage tient le contrat de l'ADR 0018 — des règles d'architecture bloquantes et un lint typé — sur TypeScript 7 ?
-- [Décisions d'architecture (ADR)](adr/README.md) — _explanation_ — Registre des décisions structurantes du projet. Format MADR.
+- [Décisions d'architecture (ADR)](adr/README.md) — _reference_ — Registre des décisions structurantes du projet. Format MADR.
 
 ## Spikes — recherche bornée
 
 - [Spike — better-auth face à l'ADR 0005](spikes/2026-09-24-better-auth.md) — _explanation_ — Avec la version actuelle de better-auth, qu'est-ce qui est fourni tel quel, qu'est-ce qui se configure, et qu'est-ce qu'il faudra écrire nous-mêmes pour tenir chaque exigence de…
-- [Spike — charge du service de chat socket.io](spikes/2026-09-24-charge-socketio.md) — _explanation_ — RSS mesurée après deux passes de GC forcées, moins la RSS du serveur à vide (environ 58 Mo).
+- [Spike — charge du service de chat socket.io](spikes/2026-09-24-charge-socketio.md) — _explanation_ — Combien de mémoire coûte une connexion socket.io configurée comme l'ADR 0022, et le seuil de réévaluation du §9 (2 Go ou 10 000 connexions par instance) est-il le bon ?
 - [Spike — client iOS socket.io](spikes/2026-09-24-client-ios-socketio.md) — _explanation_ — Le client Swift officiel de socket.io peut-il servir de base à `ChatSession` (ADR 0011), avec les exigences de l'ADR 0022 : WebSocket uniquement, token dans l'en-tête…
 - [Spike — chaîne du contrat Zod → OpenAPI → Swift](spikes/2026-09-24-contrat-zod-swift.md) — _explanation_ — La chaîne prescrite par l'ADR 0009 produit-elle, sur les cas difficiles du projet, du Swift correct, compilé en Swift 6 strict, et qui respecte la politique de compatibilité de…
 - [Spike — Prisma multiSchema et rôles PostgreSQL](spikes/2026-09-24-prisma-multischema.md) — _explanation_ — Le montage décrit par l'ADR 0008 fonctionne-t-il tel quel avec la version actuelle de Prisma : un schéma PostgreSQL par contexte, un schéma Prisma découpé en plusieurs fichiers,…

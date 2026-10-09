@@ -66,7 +66,7 @@ const headerFields = (header: readonly string[]): ReadonlyMap<string, string> =>
 
 const STRUCTURAL = /^(#|\||>|-|\+|\*\s|<|\d+\.\s|```)/;
 
-const isProse = (line: string): boolean => !STRUCTURAL.test(line);
+const isProse = (line: string): boolean => !STRUCTURAL.test(line) && !HEADER_FIELD.test(line);
 
 const firstParagraph = (text: string): string =>
   text
@@ -78,7 +78,17 @@ const firstParagraph = (text: string): string =>
 
 const PROBLEM = /^Problématique :(.*)$/m;
 
-const summarySource = (text: string): string => PROBLEM.exec(text)?.[1] ?? firstParagraph(text);
+const QUESTION = /^## Question\n([\s\S]*?)(?=^## |(?![\s\S]))/m;
+const LIST_ITEM = /^(?:\d+\.|[-*+]) +(.+)$/m;
+
+const spikeQuestion = (text: string): string => {
+  const question = QUESTION.exec(text)?.[1] ?? "";
+  return firstParagraph(question) || (LIST_ITEM.exec(question)?.[1] ?? "");
+};
+
+const summarySource = (text: string, group: string): string =>
+  PROBLEM.exec(text)?.[1] ??
+  ((group === "spikes" ? spikeQuestion(text) : "") || firstParagraph(text));
 
 export const parsePage = ({
   relPath,
@@ -99,7 +109,7 @@ export const parsePage = ({
     title: flattenInline(h1 === undefined ? titleFromFilename(relPath) : h1.slice(2)),
     type: fields.get("Type")?.toLowerCase() ?? TYPE_BY_GROUP[group] ?? "reference",
     status: flattenInline(fields.get("Statut") ?? "").split(" — ")[0] ?? "",
-    summary: capitalize(firstSentences(summarySource(text))),
+    summary: capitalize(firstSentences(summarySource(text, group))),
   };
 };
 

@@ -72,6 +72,56 @@ describe("parsePage", () => {
     );
   });
 
+  it("sums up a spike by the first item of its question when the question is a list", () => {
+    const text =
+      "# Spike — charge\n\n- Date : 2026-09-24\n\n## Question\n\n1. Combien de mémoire coûte une connexion socket.io configurée comme l'ADR 0022 ?\n2. Quel débit ?\n\n## Constats\n\nRSS mesurée après deux passes de GC forcées, moins la RSS du serveur à vide.\n";
+
+    expect(page("spikes/2026-09-24-charge.md", text).summary).toBe(
+      "Combien de mémoire coûte une connexion socket.io configurée comme l'ADR 0022 ?",
+    );
+  });
+
+  it("reads the question of a spike even when prose comes before it", () => {
+    const text =
+      "# Spike — x\n\nUne introduction en prose avant la question du spike.\n\n## Question\n\nLa vraie question du spike, assez longue pour suffire seule ?\n";
+
+    expect(page("spikes/2026-09-24-x.md", text).summary).toBe(
+      "La vraie question du spike, assez longue pour suffire seule ?",
+    );
+  });
+
+  it("does not look for a question section outside spikes", () => {
+    const text =
+      "# Guide\n\nLe paragraphe d'introduction du guide.\n\n## Question\n\nUne question de FAQ ?\n";
+
+    expect(page("guide.md", text).summary).toBe("Le paragraphe d'introduction du guide.");
+  });
+
+  it("does not take the type line of a page for its summary", () => {
+    const text =
+      "# Documentation\n\n**Type:** reference\n\nComment la documentation est organisée.\n";
+
+    expect(page("README.md", text).summary).toBe("Comment la documentation est organisée.");
+  });
+
+  it("sums up a spike without a question section by its first paragraph", () => {
+    const text =
+      "# Spike — y\n\n- Date : 2026-09-24\n\nUn spike écrit sans section de question dédiée.\n";
+
+    expect(page("spikes/2026-09-24-y.md", text).summary).toBe(
+      "Un spike écrit sans section de question dédiée.",
+    );
+  });
+
+  it("sums up a spike by the first bullet of its question", () => {
+    const text =
+      "# Spike — z\n\n## Question\n\n- Le client tient-il la reconnexion après une coupure réseau ?\n";
+
+    expect(page("spikes/2026-09-24-z.md", text).summary).toBe(
+      "Le client tient-il la reconnexion après une coupure réseau ?",
+    );
+  });
+
   it("sums up any other page by its first paragraph of prose", () => {
     const readme =
       "# Docs\n\n## Carte\n\n| a | b |\n\nComment cette documentation est organisée, et où écrire.\n";
