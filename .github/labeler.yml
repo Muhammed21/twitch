@@ -22,7 +22,6 @@ review:standard:
       - any-glob-to-any-file:
           - apps/**
           - packages/**
-          - e2e/**
           - docker/**
           - compose.yaml
           - docs/adr/**

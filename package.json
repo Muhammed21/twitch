@@ -11,8 +11,6 @@
     "check-types": "turbo run check-types",
     "test": "turbo run test",
     "bench": "turbo run bench",
-    "e2e:install": "pnpm --filter @repo/e2e exec playwright install --with-deps chromium webkit",
-    "e2e:all": "pnpm --filter @repo/e2e exec playwright test",
     "secrets": "secretlint \"**/*\"",
     "infra:up": "./docker/up.sh",
     "infra:down": "docker compose down",

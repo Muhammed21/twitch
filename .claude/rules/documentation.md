@@ -3,7 +3,6 @@ paths:
   - "*.md"
   - "apps/**/*.md"
   - "packages/**/*.md"
-  - "e2e/**/*.md"
   - "docs/**/*.md"
 ---
 

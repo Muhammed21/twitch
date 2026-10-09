@@ -1,15 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": [
-    "typescript",
-    "react",
-    "nextjs",
-    "import",
-    "promise",
-    "unicorn",
-    "jsx-a11y",
-    "vitest"
-  ],
+  "plugins": ["typescript", "import", "promise", "unicorn", "vitest"],
   "categories": {
     "correctness": "error",
     "suspicious": "warn"
@@ -25,9 +16,6 @@
     ],
     "prefer-const": "error",
     "no-var": "error",
-    "react/react-in-jsx-scope": "off",
-    "react-hooks/rules-of-hooks": "error",
-    "react-hooks/exhaustive-deps": "error",
     "no-floating-promises": "error",
     "no-misused-promises": "error",
     "promise/no-return-wrap": "error",
@@ -55,15 +43,13 @@
     "dist",
     "coverage",
     "reports",
-    ".next",
     ".turbo",
     ".stryker-tmp",
-    "next-env.d.ts",
     "packages/design-tokens/platforms/**"
   ],
   "overrides": [
     {
-      "files": ["**/*.test.ts", "**/*.test.tsx", "**/__tests__/**"],
+      "files": ["**/*.test.ts", "**/__tests__/**"],
       "rules": {
         "typescript/no-non-null-assertion": "off",
         "typescript/no-unsafe-type-assertion": "off",

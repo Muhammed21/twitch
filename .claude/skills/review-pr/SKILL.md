@@ -45,7 +45,6 @@ Stop and send the PR back if one of these fails:
 - Gates: run `pnpm lint`, `pnpm check-types`, `pnpm test` (or `pnpm exec turbo run test --filter=<package>`), and `pnpm generate` followed by `git status --porcelain`. Report the numbers, and say what you did not run.
   - The repo pins Node in `.node-version`; switch to it first.
   - `pnpm test:infra` needs Docker running.
-  - `E2E_START_SERVERS=1 pnpm e2e:all --project=chromium` builds and serves `apps/web`, then runs the Playwright suite in `e2e/`.
   - `pnpm bench` runs the micro-benches; CI posts their diff against `main` on the PR.
 - Test sensitivity, when only a run can tell: copy the file to the session scratch directory, change it, run the suite, copy it back, and check that `git status --porcelain` is empty. For a whole package, `pnpm --filter <package> mutation` runs Stryker.
 - Device pass, only when the user asks or the PR is about feel: run it on the simulator and report with screenshots.
