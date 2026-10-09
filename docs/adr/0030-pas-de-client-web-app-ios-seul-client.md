@@ -1,6 +1,6 @@
 # 0030 — Pas de client web : l'app iOS est le seul client du produit
 
-- Statut : Proposé
+- Statut : Accepté
 - Date : 2026-10-09
 - Décideurs : Muhammed Cavus
 - Amende : ADR 0009 (compositions du web), ADR 0014 (achats web via Stripe), ADR 0015 (chemin d'achat web), ADR 0017 (condition du canal web)

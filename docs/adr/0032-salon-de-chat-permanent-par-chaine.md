@@ -1,6 +1,6 @@
 # 0032 — Un salon de chat permanent par chaîne, ouvert hors live
 
-- Statut : Proposé
+- Statut : Accepté
 - Date : 2026-10-09
 - Décideurs : Muhammed Cavus
 - Amende : ADR 0003 (§4 `chat` : ouverture et fermeture du salon par `stream.started` / `stream.ended` ; tranche 1 « salon par session »), ADR 0021 (message épinglé et annonce)

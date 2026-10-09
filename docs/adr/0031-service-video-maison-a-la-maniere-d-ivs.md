@@ -1,6 +1,6 @@
 # 0031 — Un service vidéo maison, à la manière d'Amazon IVS, à la place d'IVS
 
-- Statut : Proposé
+- Statut : Accepté
 - Date : 2026-10-09
 - Décideurs : Muhammed Cavus
 - Amende : ADR 0001 (choix d'IVS, bascules envisagées, kill switch budgétaire), ADR 0002 (second process séparé), ADR 0018 (scope de commit `video`), ADR 0003 (§3 `stream` : transcodage et distribution), ADR 0021 (§7, enregistrement de la VOD), ADR 0028 (§10, la vidéo entre dans Compose)
