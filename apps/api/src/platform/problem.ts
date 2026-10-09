@@ -8,7 +8,7 @@ import {
   Inject,
 } from "@nestjs/common";
 import type { Request, Response } from "express";
-import { ZodError } from "zod";
+import type { ZodError } from "zod";
 
 import { errorDetails, LOG_SINK, type LogSink, writeLog } from "./logging.ts";
 
@@ -34,16 +34,25 @@ export class ProblemException extends Error {
   }
 }
 
+export class InvalidRequestException extends Error {
+  readonly validation: ZodError;
+
+  constructor(validation: ZodError) {
+    super(validation.message);
+    this.validation = validation;
+  }
+}
+
 const toProblem = (exception: unknown): Problem => {
   if (exception instanceof ProblemException) {
     return exception.problem;
   }
-  if (exception instanceof ZodError) {
+  if (exception instanceof InvalidRequestException) {
     return {
       type: "about:blank",
       title: "Requête invalide",
       status: 400,
-      errors: exception.issues.map((issue) => ({
+      errors: exception.validation.issues.map((issue) => ({
         path: issue.path.join("."),
         message: issue.message,
       })),
@@ -56,8 +65,10 @@ const toProblem = (exception: unknown): Problem => {
   return { type: "about:blank", title: "Erreur interne", status: 500 };
 };
 
-export const pathOf = (request: Request): string =>
-  new URL(request.originalUrl, "http://localhost").pathname;
+export const pathOf = ({ originalUrl }: Request): string => {
+  const queryStart = originalUrl.indexOf("?");
+  return queryStart === -1 ? originalUrl : originalUrl.slice(0, queryStart);
+};
 
 @Catch()
 export class ProblemFilter implements ExceptionFilter {

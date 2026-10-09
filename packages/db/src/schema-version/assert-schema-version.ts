@@ -1,13 +1,24 @@
 import { Client } from "pg";
 
+const DEFAULT_CONNECTION_TIMEOUT_MS = 2000;
+const DEFAULT_QUERY_TIMEOUT_MS = 2000;
+
 export const assertSchemaVersion = async ({
   connectionString,
   migration,
+  connectionTimeoutMillis = DEFAULT_CONNECTION_TIMEOUT_MS,
+  queryTimeoutMillis = DEFAULT_QUERY_TIMEOUT_MS,
 }: {
   connectionString: string;
   migration: string;
+  connectionTimeoutMillis?: number;
+  queryTimeoutMillis?: number;
 }): Promise<void> => {
-  const client = new Client({ connectionString });
+  const client = new Client({
+    connectionString,
+    connectionTimeoutMillis,
+    query_timeout: queryTimeoutMillis,
+  });
   await client.connect();
   try {
     const { rowCount } = await client.query(

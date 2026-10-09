@@ -87,6 +87,28 @@ describe("assertSchemaVersion", () => {
     }
   });
 
+  it("abandonne une lecture bloquée par un verrou, au lieu d'attendre sans fin", async () => {
+    const locker = new Client({ connectionString: urlOf("DATABASE_URL_MIGRATOR") });
+    await locker.connect();
+    try {
+      await locker.query("BEGIN");
+      await locker.query("LOCK TABLE _prisma_migrations IN ACCESS EXCLUSIVE MODE");
+      const startedAt = performance.now();
+
+      await expect(
+        assertSchemaVersion({
+          connectionString: health(),
+          migration: LATEST_MIGRATION,
+          queryTimeoutMillis: 300,
+        }),
+      ).rejects.toThrow("timeout");
+      expect(performance.now() - startedAt).toBeLessThan(2000);
+    } finally {
+      await locker.query("ROLLBACK");
+      await locker.end();
+    }
+  });
+
   it("accepte une migration terminée et non annulée", async () => {
     await withFakeMigration({ finished: true, rolledBack: false }, async (name) => {
       await expect(

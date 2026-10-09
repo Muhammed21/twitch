@@ -14,9 +14,10 @@ Schémas Zod du contrat de l'API, source de vérité du client Swift (ADR 0009).
 Un schéma de réponse s'exporte depuis `src/responses/`, nommé par `.meta({ id })`. `checkResponseSchema` le parcourt en entier, schémas imbriqués compris, et un test l'applique à chaque réponse exportée. Il refuse :
 
 - un objet écrit `z.object` ou `z.strictObject` : une réponse s'écrit `z.looseObject` ;
-- un `z.enum` qui ne passe pas par `openEnum` ;
+- un `z.enum` qui ne passe pas par `openEnum`, y compris en clé de `z.record` ;
 - une union sans variante de repli en dernière position, sauf `.meta({ closed: true })` justifié en revue ;
 - un `.nullable()` posé directement sur une propriété du DTO : `.optional()`, ou un schéma nommé imbriqué ;
 - un `.nullish()`, où qu'il soit.
+- un type qu'il ne sait pas vérifier (transformation, `z.date()`, `z.any()`…) : le garde descend dans les enveloppes (`readonly`, `default`, `catch`, `lazy`, `pipe`, intersection, `record`, `tuple`), parcourt une seule fois un schéma récursif (`z.lazy` ou getter), et ne laisse passer en silence aucun autre type.
 
 Les schémas de requête restent en `z.object` strict : refuser un champ inconnu est le bon comportement côté serveur.

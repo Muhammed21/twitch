@@ -1,3 +1,5 @@
+import { connect } from "node:net";
+
 import { Controller, Get, HttpException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import { describe, expect, it } from "vitest";
@@ -5,7 +7,7 @@ import { z } from "zod";
 
 import { configureApp } from "./configure-app.ts";
 import { PlatformModule, type SchemaVersionCheck } from "./platform.module.ts";
-import { ProblemException } from "./problem.ts";
+import { InvalidRequestException, ProblemException } from "./problem.ts";
 
 @Controller("faulty")
 class FaultyController {
@@ -21,10 +23,15 @@ class FaultyController {
 
   @Get("validation")
   validation(): never {
-    z.object({ title: z.string().min(3), tags: z.array(z.string()) }).parse({
-      title: "a",
-      tags: [42],
-    });
+    const parsed = z
+      .object({ title: z.string().min(3), tags: z.array(z.string()) })
+      .safeParse({ title: "a", tags: [42] });
+    throw new InvalidRequestException(parsed.error ?? new z.ZodError([]));
+  }
+
+  @Get("internal-parse")
+  internalParse(): never {
+    z.object({ viewerCount: z.int() }).parse({ viewerCount: "beaucoup" });
     throw new Error("inatteignable");
   }
 
@@ -43,6 +50,17 @@ class FaultyController {
     return { status: "ok" };
   }
 }
+
+const rawStatusLine = (url: URL, target: string) =>
+  new Promise<string>((resolve, reject) => {
+    const socket = connect(Number(url.port), url.hostname, () => {
+      socket.write(`GET ${target} HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n`);
+    });
+    const chunks: Buffer[] = [];
+    socket.on("data", (chunk: Buffer) => chunks.push(chunk));
+    socket.on("end", () => resolve(Buffer.concat(chunks).toString("utf8").split("\r\n")[0] ?? ""));
+    socket.on("error", reject);
+  });
 
 const ready: SchemaVersionCheck = async () => {};
 
@@ -64,6 +82,7 @@ const startApp = async ({
   const url = await app.getUrl();
   return {
     request: (path: string, init?: RequestInit) => fetch(`${url}${path}`, init),
+    rawStatusLine: (target: string) => rawStatusLine(new URL(url), target),
     logs: () => lines.map((line): unknown => JSON.parse(line)),
     rawLogs: () => lines.join("\n"),
     close: () => app.close(),
@@ -157,6 +176,18 @@ describe("erreurs au format RFC 9457", () => {
 });
 
 describe("statuts et journal des erreurs", () => {
+  it("traite une erreur de validation interne comme une erreur serveur, journalisée", async () => {
+    await withApp(async ({ request, logs }) => {
+      const response = await request("/v1/faulty/internal-parse");
+      const text = await response.text();
+
+      expect(response.status).toBe(500);
+      expect(JSON.parse(text)).toMatchObject({ title: "Erreur interne", status: 500 });
+      expect(text).not.toContain("viewerCount");
+      expect(logs()).toContainEqual(expect.objectContaining({ level: "error", msg: "unhandled" }));
+    });
+  });
+
   it("donne un titre générique à un statut HTTP sans libellé standard", async () => {
     await withApp(async ({ request }) => {
       const response = await request("/v1/faulty/nonstandard");
@@ -175,6 +206,30 @@ describe("statuts et journal des erreurs", () => {
       },
       { schemaVersionCheck: behind },
     );
+  });
+});
+
+describe("cibles de requête hostiles", () => {
+  it.each(["//x:abc", "//[", "/%zz"])(
+    "répond à %j sans tomber, et sert encore la requête suivante",
+    async (target) => {
+      await withApp(async ({ request, rawStatusLine, logs }) => {
+        expect(await rawStatusLine(target)).toMatch(/^HTTP\/1\.1 \d{3} /);
+        expect((await request("/health/live")).status).toBe(200);
+        expect(logs()).toContainEqual(expect.objectContaining({ msg: "request", path: target }));
+      });
+    },
+  );
+
+  it("journalise le chemin sans ses paramètres", async () => {
+    await withApp(async ({ request, logs }) => {
+      await request("/v1/faulty/ok?token=secret&page=2");
+
+      expect(logs()).toContainEqual(
+        expect.objectContaining({ msg: "request", path: "/v1/faulty/ok" }),
+      );
+      expect(JSON.stringify(logs())).not.toContain("secret");
+    });
   });
 });
 
