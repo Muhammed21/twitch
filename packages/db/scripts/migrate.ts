@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 
 import { Client } from "pg";
 
-import { assertRolesProvisioned } from "../src/index.ts";
+import { assertRolesProvisioned } from "../src/provisioned-roles.ts";
 
 const listRoles = async (): Promise<readonly string[]> => {
   const client = new Client({ connectionString: process.env["DATABASE_URL_MIGRATOR"] });
