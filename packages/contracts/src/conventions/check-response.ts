@@ -98,12 +98,16 @@ const walk = (
     ];
   }
   if (schema instanceof z.ZodObject) {
+    if (seen.has(schema)) {
+      return [];
+    }
+    const inside = new Set([...seen, schema]);
     return [
       ...(isOpen(schema) ? [] : [violation("closed-object", path)]),
       ...Object.entries(schema.shape).flatMap(([key, field]) =>
         position === "dto"
-          ? walk(field, `${path}.${key}`, seen, "property")
-          : walk(field, `${path}.${key}`, seen),
+          ? walk(field, `${path}.${key}`, inside, "property")
+          : walk(field, `${path}.${key}`, inside),
       ),
     ];
   }
@@ -111,7 +115,10 @@ const walk = (
     return walk(schema.element, `${path}[]`, seen);
   }
   if (schema instanceof z.ZodRecord) {
-    return walk(schema.def.valueType, `${path}{}`, seen);
+    return [
+      ...walk(schema.def.keyType, `${path}{key}`, seen),
+      ...walk(schema.def.valueType, `${path}{}`, seen),
+    ];
   }
   if (schema instanceof z.ZodTuple) {
     return [

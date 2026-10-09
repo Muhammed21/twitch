@@ -189,6 +189,38 @@ describe("checkResponseSchema", () => {
       ]);
     });
 
+    it("parcourt un schéma récursif écrit avec un getter, sans boucler", () => {
+      const Comment = z.looseObject({
+        body: z.string(),
+        get replies() {
+          return z.array(Comment);
+        },
+      });
+
+      expect(rules(z.looseObject({ thread: Comment }))).toEqual([]);
+    });
+
+    it("signale une seule fois une violation dans un schéma récursif", () => {
+      const Comment = z.looseObject({
+        state: z.enum(["visible"]),
+        get replies() {
+          return z.array(Comment);
+        },
+      });
+
+      expect(rules(z.looseObject({ thread: Comment }))).toEqual(["bare-enum Dto.thread.state"]);
+    });
+
+    it("refuse une clé de record en enum nu, qui ferme le record", () => {
+      expect(rules(z.looseObject({ a: z.record(z.enum(["live", "offline"]), z.int()) }))).toEqual([
+        "bare-enum Dto.a{key}",
+      ]);
+    });
+
+    it("accepte une clé de record en enum ouvert", () => {
+      expect(rules(z.looseObject({ a: z.record(openEnum(["live"]), z.int()) }))).toEqual([]);
+    });
+
     it("parcourt un schéma récursif sans boucler", () => {
       type Node = { label: string; children: Node[] };
       const TreeNode: z.ZodType<Node> = z.lazy(() =>
