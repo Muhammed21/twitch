@@ -65,4 +65,11 @@ ALTER DEFAULT PRIVILEGES FOR ROLE migrator IN SCHEMA authz
   GRANT USAGE, SELECT ON SEQUENCES TO app_channel, app_moderation;
 
 -- Sonde de disponibilité : lecture de la version du schéma, rien d'autre (ADR 0028 §8).
-GRANT SELECT ON TABLE public._prisma_migrations TO app_health;
+-- La base fantôme de migrate dev n'a pas de _prisma_migrations : le droit n'y a pas d'objet.
+DO $$
+BEGIN
+  IF to_regclass('public._prisma_migrations') IS NOT NULL THEN
+    GRANT SELECT ON TABLE public._prisma_migrations TO app_health;
+  END IF;
+END
+$$;

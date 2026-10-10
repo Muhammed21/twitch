@@ -13,6 +13,8 @@ export default defineConfig({
         "src/openapi/generate.ts",
         "src/create-app.ts",
         "src/app.module.ts",
+        "src/modules/*/infrastructure/**",
+        "src/modules/*/*.module.ts",
       ],
       reporter: ["text"],
       thresholds: {
