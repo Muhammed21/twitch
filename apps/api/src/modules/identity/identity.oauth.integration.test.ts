@@ -173,6 +173,31 @@ const signIn = async (
   return { clientId, cookie, tokens };
 };
 
+const WITHOUT_RESOURCE = { resource: undefined };
+
+const daysAfter = (later?: Date, earlier?: Date) =>
+  Math.round(((later?.getTime() ?? 0) - (earlier?.getTime() ?? 0)) / 86_400_000);
+
+const storedRefreshToken = async (refreshToken: string) =>
+  asMigrator(async (client) => {
+    const { rows } = await client.query<{ createdAt: Date; expiresAt: Date }>(
+      `SELECT "createdAt", "expiresAt" FROM "identity"."IdentityOAuthRefreshToken" WHERE "token" = $1`,
+      [createHash("sha256").update(refreshToken).digest("base64url")],
+    );
+    return rows[0];
+  });
+
+const ageRefreshToken = (refreshToken: string, days: number) =>
+  asMigrator((client) =>
+    client.query(
+      `UPDATE "identity"."IdentityOAuthRefreshToken"
+          SET "createdAt" = "createdAt" - make_interval(days => $2),
+              "expiresAt" = "expiresAt" - make_interval(days => $2)
+        WHERE "token" = $1`,
+      [createHash("sha256").update(refreshToken).digest("base64url"), days],
+    ),
+  );
+
 const expireReplayWindow = (refreshToken: string) =>
   asMigrator((client) =>
     client.query(
@@ -297,7 +322,7 @@ describe("identity : caractérisation OAuth de l'ADR 0026, contre le vrai better
 
   it("émet un jeton d'accès opaque, sans ressource demandée", async () => {
     await withApi(async (base) => {
-      const { tokens } = await signIn(base, {});
+      const { tokens } = await signIn(base, WITHOUT_RESOURCE);
 
       expect(tokens.access_token.split(".")).toHaveLength(1);
     });
@@ -324,13 +349,18 @@ describe("identity : caractérisation OAuth de l'ADR 0026, contre le vrai better
     });
   });
 
-  it("fait tourner le jeton de rafraîchissement à chaque usage", async () => {
+  it("fait tourner le jeton de rafraîchissement à chaque usage, pour 60 jours glissants", async () => {
     await withApi(async (base) => {
       const { clientId, tokens } = await signIn(base);
+      await ageRefreshToken(tokens.refresh_token, 10);
+      const original = await storedRefreshToken(tokens.refresh_token);
       const rotated = await refresh(base, { clientId, refreshToken: tokens.refresh_token });
+      const renewed = await storedRefreshToken(rotated.body.refresh_token);
 
       expect(rotated.status).toBe(200);
       expect(rotated.body.refresh_token).not.toBe(tokens.refresh_token);
+      expect(daysAfter(renewed?.expiresAt, renewed?.createdAt)).toBe(60);
+      expect(daysAfter(renewed?.expiresAt, original?.expiresAt)).toBe(10);
     });
   });
 
