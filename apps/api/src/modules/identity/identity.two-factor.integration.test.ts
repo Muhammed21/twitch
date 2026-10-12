@@ -148,6 +148,18 @@ describe("identity : second facteur TOTP de l'ADR 0026, contre le vrai better-au
     });
   });
 
+  it("présente le compte sous l'émetteur Twitch dans l'application d'authentification", async () => {
+    await withApi(async (base) => {
+      const { cookie } = await signUp(base);
+      const { body } = await postJson(`${base}/auth/two-factor/enable`, {
+        cookie,
+        body: { password: PASSWORD },
+      });
+
+      expect(new URL(String(body.totpURI)).searchParams.get("issuer")).toBe("Twitch");
+    });
+  });
+
   it("garde le secret TOTP chiffré en base", async () => {
     await withApi(async (base) => {
       const { email, cookie } = await signUp(base);
