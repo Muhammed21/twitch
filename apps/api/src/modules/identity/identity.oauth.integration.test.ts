@@ -497,6 +497,24 @@ describe("identity : caractérisation OAuth de l'ADR 0026, contre le vrai better
     });
   });
 
+  it("refuse qu'un client réécrive les méthodes d'authentification de sa session", async () => {
+    await withApi(async (base) => {
+      const { clientId, cookie, tokens } = await signIn(base);
+      await fetch(`${base}/auth/update-session`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          origin: urlOf("BETTER_AUTH_URL"),
+          cookie,
+        },
+        body: JSON.stringify({ amr: ["pwd", "otp", "mfa"] }),
+      });
+      const rotated = await refresh(base, { clientId, refreshToken: tokens.refresh_token });
+
+      expect(decodeJwt(rotated.body.access_token)).toMatchObject({ twitch_amr: ["pwd"] });
+    });
+  });
+
   it("garde l'heure et la méthode d'authentification après une rotation", async () => {
     await withApi(async (base) => {
       const { clientId, tokens } = await signIn(base);

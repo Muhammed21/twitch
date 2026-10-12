@@ -120,7 +120,7 @@ export const createIdentityAuth = ({
     user: { modelName: "IdentityUser" },
     session: {
       modelName: "IdentitySession",
-      additionalFields: { amr: { type: "string[]" } },
+      additionalFields: { amr: { type: "string[]", input: false } },
     },
     databaseHooks: {
       session: {
