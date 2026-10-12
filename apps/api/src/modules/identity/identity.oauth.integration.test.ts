@@ -184,8 +184,10 @@ const storedRefreshToken = async (refreshToken: string) =>
       createdAt: Date;
       expiresAt: Date;
       authTime: Date | null;
+      revoked: Date | null;
+      rotatedAt: Date | null;
     }>(
-      `SELECT "createdAt", "expiresAt", "authTime" FROM "identity"."IdentityOAuthRefreshToken" WHERE "token" = $1`,
+      `SELECT "createdAt", "expiresAt", "authTime", "revoked", "rotatedAt" FROM "identity"."IdentityOAuthRefreshToken" WHERE "token" = $1`,
       [createHash("sha256").update(refreshToken).digest("base64url")],
     );
     return rows[0];
@@ -429,12 +431,12 @@ describe("identity : caractérisation OAuth de l'ADR 0026, contre le vrai better
     await withApi(async (base) => {
       const { clientId, tokens } = await signIn(base);
       await ageAuthentication(tokens.refresh_token, 181);
-      const rotated = await refresh(base, { clientId, refreshToken: tokens.refresh_token });
-      const stillUnused = await refresh(base, { clientId, refreshToken: tokens.refresh_token });
+      const refused = await refresh(base, { clientId, refreshToken: tokens.refresh_token });
+      const stored = await storedRefreshToken(tokens.refresh_token);
 
-      expect(rotated.status).toBe(400);
-      expect(rotated.body.error).toBe("invalid_grant");
-      expect(stillUnused.status).toBe(400);
+      expect(refused.status).toBe(400);
+      expect(refused.body.error).toBe("invalid_grant");
+      expect(stored).toMatchObject({ revoked: null, rotatedAt: null });
     });
   });
 
