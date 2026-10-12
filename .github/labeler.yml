@@ -10,6 +10,7 @@ review:critical:
           - apps/api/src/platform/authentication.ts
           - apps/chat/src/**/auth/**
           - packages/auth-verifier/**
+          - packages/authorization/**
           - packages/db/src/contexts.ts
           - packages/db/src/schema-lint/**
           - packages/db/scripts/schema-lint/**
