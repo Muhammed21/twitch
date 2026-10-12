@@ -305,10 +305,20 @@ describe("componentSchema", () => {
 });
 
 describe("responseDto", () => {
-  it("crée un DTO d'une réponse conforme", () => {
+  it("crée un DTO qui décode comme la réponse conforme", () => {
     const Live = z.looseObject({ slug: z.string() });
 
-    expect(responseDto(Live).schema).toBe(Live);
+    expect(responseDto(Live).schema.parse({ slug: "streamer", extra: 1 })).toEqual({
+      slug: "streamer",
+      extra: 1,
+    });
+    expect(responseDto(Live).schema.safeParse({}).success).toBe(false);
+  });
+
+  it("laisse la classe nommer le composant d'une réponse nommée à la racine", () => {
+    const Viewer = z.looseObject({ name: z.string() }).meta({ id: "Viewer" });
+
+    expect(z.globalRegistry.get(responseDto(Viewer).schema)?.id).toBeUndefined();
   });
 
   it("refuse dès sa définition une réponse qui viole les conventions", () => {

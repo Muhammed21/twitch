@@ -7,6 +7,7 @@ import { assertSchemaVersion, createContextClient, LATEST_MIGRATION } from "@rep
 
 import { AppModule } from "./app.module.ts";
 import {
+  createIdentityAccessTokenVerifier,
   createIdentityAuth,
   createIdentityRedis,
   mountIdentityRoutes,
@@ -42,6 +43,11 @@ export const createApp = async ({
           migration: LATEST_MIGRATION,
         }),
       logSink,
+      accessTokenVerifier: createIdentityAccessTokenVerifier({
+        auth,
+        redis,
+        baseURL: config.authBaseUrl,
+      }),
       identity: { prisma, redis },
     }),
     { logger: new ConsoleLogger({ json: true }), bodyParser: false },

@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 
 import { type OAuthClaimExtensionInput, oauthProvider } from "@better-auth/oauth-provider";
 import { betterAuth } from "better-auth";
@@ -113,6 +113,7 @@ export const createIdentityAuth = ({
     baseURL,
     database: prismaAdapter(prisma, { provider: "postgresql" }),
     disabledPaths: ["/token"],
+    advanced: { database: { generateId: () => randomUUID() } },
     hooks: {
       before: guardRefreshGrant((input) => revokeAll({ ...input, reason: "refresh_token_reuse" })),
     },

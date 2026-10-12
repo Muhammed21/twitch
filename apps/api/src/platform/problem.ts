@@ -22,15 +22,21 @@ type Problem = {
 
 export class ProblemException extends Error {
   readonly problem: Problem;
+  readonly headers: Readonly<Record<string, string>>;
 
   constructor({
     status,
     title,
     type = "about:blank",
     detail,
-  }: Omit<Problem, "type" | "errors"> & { type?: string }) {
+    headers = {},
+  }: Omit<Problem, "type" | "errors"> & {
+    type?: string;
+    headers?: Readonly<Record<string, string>>;
+  }) {
     super(title);
     this.problem = { type, title, status, detail };
+    this.headers = headers;
   }
 }
 
@@ -94,6 +100,7 @@ export class ProblemFilter implements ExceptionFilter {
       });
     }
     response
+      .set(exception instanceof ProblemException ? exception.headers : {})
       .status(problem.status)
       .type("application/problem+json")
       .json({ ...problem, instance: pathOf(request), correlationId });

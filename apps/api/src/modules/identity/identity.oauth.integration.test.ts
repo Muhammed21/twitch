@@ -314,6 +314,15 @@ const deleteSession = (sid: string) =>
     client.query(`DELETE FROM "identity"."IdentitySession" WHERE "id" = $1`, [sid]),
   );
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+const me = async (base: string, accessToken?: string) => {
+  const response = await fetch(`${base}/v1/me`, {
+    headers: accessToken === undefined ? {} : { authorization: `Bearer ${accessToken}` },
+  });
+  return { status: response.status, body: (await response.json()) as Record<string, unknown> };
+};
+
 const webSessionOf = async (base: string, cookie: string) =>
   (await fetch(`${base}/auth/get-session`, { headers: { cookie } })).json();
 
@@ -735,6 +744,52 @@ describe("identity : caractérisation OAuth de l'ADR 0026, contre le vrai better
       expect(await withRedis((redis) => redis.exists(revokedSidKey(sid)))).toBe(0);
       expect(await webSessionOf(base, cookie)).not.toBeNull();
       expect(await auditEntriesOf(userId)).toEqual([]);
+    });
+  });
+
+  it("identifie comptes et sessions par des UUID", async () => {
+    await withApi(async (base) => {
+      const { tokens } = await signIn(base);
+      const { userId, sid } = identityOf(tokens.access_token);
+
+      expect(userId).toMatch(UUID);
+      expect(sid).toMatch(UUID);
+    });
+  });
+
+  it("rend le compte du jeton sur GET /v1/me", async () => {
+    await withApi(async (base) => {
+      const { tokens } = await signIn(base);
+      const { userId } = identityOf(tokens.access_token);
+
+      expect(await me(base, tokens.access_token)).toEqual({
+        status: 200,
+        body: {
+          id: userId,
+          name: "Viewer de test",
+          email: expect.stringMatching(/^oauth-.+@twitch\.local$/),
+        },
+      });
+    });
+  });
+
+  it("refuse GET /v1/me sans jeton, ou avec un jeton opaque qui n'est pas pour /v1", async () => {
+    await withApi(async (base) => {
+      const { tokens } = await signIn(base, WITHOUT_RESOURCE);
+
+      expect(await me(base)).toMatchObject({ status: 401 });
+      expect(await me(base, tokens.access_token)).toMatchObject({ status: 401 });
+    });
+  });
+
+  it("refuse GET /v1/me avec le jeton d'une session révoquée sur réutilisation", async () => {
+    await withApi(async (base) => {
+      const { clientId, tokens } = await signIn(base);
+      await refresh(base, { clientId, refreshToken: tokens.refresh_token });
+      await expireReplayWindow(tokens.refresh_token);
+      await refresh(base, { clientId, refreshToken: tokens.refresh_token });
+
+      expect(await me(base, tokens.access_token)).toMatchObject({ status: 401 });
     });
   });
 
