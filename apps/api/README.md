@@ -45,17 +45,18 @@ En CI, « Generated artefacts » vérifie que `openapi.json` est à jour, et « 
 
 better-auth et ses plugins `jwt`, `oauth-provider` et `two-factor` (même version exacte) émettent les jetons de l'app iOS par OAuth PKCE, sous `/auth/oauth2/*`. Réglages, vérifiés par `identity.oauth.integration.test.ts` et `identity.two-factor.integration.test.ts` contre le vrai better-auth :
 
-| Réglage                    | Valeur                                                                                                        |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Jeton d'accès              | JWT EdDSA de 900 s, pour la ressource `<BETTER_AUTH_URL>/v1`                                                  |
-| Jeton de rafraîchissement  | 256 bits, 60 jours glissants, stocké en empreinte SHA-256                                                     |
-| Durée absolue              | 180 jours depuis l'authentification, conservée à chaque rotation ; au-delà, `invalid_grant`                   |
-| Rejeu d'un jeton consommé  | même réponse pendant 30 s, conservée chiffrée par `BETTER_AUTH_SECRET` ; au-delà, tous les appareils révoqués |
-| Réutilisation hors fenêtre | toutes les sessions de l'utilisateur révoquées, voir ci-dessous                                               |
-| Clé de signature           | rotation tous les 90 jours, ancienne clé publiée encore 24 h, JWKS à `/.well-known/jwks.json`                 |
-| Endpoint `/token` de `jwt` | désactivé                                                                                                     |
-| Second facteur             | TOTP sous `/auth/two-factor/*`, actif après vérification d'un premier code                                    |
-| Codes de récupération      | 10, à usage unique, chiffrés par `BETTER_AUTH_SECRET` comme le secret TOTP                                    |
+| Réglage                     | Valeur                                                                                                                                                           |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Jeton d'accès               | JWT EdDSA de 900 s, pour la ressource `<BETTER_AUTH_URL>/v1`                                                                                                     |
+| Contexte d'authentification | `twitch_auth_time` (création de la session) et `twitch_amr` (`pwd`, puis `otp` et `mfa` après le second facteur), absents si la session n'existe plus (ADR 0033) |
+| Jeton de rafraîchissement   | 256 bits, 60 jours glissants, stocké en empreinte SHA-256                                                                                                        |
+| Durée absolue               | 180 jours depuis l'authentification, conservée à chaque rotation ; au-delà, `invalid_grant`                                                                      |
+| Rejeu d'un jeton consommé   | même réponse pendant 30 s, conservée chiffrée par `BETTER_AUTH_SECRET` ; au-delà, tous les appareils révoqués                                                    |
+| Réutilisation hors fenêtre  | toutes les sessions de l'utilisateur révoquées, voir ci-dessous                                                                                                  |
+| Clé de signature            | rotation tous les 90 jours, ancienne clé publiée encore 24 h, JWKS à `/.well-known/jwks.json`                                                                    |
+| Endpoint `/token` de `jwt`  | désactivé                                                                                                                                                        |
+| Second facteur              | TOTP sous `/auth/two-factor/*`, actif après vérification d'un premier code                                                                                       |
+| Codes de récupération       | 10, à usage unique, chiffrés par `BETTER_AUTH_SECRET` comme le secret TOTP                                                                                       |
 
 Un jeton consommé rejoué hors de la fenêtre de 30 s déclenche `revokeAllSessions` (`application/`), avant le plafond de 180 jours :
 

@@ -136,6 +136,25 @@ const storedTwoFactor = async (email: string) => {
   }
 };
 
+const latestSessionAmr = async (email: string) => {
+  const client = new Client({ connectionString: urlOf("DATABASE_URL_MIGRATOR") });
+  await client.connect();
+  try {
+    const { rows } = await client.query<{ amr: string[] }>(
+      `SELECT s."amr"
+         FROM "identity"."IdentitySession" s
+         JOIN "identity"."IdentityUser" u ON u."id" = s."userId"
+        WHERE u."email" = $1
+        ORDER BY s."createdAt" DESC
+        LIMIT 1`,
+      [email],
+    );
+    return rows[0]?.amr;
+  } finally {
+    await client.end();
+  }
+};
+
 describe("identity : second facteur TOTP de l'ADR 0026, contre le vrai better-auth", () => {
   it("garde les codes de récupération chiffrés en base, aucun en clair", async () => {
     await withApi(async (base) => {
@@ -181,6 +200,16 @@ describe("identity : second facteur TOTP de l'ADR 0026, contre le vrai better-au
 
       expect(signIn.body.twoFactorRedirect).toBe(true);
       expect(signIn.cookie).not.toMatch(SESSION_TOKEN);
+    });
+  });
+
+  it("trace le mot de passe et le second facteur sur la session ouverte par un code de récupération", async () => {
+    await withApi(async (base) => {
+      const { email, backupCodes } = await activateTwoFactor(base);
+      const signedIn = await signInWithBackupCode(base, email, backupCodes[0] ?? "");
+
+      expect(signedIn.status).toBe(200);
+      expect(await latestSessionAmr(email)).toEqual(["pwd", "otp", "mfa"]);
     });
   });
 
