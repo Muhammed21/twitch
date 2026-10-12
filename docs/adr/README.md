@@ -35,13 +35,14 @@ Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes
 | [0023](0023-client-ios-socketio-minimal-et-refus-http-au-handshake.md)       | Client iOS socket.io minimal et refus HTTP 401 / 403 au handshake                                              | Accepté                                                         | Chat         |
 | [0024](0024-conventions-de-contrat-pour-la-compatibilite.md)                 | Conventions de contrat pour la compatibilité ascendante (réponses ouvertes, enums ouverts, unions extensibles) | Accepté                                                         | Contrat      |
 | [0025](0025-un-client-prisma-par-contexte.md)                                | Un client Prisma par contexte, et ce que la base ne protège pas                                                | Accepté                                                         | Données      |
-| [0026](0026-better-auth-oauth-provider-et-revocation-sur-reutilisation.md)   | better-auth en serveur OAuth, révocation de tous les appareils sur réutilisation                               | Accepté                                                         | Auth         |
+| [0026](0026-better-auth-oauth-provider-et-revocation-sur-reutilisation.md)   | better-auth en serveur OAuth, révocation de tous les appareils sur réutilisation                               | Accepté — claims `amr` et `auth_time` remplacés par 0033        | Auth         |
 | [0027](0027-backpressure-et-dimensionnement-du-chat.md)                      | Clients lents, dimensionnement et filtrage des blocages dans le chat                                           | Accepté                                                         | Chat         |
 | [0028](0028-conteneurisation-et-environnement-local-docker-compose.md)       | Conteneurisation et environnement local Docker Compose (hébergement reporté)                                   | Accepté                                                         | Infra        |
 | [0029](0029-oxlint-et-oxfmt-a-la-place-d-eslint-et-prettier.md)              | oxlint et oxfmt à la place d'ESLint et Prettier (lint typé sur TypeScript 7)                                   | Accepté                                                         | Outillage    |
 | [0030](0030-pas-de-client-web-app-ios-seul-client.md)                        | Pas de client web : l'app iOS est le seul client du produit                                                    | Accepté                                                         | Périmètre    |
 | [0031](0031-service-video-maison-a-la-maniere-d-ivs.md)                      | Un service vidéo maison, à la manière d'Amazon IVS, à la place d'IVS                                           | Accepté                                                         | Vidéo        |
 | [0032](0032-salon-de-chat-permanent-par-chaine.md)                           | Un salon de chat permanent par chaîne, ouvert hors live                                                        | Accepté                                                         | Chat         |
+| [0033](0033-claims-twitch-auth-time-et-twitch-amr-dans-le-jeton-d-acces.md)  | Claims `twitch_auth_time` et `twitch_amr` dans le jeton d'accès, à la place d'`auth_time` et `amr`             | Proposé                                                         | Auth         |
 
 ## Dépendances principales
 
@@ -61,7 +62,7 @@ Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes
 0004 ── 0022 (transport socket.io, amende 0005 et 0011) ── 0023 (client iOS minimal, refus 401 / 403, amende 0010)
 0009 ── 0024 (conventions de compatibilité, amende aussi 0023)
 0008 ── 0025 (un client Prisma par contexte, amende aussi 0002, 0006, 0018)
-0005 ── 0026 (better-auth + oauth-provider)
+0005 ── 0026 (better-auth + oauth-provider) ── 0033 (claims twitch_auth_time / twitch_amr, amende 0026 §4)
 0022 ── 0027 (clients lents, dimensionnement, amende aussi 0021)
 0002, 0008, 0025 ── 0028 (images, Compose local, ordre de déploiement, rôles provisionnés)
 0018 ── 0029 (oxlint / oxfmt remplacent ESLint / Prettier)

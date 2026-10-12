@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 
-import { oauthProvider } from "@better-auth/oauth-provider";
+import { type OAuthClaimExtensionInput, oauthProvider } from "@better-auth/oauth-provider";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { APIError, createAuthMiddleware } from "better-auth/api";
@@ -11,6 +11,10 @@ import type { createContextClient } from "@repo/db";
 
 import { revokeAllSessions } from "../application/revoke-all-sessions.ts";
 import { exceedsAbsoluteLifetime } from "../domain/absolute-lifetime.ts";
+import {
+  authenticationClaims,
+  authenticationMethodsFor,
+} from "../domain/authentication-context.ts";
 import { isRefreshTokenReuse } from "../domain/refresh-token-reuse.ts";
 import { ACCESS_TOKEN_LIFETIME_SECONDS } from "../domain/token-lifetimes.ts";
 import { prismaSessionRevocationStore } from "./prisma-session-revocation-store.ts";
@@ -76,6 +80,17 @@ const guardRefreshGrant = (
     }
   });
 
+const sessionAuthenticationClaims = async ({ ctx, sessionId }: OAuthClaimExtensionInput) => {
+  if (typeof sessionId !== "string") {
+    return {};
+  }
+  const session = await ctx.context.adapter.findOne<{ createdAt: Date; amr: string[] | null }>({
+    model: "session",
+    where: [{ field: "id", value: sessionId }],
+  });
+  return session === null ? {} : authenticationClaims(session);
+};
+
 export const createIdentityAuth = ({
   prisma,
   redis,
@@ -103,7 +118,19 @@ export const createIdentityAuth = ({
     },
     emailAndPassword: { enabled: true },
     user: { modelName: "IdentityUser" },
-    session: { modelName: "IdentitySession" },
+    session: {
+      modelName: "IdentitySession",
+      additionalFields: { amr: { type: "string[]", input: false } },
+    },
+    databaseHooks: {
+      session: {
+        create: {
+          before: async (session, context) => ({
+            data: { ...session, amr: [...authenticationMethodsFor(context?.path ?? "")] },
+          }),
+        },
+      },
+    },
     account: { modelName: "IdentityAccount" },
     verification: { modelName: "IdentityVerification" },
     plugins: [
@@ -128,6 +155,7 @@ export const createIdentityAuth = ({
         refreshTokenReuseInterval: IDENTITY_TOKEN_SETTINGS.refreshTokenReuseInterval,
         generateRefreshToken,
         storeTokens: { hash: hashToken },
+        extensions: [{ claims: { accessToken: sessionAuthenticationClaims } }],
         schema: {
           oauthClient: { modelName: "IdentityOAuthClient" },
           oauthResource: { modelName: "IdentityOAuthResource" },

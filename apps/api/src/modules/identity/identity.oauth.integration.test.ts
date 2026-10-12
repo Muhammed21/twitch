@@ -299,6 +299,21 @@ const auditEntriesOf = (userId: string) =>
     return rows;
   });
 
+const sessionAuthTime = (sid: string) =>
+  asMigrator(async (client) => {
+    const { rows } = await client.query<{ epoch: number }>(
+      `SELECT floor(extract(epoch FROM "createdAt"))::integer AS "epoch"
+         FROM "identity"."IdentitySession" WHERE "id" = $1`,
+      [sid],
+    );
+    return rows[0]?.epoch;
+  });
+
+const deleteSession = (sid: string) =>
+  asMigrator((client) =>
+    client.query(`DELETE FROM "identity"."IdentitySession" WHERE "id" = $1`, [sid]),
+  );
+
 const webSessionOf = async (base: string, cookie: string) =>
   (await fetch(`${base}/auth/get-session`, { headers: { cookie } })).json();
 
@@ -465,6 +480,60 @@ describe("identity : caractérisation OAuth de l'ADR 0026, contre le vrai better
       expect(replay.status).toBe(200);
       expect(replay.body.refresh_token).toBe(first.body.refresh_token);
       expect(next.status).toBe(200);
+    });
+  });
+
+  it("porte l'heure et la méthode d'authentification de la session dans le jeton d'accès", async () => {
+    await withApi(async (base) => {
+      const { tokens } = await signIn(base);
+      const { sid } = identityOf(tokens.access_token);
+      const authTime = await sessionAuthTime(sid);
+
+      expect(authTime).toEqual(expect.any(Number));
+      expect(decodeJwt(tokens.access_token)).toMatchObject({
+        twitch_auth_time: authTime,
+        twitch_amr: ["pwd"],
+      });
+    });
+  });
+
+  it("refuse qu'un client réécrive les méthodes d'authentification de sa session", async () => {
+    await withApi(async (base) => {
+      const { clientId, cookie, tokens } = await signIn(base);
+      await fetch(`${base}/auth/update-session`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          origin: urlOf("BETTER_AUTH_URL"),
+          cookie,
+        },
+        body: JSON.stringify({ amr: ["pwd", "otp", "mfa"] }),
+      });
+      const rotated = await refresh(base, { clientId, refreshToken: tokens.refresh_token });
+
+      expect(decodeJwt(rotated.body.access_token)).toMatchObject({ twitch_amr: ["pwd"] });
+    });
+  });
+
+  it("garde l'heure et la méthode d'authentification après une rotation", async () => {
+    await withApi(async (base) => {
+      const { clientId, tokens } = await signIn(base);
+      const rotated = await refresh(base, { clientId, refreshToken: tokens.refresh_token });
+      const { twitch_auth_time, twitch_amr } = decodeJwt(tokens.access_token);
+
+      expect(decodeJwt(rotated.body.access_token)).toMatchObject({ twitch_auth_time, twitch_amr });
+    });
+  });
+
+  it("n'émet pas les claims d'authentification quand la session n'existe plus", async () => {
+    await withApi(async (base) => {
+      const { clientId, tokens } = await signIn(base);
+      await deleteSession(identityOf(tokens.access_token).sid);
+      const rotated = await refresh(base, { clientId, refreshToken: tokens.refresh_token });
+
+      expect(rotated.status).toBe(200);
+      expect(decodeJwt(rotated.body.access_token)).not.toHaveProperty("twitch_auth_time");
+      expect(decodeJwt(rotated.body.access_token)).not.toHaveProperty("twitch_amr");
     });
   });
 

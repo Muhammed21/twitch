@@ -35,6 +35,8 @@ model IdentitySession {
   ipAddress     String?
   /// @personal
   userAgent     String?
+  /// Méthodes d'authentification de la session, valeurs de la RFC 8176 (ADR 0033).
+  amr           String[]
   /// @personal
   userId        String
   user          IdentityUser                @relation(fields: [userId], references: [id], onDelete: Cascade)

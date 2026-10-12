@@ -120,10 +120,10 @@ _Tests d'abord_ : `authTime` conservé à chaque rotation ; refresh accepté à 
 **PR 6b — Réaction à la réutilisation.** Hook de réutilisation (liste de révocation Redis de tous les `sid`, Pub/Sub, révocation des sessions web, audit) ; table d'audit minimale dans `audit`. La notification de l'utilisateur arrive avec le contexte `notification`. Le hook passe avant celui du plafond, pour qu'un jeton consommé rejoué soit toujours traité comme une réutilisation.
 _Tests d'abord_ : un token consommé rejoué déclenche les quatre effets ; un rejeu dans la fenêtre de 30 s n'en déclenche aucun.
 
-**PR 6c — Claims `amr` et `auth_time`.** `customAccessTokenClaims` ne reçoit ni la session ni `authTime` : court spike sur le contournement, puis les deux claims dans le jeton d'accès.
-_Tests d'abord_ : `amr` et `auth_time` présents dans le JWT, et `auth_time` inchangé après rotation.
+**PR 6c — Claims d'authentification (ADR 0033).** better-auth réserve `auth_time` et `amr` sans les émettre dans le jeton d'accès : une extension de claims ajoute `twitch_auth_time` et `twitch_amr`, lus sur la session par son `sid`. La session enregistre `amr` à sa création, d'après l'endpoint de connexion.
+_Tests d'abord_ : claims présents après une connexion par mot de passe et inchangés après rotation ; absents si la session n'existe plus ; `["pwd", "otp", "mfa"]` sur une session ouverte par le second facteur.
 
-**PR 7 — `packages/auth-verifier` et garde (jalon A2).** `AccessTokenVerifier` (`jose`, cache de 10 min, rechargement sur `kid` inconnu au plus une fois par minute, vérification de `aud` et `iss`, consultation de la liste de révocation par `sid`), garde NestJS, route `GET /v1/me`.
+**PR 7 — `packages/auth-verifier` et garde (jalon A2).** `AccessTokenVerifier` (`jose`, cache de 10 min, rechargement sur `kid` inconnu au plus une fois par minute, vérification de `aud` et `iss`, consultation de la liste de révocation par `sid`, lecture de `twitch_auth_time` et `twitch_amr`), garde NestJS, route `GET /v1/me`.
 _Tests d'abord_ : `kid` inconnu → un seul rechargement ; `sid` révoqué → 401 ; token d'une autre audience → 401 ; aucun rôle lu depuis le JWT (test de régression, ADR 0006).
 
 ### Autorisation (ADR 0006)
