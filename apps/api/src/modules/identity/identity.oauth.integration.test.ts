@@ -419,7 +419,10 @@ describe("identity : caractérisation OAuth de l'ADR 0026, contre le vrai better
         { audience: API_RESOURCE },
       );
 
-      expect(decodeProtectedHeader(tokens.access_token).alg).toBe("EdDSA");
+      expect(decodeProtectedHeader(tokens.access_token)).toMatchObject({
+        alg: "EdDSA",
+        typ: "at+jwt",
+      });
       expect(tokens.expires_in).toBe(900);
       expect((payload.exp ?? 0) - (payload.iat ?? 0)).toBe(900);
       expect(payload.sub).toEqual(expect.any(String));
