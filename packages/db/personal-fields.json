@@ -4,6 +4,8 @@
   "audit.AuditEntry.onBehalfOf",
   "audit.AuditEntry.targetId",
   "audit.AuditEntry.userAgent",
+  "authz.AuthzRoleAssignment.grantedBy",
+  "authz.AuthzRoleAssignment.subjectId",
   "identity.IdentityAccount.accessToken",
   "identity.IdentityAccount.accountId",
   "identity.IdentityAccount.idToken",

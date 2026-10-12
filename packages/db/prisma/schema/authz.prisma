@@ -1,0 +1,45 @@
+// Noyau partagé des autorisations (ADR 0006 §3) : lecture par tous les contextes, écriture par channel et moderation.
+
+enum AuthzRole {
+  owner
+  editor
+  moderator
+  vip
+  banned
+  admin
+  staff
+  support
+
+  @@schema("authz")
+}
+
+enum AuthzScopeType {
+  platform
+  channel
+
+  @@schema("authz")
+}
+
+/// Attribution (sujet, rôle, portée). Révoquée par revokedAt, jamais supprimée : l'historique fait partie de l'audit.
+model AuthzRoleAssignment {
+  id        String         @id @default(uuid())
+  /// @personal
+  subjectId String
+  role      AuthzRole
+  scopeType AuthzScopeType
+  /// "platform", ou l'identifiant de la chaîne.
+  scopeId   String
+  /// Auteur de l'attribution, un humain ou un compte de service nommé (ADR 0007).
+  /// @personal
+  grantedBy String
+  grantedAt DateTime       @default(now())
+  /// Fin d'un timeout.
+  expiresAt DateTime?
+  revokedAt DateTime?
+  reason    String?
+
+  @@unique([subjectId, role, scopeType, scopeId, revokedAt])
+  @@index([subjectId, revokedAt])
+  @@index([scopeType, scopeId, role, revokedAt])
+  @@schema("authz")
+}
