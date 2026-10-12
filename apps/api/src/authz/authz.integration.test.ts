@@ -7,9 +7,11 @@ import { createContextClient } from "@repo/db";
 
 import {
   ASSIGNMENTS_TTL_SECONDS,
+  cacheIfUnchanged,
   createAuthzContext,
   createAuthzRedis,
   invalidateAssignments,
+  readGeneration,
 } from "./authz-context.ts";
 
 const urlOf = (variable: string): string => {
@@ -126,6 +128,43 @@ describe("AuthzContext sur PostgreSQL et Redis (ADR 0006 §5)", () => {
       expect(received).toEqual([{ message: { userId: subjectId }, keyStillCached: 0 }]);
       expect(await context.assignmentsOf(subjectId)).toEqual([]);
       expect((await context.abilityFor(subjectId)).can("update", channel(scopeId))).toBe(false);
+    });
+  });
+
+  it("n'écrit pas en cache une lecture devancée par une invalidation", async () => {
+    await withRedis(async (redis) => {
+      const userId = randomUUID();
+      const generation = await readGeneration({ redis, userId });
+      await invalidateAssignments({ redis, userId });
+
+      await cacheIfUnchanged({ redis, userId, generation, assignments: [] });
+
+      expect(await redis.exists(assignmentsKey(userId))).toBe(0);
+    });
+  });
+
+  it("écrit en cache une lecture dont la génération n'a pas changé", async () => {
+    await withRedis(async (redis) => {
+      const userId = randomUUID();
+      await invalidateAssignments({ redis, userId });
+      const generation = await readGeneration({ redis, userId });
+
+      await cacheIfUnchanged({ redis, userId, generation, assignments: [] });
+
+      expect(await redis.get(assignmentsKey(userId))).toBe("[]");
+      expect(await redis.ttl(assignmentsKey(userId))).toBeGreaterThan(ASSIGNMENTS_TTL_SECONDS - 5);
+    });
+  });
+
+  it("change de génération à chaque invalidation", async () => {
+    await withRedis(async (redis) => {
+      const userId = randomUUID();
+      const before = await readGeneration({ redis, userId });
+      await invalidateAssignments({ redis, userId });
+      const after = await readGeneration({ redis, userId });
+      await invalidateAssignments({ redis, userId });
+
+      expect(new Set([before, after, await readGeneration({ redis, userId })]).size).toBe(3);
     });
   });
 

@@ -15,6 +15,7 @@ export default defineConfig({
         "src/app.module.ts",
         "src/modules/*/infrastructure/**",
         "src/modules/*/*.module.ts",
+        "src/authz/authz-context.ts",
       ],
       reporter: ["text"],
       thresholds: {
