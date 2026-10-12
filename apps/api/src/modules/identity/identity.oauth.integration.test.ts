@@ -256,6 +256,7 @@ const expireSigningKey = (kid: string, hoursAgo: number) =>
 
 beforeAll(async () => {
   await asMigrator((client) => client.query(`DELETE FROM "identity"."IdentityOAuthResource"`));
+  await asMigrator((client) => client.query(`DELETE FROM "identity"."IdentityJwks"`));
 });
 
 describe("identity : caractérisation OAuth de l'ADR 0026, contre le vrai better-auth", () => {
