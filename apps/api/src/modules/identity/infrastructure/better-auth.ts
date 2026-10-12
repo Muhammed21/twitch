@@ -3,7 +3,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { oauthProvider } from "@better-auth/oauth-provider";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { jwt } from "better-auth/plugins";
+import { jwt, twoFactor } from "better-auth/plugins";
 
 import type { createContextClient } from "@repo/db";
 
@@ -53,6 +53,11 @@ export const createIdentityAuth = ({
           gracePeriod: IDENTITY_TOKEN_SETTINGS.jwksGracePeriod,
         },
         schema: { jwks: { modelName: "IdentityJwks" } },
+      }),
+      twoFactor({
+        issuer: "Twitch",
+        backupCodeOptions: { storeBackupCodes: "encrypted" },
+        schema: { twoFactor: { modelName: "IdentityTwoFactor" } },
       }),
       oauthProvider({
         loginPage: "/login",
