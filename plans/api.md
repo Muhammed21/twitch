@@ -131,8 +131,11 @@ _Tests d'abord_ : sans jeton → `401` ; `sid` révoqué → `401` ; `/v1/me` re
 
 ### Autorisation (ADR 0006)
 
-**PR 8 — Noyau `authz`.** `packages/authorization` (rôles, définition CASL, matrice), modèle `RoleAssignment` dans `authz`, port `AuthzContext` : cache Redis `authz:assign:{userId}` de 300 s, invalidation explicite dans l'ordre commit → suppression → publication.
-_Tests d'abord_ : matrice complète (rôle × action → autorisé ou refusé) ; modérateur de A et banni de B en même temps ; tentative d'attribution hors portée refusée ; timeout expiré qui ne restreint plus rien ; cache vidé avant la réponse.
+**PR 8a — `packages/authorization`.** Rôles, actions, ability CASL construite à partir des attributions actives, matrice de la tranche 1 (voir le README du package).
+_Tests d'abord_ : matrice complète (rôle × action → autorisé ou refusé) ; modérateur de A et banni de B en même temps ; tentative d'attribution hors portée refusée ; timeout expiré qui ne restreint plus rien.
+
+**PR 8b — `RoleAssignment` et `AuthzContext`.** Modèle `AuthzRoleAssignment` dans `authz`, port `AuthzContext` : cache Redis `authz:assign:{userId}` de 300 s, invalidation explicite dans l'ordre commit → suppression → publication.
+_Tests d'abord_ : attributions relues après une écriture ; cache vidé avant la réponse ; TTL de 300 s.
 
 ### Contextes de la tranche 1
 
