@@ -123,8 +123,11 @@ _Tests d'abord_ : un token consommé rejoué déclenche les quatre effets ; un r
 **PR 6c — Claims d'authentification (ADR 0033).** better-auth réserve `auth_time` et `amr` sans les émettre dans le jeton d'accès : une extension de claims ajoute `twitch_auth_time` et `twitch_amr`, lus sur la session par son `sid`. La session enregistre `amr` à sa création, d'après l'endpoint de connexion.
 _Tests d'abord_ : claims présents après une connexion par mot de passe et inchangés après rotation ; absents si la session n'existe plus ; `["pwd", "otp", "mfa"]` sur une session ouverte par le second facteur.
 
-**PR 7 — `packages/auth-verifier` et garde (jalon A2).** `AccessTokenVerifier` (`jose`, cache de 10 min, rechargement sur `kid` inconnu au plus une fois par minute, vérification de `aud` et `iss`, consultation de la liste de révocation par `sid`, lecture de `twitch_auth_time` et `twitch_amr`), garde NestJS, route `GET /v1/me`.
-_Tests d'abord_ : `kid` inconnu → un seul rechargement ; `sid` révoqué → 401 ; token d'une autre audience → 401 ; aucun rôle lu depuis le JWT (test de régression, ADR 0006).
+**PR 7a — `packages/auth-verifier`.** `createAccessTokenVerifier` (`jose`, cache JWKS de 10 min, rechargement sur `kid` inconnu au plus une fois par minute, vérification de `aud`, `iss`, du type `at+jwt` et de l'algorithme `EdDSA`, port de révocation par `sid`, lecture de `twitch_auth_time` et `twitch_amr`).
+_Tests d'abord_ : `kid` inconnu → un seul rechargement ; `sid` révoqué → refus ; token d'une autre audience → refus ; aucun rôle lu depuis le JWT (test de régression, ADR 0006).
+
+**PR 7b — Garde et `GET /v1/me` (jalon A2).** Adapter Redis de la liste de révocation, garde NestJS (`401` avec `WWW-Authenticate: Bearer`), JWKS lu en interne par `auth.handler`, route `GET /v1/me`.
+_Tests d'abord_ : sans jeton → `401` ; `sid` révoqué → `401` ; `/v1/me` rend l'utilisateur du jeton.
 
 ### Autorisation (ADR 0006)
 
