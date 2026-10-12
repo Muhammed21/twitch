@@ -1,6 +1,6 @@
 # 0026 — better-auth en serveur OAuth, et révocation de tous les appareils sur réutilisation
 
-- Statut : Accepté
+- Statut : Accepté — claims `amr` et `auth_time` (§4) remplacés par [0033](0033-claims-twitch-auth-time-et-twitch-amr-dans-le-jeton-d-acces.md)
 - Date : 2026-09-24
 - Décideurs : Muhammed Cavus
 - Amende : ADR 0005 (détection de réutilisation, passkeys, stockage de la clé de signature, chemin du JWKS, notes d'implémentation)

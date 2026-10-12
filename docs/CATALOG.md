@@ -44,6 +44,7 @@ Chaque page de `docs/`, une ligne chacune : titre, [mode](README.md#carte), stat
 - [0030 — Pas de client web : l'app iOS est le seul client du produit](adr/0030-pas-de-client-web-app-ios-seul-client.md) — _explanation · Accepté_ — Le produit a-t-il un client web, et que deviennent les décisions qui en supposaient un ?
 - [0031 — Un service vidéo maison, à la manière d'Amazon IVS, à la place d'IVS](adr/0031-service-video-maison-a-la-maniere-d-ivs.md) — _explanation · Accepté_ — Quelle part de la chaîne vidéo écrire soi-même, avec quels outils pour le reste, et comment la découper pour qu'elle ne bloque pas la tranche 1 ?
 - [0032 — Un salon de chat permanent par chaîne, ouvert hors live](adr/0032-salon-de-chat-permanent-par-chaine.md) — _explanation · Accepté_ — Le salon de chat a-t-il le cycle de vie de la chaîne ou celui de la session ?
+- [0033 — Claims `twitch_auth_time` et `twitch_amr` dans le jeton d'accès, à la place d'`auth_time` et `amr`](adr/0033-claims-twitch-auth-time-et-twitch-amr-dans-le-jeton-d-acces.md) — _explanation · Proposé_ — Comment porter l'heure et les méthodes d'authentification dans le jeton d'accès, quand better-auth réserve `auth_time` et `amr` sans les émettre ?
 - [Décisions d'architecture (ADR)](adr/README.md) — _reference_ — Registre des décisions structurantes du projet. Format MADR.
 
 ## Spikes — recherche bornée
