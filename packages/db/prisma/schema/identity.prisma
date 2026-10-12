@@ -1,23 +1,26 @@
-// Tables de better-auth et de ses plugins jwt et oauth-provider (ADR 0005, ADR 0026), renommées par modelName.
+// Tables de better-auth et de ses plugins jwt, oauth-provider et two-factor (ADR 0005, ADR 0026), renommées par modelName.
 
 model IdentityUser {
-  id            String                      @id
+  id               String                      @id
   /// @personal
-  name          String
+  name             String
   /// @personal
-  email         String                      @unique
+  email            String                      @unique
   /// @not-personal
-  emailVerified Boolean                     @default(false)
+  emailVerified    Boolean                     @default(false)
   /// @personal
-  image         String?
-  createdAt     DateTime                    @default(now())
-  updatedAt     DateTime                    @updatedAt
-  sessions      IdentitySession[]
-  accounts      IdentityAccount[]
-  oauthClients  IdentityOAuthClient[]
-  refreshTokens IdentityOAuthRefreshToken[]
-  accessTokens  IdentityOAuthAccessToken[]
-  consents      IdentityOAuthConsent[]
+  image            String?
+  /// @not-personal
+  twoFactorEnabled Boolean?                    @default(false)
+  createdAt        DateTime                    @default(now())
+  updatedAt        DateTime                    @updatedAt
+  sessions         IdentitySession[]
+  twoFactors       IdentityTwoFactor[]
+  accounts         IdentityAccount[]
+  oauthClients     IdentityOAuthClient[]
+  refreshTokens    IdentityOAuthRefreshToken[]
+  accessTokens     IdentityOAuthAccessToken[]
+  consents         IdentityOAuthConsent[]
 
   @@schema("identity")
 }
@@ -81,6 +84,25 @@ model IdentityVerification {
   updatedAt  DateTime @updatedAt
 
   @@index([identifier])
+  @@schema("identity")
+}
+
+/// Second facteur TOTP : secret et codes de récupération chiffrés par le secret de better-auth (ADR 0026 §2).
+model IdentityTwoFactor {
+  id                      String       @id
+  /// @personal
+  secret                  String
+  /// @personal
+  backupCodes             String
+  /// @personal
+  userId                  String
+  user                    IdentityUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verified                Boolean?     @default(true)
+  failedVerificationCount Int?         @default(0)
+  lockedUntil             DateTime?
+
+  @@index([secret])
+  @@index([userId])
   @@schema("identity")
 }
 

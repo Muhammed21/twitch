@@ -42,7 +42,7 @@ En CI, « Generated artefacts » vérifie que `openapi.json` est à jour, et « 
 
 ## Authentification (ADR 0005, ADR 0026)
 
-better-auth et ses plugins `jwt` et `oauth-provider` (même version exacte) émettent les jetons de l'app iOS par OAuth PKCE, sous `/auth/oauth2/*`. Réglages, vérifiés par `identity.oauth.integration.test.ts` contre le vrai better-auth :
+better-auth et ses plugins `jwt`, `oauth-provider` et `two-factor` (même version exacte) émettent les jetons de l'app iOS par OAuth PKCE, sous `/auth/oauth2/*`. Réglages, vérifiés par `identity.oauth.integration.test.ts` et `identity.two-factor.integration.test.ts` contre le vrai better-auth :
 
 | Réglage                    | Valeur                                                                                                        |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------- |
@@ -51,5 +51,7 @@ better-auth et ses plugins `jwt` et `oauth-provider` (même version exacte) éme
 | Rejeu d'un jeton consommé  | même réponse pendant 30 s, conservée chiffrée par `BETTER_AUTH_SECRET` ; au-delà, tous les appareils révoqués |
 | Clé de signature           | rotation tous les 90 jours, ancienne clé publiée encore 24 h                                                  |
 | Endpoint `/token` de `jwt` | désactivé                                                                                                     |
+| Second facteur             | TOTP sous `/auth/two-factor/*`, actif après vérification d'un premier code                                    |
+| Codes de récupération      | 10, à usage unique, chiffrés par `BETTER_AUTH_SECRET` comme le secret TOTP                                    |
 
 Sans paramètre `resource`, le jeton d'accès est opaque : l'app iOS l'envoie toujours. Un client OAuth n'obtient de jeton pour `/v1` que s'il est lié à cette ressource (`IdentityOAuthClientResource`).
