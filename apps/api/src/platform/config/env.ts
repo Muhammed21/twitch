@@ -5,6 +5,7 @@ const envSchema = z.object({
   DATABASE_URL_HEALTH: z.string().regex(/^postgres(ql)?:\/\/\S+$/),
   BETTER_AUTH_SECRET: z.string().min(32),
   BETTER_AUTH_URL: z.url({ protocol: /^https?$/ }),
+  REDIS_URL: z.url({ protocol: /^rediss?$/ }),
 });
 
 export type AppConfig = {
@@ -12,6 +13,7 @@ export type AppConfig = {
   readonly databaseUrlHealth: string;
   readonly authSecret: string;
   readonly authBaseUrl: string;
+  readonly redisUrl: string;
 };
 
 export const loadEnv = (env: Readonly<Record<string, string | undefined>>): AppConfig => {
@@ -25,5 +27,6 @@ export const loadEnv = (env: Readonly<Record<string, string | undefined>>): AppC
     databaseUrlHealth: parsed.data.DATABASE_URL_HEALTH,
     authSecret: parsed.data.BETTER_AUTH_SECRET,
     authBaseUrl: parsed.data.BETTER_AUTH_URL,
+    redisUrl: parsed.data.REDIS_URL,
   };
 };

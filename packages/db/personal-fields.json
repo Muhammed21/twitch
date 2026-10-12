@@ -1,4 +1,9 @@
 [
+  "audit.AuditEntry.actorId",
+  "audit.AuditEntry.ip",
+  "audit.AuditEntry.onBehalfOf",
+  "audit.AuditEntry.targetId",
+  "audit.AuditEntry.userAgent",
   "identity.IdentityAccount.accessToken",
   "identity.IdentityAccount.accountId",
   "identity.IdentityAccount.idToken",

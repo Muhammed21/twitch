@@ -9,14 +9,23 @@ import { z } from "zod";
 
 import type { createContextClient } from "@repo/db";
 
+import { revokeAllSessions } from "../application/revoke-all-sessions.ts";
 import { exceedsAbsoluteLifetime } from "../domain/absolute-lifetime.ts";
+import { isRefreshTokenReuse } from "../domain/refresh-token-reuse.ts";
+import { ACCESS_TOKEN_LIFETIME_SECONDS } from "../domain/token-lifetimes.ts";
+import { prismaSessionRevocationStore } from "./prisma-session-revocation-store.ts";
+import {
+  type IdentityRedis,
+  redisRevokedSessionList,
+  redisSessionRevocationBroadcast,
+} from "./redis-session-revocation.ts";
 
 export type IdentityPrisma = ReturnType<typeof createContextClient>;
 
 const DAY_SECONDS = 86_400;
 
 export const IDENTITY_TOKEN_SETTINGS = {
-  accessTokenExpiresIn: 900,
+  accessTokenExpiresIn: ACCESS_TOKEN_LIFETIME_SECONDS,
   refreshTokenExpiresIn: 60 * DAY_SECONDS,
   refreshTokenReuseInterval: 30,
   jwksRotationInterval: 90 * DAY_SECONDS,
@@ -35,36 +44,63 @@ const RefreshGrant = z.object({
   refresh_token: z.string(),
 });
 
-const refuseBeyondAbsoluteLifetime = createAuthMiddleware(async (ctx) => {
-  const grant = RefreshGrant.safeParse(ctx.body);
-  if (!grant.success) {
-    return;
-  }
-  const stored = await ctx.context.adapter.findOne<{ authTime: Date | null }>({
-    model: "oauthRefreshToken",
-    where: [{ field: "token", value: hashToken(grant.data.refresh_token) }],
+type StoredRefreshToken = {
+  userId: string;
+  authTime: Date | null;
+  revoked: Date | null;
+  rotationReplayExpiresAt: Date | null;
+};
+
+const guardRefreshGrant = (
+  onReuse: (input: { userId: string; userAgent: string | null }) => Promise<unknown>,
+) =>
+  createAuthMiddleware(async (ctx) => {
+    const grant = RefreshGrant.safeParse(ctx.body);
+    if (!grant.success) {
+      return;
+    }
+    const stored = await ctx.context.adapter.findOne<StoredRefreshToken>({
+      model: "oauthRefreshToken",
+      where: [{ field: "token", value: hashToken(grant.data.refresh_token) }],
+    });
+    if (stored === null) {
+      return;
+    }
+    const now = new Date();
+    if (isRefreshTokenReuse({ token: stored, now })) {
+      await onReuse({ userId: stored.userId, userAgent: ctx.headers?.get("user-agent") ?? null });
+      return;
+    }
+    if (exceedsAbsoluteLifetime({ authTime: stored.authTime, now })) {
+      throw new APIError("BAD_REQUEST", { error: "invalid_grant" });
+    }
   });
-  if (stored !== null && exceedsAbsoluteLifetime({ authTime: stored.authTime, now: new Date() })) {
-    throw new APIError("BAD_REQUEST", { error: "invalid_grant" });
-  }
-});
 
 export const createIdentityAuth = ({
   prisma,
+  redis,
   secret,
   baseURL,
 }: {
   prisma: IdentityPrisma;
+  redis: IdentityRedis;
   secret: string;
   baseURL: string;
-}) =>
-  betterAuth({
+}) => {
+  const revokeAll = revokeAllSessions({
+    store: prismaSessionRevocationStore(prisma),
+    revokedSessions: redisRevokedSessionList(redis),
+    broadcast: redisSessionRevocationBroadcast(redis),
+  });
+  return betterAuth({
     basePath: "/auth",
     secret,
     baseURL,
     database: prismaAdapter(prisma, { provider: "postgresql" }),
     disabledPaths: ["/token"],
-    hooks: { before: refuseBeyondAbsoluteLifetime },
+    hooks: {
+      before: guardRefreshGrant((input) => revokeAll({ ...input, reason: "refresh_token_reuse" })),
+    },
     emailAndPassword: { enabled: true },
     user: { modelName: "IdentityUser" },
     session: { modelName: "IdentitySession" },
@@ -104,5 +140,6 @@ export const createIdentityAuth = ({
       }),
     ],
   });
+};
 
 export type IdentityAuth = ReturnType<typeof createIdentityAuth>;

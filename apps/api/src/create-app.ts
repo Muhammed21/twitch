@@ -6,10 +6,14 @@ import type { Express } from "express";
 import { assertSchemaVersion, createContextClient, LATEST_MIGRATION } from "@repo/db";
 
 import { AppModule } from "./app.module.ts";
-import { createIdentityAuth, mountIdentityRoutes } from "./modules/identity/identity.module.ts";
+import {
+  createIdentityAuth,
+  createIdentityRedis,
+  mountIdentityRoutes,
+} from "./modules/identity/identity.module.ts";
 import { type AppConfig, loadEnv } from "./platform/config/env.ts";
 import { configureApp } from "./platform/configure-app.ts";
-import { type LogSink, stdoutSink } from "./platform/logging.ts";
+import { errorDetails, type LogSink, stdoutSink, writeLog } from "./platform/logging.ts";
 
 export const createApp = async ({
   env,
@@ -20,8 +24,13 @@ export const createApp = async ({
 }): Promise<{ app: INestApplication; config: AppConfig }> => {
   const config = loadEnv(env);
   const prisma = createContextClient({ context: "identity", env });
+  const redis = createIdentityRedis(config.redisUrl).on("error", (error: unknown) => {
+    writeLog(logSink, { level: "error", msg: "redis", ...errorDetails(error) });
+  });
+  redis.connect().catch(() => {});
   const auth = createIdentityAuth({
     prisma,
+    redis,
     secret: config.authSecret,
     baseURL: config.authBaseUrl,
   });
@@ -33,7 +42,7 @@ export const createApp = async ({
           migration: LATEST_MIGRATION,
         }),
       logSink,
-      identity: { prisma },
+      identity: { prisma, redis },
     }),
     { logger: new ConsoleLogger({ json: true }), bodyParser: false },
   );

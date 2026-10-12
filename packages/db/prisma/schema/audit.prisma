@@ -1,0 +1,27 @@
+/// Journal append-only des actions privilégiées (ADR 0006 §7) : INSERT et SELECT seulement pour les rôles applicatifs.
+model AuditEntry {
+  id          String   @id @default(uuid())
+  occurredAt  DateTime @default(now())
+  /// L'humain à l'origine de l'action (ADR 0007).
+  /// @personal
+  actorId     String
+  /// Compte de service qui agit pour l'humain, le cas échéant.
+  /// @personal
+  onBehalfOf  String?
+  action      String
+  scopeType   String?
+  scopeId     String?
+  /// @personal
+  targetId    String?
+  stateBefore Json?
+  stateAfter  Json?
+  reason      String?
+  requestId   String?
+  /// @personal
+  ip          String?
+  /// @personal
+  userAgent   String?
+
+  @@index([targetId, occurredAt])
+  @@schema("audit")
+}

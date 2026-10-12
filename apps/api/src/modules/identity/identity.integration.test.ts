@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 
 import { Client } from "pg";
-import { describe, expect, it } from "vitest";
+import { createClient } from "redis";
+import { describe, expect, it, vi } from "vitest";
 
 import { createApp } from "../../create-app.ts";
 
@@ -112,6 +113,20 @@ describe("identity : better-auth monté sous /auth, contre la base locale migré
       expect(rows).toEqual([{ open: "0" }]);
     } finally {
       await client.end();
+    }
+  });
+
+  it("ferme sa connexion Redis à l'arrêt de l'API", async () => {
+    const redis = await createClient({ url: urlOf("REDIS_URL") }).connect();
+    const apiClient = expect.objectContaining({ name: "api-identity" });
+    try {
+      await withApi(async () => {
+        await vi.waitFor(async () => expect(await redis.clientList()).toContainEqual(apiClient));
+      });
+
+      await vi.waitFor(async () => expect(await redis.clientList()).not.toContainEqual(apiClient));
+    } finally {
+      redis.destroy();
     }
   });
 

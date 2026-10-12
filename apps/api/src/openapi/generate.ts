@@ -5,6 +5,7 @@ import { NestFactory } from "@nestjs/core";
 import { createContextClient } from "@repo/db";
 
 import { AppModule } from "../app.module.ts";
+import { createIdentityRedis } from "../modules/identity/identity.module.ts";
 import { configureApp } from "../platform/configure-app.ts";
 import { buildOpenApiDocument } from "./build-document.ts";
 
@@ -20,7 +21,7 @@ const app = configureApp(
     AppModule.register({
       schemaVersionCheck: async () => {},
       logSink: () => {},
-      identity: { prisma },
+      identity: { prisma, redis: createIdentityRedis() },
     }),
     { logger: false },
   ),
