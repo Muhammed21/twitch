@@ -198,6 +198,15 @@ const ageRefreshToken = (refreshToken: string, days: number) =>
     ),
   );
 
+const storedReplayResponse = async (refreshToken: string) =>
+  asMigrator(async (client) => {
+    const { rows } = await client.query<{ rotationReplayResponse: string | null }>(
+      `SELECT "rotationReplayResponse" FROM "identity"."IdentityOAuthRefreshToken" WHERE "token" = $1`,
+      [createHash("sha256").update(refreshToken).digest("base64url")],
+    );
+    return rows[0]?.rotationReplayResponse;
+  });
+
 const expireReplayWindow = (refreshToken: string) =>
   asMigrator((client) =>
     client.query(
@@ -374,6 +383,19 @@ describe("identity : caractérisation OAuth de l'ADR 0026, contre le vrai better
       expect(replay.status).toBe(200);
       expect(replay.body.refresh_token).toBe(first.body.refresh_token);
       expect(next.status).toBe(200);
+    });
+  });
+
+  it("garde la réponse rejouable chiffrée en base, sans jeton en clair", async () => {
+    await withApi(async (base) => {
+      const { clientId, tokens } = await signIn(base);
+      const first = await refresh(base, { clientId, refreshToken: tokens.refresh_token });
+      const stored = await storedReplayResponse(tokens.refresh_token);
+
+      expect(stored).toEqual(expect.any(String));
+      expect(stored).not.toContain(first.body.refresh_token);
+      expect(stored).not.toContain(first.body.access_token);
+      expect(stored).not.toContain("refresh_token");
     });
   });
 

@@ -44,12 +44,12 @@ En CI, « Generated artefacts » vérifie que `openapi.json` est à jour, et « 
 
 better-auth et ses plugins `jwt` et `oauth-provider` (même version exacte) émettent les jetons de l'app iOS par OAuth PKCE, sous `/auth/oauth2/*`. Réglages, vérifiés par `identity.oauth.integration.test.ts` contre le vrai better-auth :
 
-| Réglage                    | Valeur                                                           |
-| -------------------------- | ---------------------------------------------------------------- |
-| Jeton d'accès              | JWT EdDSA de 900 s, pour la ressource `<BETTER_AUTH_URL>/v1`     |
-| Jeton de rafraîchissement  | 256 bits, 60 jours glissants, stocké en empreinte SHA-256        |
-| Rejeu d'un jeton consommé  | même réponse pendant 30 s ; au-delà, tous les appareils révoqués |
-| Clé de signature           | rotation tous les 90 jours, ancienne clé publiée encore 24 h     |
-| Endpoint `/token` de `jwt` | désactivé                                                        |
+| Réglage                    | Valeur                                                                                                        |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Jeton d'accès              | JWT EdDSA de 900 s, pour la ressource `<BETTER_AUTH_URL>/v1`                                                  |
+| Jeton de rafraîchissement  | 256 bits, 60 jours glissants, stocké en empreinte SHA-256                                                     |
+| Rejeu d'un jeton consommé  | même réponse pendant 30 s, conservée chiffrée par `BETTER_AUTH_SECRET` ; au-delà, tous les appareils révoqués |
+| Clé de signature           | rotation tous les 90 jours, ancienne clé publiée encore 24 h                                                  |
+| Endpoint `/token` de `jwt` | désactivé                                                                                                     |
 
 Sans paramètre `resource`, le jeton d'accès est opaque : l'app iOS l'envoie toujours. Un client OAuth n'obtient de jeton pour `/v1` que s'il est lié à cette ressource (`IdentityOAuthClientResource`).
