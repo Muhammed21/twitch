@@ -117,7 +117,7 @@ _Tests d'abord_, contre le vrai better-auth : rotation nominale ; réutilisation
 **PR 6a — Plafond de 180 jours et JWKS à la racine.** Hook `before` sur `/oauth2/token` qui refuse un refresh dont l'`authTime` d'origine dépasse 180 jours ; JWKS relayé à `/.well-known/jwks.json`.
 _Tests d'abord_ : `authTime` conservé à chaque rotation ; refresh accepté à 179 jours, refusé au-delà de 180 ; `/.well-known/jwks.json` sert la clé courante et la précédente pendant la grâce.
 
-**PR 6b — Réaction à la réutilisation.** Hook de réutilisation (liste de révocation Redis de tous les `sid`, Pub/Sub, révocation des sessions web, audit, notification) ; table d'audit minimale dans `audit`. Le hook passe avant celui du plafond, pour qu'un jeton consommé rejoué soit toujours traité comme une réutilisation.
+**PR 6b — Réaction à la réutilisation.** Hook de réutilisation (liste de révocation Redis de tous les `sid`, Pub/Sub, révocation des sessions web, audit) ; table d'audit minimale dans `audit`. La notification de l'utilisateur arrive avec le contexte `notification`. Le hook passe avant celui du plafond, pour qu'un jeton consommé rejoué soit toujours traité comme une réutilisation.
 _Tests d'abord_ : un token consommé rejoué déclenche les quatre effets ; un rejeu dans la fenêtre de 30 s n'en déclenche aucun.
 
 **PR 6c — Claims `amr` et `auth_time`.** `customAccessTokenClaims` ne reçoit ni la session ni `authTime` : court spike sur le contournement, puis les deux claims dans le jeton d'accès.

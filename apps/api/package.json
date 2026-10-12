@@ -26,6 +26,7 @@
     "@repo/result": "workspace:*",
     "better-auth": "1.7.7",
     "nestjs-zod": "5.5.0",
+    "redis": "6.2.1",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2",
     "zod": "4.6.5"

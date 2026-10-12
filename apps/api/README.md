@@ -10,13 +10,14 @@ API NestJS 11 (ADR 0002, 0009). Architecture et découpage : [plan de l'API](../
 | `pnpm test`             | Tests unitaires et HTTP (application NestJS sur un port libre)            |
 | `pnpm test:integration` | Sondes contre la base locale migrée (`pnpm infra:up` puis `pnpm migrate`) |
 
-| Variable                | Rôle                                                               |
-| ----------------------- | ------------------------------------------------------------------ |
-| `API_PORT`              | Port d'écoute, 3000 par défaut                                     |
-| `DATABASE_URL_HEALTH`   | Rôle `app_health`, lecture de la version du schéma, requis         |
-| `DATABASE_URL_IDENTITY` | Rôle `app_identity`, tables de better-auth, requis                 |
-| `BETTER_AUTH_SECRET`    | Secret de better-auth, au moins 32 caractères, requis              |
-| `BETTER_AUTH_URL`       | URL publique de l'API, origine de confiance de better-auth, requis |
+| Variable                | Rôle                                                                                    |
+| ----------------------- | --------------------------------------------------------------------------------------- |
+| `API_PORT`              | Port d'écoute, 3000 par défaut                                                          |
+| `DATABASE_URL_HEALTH`   | Rôle `app_health`, lecture de la version du schéma, requis                              |
+| `DATABASE_URL_IDENTITY` | Rôle `app_identity`, tables de better-auth, requis                                      |
+| `BETTER_AUTH_SECRET`    | Secret de better-auth, au moins 32 caractères, requis                                   |
+| `BETTER_AUTH_URL`       | URL publique de l'API, origine de confiance de better-auth, requis                      |
+| `REDIS_URL`             | Redis (`redis://` ou `rediss://`) : liste de révocation des sessions et Pub/Sub, requis |
 
 Une variable invalide arrête le démarrage avec le nom de la variable, jamais sa valeur.
 
@@ -50,9 +51,18 @@ better-auth et ses plugins `jwt`, `oauth-provider` et `two-factor` (même versio
 | Jeton de rafraîchissement  | 256 bits, 60 jours glissants, stocké en empreinte SHA-256                                                     |
 | Durée absolue              | 180 jours depuis l'authentification, conservée à chaque rotation ; au-delà, `invalid_grant`                   |
 | Rejeu d'un jeton consommé  | même réponse pendant 30 s, conservée chiffrée par `BETTER_AUTH_SECRET` ; au-delà, tous les appareils révoqués |
+| Réutilisation hors fenêtre | toutes les sessions de l'utilisateur révoquées, voir ci-dessous                                               |
 | Clé de signature           | rotation tous les 90 jours, ancienne clé publiée encore 24 h, JWKS à `/.well-known/jwks.json`                 |
 | Endpoint `/token` de `jwt` | désactivé                                                                                                     |
 | Second facteur             | TOTP sous `/auth/two-factor/*`, actif après vérification d'un premier code                                    |
 | Codes de récupération      | 10, à usage unique, chiffrés par `BETTER_AUTH_SECRET` comme le secret TOTP                                    |
+
+Un jeton consommé rejoué hors de la fenêtre de 30 s déclenche `revokeAllSessions` (`application/`), avant le plafond de 180 jours :
+
+1. en une transaction : refresh tokens de l'utilisateur révoqués, sessions web supprimées, entrée `identity.session.revoked` dans `audit.AuditEntry` ;
+2. chaque `sid` sur la liste de révocation Redis, clé `identity:revoked-sid:<sid>`, pour 15 min (la durée d'un jeton d'accès) ;
+3. `{ userId, sids }` publié sur le canal `identity.session.revoked`, pour que le chat ferme les sockets.
+
+better-auth répond ensuite `invalid_grant`.
 
 Sans paramètre `resource`, le jeton d'accès est opaque : l'app iOS l'envoie toujours. Un client OAuth n'obtient de jeton pour `/v1` que s'il est lié à cette ressource (`IdentityOAuthClientResource`).

@@ -1,6 +1,10 @@
 import { type DynamicModule, Module } from "@nestjs/common";
 
-import { IdentityModule, type IdentityPrisma } from "./modules/identity/identity.module.ts";
+import {
+  IdentityModule,
+  type IdentityPrisma,
+  type IdentityRedis,
+} from "./modules/identity/identity.module.ts";
 import type { LogSink } from "./platform/logging.ts";
 import { PlatformModule, type SchemaVersionCheck } from "./platform/platform.module.ts";
 
@@ -12,7 +16,7 @@ export class AppModule {
   }: {
     schemaVersionCheck: SchemaVersionCheck;
     logSink: LogSink;
-    identity: { prisma: IdentityPrisma };
+    identity: { prisma: IdentityPrisma; redis: IdentityRedis };
   }): DynamicModule {
     return {
       module: AppModule,

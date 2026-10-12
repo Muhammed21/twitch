@@ -10,6 +10,7 @@ const makeEnv = (overrides: Record<string, string | undefined> = {}) => ({
   DATABASE_URL_HEALTH: HEALTH_URL,
   BETTER_AUTH_SECRET: AUTH_SECRET,
   BETTER_AUTH_URL: "http://127.0.0.1:3000",
+  REDIS_URL: "redis://127.0.0.1:6379",
   ...overrides,
 });
 
@@ -20,6 +21,7 @@ describe("loadEnv", () => {
       databaseUrlHealth: HEALTH_URL,
       authSecret: AUTH_SECRET,
       authBaseUrl: "http://127.0.0.1:3000",
+      redisUrl: "redis://127.0.0.1:6379",
     });
   });
 
@@ -40,7 +42,7 @@ describe("loadEnv", () => {
 
   it("nomme toutes les variables invalides à la fois", () => {
     expect(() => loadEnv({ API_PORT: "abc" })).toThrow(
-      "Configuration invalide, variables à corriger : API_PORT, DATABASE_URL_HEALTH, BETTER_AUTH_SECRET, BETTER_AUTH_URL",
+      "Configuration invalide, variables à corriger : API_PORT, DATABASE_URL_HEALTH, BETTER_AUTH_SECRET, BETTER_AUTH_URL, REDIS_URL",
     );
   });
 
@@ -54,6 +56,17 @@ describe("loadEnv", () => {
       expect(() => loadEnv(makeEnv({ BETTER_AUTH_URL: url }))).toThrow("BETTER_AUTH_URL");
     },
   );
+
+  it.each([undefined, "", "pas une url", "http://h:6379", "xredis://h", "redis2://h"])(
+    "refuse REDIS_URL %j en la nommant",
+    (url) => {
+      expect(() => loadEnv(makeEnv({ REDIS_URL: url }))).toThrow("REDIS_URL");
+    },
+  );
+
+  it("accepte une URL rediss:// chiffrée", () => {
+    expect(loadEnv(makeEnv({ REDIS_URL: "rediss://h:6380" })).redisUrl).toBe("rediss://h:6380");
+  });
 
   it("accepte une URL postgres:// courte", () => {
     expect(loadEnv(makeEnv({ DATABASE_URL_HEALTH: "postgres://h/app" })).databaseUrlHealth).toBe(

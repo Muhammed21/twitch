@@ -1,12 +1,15 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 
-import { createRemoteJWKSet, decodeProtectedHeader, jwtVerify } from "jose";
+import { createRemoteJWKSet, decodeJwt, decodeProtectedHeader, jwtVerify } from "jose";
 import { Client } from "pg";
+import { createClient } from "redis";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { createApp } from "../../create-app.ts";
 
 const REDIRECT_URI = "twitch-ios://oauth/callback";
+
+const USER_AGENT = "Twitch-iOS/1.0 (test)";
 
 const urlOf = (variable: string): string => {
   const url = process.env[variable];
@@ -136,12 +139,13 @@ const authorizationCode = async (
 const token = async (base: string, body: Record<string, string>) => {
   const response = await fetch(`${base}/auth/oauth2/token`, {
     method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded" },
+    headers: { "content-type": "application/x-www-form-urlencoded", "user-agent": USER_AGENT },
     body: new URLSearchParams(body),
   });
+  const text = await response.text();
   return {
     status: response.status,
-    body: (await response.json()) as TokenResponse & { error?: string },
+    body: (text === "" ? {} : JSON.parse(text)) as TokenResponse & { error?: string },
   };
 };
 
@@ -245,8 +249,67 @@ const refresh = (
     resource: API_RESOURCE,
   });
 
-const withApi = async (run: (base: string) => Promise<void>) => {
-  const { app } = await createApp({ env: process.env, logSink: () => {} });
+const REVOCATION_CHANNEL = "identity.session.revoked";
+
+const revokedSidKey = (sid: string) => `identity:revoked-sid:${sid}`;
+
+const connectRedis = () => createClient({ url: urlOf("REDIS_URL") }).connect();
+
+const withRedis = async <T>(
+  run: (redis: Awaited<ReturnType<typeof connectRedis>>) => Promise<T>,
+) => {
+  const redis = await connectRedis();
+  try {
+    return await run(redis);
+  } finally {
+    redis.destroy();
+  }
+};
+
+const listenForRevocations = async () => {
+  const subscriber = await connectRedis();
+  const received: unknown[] = [];
+  await subscriber.subscribe(REVOCATION_CHANNEL, (message) => {
+    received.push(JSON.parse(message));
+  });
+  return {
+    received,
+    close: () => subscriber.destroy(),
+  };
+};
+
+const identityOf = (accessToken: string) => {
+  const { sub, sid } = decodeJwt(accessToken);
+  return { userId: String(sub), sid: String(sid) };
+};
+
+const auditEntriesOf = (userId: string) =>
+  asMigrator(async (client) => {
+    const { rows } = await client.query<{
+      action: string;
+      actorId: string;
+      reason: string | null;
+      userAgent: string | null;
+      stateAfter: unknown;
+    }>(
+      `SELECT "action", "actorId", "reason", "userAgent", "stateAfter"
+         FROM "audit"."AuditEntry" WHERE "targetId" = $1`,
+      [userId],
+    );
+    return rows;
+  });
+
+const webSessionOf = async (base: string, cookie: string) =>
+  (await fetch(`${base}/auth/get-session`, { headers: { cookie } })).json();
+
+const withApi = async (
+  run: (base: string) => Promise<void>,
+  {
+    env = {},
+    logSink = () => {},
+  }: { env?: Record<string, string>; logSink?: (line: string) => void } = {},
+) => {
+  const { app } = await createApp({ env: { ...process.env, ...env }, logSink });
   await app.listen(0, "127.0.0.1");
   try {
     await run(await app.getUrl());
@@ -492,6 +555,114 @@ describe("identity : caractérisation OAuth de l'ADR 0026, contre le vrai better
       expect(replay.body.error).toBe("invalid_grant");
       expect(secondDevice.status).toBe(400);
       expect(secondDevice.body.error).toBe("invalid_grant");
+    });
+  });
+
+  it("réagit à un jeton consommé rejoué hors de la fenêtre : sid révoqués, publication, sessions web, audit", async () => {
+    await withApi(async (base) => {
+      const { clientId, cookie, tokens } = await signIn(base);
+      const { userId, sid } = identityOf(tokens.access_token);
+      const revocations = await listenForRevocations();
+      await refresh(base, { clientId, refreshToken: tokens.refresh_token });
+      await expireReplayWindow(tokens.refresh_token);
+      const replay = await refresh(base, { clientId, refreshToken: tokens.refresh_token });
+      revocations.close();
+
+      expect(replay.status).toBe(400);
+      expect(replay.body.error).toBe("invalid_grant");
+      const ttl = await withRedis((redis) => redis.ttl(revokedSidKey(sid)));
+      expect(ttl).toBeGreaterThan(890);
+      expect(ttl).toBeLessThanOrEqual(900);
+      expect(revocations.received).toEqual([{ userId, sids: [sid] }]);
+      expect(await webSessionOf(base, cookie)).toBeNull();
+      expect(await auditEntriesOf(userId)).toEqual([
+        {
+          action: "identity.session.revoked",
+          actorId: userId,
+          reason: "refresh_token_reuse",
+          userAgent: USER_AGENT,
+          stateAfter: { revokedSids: [sid] },
+        },
+      ]);
+    });
+  });
+
+  it("révoque l'utilisateur sur tous ses clients OAuth, sans toucher aux autres utilisateurs", async () => {
+    await withApi(async (base) => {
+      const { clientId, cookie, tokens } = await signIn(base);
+      const otherClientId = await seedPublicClient();
+      const otherClient = await signInDevice(base, {
+        cookie,
+        clientId: otherClientId,
+        resource: API_RESOURCE,
+      });
+      const otherUser = await signIn(base);
+      await refresh(base, { clientId, refreshToken: tokens.refresh_token });
+      await expireReplayWindow(tokens.refresh_token);
+      await refresh(base, { clientId, refreshToken: tokens.refresh_token });
+
+      const otherClientRefresh = await refresh(base, {
+        clientId: otherClientId,
+        refreshToken: otherClient.refresh_token,
+      });
+      const otherUserRefresh = await refresh(base, {
+        clientId: otherUser.clientId,
+        refreshToken: otherUser.tokens.refresh_token,
+      });
+      expect(otherClientRefresh.body.error).toBe("invalid_grant");
+      expect(otherUserRefresh.status).toBe(200);
+      expect(await webSessionOf(base, otherUser.cookie)).not.toBeNull();
+    });
+  });
+
+  it("traite en réutilisation un jeton consommé rejoué au-delà de 180 jours", async () => {
+    await withApi(async (base) => {
+      const { clientId, tokens } = await signIn(base);
+      const { userId } = identityOf(tokens.access_token);
+      await refresh(base, { clientId, refreshToken: tokens.refresh_token });
+      await expireReplayWindow(tokens.refresh_token);
+      await ageAuthentication(tokens.refresh_token, 181);
+      const replay = await refresh(base, { clientId, refreshToken: tokens.refresh_token });
+
+      expect(replay.body.error).toBe("invalid_grant");
+      expect(await auditEntriesOf(userId)).toHaveLength(1);
+    });
+  });
+
+  it("révoque en base malgré un Redis injoignable, journalise la panne et répond une erreur sous 4 s", async () => {
+    const logs: string[] = [];
+    await withApi(
+      async (base) => {
+        const { clientId, cookie, tokens } = await signIn(base);
+        const { userId } = identityOf(tokens.access_token);
+        await refresh(base, { clientId, refreshToken: tokens.refresh_token });
+        await expireReplayWindow(tokens.refresh_token);
+        const startedAt = performance.now();
+        const replay = await refresh(base, { clientId, refreshToken: tokens.refresh_token });
+
+        expect(replay.status).toBe(500);
+        expect(performance.now() - startedAt).toBeLessThan(4000);
+        expect(await webSessionOf(base, cookie)).toBeNull();
+        expect(await auditEntriesOf(userId)).toHaveLength(1);
+      },
+      { env: { REDIS_URL: "redis://127.0.0.1:1" }, logSink: (line) => logs.push(line) },
+    );
+
+    expect(logs.map((line) => JSON.parse(line))).toContainEqual(
+      expect.objectContaining({ level: "error", msg: "redis" }),
+    );
+  });
+
+  it("ne réagit pas à un rejeu dans la fenêtre de 30 s", async () => {
+    await withApi(async (base) => {
+      const { clientId, cookie, tokens } = await signIn(base);
+      const { userId, sid } = identityOf(tokens.access_token);
+      await refresh(base, { clientId, refreshToken: tokens.refresh_token });
+      await refresh(base, { clientId, refreshToken: tokens.refresh_token });
+
+      expect(await withRedis((redis) => redis.exists(revokedSidKey(sid)))).toBe(0);
+      expect(await webSessionOf(base, cookie)).not.toBeNull();
+      expect(await auditEntriesOf(userId)).toEqual([]);
     });
   });
 
