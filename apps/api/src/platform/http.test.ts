@@ -5,6 +5,7 @@ import { Test } from "@nestjs/testing";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
+import { rejectingVerifier } from "./authentication.ts";
 import { configureApp } from "./configure-app.ts";
 import { PlatformModule, type SchemaVersionCheck } from "./platform.module.ts";
 import { InvalidRequestException, ProblemException } from "./problem.ts";
@@ -73,7 +74,13 @@ const startApp = async ({
 }: { schemaVersionCheck?: SchemaVersionCheck } = {}) => {
   const lines: string[] = [];
   const moduleRef = await Test.createTestingModule({
-    imports: [PlatformModule.register({ schemaVersionCheck, logSink: (line) => lines.push(line) })],
+    imports: [
+      PlatformModule.register({
+        schemaVersionCheck,
+        logSink: (line) => lines.push(line),
+        accessTokenVerifier: rejectingVerifier,
+      }),
+    ],
     controllers: [FaultyController],
   }).compile();
   const app = moduleRef.createNestApplication({ logger: false });

@@ -5,6 +5,7 @@ import {
   type IdentityPrisma,
   type IdentityRedis,
 } from "./modules/identity/identity.module.ts";
+import type { AccessTokenVerifier } from "./platform/authentication.ts";
 import type { LogSink } from "./platform/logging.ts";
 import { PlatformModule, type SchemaVersionCheck } from "./platform/platform.module.ts";
 
@@ -16,6 +17,7 @@ export class AppModule {
   }: {
     schemaVersionCheck: SchemaVersionCheck;
     logSink: LogSink;
+    accessTokenVerifier: AccessTokenVerifier;
     identity: { prisma: IdentityPrisma; redis: IdentityRedis };
   }): DynamicModule {
     return {

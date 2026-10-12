@@ -1,12 +1,16 @@
 import { type DynamicModule, Inject, Module, type OnModuleDestroy } from "@nestjs/common";
 
+import { getCurrentAccount } from "./application/get-current-account.ts";
 import type { IdentityPrisma } from "./infrastructure/better-auth.ts";
+import { prismaAccountDirectory } from "./infrastructure/prisma-account-directory.ts";
 import type { IdentityRedis } from "./infrastructure/redis-session-revocation.ts";
+import { GET_CURRENT_ACCOUNT, MeController } from "./presentation/me.controller.ts";
 export {
   createIdentityRedis,
   type IdentityRedis,
 } from "./infrastructure/redis-session-revocation.ts";
 export { mountIdentityRoutes } from "./infrastructure/routes.ts";
+export { createIdentityAccessTokenVerifier } from "./infrastructure/access-token-verifier.ts";
 
 export {
   createIdentityAuth,
@@ -33,7 +37,12 @@ export class IdentityModule implements OnModuleDestroy {
   }): DynamicModule {
     return {
       module: IdentityModule,
+      controllers: [MeController],
       providers: [
+        {
+          provide: GET_CURRENT_ACCOUNT,
+          useValue: getCurrentAccount(prismaAccountDirectory(prisma)),
+        },
         { provide: IDENTITY_PRISMA, useValue: prisma },
         { provide: IDENTITY_REDIS, useValue: redis },
       ],

@@ -52,3 +52,30 @@ describe("Problem", () => {
     expect(responses.Problem.safeParse(makeProblem(overrides)).success).toBe(false);
   });
 });
+
+describe("Me", () => {
+  const makeMe = (overrides: Record<string, unknown> = {}) => ({
+    id: "4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b",
+    name: "Viewer de test",
+    email: "viewer@twitch.local",
+    ...overrides,
+  });
+
+  it("décode le compte de l'utilisateur authentifié", () => {
+    expect(responses.Me.parse(makeMe())).toEqual(makeMe());
+  });
+
+  it("garde un champ ajouté plus tard par le serveur", () => {
+    expect(responses.Me.parse(makeMe({ avatarUrl: "https://cdn/a.png" }))).toMatchObject({
+      avatarUrl: "https://cdn/a.png",
+    });
+  });
+
+  it.each([
+    ["un identifiant qui n'est pas un UUID", { id: "FWGDz5f2dSosyWpO6un25VBOMSsnkVjk" }],
+    ["sans nom", { name: undefined }],
+    ["sans e-mail", { email: undefined }],
+  ])("refuse %s", (_name, overrides) => {
+    expect(responses.Me.safeParse(makeMe(overrides)).success).toBe(false);
+  });
+});

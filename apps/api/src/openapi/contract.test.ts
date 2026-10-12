@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { openEnum, Uuid } from "@repo/contracts";
 
+import { rejectingVerifier } from "../platform/authentication.ts";
 import { configureApp } from "../platform/configure-app.ts";
 import { PlatformModule } from "../platform/platform.module.ts";
 import { buildOpenApiDocument } from "./build-document.ts";
@@ -23,6 +24,10 @@ const Live = z.looseObject({
 
 class LiveDto extends responseDto(Live) {}
 
+const ViewerSchema = z.looseObject({ id: Uuid, name: z.string() }).meta({ id: "Viewer" });
+
+class Viewer extends responseDto(ViewerSchema) {}
+
 class StartLiveDto extends createZodDto(z.object({ title: z.string().min(3) })) {}
 
 @Controller("lives")
@@ -31,6 +36,12 @@ class LivesController {
   @ZodResponse({ status: 200, type: LiveDto })
   current() {
     return { id: LIVE_ID, state: "live", channel: { slug: "streamer", title: null } };
+  }
+
+  @Get("viewer")
+  @ZodResponse({ status: 200, type: Viewer })
+  viewer() {
+    return { id: LIVE_ID, name: "Viewer de test" };
   }
 
   @Get("broken")
@@ -48,7 +59,13 @@ class LivesController {
 
 const startApp = async () => {
   const moduleRef = await Test.createTestingModule({
-    imports: [PlatformModule.register({ schemaVersionCheck: async () => {}, logSink: () => {} })],
+    imports: [
+      PlatformModule.register({
+        schemaVersionCheck: async () => {},
+        logSink: () => {},
+        accessTokenVerifier: rejectingVerifier,
+      }),
+    ],
     controllers: [LivesController],
   }).compile();
   const app = configureApp(moduleRef.createNestApplication({ logger: false }));
@@ -75,6 +92,13 @@ const documentOf = async () => {
 };
 
 describe("document OpenAPI", () => {
+  it("publie une réponse nommée à la racine sous un seul composant, au nom de sa classe", async () => {
+    const schemas = at(await documentOf(), "components", "schemas") as JsonObject;
+
+    expect(at(schemas, "Viewer", "properties", "name")).toEqual({ type: "string" });
+    expect(Object.keys(schemas).filter((name) => name.startsWith("Viewer"))).toEqual(["Viewer"]);
+  });
+
   it("est un document 3.1, aux chemins préfixés par /v1, sans les sondes", async () => {
     const document = await documentOf();
 
@@ -84,6 +108,7 @@ describe("document OpenAPI", () => {
       "/v1/lives",
       "/v1/lives/broken",
       "/v1/lives/current",
+      "/v1/lives/viewer",
     ]);
   });
 
@@ -96,8 +121,10 @@ describe("document OpenAPI", () => {
       "Problem",
       "StartLiveDto",
       "Uuid",
+      "Viewer",
     ]);
     expect(at(schemas, "LiveDto", "additionalProperties")).toEqual({});
+    expect(at(schemas, "Viewer", "additionalProperties")).toEqual({});
     expect(at(schemas, "LiveChannel", "additionalProperties")).toEqual({});
     expect(at(schemas, "Problem", "additionalProperties")).toEqual({});
   });

@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 
 import { createContextClient } from "@repo/db";
 
+import { rejectingVerifier } from "../../platform/authentication.ts";
+import { PlatformModule } from "../../platform/platform.module.ts";
 import { createIdentityRedis, IdentityModule } from "./identity.module.ts";
 
 describe("IdentityModule", () => {
@@ -12,7 +14,14 @@ describe("IdentityModule", () => {
       env: { DATABASE_URL_IDENTITY: "postgresql://test@localhost/aucune-connexion" },
     });
     const moduleRef = await Test.createTestingModule({
-      imports: [IdentityModule.register({ prisma, redis: createIdentityRedis() })],
+      imports: [
+        PlatformModule.register({
+          schemaVersionCheck: async () => {},
+          logSink: () => {},
+          accessTokenVerifier: rejectingVerifier,
+        }),
+        IdentityModule.register({ prisma, redis: createIdentityRedis() }),
+      ],
     }).compile();
     await moduleRef.init();
 

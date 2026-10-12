@@ -10,5 +10,5 @@ export const responseDto = <Schema extends z.ZodType>(schema: Schema) => {
       violations.map((violation) => `${violation.rule} ${violation.message}`).join("\n"),
     );
   }
-  return createZodDto(schema);
+  return createZodDto(schema.clone(schema._zod.def));
 };
