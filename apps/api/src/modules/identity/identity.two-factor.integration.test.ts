@@ -152,10 +152,11 @@ describe("identity : second facteur TOTP de l'ADR 0026, contre le vrai better-au
     await withApi(async (base) => {
       const { email, cookie } = await signUp(base);
       const { totpSecret } = await enableTwoFactor(base, cookie);
+      const rawSecret = base32Decode(totpSecret).toString();
       const [stored] = await storedTwoFactor(email);
 
-      expect(totpSecret).not.toBe("");
-      expect(stored?.secret).not.toContain(totpSecret);
+      expect(rawSecret).not.toBe("");
+      expect(stored?.secret).not.toContain(rawSecret);
     });
   });
 
