@@ -76,9 +76,7 @@ const CHANNEL_RULES: Readonly<Record<ChannelRole, (builder: Builder, channelId: 
       can(["timeout", "ban"], "ChannelMember", { channelId, ...UNPROTECTED_FOR_MODERATOR });
     },
     vip: () => {},
-    banned: ({ cannot }, channelId) => {
-      cannot("send", "Chat", { channelId });
-    },
+    banned: () => {},
   };
 
 const PLATFORM_RULES: Readonly<Record<PlatformRole, (builder: Builder) => void>> = {
@@ -91,6 +89,16 @@ const PLATFORM_RULES: Readonly<Record<PlatformRole, (builder: Builder) => void>>
   support: () => {},
 };
 
+const isBan = (assignment: RoleAssignment): assignment is ChannelAssignment =>
+  assignment.role === "banned";
+
+const applyBan = ({ cannot }: Builder, channelId: string) => {
+  cannot(["update", "readStreamKey"], "Channel", { id: channelId });
+  cannot("grant", "ChannelRole", { channelId });
+  cannot(["timeout", "ban"], "ChannelMember", { channelId });
+  cannot("send", "Chat", { channelId });
+};
+
 export const defineAbilityFor = ({
   assignments,
   now,
@@ -100,13 +108,13 @@ export const defineAbilityFor = ({
 }): AppAbility => {
   const builder = new AbilityBuilder<AppAbility>(createMongoAbility);
   builder.can("send", "Chat");
-  assignments
-    .filter((assignment) => isActive(assignment, now))
-    .forEach((assignment) =>
-      isPlatformAssignment(assignment)
-        ? PLATFORM_RULES[assignment.role](builder)
-        : CHANNEL_RULES[assignment.role](builder, assignment.scope.channelId),
-    );
+  const active = assignments.filter((assignment) => isActive(assignment, now));
+  active.forEach((assignment) =>
+    isPlatformAssignment(assignment)
+      ? PLATFORM_RULES[assignment.role](builder)
+      : CHANNEL_RULES[assignment.role](builder, assignment.scope.channelId),
+  );
+  active.filter(isBan).forEach(({ scope }) => applyBan(builder, scope.channelId));
   return builder.build();
 };
 

@@ -158,6 +158,33 @@ describe("portée par chaîne", () => {
     expect(abilityOf(onChannel("editor")).can("update", channel(CHANNEL_B))).toBe(false);
   });
 
+  it.each(["owner", "editor", "moderator"] as const)(
+    "retire au %s banni tous ses droits sur la chaîne, quel que soit l'ordre des attributions",
+    (role) => {
+      const banned = onChannel("banned", { expiresAt: secondsFromNow(600) });
+      const abilities = [abilityOf(onChannel(role), banned), abilityOf(banned, onChannel(role))];
+
+      abilities.forEach((ability) =>
+        expect(Object.values(ACTIONS).map((check) => check(ability))).toEqual(
+          Object.values(ACTIONS).map(() => false),
+        ),
+      );
+    },
+  );
+
+  it("garde au owner banni d'une chaîne ses droits sur sa propre chaîne", () => {
+    const ability = abilityOf(onChannel("owner", { channelId: CHANNEL_B }), onChannel("banned"));
+
+    const memberOfB = channelMember({ channelId: CHANNEL_B, targetAssignments: [], now: NOW });
+
+    expect(ability.can("update", channel(CHANNEL_B))).toBe(true);
+    expect(ability.can("readStreamKey", channel(CHANNEL_B))).toBe(true);
+    expect(ability.can("grant", channelRole(CHANNEL_B, "moderator"))).toBe(true);
+    expect(ability.can("ban", memberOfB)).toBe(true);
+    expect(ability.can("send", chat(CHANNEL_B))).toBe(true);
+    expect(ability.can("update", channel(CHANNEL_A))).toBe(false);
+  });
+
   it("garde le banni d'une chaîne interdit de chat même s'il y tient un autre rôle", () => {
     expect(abilityOf(onChannel("vip"), onChannel("banned")).can("send", chat(CHANNEL_A))).toBe(
       false,
