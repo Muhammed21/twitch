@@ -3,9 +3,13 @@ import { createHash, randomBytes } from "node:crypto";
 import { oauthProvider } from "@better-auth/oauth-provider";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { jwt, twoFactor } from "better-auth/plugins";
+import { z } from "zod";
 
 import type { createContextClient } from "@repo/db";
+
+import { exceedsAbsoluteLifetime } from "../domain/absolute-lifetime.ts";
 
 export type IdentityPrisma = ReturnType<typeof createContextClient>;
 
@@ -26,6 +30,25 @@ export const generateRefreshToken = (): string => randomBytes(32).toString("base
 
 export const apiResourceOf = (baseURL: string): string => new URL("/v1", baseURL).href;
 
+const RefreshGrant = z.object({
+  grant_type: z.literal("refresh_token"),
+  refresh_token: z.string(),
+});
+
+const refuseBeyondAbsoluteLifetime = createAuthMiddleware(async (ctx) => {
+  const grant = RefreshGrant.safeParse(ctx.body);
+  if (!grant.success) {
+    return;
+  }
+  const stored = await ctx.context.adapter.findOne<{ authTime: Date | null }>({
+    model: "oauthRefreshToken",
+    where: [{ field: "token", value: hashToken(grant.data.refresh_token) }],
+  });
+  if (stored !== null && exceedsAbsoluteLifetime({ authTime: stored.authTime, now: new Date() })) {
+    throw new APIError("BAD_REQUEST", { error: "invalid_grant" });
+  }
+});
+
 export const createIdentityAuth = ({
   prisma,
   secret,
@@ -41,6 +64,7 @@ export const createIdentityAuth = ({
     baseURL,
     database: prismaAdapter(prisma, { provider: "postgresql" }),
     disabledPaths: ["/token"],
+    hooks: { before: refuseBeyondAbsoluteLifetime },
     emailAndPassword: { enabled: true },
     user: { modelName: "IdentityUser" },
     session: { modelName: "IdentitySession" },

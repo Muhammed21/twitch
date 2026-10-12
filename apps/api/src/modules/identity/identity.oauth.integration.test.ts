@@ -180,8 +180,12 @@ const daysAfter = (later?: Date, earlier?: Date) =>
 
 const storedRefreshToken = async (refreshToken: string) =>
   asMigrator(async (client) => {
-    const { rows } = await client.query<{ createdAt: Date; expiresAt: Date }>(
-      `SELECT "createdAt", "expiresAt" FROM "identity"."IdentityOAuthRefreshToken" WHERE "token" = $1`,
+    const { rows } = await client.query<{
+      createdAt: Date;
+      expiresAt: Date;
+      authTime: Date | null;
+    }>(
+      `SELECT "createdAt", "expiresAt", "authTime" FROM "identity"."IdentityOAuthRefreshToken" WHERE "token" = $1`,
       [createHash("sha256").update(refreshToken).digest("base64url")],
     );
     return rows[0];
@@ -206,6 +210,16 @@ const storedReplayResponse = async (refreshToken: string) =>
     );
     return rows[0]?.rotationReplayResponse;
   });
+
+const ageAuthentication = (refreshToken: string, days: number) =>
+  asMigrator((client) =>
+    client.query(
+      `UPDATE "identity"."IdentityOAuthRefreshToken"
+          SET "authTime" = "authTime" - make_interval(days => $2)
+        WHERE "token" = $1`,
+      [createHash("sha256").update(refreshToken).digest("base64url"), days],
+    ),
+  );
 
 const expireReplayWindow = (refreshToken: string) =>
   asMigrator((client) =>
@@ -242,7 +256,9 @@ const withApi = async (run: (base: string) => Promise<void>) => {
 const kidOf = (jwt: string) => decodeProtectedHeader(jwt).kid ?? "";
 
 const publishedKids = async (base: string) => {
-  const { keys } = (await (await fetch(`${base}/auth/jwks`)).json()) as { keys: { kid: string }[] };
+  const { keys } = (await (await fetch(`${base}/.well-known/jwks.json`)).json()) as {
+    keys: { kid: string }[];
+  };
   return keys.map((key) => key.kid);
 };
 
@@ -319,7 +335,7 @@ describe("identity : caractérisation OAuth de l'ADR 0026, contre le vrai better
       const { tokens } = await signIn(base);
       const { payload } = await jwtVerify(
         tokens.access_token,
-        createRemoteJWKSet(new URL(`${base}/auth/jwks`)),
+        createRemoteJWKSet(new URL(`${base}/.well-known/jwks.json`)),
         { audience: API_RESOURCE },
       );
 
@@ -384,6 +400,53 @@ describe("identity : caractérisation OAuth de l'ADR 0026, contre le vrai better
       expect(replay.status).toBe(200);
       expect(replay.body.refresh_token).toBe(first.body.refresh_token);
       expect(next.status).toBe(200);
+    });
+  });
+
+  it("garde l'heure d'authentification d'origine à chaque rotation", async () => {
+    await withApi(async (base) => {
+      const { clientId, tokens } = await signIn(base);
+      const original = await storedRefreshToken(tokens.refresh_token);
+      const rotated = await refresh(base, { clientId, refreshToken: tokens.refresh_token });
+      const renewed = await storedRefreshToken(rotated.body.refresh_token);
+
+      expect(original?.authTime).toEqual(expect.any(Date));
+      expect(renewed?.authTime).toEqual(original?.authTime);
+    });
+  });
+
+  it("rafraîchit encore une session authentifiée il y a 179 jours", async () => {
+    await withApi(async (base) => {
+      const { clientId, tokens } = await signIn(base);
+      await ageAuthentication(tokens.refresh_token, 179);
+      const rotated = await refresh(base, { clientId, refreshToken: tokens.refresh_token });
+
+      expect(rotated.status).toBe(200);
+    });
+  });
+
+  it("refuse le rafraîchissement d'une session authentifiée il y a plus de 180 jours", async () => {
+    await withApi(async (base) => {
+      const { clientId, tokens } = await signIn(base);
+      await ageAuthentication(tokens.refresh_token, 181);
+      const rotated = await refresh(base, { clientId, refreshToken: tokens.refresh_token });
+      const stillUnused = await refresh(base, { clientId, refreshToken: tokens.refresh_token });
+
+      expect(rotated.status).toBe(400);
+      expect(rotated.body.error).toBe("invalid_grant");
+      expect(stillUnused.status).toBe(400);
+    });
+  });
+
+  it("publie le JWKS de better-auth à la racine, sous /.well-known/jwks.json", async () => {
+    await withApi(async (base) => {
+      await signIn(base);
+      const relayed = await fetch(`${base}/.well-known/jwks.json`);
+      const source = await fetch(`${base}/auth/jwks`);
+
+      expect(relayed.status).toBe(200);
+      expect(relayed.headers.get("content-type")).toMatch(/^application\/json/);
+      expect(await relayed.json()).toEqual(await source.json());
     });
   });
 

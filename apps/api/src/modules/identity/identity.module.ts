@@ -1,6 +1,7 @@
 import { type DynamicModule, Inject, Module, type OnModuleDestroy } from "@nestjs/common";
 
 import type { IdentityPrisma } from "./infrastructure/better-auth.ts";
+export { mountIdentityRoutes } from "./infrastructure/routes.ts";
 
 export {
   createIdentityAuth,

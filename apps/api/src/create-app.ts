@@ -1,13 +1,12 @@
 import { ConsoleLogger, type INestApplication } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import type { NestExpressApplication } from "@nestjs/platform-express";
-import { toNodeHandler } from "better-auth/node";
 import type { Express } from "express";
 
 import { assertSchemaVersion, createContextClient, LATEST_MIGRATION } from "@repo/db";
 
 import { AppModule } from "./app.module.ts";
-import { createIdentityAuth } from "./modules/identity/identity.module.ts";
+import { createIdentityAuth, mountIdentityRoutes } from "./modules/identity/identity.module.ts";
 import { type AppConfig, loadEnv } from "./platform/config/env.ts";
 import { configureApp } from "./platform/configure-app.ts";
 import { type LogSink, stdoutSink } from "./platform/logging.ts";
@@ -40,7 +39,7 @@ export const createApp = async ({
   );
   configureApp(app);
   const server: Express = app.getHttpAdapter().getInstance();
-  server.all("/auth/{*splat}", toNodeHandler(auth));
+  mountIdentityRoutes(server, auth);
   app.useBodyParser("json");
   return { app, config };
 };
