@@ -238,6 +238,7 @@ describe("cache du JWKS (ADR 0026 §5)", () => {
     const server = makeJwksServer([current]);
     const verifier = makeVerifier({ server });
     await verifier.verify(await signToken({ key: current }));
+    vi.advanceTimersByTime(MINUTE - 1000);
 
     await verifier.verify(await signToken({ key: await makeKey("inconnu-1") }));
     await verifier.verify(await signToken({ key: await makeKey("inconnu-2") }));
