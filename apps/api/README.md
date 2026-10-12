@@ -48,8 +48,9 @@ better-auth et ses plugins `jwt`, `oauth-provider` et `two-factor` (même versio
 | -------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | Jeton d'accès              | JWT EdDSA de 900 s, pour la ressource `<BETTER_AUTH_URL>/v1`                                                  |
 | Jeton de rafraîchissement  | 256 bits, 60 jours glissants, stocké en empreinte SHA-256                                                     |
+| Durée absolue              | 180 jours depuis l'authentification, conservée à chaque rotation ; au-delà, `invalid_grant`                   |
 | Rejeu d'un jeton consommé  | même réponse pendant 30 s, conservée chiffrée par `BETTER_AUTH_SECRET` ; au-delà, tous les appareils révoqués |
-| Clé de signature           | rotation tous les 90 jours, ancienne clé publiée encore 24 h                                                  |
+| Clé de signature           | rotation tous les 90 jours, ancienne clé publiée encore 24 h, JWKS à `/.well-known/jwks.json`                 |
 | Endpoint `/token` de `jwt` | désactivé                                                                                                     |
 | Second facteur             | TOTP sous `/auth/two-factor/*`, actif après vérification d'un premier code                                    |
 | Codes de récupération      | 10, à usage unique, chiffrés par `BETTER_AUTH_SECRET` comme le secret TOTP                                    |

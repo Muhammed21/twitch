@@ -114,8 +114,14 @@ _Tests d'abord_ : pour chaque règle, une fixture qui la viole est refusée ; ch
 **PR 5 — better-auth, caractérisation.** Premier sprint `identity` : adapter Prisma de better-auth sur le schéma `identity` avec le client du contexte, monté sous `/auth` dans NestJS. Les trois packages better-auth épinglés sur la même version. Configuration de l'ADR 0026, §2.
 _Tests d'abord_, contre le vrai better-auth : rotation nominale ; réutilisation qui révoque **aussi** un second appareil ; rejeu dans la fenêtre de 30 s sans révocation ; token opaque sans paramètre `resource` ; codes de récupération chiffrés en base ; endpoint `/token` du plugin `jwt` désactivé.
 
-**PR 6 — Ce que better-auth ne fait pas.** Hook de réutilisation (liste de révocation Redis de tous les `sid`, Pub/Sub, révocation des sessions web, audit, notification) ; plafond de 180 jours ; claims `amr` et `auth_time` ; JWKS relayé à `/.well-known/jwks.json` ; table d'audit minimale dans `audit`.
-_Tests d'abord_ : un token consommé rejoué déclenche les quatre effets ; refresh refusé au-delà de 180 jours ; `amr` présent dans le JWT ; `/.well-known/jwks.json` sert la clé courante et la précédente pendant la grâce.
+**PR 6a — Plafond de 180 jours et JWKS à la racine.** Hook `before` sur `/oauth2/token` qui refuse un refresh dont l'`authTime` d'origine dépasse 180 jours ; JWKS relayé à `/.well-known/jwks.json`.
+_Tests d'abord_ : `authTime` conservé à chaque rotation ; refresh accepté à 179 jours, refusé au-delà de 180 ; `/.well-known/jwks.json` sert la clé courante et la précédente pendant la grâce.
+
+**PR 6b — Réaction à la réutilisation.** Hook de réutilisation (liste de révocation Redis de tous les `sid`, Pub/Sub, révocation des sessions web, audit, notification) ; table d'audit minimale dans `audit`. Le hook passe avant celui du plafond, pour qu'un jeton consommé rejoué soit toujours traité comme une réutilisation.
+_Tests d'abord_ : un token consommé rejoué déclenche les quatre effets ; un rejeu dans la fenêtre de 30 s n'en déclenche aucun.
+
+**PR 6c — Claims `amr` et `auth_time`.** `customAccessTokenClaims` ne reçoit ni la session ni `authTime` : court spike sur le contournement, puis les deux claims dans le jeton d'accès.
+_Tests d'abord_ : `amr` et `auth_time` présents dans le JWT, et `auth_time` inchangé après rotation.
 
 **PR 7 — `packages/auth-verifier` et garde (jalon A2).** `AccessTokenVerifier` (`jose`, cache de 10 min, rechargement sur `kid` inconnu au plus une fois par minute, vérification de `aud` et `iss`, consultation de la liste de révocation par `sid`), garde NestJS, route `GET /v1/me`.
 _Tests d'abord_ : `kid` inconnu → un seul rechargement ; `sid` révoqué → 401 ; token d'une autre audience → 401 ; aucun rôle lu depuis le JWT (test de régression, ADR 0006).
