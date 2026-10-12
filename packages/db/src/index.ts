@@ -1,5 +1,6 @@
 export { contexts, type Context } from "./contexts.ts";
 export { createContextClient, contextPoolConfig } from "./create-context-client.ts";
+export { collectByKeyset, type KeysetPage } from "./keyset.ts";
 export { assertRolesProvisioned, expectedRoles } from "./provisioned-roles.ts";
 export {
   alreadyProcessed,
