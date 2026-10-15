@@ -173,6 +173,19 @@ describe("AuthzContext sur PostgreSQL et Redis (ADR 0006 §5)", () => {
     });
   });
 
+  it("remet en cache la lecture qui suit une invalidation", async () => {
+    await withRedis(async (redis) => {
+      const subjectId = randomUUID();
+      await grant({ subjectId });
+      await invalidateAssignments({ redis, userId: subjectId });
+      const context = createAuthzContext({ prisma, redis, now: () => NOW });
+
+      await context.assignmentsOf(subjectId);
+
+      expect(await redis.exists(assignmentsKey(subjectId))).toBe(1);
+    });
+  });
+
   it("ignore les attributions révoquées", async () => {
     await withRedis(async (redis) => {
       const subjectId = randomUUID();
