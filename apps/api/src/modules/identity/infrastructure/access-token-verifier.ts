@@ -1,7 +1,7 @@
 import { createAccessTokenVerifier } from "@repo/auth-verifier";
 
 import { apiResourceOf, type IdentityAuth } from "./better-auth.ts";
-import { type IdentityRedis, revokedSidKey } from "./redis-session-revocation.ts";
+import { type IdentityRedis, redisRevokedSessions } from "./redis-session-revocation.ts";
 
 export const createIdentityAccessTokenVerifier = ({
   auth,
@@ -16,6 +16,6 @@ export const createIdentityAccessTokenVerifier = ({
     jwksUrl: new URL("/auth/jwks", baseURL).href,
     issuer: new URL("/auth", baseURL).href,
     audience: apiResourceOf(baseURL),
-    revokedSessions: { isRevoked: async (sid) => (await redis.exists(revokedSidKey(sid))) === 1 },
+    revokedSessions: redisRevokedSessions(redis),
     fetchJwks: (url, init) => auth.handler(new Request(url, init)),
   });

@@ -3,6 +3,7 @@ import { createClient } from "redis";
 import { type AuthzContext, authzContextFrom, type RoleAssignment } from "@repo/authorization";
 import { collectByKeyset, type createContextClient } from "@repo/db";
 
+import { withRedisDeadline } from "../platform/redis-deadline.ts";
 import { fromCache, fromRows, toCache } from "./assignment-record.ts";
 
 export const ASSIGNMENTS_TTL_SECONDS = 300;
@@ -30,14 +31,6 @@ if (redis.call("GET", KEYS[2]) or "0") == ARGV[1] then
 end
 return 0`;
 
-export const readGeneration = async ({
-  redis,
-  userId,
-}: {
-  redis: AuthzRedis;
-  userId: string;
-}): Promise<string> => (await redis.get(generationKey(userId))) ?? "0";
-
 export const cacheIfUnchanged = async ({
   redis,
   userId,
@@ -49,10 +42,12 @@ export const cacheIfUnchanged = async ({
   generation: string;
   assignments: readonly RoleAssignment[];
 }): Promise<void> => {
-  await redis.eval(SET_IF_GENERATION_UNCHANGED, {
-    keys: [assignmentsKey(userId), generationKey(userId)],
-    arguments: [generation, toCache(assignments), String(ASSIGNMENTS_TTL_SECONDS)],
-  });
+  await withRedisDeadline(
+    redis.eval(SET_IF_GENERATION_UNCHANGED, {
+      keys: [assignmentsKey(userId), generationKey(userId)],
+      arguments: [generation, toCache(assignments), String(ASSIGNMENTS_TTL_SECONDS)],
+    }),
+  );
 };
 
 const bestEffort = async <T>(run: () => Promise<T>, fallback: T): Promise<T> => {
@@ -106,21 +101,23 @@ export const createAuthzContext = ({
   authzContextFrom({
     now,
     assignmentsOf: async (userId) => {
-      const cached = await bestEffort(
-        async () => fromCache(await redis.get(assignmentsKey(userId))),
+      const cache = await bestEffort(
+        () => withRedisDeadline(redis.mGet([assignmentsKey(userId), generationKey(userId)])),
         null,
       );
-      if (cached !== null) {
-        return cached;
+      if (cache === null) {
+        return fromRows(await readDatabase(prisma, userId, pageSize));
       }
-      const generation = await bestEffort(() => readGeneration({ redis, userId }), null);
+      const [cached = null, generation = null] = cache;
+      const hit = fromCache(cached);
+      if (hit !== null) {
+        return hit;
+      }
       const assignments = fromRows(await readDatabase(prisma, userId, pageSize));
-      if (generation !== null) {
-        await bestEffort(
-          () => cacheIfUnchanged({ redis, userId, generation, assignments }),
-          undefined,
-        );
-      }
+      await bestEffort(
+        () => cacheIfUnchanged({ redis, userId, generation: generation ?? "0", assignments }),
+        undefined,
+      );
       return assignments;
     },
   });
@@ -132,7 +129,7 @@ export const invalidateAssignments = async ({
   redis: AuthzRedis;
   userId: string;
 }): Promise<void> => {
-  await redis.incr(generationKey(userId));
-  await redis.del(assignmentsKey(userId));
-  await redis.publish(AUTHZ_INVALIDATED_CHANNEL, JSON.stringify({ userId }));
+  await withRedisDeadline(redis.incr(generationKey(userId)));
+  await withRedisDeadline(redis.del(assignmentsKey(userId)));
+  await withRedisDeadline(redis.publish(AUTHZ_INVALIDATED_CHANNEL, JSON.stringify({ userId })));
 };

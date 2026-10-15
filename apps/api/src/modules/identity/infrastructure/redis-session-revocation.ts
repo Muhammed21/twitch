@@ -1,5 +1,8 @@
 import { createClient } from "redis";
 
+import type { RevokedSessions } from "@repo/auth-verifier";
+
+import { withRedisDeadline } from "../../../platform/redis-deadline.ts";
 import type {
   RevokedSessionList,
   SessionRevocationBroadcast,
@@ -16,11 +19,17 @@ export const SESSION_REVOKED_CHANNEL = "identity.session.revoked";
 
 export const revokedSidKey = (sid: string): string => `identity:revoked-sid:${sid}`;
 
+export const redisRevokedSessions = (redis: IdentityRedis): RevokedSessions => ({
+  isRevoked: async (sid) => (await withRedisDeadline(redis.exists(revokedSidKey(sid)))) === 1,
+});
+
 export const redisRevokedSessionList = (redis: IdentityRedis): RevokedSessionList => ({
   add: async ({ sids, ttlSeconds }) => {
     await Promise.all(
       sids.map((sid) =>
-        redis.set(revokedSidKey(sid), "1", { expiration: { type: "EX", value: ttlSeconds } }),
+        withRedisDeadline(
+          redis.set(revokedSidKey(sid), "1", { expiration: { type: "EX", value: ttlSeconds } }),
+        ),
       ),
     );
   },
@@ -30,6 +39,6 @@ export const redisSessionRevocationBroadcast = (
   redis: IdentityRedis,
 ): SessionRevocationBroadcast => ({
   publish: async (event) => {
-    await redis.publish(SESSION_REVOKED_CHANNEL, JSON.stringify(event));
+    await withRedisDeadline(redis.publish(SESSION_REVOKED_CHANNEL, JSON.stringify(event)));
   },
 });
