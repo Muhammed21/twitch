@@ -12,10 +12,30 @@
           "$value": "#18181b",
           "$description": "Convention : surface du thème sombre, un cran au-dessus du fond."
         },
+        "16": {
+          "$type": "color",
+          "$value": "#29282f",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : champs et boutons secondaires, thème sombre."
+        },
+        "35": {
+          "$type": "color",
+          "$value": "#53535f",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : texte secondaire, thème clair. Valeur de la charte twitch.tv, mesurée #55545b sur le texte lissé."
+        },
+        "70": {
+          "$type": "color",
+          "$value": "#adadb8",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : texte secondaire, thème sombre. Valeur de la charte twitch.tv, mesurée #adadb2 sur le texte lissé."
+        },
         "90": {
           "$type": "color",
           "$value": "#efeff1",
           "$description": "Convention : texte du thème sombre, légèrement en dessous du blanc pur."
+        },
+        "92": {
+          "$type": "color",
+          "$value": "#e8e7ea",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : champs et boutons secondaires, thème clair."
         },
         "97": {
           "$type": "color",
@@ -37,12 +57,12 @@
         "60": {
           "$type": "color",
           "$value": "#9147ff",
-          "$description": "Charte publique de la marque Twitch (violet de marque), absente du design system relevé."
+          "$description": "Charte publique de la marque Twitch (violet de marque). Relevé sur l'app iOS : fond des boutons d'action dans les deux thèmes."
         },
         "80": {
           "$type": "color",
           "$value": "#bf94ff",
-          "$description": "Convention : violet éclairci pour rester lisible en texte sur fond sombre."
+          "$description": "Relevé sur l'app iOS Twitch : texte d'accent et onglet actif du thème sombre."
         }
       }
     }

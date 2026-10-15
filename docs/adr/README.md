@@ -28,7 +28,7 @@ Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes
 | [0016](0016-repartition-posthog-revenuecat-flags-experimentation.md)         | Répartition PostHog / RevenueCat sur les flags et l'expérimentation                                            | Accepté                                                         | Analytics    |
 | [0017](0017-modele-de-reversement-streamer.md)                               | Modèle de reversement aux streamers : split sur le net encaissé                                                | **Proposé — conditionné aux questions fiscales du reversement** | Monétisation |
 | [0018](0018-qualite-de-code-et-discipline-de-depot.md)                       | Qualité de code et discipline de dépôt : le lint comme mécanisme d'application des ADR                         | Accepté — outils remplacés par 0029                             | Outillage    |
-| [0019](0019-package-design-tokens.md)                                        | Package de design tokens : source DTCG unique compilée en Swift et CSS                                         | Accepté                                                         | Design       |
+| [0019](0019-package-design-tokens.md)                                        | Package de design tokens : source DTCG unique compilée en Swift et CSS                                         | Accepté — §9 amendé par 0036                                    | Design       |
 | [0020](0020-modele-du-follow-et-graphe-social.md)                            | Modèle du follow : version monotone par paire, projections convergentes                                        | Accepté                                                         | Social       |
 | [0021](0021-perimetre-fonctionnel-et-cartographie-des-entites.md)            | Périmètre fonctionnel : un propriétaire et un horizon pour chaque entité                                       | Accepté                                                         | Domaine      |
 | [0022](0022-socket-io-transport-du-chat.md)                                  | socket.io comme transport du chat, à la place de uWebSockets.js                                                | Accepté                                                         | Chat         |
@@ -45,6 +45,7 @@ Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes
 | [0033](0033-claims-twitch-auth-time-et-twitch-amr-dans-le-jeton-d-acces.md)  | Claims `twitch_auth_time` et `twitch_amr` dans le jeton d'accès, à la place d'`auth_time` et `amr`             | Proposé                                                         | Auth         |
 | [0034](0034-un-stream-redis-par-contexte-pour-les-events-de-l-outbox.md)     | Un stream Redis par contexte pour les events de l'outbox, plafonné à environ 100 000 entrées                   | Accepté                                                         | Données      |
 | [0035](0035-slug-de-chaine-derive-du-nom-d-affichage-jamais-refuse.md)       | Slug de chaîne dérivé du nom d'affichage, au format Twitch, jamais refusé à la création                        | Proposé                                                         | Domaine      |
+| [0036](0036-valeurs-visuelles-relevees-sur-l-app-ios-twitch.md)              | Les valeurs visuelles reprennent l'app iOS Twitch, relevées sur captures                                       | Accepté                                                         | Design       |
 
 ## Dépendances principales
 
@@ -73,6 +74,7 @@ Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes
 0002, 0025, 0028 ── 0034 (un stream Redis par contexte pour l'outbox)
 0001 ── 0031 (service vidéo maison derrière le même port, amende aussi 0002, 0003, 0018, 0021, 0028)
 0003 ── 0032 (salon de chat permanent par chaîne, amende aussi 0021)
+0019, 0030 ── 0036 (valeurs visuelles relevées sur l'app iOS Twitch)
 ```
 
 ## Points ouverts

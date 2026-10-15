@@ -51,6 +51,11 @@
         "$value": "15px",
         "$description": "Charte relevée sur twitch.tv (échelle d'espacement, base 1px)."
       },
+      "16": {
+        "$type": "dimension",
+        "$value": "16px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : marge latérale des écrans."
+      },
       "full": {
         "$type": "dimension",
         "$value": "9999px",

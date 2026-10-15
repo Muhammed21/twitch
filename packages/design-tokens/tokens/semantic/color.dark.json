@@ -12,6 +12,11 @@
         "$type": "color",
         "$value": "{core.color.neutral.10}",
         "$description": "Cartes, modales et conteneurs posés sur le fond."
+      },
+      "secondary": {
+        "$type": "color",
+        "$value": "{core.color.neutral.16}",
+        "$description": "Champs de recherche et de saisie, boutons secondaires (notifications, création), posés sur le fond."
       }
     },
     "text": {
@@ -22,8 +27,13 @@
       },
       "secondary": {
         "$type": "color",
+        "$value": "{core.color.neutral.70}",
+        "$description": "Texte secondaire : bio, métadonnées, compteurs de spectateurs."
+      },
+      "link": {
+        "$type": "color",
         "$value": "{core.color.purple.80}",
-        "$description": "Texte secondaire et libellés de catégorie. Violet, comme text-muted dans la charte relevée."
+        "$description": "Texte d'accent : liens, libellés d'accent (« Past Broadcast »), liens sociaux de la chaîne."
       }
     },
     "accent": {

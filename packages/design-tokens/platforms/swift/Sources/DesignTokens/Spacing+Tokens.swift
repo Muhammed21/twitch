@@ -24,4 +24,6 @@ public enum Spacing {
     public static let x12: CGFloat = 12
     /// 15 fois l'unité de base de la charte relevée (1 pt).
     public static let x15: CGFloat = 15
+    /// Marge latérale des écrans, relevée sur l'app iOS Twitch (16 pt).
+    public static let x16: CGFloat = 16
 }

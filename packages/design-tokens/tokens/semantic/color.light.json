@@ -12,6 +12,11 @@
         "$type": "color",
         "$value": "{core.color.neutral.100}",
         "$description": "Cartes, modales et conteneurs posés sur le fond."
+      },
+      "secondary": {
+        "$type": "color",
+        "$value": "{core.color.neutral.92}",
+        "$description": "Champs de recherche et de saisie, boutons secondaires (notifications, création), posés sur le fond."
       }
     },
     "text": {
@@ -22,14 +27,19 @@
       },
       "secondary": {
         "$type": "color",
+        "$value": "{core.color.neutral.35}",
+        "$description": "Texte secondaire : bio, métadonnées, compteurs de spectateurs."
+      },
+      "link": {
+        "$type": "color",
         "$value": "{core.color.purple.40}",
-        "$description": "Texte secondaire et libellés de catégorie. Violet, comme text-muted dans la charte relevée."
+        "$description": "Texte d'accent : liens, libellés d'accent (« Past Broadcast »), liens sociaux de la chaîne."
       }
     },
     "accent": {
       "default": {
         "$type": "color",
-        "$value": "{core.color.purple.40}",
+        "$value": "{core.color.purple.60}",
         "$description": "Accent du produit hors contexte de chaîne : liens, états actifs, boutons d'action (ADR 0019 §3)."
       },
       "onAccent": {
@@ -39,7 +49,7 @@
       },
       "fallback": {
         "$type": "color",
-        "$value": "{core.color.purple.40}",
+        "$value": "{core.color.purple.60}",
         "$description": "Repli quand la couleur d'accent d'une chaîne est inutilisable (ADR 0019 §3)."
       }
     }
