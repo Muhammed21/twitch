@@ -101,7 +101,7 @@ describe("POST /v1/webhooks/video", () => {
     );
   });
 
-  it.each(["recorded", "already-processed", "unknown-channel"] as const)(
+  it.each(["recorded", "unchanged", "already-processed", "unknown-channel"] as const)(
     "répond 204 quand l'event est %s",
     async (status) => {
       await withWebhook(ok({ status }), async (url) => {

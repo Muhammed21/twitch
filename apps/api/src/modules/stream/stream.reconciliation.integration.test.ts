@@ -124,6 +124,33 @@ describe("réconciliation des sessions avec le provider, en base (ADR 0001, 0031
     expect(await endedEventsOf(channel.channelId)).toHaveLength(1);
   });
 
+  it("ne compte pas comme close une session dont le webhook de fin arrive pendant la réconciliation", async () => {
+    const channel = await seedChannel();
+    const forgotten = await seedLiveSession(channel);
+    const endedByWebhook = {
+      list: async () => {
+        const open = await openSessions.list();
+        await record({
+          eventId: randomUUID(),
+          kind: "ended",
+          providerChannelId: channel.providerChannelId,
+          providerSessionId: forgotten,
+          occurredAt: at("20:59"),
+        });
+        return open;
+      },
+    };
+    const reconcile = reconcileStreamSessions({
+      provider: providerForgetting(forgotten),
+      openSessions: endedByWebhook,
+      record,
+      endEventIdOf: reconciliationEndEventId,
+    });
+
+    expect((await reconcile(at("21:00"))).closed).not.toContain(forgotten);
+    expect(await endedEventsOf(channel.channelId)).toHaveLength(1);
+  });
+
   it("laisse ouverte une session que le provider diffuse encore", async () => {
     const channel = await seedChannel();
     const live = await seedLiveSession(channel);

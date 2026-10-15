@@ -177,6 +177,23 @@ describe("enregistrement d'un event de cycle de vie du provider", () => {
     expect(state.published).toHaveLength(1);
   });
 
+  it("signale une fin sans effet quand la session est déjà close, sans rien publier", async () => {
+    const closed = openSession({ endedAt: at("21:00") });
+    const { state, store } = memorySessions({ sessions: [closed] });
+
+    expect(
+      await record(store)(
+        makeEvent({
+          kind: "ended",
+          providerSessionId: "provider-session-0",
+          occurredAt: at("22:00"),
+        }),
+      ),
+    ).toEqual({ status: "unchanged" });
+    expect(state.sessions).toEqual([closed]);
+    expect(state.published).toEqual([]);
+  });
+
   it("signale un canal provider inconnu, sans rien écrire", async () => {
     const { state, store } = memorySessions({ channels: {} });
 
