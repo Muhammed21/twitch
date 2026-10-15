@@ -43,6 +43,28 @@
       "background": "color.surface.primary",
       "min": 3.0,
       "note": "SC 1.4.11 — composant interactif non textuel"
+    },
+    {
+      "foreground": "color.text.primary",
+      "background": "color.surface.secondary",
+      "min": 4.5,
+      "note": "Libellé d'un champ ou d'un bouton secondaire"
+    },
+    {
+      "foreground": "color.text.secondary",
+      "background": "color.surface.secondary",
+      "min": 4.5,
+      "note": "Placeholder d'un champ de recherche"
+    },
+    {
+      "foreground": "color.text.link",
+      "background": "color.background.primary",
+      "min": 4.5
+    },
+    {
+      "foreground": "color.text.link",
+      "background": "color.surface.primary",
+      "min": 4.5
     }
   ]
 }

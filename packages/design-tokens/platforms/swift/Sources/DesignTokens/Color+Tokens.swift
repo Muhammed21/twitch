@@ -18,6 +18,13 @@ public extension Color {
             ? UIColor(red: 0.094, green: 0.094, blue: 0.106, alpha: 1)
             : UIColor(red: 1, green: 1, blue: 1, alpha: 1)
     })
+    /// Champs de recherche et de saisie, boutons secondaires (notifications, création), posés sur le fond.
+    /// clair #E8E7EA · sombre #29282F
+    static let surfaceSecondary = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.161, green: 0.157, blue: 0.184, alpha: 1)
+            : UIColor(red: 0.91, green: 0.906, blue: 0.918, alpha: 1)
+    })
     /// Texte courant.
     /// clair #0E0E10 · sombre #EFEFF1
     static let textPrimary = Color(uiColor: UIColor { trait in
@@ -25,19 +32,26 @@ public extension Color {
             ? UIColor(red: 0.937, green: 0.937, blue: 0.945, alpha: 1)
             : UIColor(red: 0.055, green: 0.055, blue: 0.063, alpha: 1)
     })
-    /// Texte secondaire et libellés de catégorie. Violet, comme text-muted dans la charte relevée.
-    /// clair #5C16C5 · sombre #BF94FF
+    /// Texte secondaire : bio, métadonnées, compteurs de spectateurs.
+    /// clair #53535F · sombre #ADADB8
     static let textSecondary = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.678, green: 0.678, blue: 0.722, alpha: 1)
+            : UIColor(red: 0.325, green: 0.325, blue: 0.373, alpha: 1)
+    })
+    /// Texte d'accent : liens, libellés d'accent (« Past Broadcast »), liens sociaux de la chaîne.
+    /// clair #5C16C5 · sombre #BF94FF
+    static let textLink = Color(uiColor: UIColor { trait in
         trait.userInterfaceStyle == .dark
             ? UIColor(red: 0.749, green: 0.58, blue: 1, alpha: 1)
             : UIColor(red: 0.361, green: 0.086, blue: 0.773, alpha: 1)
     })
-    /// Accent du produit hors contexte de chaîne : liens, états actifs, boutons d'action (ADR 0019 §3).
-    /// clair #5C16C5 · sombre #9147FF
+    /// Accent du produit hors contexte de chaîne : fond des boutons d'action et indicateurs d'état actif (ADR 0019 §3). Jamais pour du texte : les liens prennent color.text.link.
+    /// clair #9147FF · sombre #9147FF
     static let accentDefault = Color(uiColor: UIColor { trait in
         trait.userInterfaceStyle == .dark
             ? UIColor(red: 0.569, green: 0.278, blue: 1, alpha: 1)
-            : UIColor(red: 0.361, green: 0.086, blue: 0.773, alpha: 1)
+            : UIColor(red: 0.569, green: 0.278, blue: 1, alpha: 1)
     })
     /// Texte ou glyphe posé sur une surface d'accent (ADR 0019 §3).
     /// clair #FFFFFF · sombre #FFFFFF
@@ -47,11 +61,11 @@ public extension Color {
             : UIColor(red: 1, green: 1, blue: 1, alpha: 1)
     })
     /// Repli quand la couleur d'accent d'une chaîne est inutilisable (ADR 0019 §3).
-    /// clair #5C16C5 · sombre #9147FF
+    /// clair #9147FF · sombre #9147FF
     static let accentFallback = Color(uiColor: UIColor { trait in
         trait.userInterfaceStyle == .dark
             ? UIColor(red: 0.569, green: 0.278, blue: 1, alpha: 1)
-            : UIColor(red: 0.361, green: 0.086, blue: 0.773, alpha: 1)
+            : UIColor(red: 0.569, green: 0.278, blue: 1, alpha: 1)
     })
 
     /// Valeurs fixes par thème, réservées aux contextes sans traits et aux tests (ADR 0019 §2.2).
@@ -60,15 +74,19 @@ public extension Color {
         public static let backgroundPrimaryDark = Color(.sRGB, red: 0.055, green: 0.055, blue: 0.063, opacity: 1)
         public static let surfacePrimaryLight = Color(.sRGB, red: 1, green: 1, blue: 1, opacity: 1)
         public static let surfacePrimaryDark = Color(.sRGB, red: 0.094, green: 0.094, blue: 0.106, opacity: 1)
+        public static let surfaceSecondaryLight = Color(.sRGB, red: 0.91, green: 0.906, blue: 0.918, opacity: 1)
+        public static let surfaceSecondaryDark = Color(.sRGB, red: 0.161, green: 0.157, blue: 0.184, opacity: 1)
         public static let textPrimaryLight = Color(.sRGB, red: 0.055, green: 0.055, blue: 0.063, opacity: 1)
         public static let textPrimaryDark = Color(.sRGB, red: 0.937, green: 0.937, blue: 0.945, opacity: 1)
-        public static let textSecondaryLight = Color(.sRGB, red: 0.361, green: 0.086, blue: 0.773, opacity: 1)
-        public static let textSecondaryDark = Color(.sRGB, red: 0.749, green: 0.58, blue: 1, opacity: 1)
-        public static let accentDefaultLight = Color(.sRGB, red: 0.361, green: 0.086, blue: 0.773, opacity: 1)
+        public static let textSecondaryLight = Color(.sRGB, red: 0.325, green: 0.325, blue: 0.373, opacity: 1)
+        public static let textSecondaryDark = Color(.sRGB, red: 0.678, green: 0.678, blue: 0.722, opacity: 1)
+        public static let textLinkLight = Color(.sRGB, red: 0.361, green: 0.086, blue: 0.773, opacity: 1)
+        public static let textLinkDark = Color(.sRGB, red: 0.749, green: 0.58, blue: 1, opacity: 1)
+        public static let accentDefaultLight = Color(.sRGB, red: 0.569, green: 0.278, blue: 1, opacity: 1)
         public static let accentDefaultDark = Color(.sRGB, red: 0.569, green: 0.278, blue: 1, opacity: 1)
         public static let accentOnAccentLight = Color(.sRGB, red: 1, green: 1, blue: 1, opacity: 1)
         public static let accentOnAccentDark = Color(.sRGB, red: 1, green: 1, blue: 1, opacity: 1)
-        public static let accentFallbackLight = Color(.sRGB, red: 0.361, green: 0.086, blue: 0.773, opacity: 1)
+        public static let accentFallbackLight = Color(.sRGB, red: 0.569, green: 0.278, blue: 1, opacity: 1)
         public static let accentFallbackDark = Color(.sRGB, red: 0.569, green: 0.278, blue: 1, opacity: 1)
     }
 }

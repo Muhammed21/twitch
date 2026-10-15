@@ -49,6 +49,11 @@
       "$type": "dimension",
       "$value": "{core.dimension.15}",
       "$description": "15 fois l'unité de base de la charte relevée (1 pt)."
+    },
+    "x16": {
+      "$type": "dimension",
+      "$value": "{core.dimension.16}",
+      "$description": "Marge latérale des écrans, relevée sur l'app iOS Twitch (16 pt)."
     }
   },
   "radius": {

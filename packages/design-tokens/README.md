@@ -14,7 +14,7 @@ Tokens DTCG compilés en package SPM Swift (ADR 0019). `tokens/` fait foi et s'�
 
 ## Règles d'édition (ADR 0019 §10)
 
-- Chaque valeur indique sa provenance dans `$description` : charte relevée, charte publique de la marque, ou convention.
+- Chaque valeur indique sa provenance dans `$description` : relevé sur les captures de l'app iOS Twitch (`docs/reference-ui/`, ADR 0036), charte relevée sur twitch.tv, charte publique de la marque, ou convention.
 - `color.light.json` et `color.dark.json` déclarent exactement les mêmes rôles ; sinon, le build échoue.
 - Toute couleur de texte ou d'élément porteur d'information ajoute sa paire dans `contrast-pairs.json`, dans le même commit.
 - `tokens/` et `platforms/swift/` sont committés ensemble.
