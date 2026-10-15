@@ -16,6 +16,8 @@ export default defineConfig({
         "src/modules/*/infrastructure/**",
         "src/modules/*/*.module.ts",
         "src/authz/authz-context.ts",
+        "src/outbox-relay/outbox-relay.ts",
+        "src/outbox-relay/main.ts",
       ],
       reporter: ["text"],
       thresholds: {

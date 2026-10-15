@@ -8,6 +8,18 @@ const envSchema = z.object({
   REDIS_URL: z.url({ protocol: /^rediss?$/ }),
 });
 
+export const parseVariables = <T>(
+  schema: z.ZodType<T>,
+  env: Readonly<Record<string, string | undefined>>,
+): T => {
+  const parsed = schema.safeParse(env);
+  if (!parsed.success) {
+    const variables = [...new Set(parsed.error.issues.map((issue) => String(issue.path[0])))];
+    throw new Error(`Configuration invalide, variables à corriger : ${variables.join(", ")}`);
+  }
+  return parsed.data;
+};
+
 export type AppConfig = {
   readonly port: number;
   readonly databaseUrlHealth: string;
@@ -17,16 +29,12 @@ export type AppConfig = {
 };
 
 export const loadEnv = (env: Readonly<Record<string, string | undefined>>): AppConfig => {
-  const parsed = envSchema.safeParse(env);
-  if (!parsed.success) {
-    const variables = [...new Set(parsed.error.issues.map((issue) => String(issue.path[0])))];
-    throw new Error(`Configuration invalide, variables à corriger : ${variables.join(", ")}`);
-  }
+  const variables = parseVariables(envSchema, env);
   return {
-    port: parsed.data.API_PORT,
-    databaseUrlHealth: parsed.data.DATABASE_URL_HEALTH,
-    authSecret: parsed.data.BETTER_AUTH_SECRET,
-    authBaseUrl: parsed.data.BETTER_AUTH_URL,
-    redisUrl: parsed.data.REDIS_URL,
+    port: variables.API_PORT,
+    databaseUrlHealth: variables.DATABASE_URL_HEALTH,
+    authSecret: variables.BETTER_AUTH_SECRET,
+    authBaseUrl: variables.BETTER_AUTH_URL,
+    redisUrl: variables.REDIS_URL,
   };
 };

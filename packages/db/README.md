@@ -47,7 +47,7 @@ Chaque contexte qui publie des events déclare ses propres tables, de forme impo
 - `<Contexte>Outbox` : `id`, `name`, `version`, `payload` (Json), `occurredAt`, `publishedAt`, `attempts`, `nextAttemptAt`, `lastError`, avec un index sur `(publishedAt, nextAttemptAt)` ;
 - `<Contexte>ProcessedEvent` : `eventId`, `handlerName`, `processedAt`, unique sur `(eventId, handlerName)`.
 
-La migration qui crée une outbox accorde `SELECT, UPDATE` sur cette table à `app_outbox_relay` : aucun privilège par défaut ne cible les seules outbox.
+La migration qui crée une outbox accorde à `app_outbox_relay` `USAGE` sur son schéma et `SELECT, UPDATE` sur la table : aucun privilège par défaut ne cible les seules outbox.
 
 ```ts
 await db.$transaction(async (tx) => {
