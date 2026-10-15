@@ -30,7 +30,11 @@ export class AppModule {
       authzRedis: AuthzRedis;
       consumerRedis: StreamConsumerRedis;
     };
-    stream: { prisma: StreamPrisma; webhookSecret: string };
+    stream: {
+      prisma: StreamPrisma;
+      webhookSecret: string;
+      consumerRedis: StreamConsumerRedis;
+    };
   }): DynamicModule {
     return {
       module: AppModule,
@@ -38,7 +42,11 @@ export class AppModule {
         PlatformModule.register(platform),
         IdentityModule.register(identity),
         ChannelModule.register({ ...channel, logSink: platform.logSink }),
-        StreamModule.register(stream),
+        StreamModule.register({
+          ...stream,
+          authzRedis: channel.authzRedis,
+          logSink: platform.logSink,
+        }),
       ],
     };
   }

@@ -1,3 +1,5 @@
+import { createHmac } from "node:crypto";
+
 import { z } from "zod";
 
 import { err, ok } from "@repo/result";
@@ -26,11 +28,27 @@ const readJson = (body: Buffer): { readonly value: unknown } | null => {
   }
 };
 
+const PROVIDER_CHANNEL_PREFIX = "fake-";
+const INGEST_URL = "rtmp://127.0.0.1:1935/live";
+
 export const fakeLiveVideoProvider = ({
   webhookSecret,
 }: {
   webhookSecret: string;
 }): LiveVideoProviderPort => ({
+  provisionChannel: async ({ channelId }) => ({
+    providerChannelId: `${PROVIDER_CHANNEL_PREFIX}${channelId}`,
+  }),
+  getStreamKey: async ({ providerChannelId }) =>
+    providerChannelId.startsWith(PROVIDER_CHANNEL_PREFIX)
+      ? {
+          streamKey: `sk_live_${createHmac("sha256", webhookSecret)
+            .update(`stream-key:${providerChannelId}`)
+            .digest("hex")
+            .slice(0, 32)}`,
+          ingestUrl: INGEST_URL,
+        }
+      : null,
   parseLifecycleWebhook: ({ body, signature, receivedAt }) => {
     const verified = verifyWebhookSignature({
       secret: webhookSecret,
