@@ -6,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import type { TableRef } from "@repo/db";
 
+import { streamOf } from "../platform/stream-entry.ts";
 import { withPausedRedis } from "../platform/testing/paused-redis.ts";
 import {
   createRelayRedis,
@@ -14,7 +15,6 @@ import {
   relayOutboxes,
   startOutboxRelay,
 } from "./outbox-relay.ts";
-import { streamOf } from "./stream-entry.ts";
 
 const SCHEMA = `relay_test_${randomUUID().replaceAll("-", "").slice(0, 12)}`;
 

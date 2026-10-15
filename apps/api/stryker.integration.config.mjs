@@ -9,6 +9,7 @@ export default {
     "src/modules/*/*.module.ts",
     "src/authz/authz-context.ts",
     "src/outbox-relay/outbox-relay.ts",
+    "src/platform/stream-consumer.ts",
   ],
   coverageAnalysis: "off",
   inPlace: true,
