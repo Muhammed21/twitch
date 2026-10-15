@@ -6,9 +6,13 @@ import {
   subject,
 } from "@casl/ability";
 
-export type ChannelRole = "owner" | "editor" | "moderator" | "vip" | "banned";
+export const channelRoles = ["owner", "editor", "moderator", "vip", "banned"] as const;
 
-export type PlatformRole = "admin" | "staff" | "support";
+export type ChannelRole = (typeof channelRoles)[number];
+
+export const platformRoles = ["admin", "staff", "support"] as const;
+
+export type PlatformRole = (typeof platformRoles)[number];
 
 type Validity = { readonly expiresAt: Date | null; readonly revokedAt: Date | null };
 

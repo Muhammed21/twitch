@@ -4,7 +4,11 @@ import base from "./stryker.config.mjs";
 export default {
   ...base,
   vitest: { configFile: "vitest.mutation.config.ts" },
-  mutate: ["src/modules/*/infrastructure/**/*.ts", "src/modules/*/*.module.ts"],
+  mutate: [
+    "src/modules/*/infrastructure/**/*.ts",
+    "src/modules/*/*.module.ts",
+    "src/authz/authz-context.ts",
+  ],
   coverageAnalysis: "off",
   inPlace: true,
   concurrency: 1,

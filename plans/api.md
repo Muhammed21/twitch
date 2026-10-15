@@ -135,7 +135,7 @@ _Tests d'abord_ : sans jeton → `401` ; `sid` révoqué → `401` ; `/v1/me` re
 _Tests d'abord_ : matrice complète (rôle × action → autorisé ou refusé) ; modérateur de A et banni de B en même temps ; tentative d'attribution hors portée refusée ; timeout expiré qui ne restreint plus rien.
 
 **PR 8b — `RoleAssignment` et `AuthzContext`.** Modèle `AuthzRoleAssignment` dans `authz`, port `AuthzContext` : cache Redis `authz:assign:{userId}` de 300 s, invalidation explicite dans l'ordre commit → suppression → publication.
-_Tests d'abord_ : attributions relues après une écriture ; cache vidé avant la réponse ; TTL de 300 s.
+_Tests d'abord_ : attributions relues après une invalidation, la clé supprimée avant la publication ; cache servi sans relire la base ; TTL de 300 s ; lecture par pages ; lecture en base quand Redis ne répond pas.
 
 ### Contextes de la tranche 1
 

@@ -67,6 +67,9 @@ importers:
       '@repo/auth-verifier':
         specifier: workspace:*
         version: link:../../packages/auth-verifier
+      '@repo/authorization':
+        specifier: workspace:*
+        version: link:../../packages/authorization
       '@repo/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts

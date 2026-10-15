@@ -22,6 +22,7 @@
     "@nestjs/platform-express": "11.2.7",
     "@nestjs/swagger": "11.4.7",
     "@repo/auth-verifier": "workspace:*",
+    "@repo/authorization": "workspace:*",
     "@repo/contracts": "workspace:*",
     "@repo/db": "workspace:*",
     "@repo/result": "workspace:*",

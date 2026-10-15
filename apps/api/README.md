@@ -69,3 +69,10 @@ better-auth répond ensuite `invalid_grant`.
 Une route protégée porte `@UseGuards(AccessTokenGuard)` et lit l'identité par `@CurrentIdentity()` (`platform/authentication.ts`). Le garde vérifie le jeton avec `@repo/auth-verifier` : JWKS lu en interne par `auth.handler`, émetteur `<BETTER_AUTH_URL>/auth`, audience `<BETTER_AUTH_URL>/v1`, `sid` cherché sur la liste de révocation Redis. Un refus répond `401` en `application/problem+json`, avec `WWW-Authenticate: Bearer`, et `error="invalid_token"` quand un jeton était présenté. `GET /v1/me` rend le compte du jeton (`Me`). Comptes et sessions sont identifiés par des UUID.
 
 Sans paramètre `resource`, le jeton d'accès est opaque : l'app iOS l'envoie toujours. Un client OAuth n'obtient de jeton pour `/v1` que s'il est lié à cette ressource (`IdentityOAuthClientResource`).
+
+## Autorisation (ADR 0006)
+
+Les droits se décident dans les use-cases, à partir de `AuthzContext` (`@repo/authorization`) ; un garde NestJS ne porte aucune règle métier. `apps/api/src/authz/` implémente ce port sur PostgreSQL et Redis :
+
+- `createAuthzContext({ prisma, redis, now })` lit les attributions actives de `authz.AuthzRoleAssignment`, par pages de 500 (ADR 0008), puis les garde sous `authz:assign:{userId}` pendant 300 s. Si Redis ne répond pas, la base est lue directement.
+- Une écriture sur `AuthzRoleAssignment` (contextes `channel` et `moderation` seulement, jamais de `DELETE`) appelle `invalidateAssignments({ redis, userId })` **après le commit** : la clé est supprimée, puis `{ userId }` est publié sur `authz.invalidated`. Ce canal est un indice de cache ; une sanction passe par l'outbox et Redis Streams.
