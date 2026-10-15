@@ -40,7 +40,7 @@
       "default": {
         "$type": "color",
         "$value": "{core.color.purple.60}",
-        "$description": "Accent du produit hors contexte de chaîne : liens, états actifs, boutons d'action (ADR 0019 §3)."
+        "$description": "Accent du produit hors contexte de chaîne : fond des boutons d'action et indicateurs d'état actif (ADR 0019 §3). Jamais pour du texte : les liens prennent color.text.link."
       },
       "onAccent": {
         "$type": "color",

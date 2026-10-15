@@ -46,7 +46,7 @@ public extension Color {
             ? UIColor(red: 0.749, green: 0.58, blue: 1, alpha: 1)
             : UIColor(red: 0.361, green: 0.086, blue: 0.773, alpha: 1)
     })
-    /// Accent du produit hors contexte de chaîne : liens, états actifs, boutons d'action (ADR 0019 §3).
+    /// Accent du produit hors contexte de chaîne : fond des boutons d'action et indicateurs d'état actif (ADR 0019 §3). Jamais pour du texte : les liens prennent color.text.link.
     /// clair #9147FF · sombre #9147FF
     static let accentDefault = Color(uiColor: UIColor { trait in
         trait.userInterfaceStyle == .dark
