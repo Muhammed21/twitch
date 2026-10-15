@@ -74,7 +74,7 @@ const seedEvent = async (outbox: TableRef) => {
   await asMigrator((client) =>
     client.query(
       `INSERT INTO "${outbox.schema}"."${outbox.table}" ("id", "name", "version", "payload", "occurredAt")
-       VALUES ($1, $2, 1, $3, '2026-10-15 09:30:00')`,
+       VALUES ($1, $2, 1, $3, '2000-01-01 00:00:00')`,
       [event.id, event.name, JSON.stringify(event.payload)],
     ),
   );
@@ -120,8 +120,8 @@ afterAll(async () => {
 });
 
 describe("relais de l'outbox vers Redis Streams", () => {
-  it("relaie l'outbox d'identity", () => {
-    expect(OUTBOXES).toContainEqual(IDENTITY_OUTBOX);
+  it("relaie les outbox d'identity et de channel", () => {
+    expect(OUTBOXES).toEqual([IDENTITY_OUTBOX, { schema: "channel", table: "ChannelOutbox" }]);
   });
 
   it("publie un event de l'outbox d'identity sur events.identity, puis le marque publié", async () => {
@@ -133,7 +133,7 @@ describe("relais de l'outbox vers Redis Streams", () => {
       id: event.id,
       name: event.name,
       version: "1",
-      occurredAt: "2026-10-15T09:30:00.000Z",
+      occurredAt: "2000-01-01T00:00:00.000Z",
       payload: JSON.stringify(event.payload),
     });
     expect(await rowOf(IDENTITY_OUTBOX, event.id)).toMatchObject({ published: true });

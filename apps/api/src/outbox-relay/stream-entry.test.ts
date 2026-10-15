@@ -9,7 +9,7 @@ const makeEvent = (overrides: Partial<OutboxEvent> = {}): OutboxEvent => ({
   id: "7f3c2a10-0000-4000-8000-000000000001",
   name: events.identity.accountRegistered.name,
   version: events.identity.accountRegistered.version,
-  payload: { accountId: "0b6e1f2a-0000-4000-8000-000000000002" },
+  payload: { accountId: "0b6e1f2a-0000-4000-8000-000000000002", displayName: "Streamer" },
   occurredAt: new Date("2026-10-15T09:30:00.000Z"),
   ...overrides,
 });
@@ -31,7 +31,7 @@ describe("entrée de stream d'un event", () => {
       name: "identity.account.registered",
       version: "1",
       occurredAt: "2026-10-15T09:30:00.000Z",
-      payload: '{"accountId":"0b6e1f2a-0000-4000-8000-000000000002"}',
+      payload: '{"accountId":"0b6e1f2a-0000-4000-8000-000000000002","displayName":"Streamer"}',
     });
   });
 

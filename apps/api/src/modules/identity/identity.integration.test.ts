@@ -157,7 +157,7 @@ describe("identity : better-auth monté sous /auth, contre la base locale migré
         id: expect.stringMatching(/^[0-9a-f-]{36}$/),
         name: "identity.account.registered",
         version: 1,
-        payload: { accountId },
+        payload: { accountId, displayName: account.name },
         publishedAt: null,
       },
     ]);

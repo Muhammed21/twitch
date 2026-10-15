@@ -44,6 +44,7 @@ Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes
 | [0032](0032-salon-de-chat-permanent-par-chaine.md)                           | Un salon de chat permanent par chaîne, ouvert hors live                                                        | Accepté                                                         | Chat         |
 | [0033](0033-claims-twitch-auth-time-et-twitch-amr-dans-le-jeton-d-acces.md)  | Claims `twitch_auth_time` et `twitch_amr` dans le jeton d'accès, à la place d'`auth_time` et `amr`             | Proposé                                                         | Auth         |
 | [0034](0034-un-stream-redis-par-contexte-pour-les-events-de-l-outbox.md)     | Un stream Redis par contexte pour les events de l'outbox, plafonné à environ 100 000 entrées                   | Proposé                                                         | Données      |
+| [0035](0035-slug-de-chaine-derive-du-nom-d-affichage-jamais-refuse.md)       | Slug de chaîne dérivé du nom d'affichage, au format Twitch, jamais refusé à la création                        | Accepté                                                         | Domaine      |
 
 ## Dépendances principales
 
@@ -68,6 +69,7 @@ Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes
 0002, 0008, 0025 ── 0028 (images, Compose local, ordre de déploiement, rôles provisionnés)
 0018 ── 0029 (oxlint / oxfmt remplacent ESLint / Prettier)
 0009 ── 0030 (pas de client web, amende aussi 0014, 0015, 0017)
+0003, 0009 ── 0035 (slug de chaîne dérivé du nom d'affichage)
 0002, 0025, 0028 ── 0034 (un stream Redis par contexte pour l'outbox)
 0001 ── 0031 (service vidéo maison derrière le même port, amende aussi 0002, 0003, 0018, 0021, 0028)
 0003 ── 0032 (salon de chat permanent par chaîne, amende aussi 0021)

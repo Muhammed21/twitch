@@ -1,6 +1,6 @@
 # 0034 — Un stream Redis par contexte pour les events de l'outbox, plafonné à environ 100 000 entrées
 
-- Statut : Proposé
+- Statut : Accepté
 - Date : 2026-10-15
 - Décideurs : Muhammed Cavus
 
