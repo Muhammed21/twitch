@@ -34,6 +34,13 @@ const app = configureApp(
         authzRedis: createAuthzRedis(),
         consumerRedis: createStreamConsumerRedis(),
       },
+      stream: {
+        prisma: createContextClient({
+          context: "stream",
+          env: { DATABASE_URL_STREAM: "postgresql://openapi@localhost/aucune-connexion" },
+        }),
+        webhookSecret: "openapi-aucun-webhook-recu-par-ce-document",
+      },
     }),
     { logger: false },
   ),

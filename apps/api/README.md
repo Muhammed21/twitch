@@ -10,14 +10,17 @@ API NestJS 11 (ADR 0002, 0009). Architecture et découpage : [plan de l'API](../
 | `pnpm test`             | Tests unitaires et HTTP (application NestJS sur un port libre)            |
 | `pnpm test:integration` | Sondes contre la base locale migrée (`pnpm infra:up` puis `pnpm migrate`) |
 
-| Variable                | Rôle                                                                                    |
-| ----------------------- | --------------------------------------------------------------------------------------- |
-| `API_PORT`              | Port d'écoute, 3000 par défaut                                                          |
-| `DATABASE_URL_HEALTH`   | Rôle `app_health`, lecture de la version du schéma, requis                              |
-| `DATABASE_URL_IDENTITY` | Rôle `app_identity`, tables de better-auth, requis                                      |
-| `BETTER_AUTH_SECRET`    | Secret de better-auth, au moins 32 caractères, requis                                   |
-| `BETTER_AUTH_URL`       | URL publique de l'API, origine de confiance de better-auth, requis                      |
-| `REDIS_URL`             | Redis (`redis://` ou `rediss://`) : liste de révocation des sessions et Pub/Sub, requis |
+| Variable                | Rôle                                                                                     |
+| ----------------------- | ---------------------------------------------------------------------------------------- |
+| `API_PORT`              | Port d'écoute, 3000 par défaut                                                           |
+| `DATABASE_URL_HEALTH`   | Rôle `app_health`, lecture de la version du schéma, requis                               |
+| `DATABASE_URL_IDENTITY` | Rôle `app_identity`, tables de better-auth, requis                                       |
+| `DATABASE_URL_CHANNEL`  | Rôle `app_channel`, chaînes et attributions, requis                                      |
+| `DATABASE_URL_STREAM`   | Rôle `app_stream`, sessions de diffusion, requis                                         |
+| `BETTER_AUTH_SECRET`    | Secret de better-auth, au moins 32 caractères, requis                                    |
+| `BETTER_AUTH_URL`       | URL publique de l'API, origine de confiance de better-auth, requis                       |
+| `REDIS_URL`             | Redis (`redis://` ou `rediss://`) : liste de révocation des sessions et Pub/Sub, requis  |
+| `VIDEO_WEBHOOK_SECRET`  | Secret partagé des webhooks du provider vidéo (ADR 0031), au moins 32 caractères, requis |
 
 Une variable invalide arrête le démarrage avec le nom de la variable, jamais sa valeur.
 
@@ -119,6 +122,15 @@ L'API consomme `events.identity` dans le groupe `channel` (`platform/stream-cons
 - Un canal provider inconnu n'ouvre rien (`unknown-channel`).
 - La base n'admet qu'une session ouverte par chaîne (index unique partiel `StreamSession_channelId_open_key`).
 - Les events d'un même instant (clôture et nouveau démarrage) n'ont pas d'ordre garanti dans l'outbox : un consommateur raisonne par `sessionId`.
+
+Le provider signale le début et la fin d'un live par `POST /v1/webhooks/video`, hors contrat OpenAPI (route interne du provider) :
+
+- le corps est lu brut (`useRawWebhookBodies`, 16 Kio au plus, 413 au-delà), sans passer par le parseur JSON de l'API ;
+- l'en-tête `X-Video-Signature: t=<secondes>,v1=<HMAC-SHA256 hexadécimal de "<t>.<corps brut>">` est vérifié **avant** toute lecture du corps (`platform/webhook-signature.ts`) : secret `VIDEO_WEBHOOK_SECRET`, comparaison à temps constant, horodatage entier à 5 minutes au plus de l'heure de réception dans les deux sens ;
+- le provider (`LiveVideoProviderPort.parseLifecycleWebhook`, ici `FakeLiveVideoProvider`) valide ensuite le corps (`id`, `type` `stream.started` ou `stream.ended`, `channelId`, `sessionId`, `occurredAt`) et le traduit en event de cycle de vie, puis `recordStreamLifecycle` l'enregistre ;
+- réponses : 204 (enregistré, déjà traité, canal provider inconnu), 409 (fin reçue avant son démarrage : le provider réémet), 401 (signature absente, fausse ou hors fenêtre), 400 (corps signé invalide).
+
+Une erreur client exposée par une bibliothèque HTTP (`expose: true`, statut 4xx, comme celles de body-parser) garde son statut dans le `Problem`.
 
 ## Autorisation (ADR 0006)
 

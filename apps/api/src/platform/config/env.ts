@@ -6,6 +6,7 @@ const envSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32),
   BETTER_AUTH_URL: z.url({ protocol: /^https?$/ }),
   REDIS_URL: z.url({ protocol: /^rediss?$/ }),
+  VIDEO_WEBHOOK_SECRET: z.string().min(32),
 });
 
 export const parseVariables = <T>(
@@ -26,6 +27,7 @@ export type AppConfig = {
   readonly authSecret: string;
   readonly authBaseUrl: string;
   readonly redisUrl: string;
+  readonly videoWebhookSecret: string;
 };
 
 export const loadEnv = (env: Readonly<Record<string, string | undefined>>): AppConfig => {
@@ -36,5 +38,6 @@ export const loadEnv = (env: Readonly<Record<string, string | undefined>>): AppC
     authSecret: variables.BETTER_AUTH_SECRET,
     authBaseUrl: variables.BETTER_AUTH_URL,
     redisUrl: variables.REDIS_URL,
+    videoWebhookSecret: variables.VIDEO_WEBHOOK_SECRET,
   };
 };

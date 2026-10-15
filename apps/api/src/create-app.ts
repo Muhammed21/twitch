@@ -16,6 +16,7 @@ import {
 import { type AppConfig, loadEnv } from "./platform/config/env.ts";
 import { configureApp } from "./platform/configure-app.ts";
 import { errorDetails, type LogSink, stdoutSink, writeLog } from "./platform/logging.ts";
+import { useRawWebhookBodies } from "./platform/raw-webhook-body.ts";
 import { createStreamConsumerRedis } from "./platform/stream-consumer.ts";
 
 export const createApp = async ({
@@ -64,12 +65,17 @@ export const createApp = async ({
         authzRedis,
         consumerRedis,
       },
+      stream: {
+        prisma: createContextClient({ context: "stream", env }),
+        webhookSecret: config.videoWebhookSecret,
+      },
     }),
     { logger: new ConsoleLogger({ json: true }), bodyParser: false },
   );
   configureApp(app);
   const server: Express = app.getHttpAdapter().getInstance();
   mountIdentityRoutes(server, auth);
+  useRawWebhookBodies(app);
   app.useBodyParser("json");
   return { app, config };
 };
