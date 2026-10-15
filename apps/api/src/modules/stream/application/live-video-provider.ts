@@ -10,6 +10,13 @@ export type RawWebhook = {
 
 export type WebhookError = "invalid_signature" | "malformed_payload";
 
+export type StreamCredentials = {
+  readonly streamKey: string;
+  readonly ingestUrl: string;
+};
+
 export interface LiveVideoProviderPort {
+  provisionChannel(input: { channelId: string }): Promise<{ providerChannelId: string }>;
+  getStreamKey(input: { providerChannelId: string }): Promise<StreamCredentials | null>;
   parseLifecycleWebhook(raw: RawWebhook): Result<ProviderLifecycleEvent, WebhookError>;
 }

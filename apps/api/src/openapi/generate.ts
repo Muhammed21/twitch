@@ -40,6 +40,7 @@ const app = configureApp(
           env: { DATABASE_URL_STREAM: "postgresql://openapi@localhost/aucune-connexion" },
         }),
         webhookSecret: "openapi-aucun-webhook-recu-par-ce-document",
+        consumerRedis: createStreamConsumerRedis(),
       },
     }),
     { logger: false },

@@ -108,3 +108,30 @@ describe("Channel", () => {
     expect(responses.Channel.safeParse(makeChannel(overrides)).success).toBe(false);
   });
 });
+
+describe("StreamKey", () => {
+  const makeStreamKey = (overrides: Record<string, unknown> = {}) => ({
+    streamKey: "sk_live_0123456789abcdef",
+    ingestUrl: "rtmp://127.0.0.1:1935/live",
+    ...overrides,
+  });
+
+  it("décode la clé de stream et l'adresse d'ingest", () => {
+    expect(responses.StreamKey.parse(makeStreamKey())).toEqual(makeStreamKey());
+  });
+
+  it("garde un champ ajouté plus tard par le serveur", () => {
+    expect(responses.StreamKey.parse(makeStreamKey({ rotatedAt: "hier" }))).toMatchObject({
+      rotatedAt: "hier",
+    });
+  });
+
+  it.each([
+    ["sans clé", { streamKey: undefined }],
+    ["avec une clé vide", { streamKey: "" }],
+    ["sans adresse d'ingest", { ingestUrl: undefined }],
+    ["avec une adresse d'ingest qui n'est pas une URL", { ingestUrl: "pas une url" }],
+  ])("refuse une clé de stream %s", (_name, overrides) => {
+    expect(responses.StreamKey.safeParse(makeStreamKey(overrides)).success).toBe(false);
+  });
+});

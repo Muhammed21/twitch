@@ -40,6 +40,13 @@ export const createApp = async ({
     writeLog(logSink, { level: "error", msg: "redis stream consumer", ...errorDetails(error) });
   });
   consumerRedis.connect().catch(() => {});
+  const streamConsumerRedis = createStreamConsumerRedis(config.redisUrl).on(
+    "error",
+    (error: unknown) => {
+      writeLog(logSink, { level: "error", msg: "redis stream consumer", ...errorDetails(error) });
+    },
+  );
+  streamConsumerRedis.connect().catch(() => {});
   const auth = createIdentityAuth({
     prisma,
     redis,
@@ -68,6 +75,7 @@ export const createApp = async ({
       stream: {
         prisma: createContextClient({ context: "stream", env }),
         webhookSecret: config.videoWebhookSecret,
+        consumerRedis: streamConsumerRedis,
       },
     }),
     { logger: new ConsoleLogger({ json: true }), bodyParser: false },

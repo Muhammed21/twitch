@@ -9,7 +9,7 @@ export const receiveProviderWebhook =
     record,
     now,
   }: {
-    provider: LiveVideoProviderPort;
+    provider: Pick<LiveVideoProviderPort, "parseLifecycleWebhook">;
     record: (event: ProviderLifecycleEvent) => Promise<LifecycleOutcome>;
     now: () => Date;
   }) =>

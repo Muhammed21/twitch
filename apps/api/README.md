@@ -130,6 +130,13 @@ Le provider signale le début et la fin d'un live par `POST /v1/webhooks/video`,
 - le provider (`LiveVideoProviderPort.parseLifecycleWebhook`, ici `FakeLiveVideoProvider`) valide ensuite le corps (`id`, `type` `stream.started` ou `stream.ended`, `channelId`, `sessionId`, `occurredAt`) et le traduit en event de cycle de vie, puis `recordStreamLifecycle` l'enregistre ;
 - réponses : 204 (enregistré, déjà traité, canal provider inconnu), 409 (fin reçue avant son démarrage : le provider réémet), 401 (signature absente, fausse ou hors fenêtre), 400 (corps signé invalide).
 
+Clé de stream :
+
+- à la réception de `channel.created` (groupe `stream` sur `events.channel`, client Redis dédié), `provisionStreamChannel` crée le canal chez le provider et garde le lien dans `StreamChannel` ; une chaîne déjà provisionnée ne rappelle pas le provider. Une version autre que 1 reste en attente, un payload hors contrat est journalisé et écarté ;
+- `GET /v1/channels/{id}/stream-key` (jeton requis) rend `{ streamKey, ingestUrl }` avec `Cache-Control: no-store`, lus chez le provider à chaque appel : 403 sans le droit `readStreamKey` (propriétaire seulement, perdu par un banni, ADR 0006), 404 pour une chaîne non provisionnée ou un identifiant qui n'est pas un UUID ;
+- la clé n'est ni stockée par l'API, ni journalisée, ni présente dans une autre réponse (ADR 0001) ;
+- `FakeLiveVideoProvider` est déterministe : canal `fake-<channelId>`, clé dérivée par HMAC de `VIDEO_WEBHOOK_SECRET`, ingest `rtmp://127.0.0.1:1935/live`.
+
 Une erreur client exposée par une bibliothèque HTTP (`expose: true`, statut 4xx, comme celles de body-parser) garde son statut dans le `Problem`.
 
 ## Autorisation (ADR 0006)
