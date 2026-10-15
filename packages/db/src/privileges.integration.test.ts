@@ -135,6 +135,30 @@ describe("rôles techniques", () => {
       expect(await outcome(urlOf(variable), crud("identity").select)).toBe(PERMISSION_DENIED);
     },
   );
+
+  it("app_outbox_relay lit l'outbox d'identity et marque ses events publiés", async () => {
+    const relay = urlOf("DATABASE_URL_OUTBOX_RELAY");
+    const outbox = `"identity"."IdentityOutbox"`;
+
+    expect(await outcome(relay, `SELECT "id" FROM ${outbox}`)).toBe("ok");
+    expect(await outcome(relay, `UPDATE ${outbox} SET "attempts" = "attempts" WHERE false`)).toBe(
+      "ok",
+    );
+  });
+
+  it("app_outbox_relay n'ajoute ni ne supprime d'event dans l'outbox d'identity", async () => {
+    const relay = urlOf("DATABASE_URL_OUTBOX_RELAY");
+    const outbox = `"identity"."IdentityOutbox"`;
+
+    expect(
+      await outcome(
+        relay,
+        `INSERT INTO ${outbox} ("id", "name", "version", "payload", "occurredAt")
+         VALUES (gen_random_uuid(), 'x', 1, '{}', now())`,
+      ),
+    ).toBe(PERMISSION_DENIED);
+    expect(await outcome(relay, `DELETE FROM ${outbox} WHERE false`)).toBe(PERMISSION_DENIED);
+  });
 });
 
 describe("migrate deploy", () => {
