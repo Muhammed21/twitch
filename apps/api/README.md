@@ -68,4 +68,6 @@ better-auth répond ensuite `invalid_grant`.
 
 Une route protégée porte `@UseGuards(AccessTokenGuard)` et lit l'identité par `@CurrentIdentity()` (`platform/authentication.ts`). Le garde vérifie le jeton avec `@repo/auth-verifier` : JWKS lu en interne par `auth.handler`, émetteur `<BETTER_AUTH_URL>/auth`, audience `<BETTER_AUTH_URL>/v1`, `sid` cherché sur la liste de révocation Redis. Un refus répond `401` en `application/problem+json`, avec `WWW-Authenticate: Bearer`, et `error="invalid_token"` quand un jeton était présenté. `GET /v1/me` rend le compte du jeton (`Me`). Comptes et sessions sont identifiés par des UUID.
 
+Une inscription est une transaction (`transaction: true` de l'adapter Prisma) : compte, mot de passe et event `identity.account.registered` (`@repo/contracts`, `events.identity`) dans `identity.IdentityOutbox`, ou rien. L'event est écrit par le plugin `identityOutbox` dans un hook `user.create.before`, avec l'adapter de la transaction (`getCurrentAdapter`), et porte l'identifiant du compte. `payload` est déclaré `string` auprès de better-auth : un champ `json` y serait écrit en texte.
+
 Sans paramètre `resource`, le jeton d'accès est opaque : l'app iOS l'envoie toujours. Un client OAuth n'obtient de jeton pour `/v1` que s'il est lié à cette ressource (`IdentityOAuthClientResource`).

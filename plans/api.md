@@ -139,8 +139,17 @@ _Tests d'abord_ : attributions relues après une écriture ; cache vidé avant l
 
 ### Contextes de la tranche 1
 
-**PR 9 — `channel`.** Agrégat `Channel` (slug et ses mots réservés, titre), création à la réception de `identity.account.registered` (outbox `identity` → Redis Streams), attribution `owner` dans `authz`, `channel.created` dans l'outbox. `GET /v1/channels/{slug}`, `PATCH /v1/channels/{id}` (titre, propriétaire seulement). Adapter Redis Streams du relais.
-_Tests d'abord_ : slug réservé ou mal formé refusé ; inscription → chaîne créée une seule fois, même si l'event est rejoué ; modification du titre par un autre que le propriétaire → 403.
+**PR 9a — Outbox d'`identity`.** Contrat `identity.account.registered` dans `packages/contracts/src/events/identity/` ; table `IdentityOutbox` ; event écrit dans la transaction d'inscription de better-auth (`transaction: true`, hook `user.create.before`).
+_Tests d'abord_ : une inscription écrit l'event avec l'identifiant du compte ; une inscription qui échoue en cours de transaction n'écrit ni compte ni event.
+
+**PR 9b — Relais de l'outbox vers Redis Streams.** Process `outbox-relay` (rôle `app_outbox_relay`) qui parcourt les outbox et publie sur Redis Streams ; adapter Redis Streams du port `OutboxPublisher`.
+_Tests d'abord_ : un event de l'outbox arrive sur son stream ; un échec de publication le reprogramme.
+
+**PR 9c — Contexte `channel`.** Agrégat `Channel` (slug et ses mots réservés, titre), création à la réception de `identity.account.registered` par un consommateur idempotent (`processed_events`), attribution `owner` dans `authz` avec invalidation après commit, `channel.created` dans l'outbox de `channel`.
+_Tests d'abord_ : slug réservé ou mal formé refusé ; inscription → chaîne créée une seule fois, même si l'event est rejoué.
+
+**PR 9d — Routes de `channel`.** `GET /v1/channels/{slug}`, `PATCH /v1/channels/{id}` (titre, propriétaire et editor).
+_Tests d'abord_ : modification du titre par un autre que le propriétaire ou un editor → 403.
 
 **PR 10 — `stream`, contre le provider factice.** Agrégat `StreamSession`, port `LiveVideoProviderPort` et `FakeLiveVideoProvider` (ADR 0001), route de webhook qui vérifie la signature **avant** toute désérialisation, `stream.started` et `stream.ended` par l'outbox, job de réconciliation, `GET /v1/channels/{id}/stream-key` (propriétaire seulement), URL de lecture.
 _Tests d'abord_ : webhook mal signé → 401 sans parsing ; `stream.started` rejoué → une seule session ; session ouverte que le provider ne connaît plus → close par la réconciliation ; clé de stream absente de tout log et de toute liste.

@@ -17,6 +17,7 @@ import {
 } from "../domain/authentication-context.ts";
 import { isRefreshTokenReuse } from "../domain/refresh-token-reuse.ts";
 import { ACCESS_TOKEN_LIFETIME_SECONDS } from "../domain/token-lifetimes.ts";
+import { identityOutbox } from "./identity-outbox.ts";
 import { prismaSessionRevocationStore } from "./prisma-session-revocation-store.ts";
 import {
   type IdentityRedis,
@@ -111,7 +112,7 @@ export const createIdentityAuth = ({
     basePath: "/auth",
     secret,
     baseURL,
-    database: prismaAdapter(prisma, { provider: "postgresql" }),
+    database: prismaAdapter(prisma, { provider: "postgresql", transaction: true }),
     disabledPaths: ["/token"],
     advanced: { database: { generateId: () => randomUUID() } },
     hooks: {
@@ -135,6 +136,7 @@ export const createIdentityAuth = ({
     account: { modelName: "IdentityAccount" },
     verification: { modelName: "IdentityVerification" },
     plugins: [
+      identityOutbox(),
       jwt({
         jwks: {
           rotationInterval: IDENTITY_TOKEN_SETTINGS.jwksRotationInterval,
