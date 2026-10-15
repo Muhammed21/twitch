@@ -4,7 +4,7 @@ import { decideLifecycle, type LifecycleEvent, type SessionState } from "./strea
 
 const at = (time: string) => new Date(`2026-10-15T${time}:00.000Z`);
 
-const NOTHING = { close: [], open: null };
+const NOTHING = { kind: "nothing" };
 
 const makeSession = (overrides: Partial<SessionState> = {}): SessionState => ({
   id: "session-en-cours",
@@ -26,43 +26,67 @@ const ended = (providerSessionId: string, time = "22:00"): LifecycleEvent => ({
   occurredAt: at(time),
 });
 
+const decide = ({
+  event,
+  open = null,
+  known = null,
+  following = null,
+}: {
+  event: LifecycleEvent;
+  open?: SessionState | null;
+  known?: SessionState | null;
+  following?: SessionState | null;
+}) => decideLifecycle({ event, open, known, following });
+
 describe("démarrage d'un live", () => {
   it("ouvre une session quand la chaîne n'en a aucune", () => {
-    expect(decideLifecycle({ event: started("provider-1"), open: null, known: null })).toEqual({
+    expect(decide({ event: started("provider-1") })).toEqual({
+      kind: "apply",
       close: [],
       open: { providerSessionId: "provider-1", startedAt: at("20:00") },
     });
   });
 
   it("ne fait rien pour un démarrage déjà connu, même rejoué après la fin", () => {
-    const session = makeSession({ endedAt: at("22:00") });
-
-    expect(decideLifecycle({ event: started("provider-1"), open: null, known: session })).toEqual(
-      NOTHING,
-    );
+    expect(
+      decide({ event: started("provider-1"), known: makeSession({ endedAt: at("22:00") }) }),
+    ).toEqual(NOTHING);
   });
 
   it("ne fait rien pour le démarrage de la session déjà ouverte", () => {
     const session = makeSession();
 
-    expect(
-      decideLifecycle({ event: started("provider-1"), open: session, known: session }),
-    ).toEqual(NOTHING);
+    expect(decide({ event: started("provider-1"), open: session, known: session })).toEqual(
+      NOTHING,
+    );
   });
 
   it("clôt la session restée ouverte avant d'ouvrir la nouvelle", () => {
-    expect(
-      decideLifecycle({ event: started("provider-2", "21:00"), open: makeSession(), known: null }),
-    ).toEqual({
+    expect(decide({ event: started("provider-2", "21:00"), open: makeSession() })).toEqual({
+      kind: "apply",
       close: [{ sessionId: "session-en-cours", endedAt: at("21:00") }],
       open: { providerSessionId: "provider-2", startedAt: at("21:00") },
     });
   });
+});
 
-  it("ne clôt jamais une session avant son début", () => {
-    expect(
-      decideLifecycle({ event: started("provider-2", "19:00"), open: makeSession(), known: null }),
-    ).toMatchObject({ close: [{ sessionId: "session-en-cours", endedAt: at("20:00") }] });
+describe("démarrage reçu en retard (ADR 0001, webhooks dans le désordre)", () => {
+  it("archive close, jusqu'au début de la session suivante, une session plus ancienne que le live en cours", () => {
+    const live = makeSession();
+
+    expect(decide({ event: started("provider-0", "19:00"), open: live, following: live })).toEqual({
+      kind: "archive",
+      session: { providerSessionId: "provider-0", startedAt: at("19:00"), endedAt: at("20:00") },
+    });
+  });
+
+  it("archive aussi une session plus ancienne qu'une session déjà close", () => {
+    const next = makeSession({ endedAt: at("21:00") });
+
+    expect(decide({ event: started("provider-0", "19:00"), following: next })).toEqual({
+      kind: "archive",
+      session: { providerSessionId: "provider-0", startedAt: at("19:00"), endedAt: at("20:00") },
+    });
   });
 });
 
@@ -70,7 +94,8 @@ describe("fin d'un live", () => {
   it("clôt la session ouverte à la date de fin", () => {
     const session = makeSession();
 
-    expect(decideLifecycle({ event: ended("provider-1"), open: session, known: session })).toEqual({
+    expect(decide({ event: ended("provider-1"), open: session, known: session })).toEqual({
+      kind: "apply",
       close: [{ sessionId: "session-en-cours", endedAt: at("22:00") }],
       open: null,
     });
@@ -80,21 +105,19 @@ describe("fin d'un live", () => {
     const session = makeSession();
 
     expect(
-      decideLifecycle({ event: ended("provider-1", "19:00"), open: session, known: session }),
+      decide({ event: ended("provider-1", "19:00"), open: session, known: session }),
     ).toMatchObject({ close: [{ sessionId: "session-en-cours", endedAt: at("20:00") }] });
   });
 
   it("ne fait rien pour une session déjà close", () => {
-    const session = makeSession({ endedAt: at("22:00") });
-
-    expect(decideLifecycle({ event: ended("provider-1"), open: null, known: session })).toEqual(
-      NOTHING,
-    );
+    expect(
+      decide({ event: ended("provider-1"), known: makeSession({ endedAt: at("22:00") }) }),
+    ).toEqual(NOTHING);
   });
 
-  it("ne fait rien pour une session inconnue", () => {
-    expect(
-      decideLifecycle({ event: ended("provider-9"), open: makeSession(), known: null }),
-    ).toEqual(NOTHING);
+  it("attend le démarrage d'une session encore inconnue", () => {
+    expect(decide({ event: ended("provider-9"), open: makeSession() })).toEqual({
+      kind: "wait-for-start",
+    });
   });
 });

@@ -53,10 +53,19 @@ const lifecycleTransaction = (tx: StreamTransaction): LifecycleTransaction => ({
     tx.streamSession.findFirst({ where: { channelId, endedAt: null }, select: SESSION }),
   sessionByProvider: (providerSessionId) =>
     tx.streamSession.findUnique({ where: { providerSessionId }, select: SESSION }),
+  followingSessionOf: (channelId, after) =>
+    tx.streamSession.findFirst({
+      where: { channelId, startedAt: { gt: after } },
+      orderBy: { startedAt: "asc" },
+      select: SESSION,
+    }),
   closeSession: async ({ sessionId, endedAt }) => {
     await tx.streamSession.update({ where: { id: sessionId }, data: { endedAt } });
   },
   openSession: async (session) => {
+    await tx.streamSession.create({ data: session });
+  },
+  archiveSession: async (session) => {
     await tx.streamSession.create({ data: session });
   },
   publish: (publication) =>

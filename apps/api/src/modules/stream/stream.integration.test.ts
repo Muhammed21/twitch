@@ -163,6 +163,54 @@ describe("sessions de diffusion en base (ADR 0001)", () => {
     expect(await outboxOf(channel.channelId)).toHaveLength(3);
   });
 
+  it("archive close et sans event un démarrage reçu après le live suivant", async () => {
+    const channel = await seedChannel();
+    await record(lifecycle(channel, { occurredAt: at("20:00") }));
+
+    await record(lifecycle(channel, { occurredAt: at("19:00") }));
+
+    const sessions = await sessionsOf(channel.channelId);
+    expect(sessions.map(({ startedAt, endedAt }) => ({ startedAt, endedAt }))).toEqual([
+      { startedAt: at("19:00"), endedAt: at("20:00") },
+      { startedAt: at("20:00"), endedAt: null },
+    ]);
+    expect((await outboxOf(channel.channelId)).map(({ name }) => name)).toEqual(["stream.started"]);
+  });
+
+  it("archive un démarrage tardif jusqu'au début de la session la plus proche qui le suit", async () => {
+    const channel = await seedChannel();
+    await record(lifecycle(channel, { occurredAt: at("21:00") }));
+    await record(lifecycle(channel, { occurredAt: at("20:00") }));
+
+    await record(lifecycle(channel, { occurredAt: at("19:00") }));
+
+    expect((await sessionsOf(channel.channelId))[0]).toMatchObject({
+      startedAt: at("19:00"),
+      endedAt: at("20:00"),
+    });
+  });
+
+  it("refuse une fin reçue avant son démarrage, puis l'applique quand elle revient", async () => {
+    const channel = await seedChannel();
+    const start = lifecycle(channel);
+    const end = lifecycle(channel, {
+      kind: "ended",
+      providerSessionId: start.providerSessionId,
+      occurredAt: at("22:00"),
+    });
+
+    expect(await record(end)).toEqual({ status: "not-yet-started" });
+    expect(await prisma.streamProcessedEvent.findMany({ where: { eventId: end.eventId } })).toEqual(
+      [],
+    );
+    await record(start);
+    expect(await record(end)).toEqual({ status: "recorded" });
+
+    expect(await sessionsOf(channel.channelId)).toEqual([
+      expect.objectContaining({ startedAt: at("20:00"), endedAt: at("22:00") }),
+    ]);
+  });
+
   it("n'écrit rien pour un canal provider inconnu", async () => {
     const event = lifecycle({ providerChannelId: `inconnu-${randomUUID()}` });
 

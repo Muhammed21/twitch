@@ -113,7 +113,9 @@ L'API consomme `events.identity` dans le groupe `channel` (`platform/stream-cons
 
 - `recordStreamLifecycle` traite un event de cycle de vie du provider (`started` ou `ended`, avec son canal et sa session provider) dans une transaction du client `stream` : l'event est inscrit dans `StreamProcessedEvent` (handler `stream.record-lifecycle`), le canal provider est retrouvé dans `StreamChannel`, puis `decideLifecycle` (`domain/stream-lifecycle.ts`) décide.
 - Un démarrage ouvre une session et publie `stream.started` ; s'il trouve une autre session ouverte sur la chaîne, il la clôt d'abord et publie son `stream.ended`. Un démarrage déjà connu, même sous un autre identifiant d'event, ne fait rien.
-- Une fin clôt la session ouverte et publie `stream.ended` ; une session déjà close ou inconnue ne change pas. Une session n'est jamais close avant son début.
+- Les webhooks arrivent dans le désordre (ADR 0001). Un démarrage plus ancien qu'une session déjà connue de la chaîne est archivé clos, de son début au début de la session qui le suit, sans event ; le live en cours reste ouvert.
+- Une fin clôt la session ouverte et publie `stream.ended` ; une session déjà close ne change pas. Une session n'est jamais close avant son début.
+- Une fin dont la session est encore inconnue n'est pas enregistrée (`not-yet-started`) : la transaction est annulée, l'event n'est pas marqué traité, et le provider la réémet.
 - Un canal provider inconnu n'ouvre rien (`unknown-channel`).
 - La base n'admet qu'une session ouverte par chaîne (index unique partiel `StreamSession_channelId_open_key`).
 - Les events d'un même instant (clôture et nouveau démarrage) n'ont pas d'ordre garanti dans l'outbox : un consommateur raisonne par `sessionId`.

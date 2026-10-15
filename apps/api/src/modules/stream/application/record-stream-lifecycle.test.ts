@@ -39,14 +39,37 @@ const memorySessions = ({
     closeSession: async ({ sessionId, endedAt }) => {
       state.sessions = state.sessions.map((s) => (s.id === sessionId ? { ...s, endedAt } : s));
     },
+    followingSessionOf: async (channelId, after) =>
+      state.sessions
+        .filter((s) => s.channelId === channelId && s.startedAt > after)
+        .toSorted((a, b) => a.startedAt.getTime() - b.startedAt.getTime())[0] ?? null,
     openSession: async (session) => {
       state.sessions = [...state.sessions, { ...session, endedAt: null }];
+    },
+    archiveSession: async (session) => {
+      state.sessions = [...state.sessions, session];
     },
     publish: async (event) => {
       state.published.push(event);
     },
   };
-  const store: StreamSessions = { transaction: (work) => work(tx) };
+  const store: StreamSessions = {
+    transaction: async (work) => {
+      const before = {
+        sessions: state.sessions,
+        processed: new Set(state.processed),
+        published: published.length,
+      };
+      try {
+        return await work(tx);
+      } catch (error) {
+        state.sessions = before.sessions;
+        state.processed = before.processed;
+        published.splice(before.published);
+        throw error;
+      }
+    },
+  };
   return { state, store };
 };
 
@@ -160,5 +183,46 @@ describe("enregistrement d'un event de cycle de vie du provider", () => {
     expect(await record(store)(makeEvent())).toEqual({ status: "unknown-channel" });
     expect(state.sessions).toEqual([]);
     expect(state.published).toEqual([]);
+  });
+
+  it("archive close et sans event un démarrage plus ancien que le live en cours", async () => {
+    const live = openSession({ startedAt: at("20:00") });
+    const { state, store } = memorySessions({ sessions: [live] });
+
+    expect(
+      await record(store)(
+        makeEvent({ providerSessionId: "provider-ancien", occurredAt: at("19:00") }),
+      ),
+    ).toEqual({ status: "recorded" });
+
+    expect(state.sessions).toEqual([
+      live,
+      {
+        id: "id-1",
+        channelId: CHANNEL_ID,
+        providerSessionId: "provider-ancien",
+        startedAt: at("19:00"),
+        endedAt: at("20:00"),
+      },
+    ]);
+    expect(state.published).toEqual([]);
+  });
+
+  it("n'enregistre pas une fin reçue avant son démarrage, pour qu'elle soit réémise", async () => {
+    const { state, store } = memorySessions();
+
+    expect(
+      await record(store)(makeEvent({ kind: "ended", providerSessionId: "provider-pas-encore" })),
+    ).toEqual({ status: "not-yet-started" });
+    expect(state.processed.has("event-1")).toBe(false);
+    expect(state.sessions).toEqual([]);
+    expect(state.published).toEqual([]);
+  });
+
+  it("laisse remonter une autre erreur de la transaction", async () => {
+    const failure = new Error("base indisponible");
+    const store: StreamSessions = { transaction: () => Promise.reject(failure) };
+
+    await expect(record(store)(makeEvent())).rejects.toBe(failure);
   });
 });
