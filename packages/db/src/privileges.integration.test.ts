@@ -11,6 +11,7 @@ const PERMISSION_DENIED = "42501";
 const AUTHZ_WRITERS: readonly Context[] = ["channel", "moderation"];
 const SHARED_SCHEMAS = ["authz", "audit"] as const;
 const SCHEMAS = [...contexts, ...SHARED_SCHEMAS];
+const OUTBOXES = [`"identity"."IdentityOutbox"`, `"channel"."ChannelOutbox"`];
 const PROBE = `probe_${randomUUID().replaceAll("-", "")}`;
 
 const urlOf = (variable: string): string => {
@@ -136,9 +137,8 @@ describe("rôles techniques", () => {
     },
   );
 
-  it("app_outbox_relay lit l'outbox d'identity et marque ses events publiés", async () => {
+  it.each(OUTBOXES)("app_outbox_relay lit %s et marque ses events publiés", async (outbox) => {
     const relay = urlOf("DATABASE_URL_OUTBOX_RELAY");
-    const outbox = `"identity"."IdentityOutbox"`;
 
     expect(await outcome(relay, `SELECT "id" FROM ${outbox}`)).toBe("ok");
     expect(await outcome(relay, `UPDATE ${outbox} SET "attempts" = "attempts" WHERE false`)).toBe(
@@ -146,9 +146,8 @@ describe("rôles techniques", () => {
     );
   });
 
-  it("app_outbox_relay n'ajoute ni ne supprime d'event dans l'outbox d'identity", async () => {
+  it.each(OUTBOXES)("app_outbox_relay n'ajoute ni ne supprime d'event dans %s", async (outbox) => {
     const relay = urlOf("DATABASE_URL_OUTBOX_RELAY");
-    const outbox = `"identity"."IdentityOutbox"`;
 
     expect(
       await outcome(

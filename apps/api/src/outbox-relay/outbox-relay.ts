@@ -10,7 +10,10 @@ import { STREAM_MAX_LENGTH, streamOf, toStreamEntry } from "./stream-entry.ts";
 
 const COMMAND_TIMEOUT_MS = 2000;
 
-export const OUTBOXES: readonly TableRef[] = [{ schema: "identity", table: "IdentityOutbox" }];
+export const OUTBOXES: readonly TableRef[] = [
+  { schema: "identity", table: "IdentityOutbox" },
+  { schema: "channel", table: "ChannelOutbox" },
+];
 
 export const createRelayRedis = (url?: string) =>
   createClient({ url, name: "outbox-relay", commandOptions: { timeout: COMMAND_TIMEOUT_MS } });

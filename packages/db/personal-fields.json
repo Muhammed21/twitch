@@ -6,6 +6,8 @@
   "audit.AuditEntry.userAgent",
   "authz.AuthzRoleAssignment.grantedBy",
   "authz.AuthzRoleAssignment.subjectId",
+  "channel.Channel.ownerId",
+  "channel.Channel.slug",
   "identity.IdentityAccount.accessToken",
   "identity.IdentityAccount.accountId",
   "identity.IdentityAccount.idToken",

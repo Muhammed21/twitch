@@ -32,7 +32,7 @@ export const identityOutbox = (): BetterAuthPlugin => ({
                 data: {
                   name: accountRegistered.name,
                   version: accountRegistered.version,
-                  payload: accountRegistered.payload.parse({ accountId }),
+                  payload: accountRegistered.payload.parse({ accountId, displayName: user.name }),
                   occurredAt: new Date(),
                 },
               });

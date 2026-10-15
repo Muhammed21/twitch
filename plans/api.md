@@ -145,8 +145,11 @@ _Tests d'abord_ : une inscription écrit l'event avec l'identifiant du compte ; 
 **PR 9b — Relais de l'outbox vers Redis Streams.** Process `outbox-relay` (rôle `app_outbox_relay`) qui parcourt les outbox et publie sur Redis Streams ; adapter Redis Streams du port `OutboxPublisher`.
 _Tests d'abord_ : un event de l'outbox arrive sur son stream ; un échec de publication le reprogramme.
 
-**PR 9c — Contexte `channel`.** Agrégat `Channel` (slug et ses mots réservés, titre), création à la réception de `identity.account.registered` par un consommateur idempotent (`processed_events`), attribution `owner` dans `authz` avec invalidation après commit, `channel.created` dans l'outbox de `channel`.
-_Tests d'abord_ : slug réservé ou mal formé refusé ; inscription → chaîne créée une seule fois, même si l'event est rejoué.
+**PR 9c — Contexte `channel` : création de la chaîne.** Slug dérivé du nom d'affichage (ADR 0035 : format, mots réservés, candidats), `displayName` dans `identity.account.registered`, contrat `channel.created`, tables `Channel`, `ChannelOutbox` et `ChannelProcessedEvent`. Use-case `createChannelForAccount` : dans une transaction, event déjà traité ou compte déjà doté écarté, chaîne, attribution `owner` dans `authz` et `channel.created` dans l'outbox ; invalidation des attributions après commit.
+_Tests d'abord_ : slug réservé ou mal formé refusé ; event rejoué → une seule chaîne ; slug pris → candidat suivant ; aucun candidat libre → rien d'écrit, l'event se retente.
+
+**PR 9c′ — Consommateur `channel` de `events.identity`.** Groupe `channel` créé depuis le début du stream (ADR 0034), lecture par `XREADGROUP`, `createChannelForAccount` puis `XACK`, reprise des entrées en attente d'un consommateur arrêté.
+_Tests d'abord_ : inscription → chaîne créée ; un event non acquitté est relu après redémarrage ; un event d'un autre nom est acquitté sans effet.
 
 **PR 9d — Routes de `channel`.** `GET /v1/channels/{slug}`, `PATCH /v1/channels/{id}` (titre, propriétaire et editor).
 _Tests d'abord_ : modification du titre par un autre que le propriétaire ou un editor → 403.

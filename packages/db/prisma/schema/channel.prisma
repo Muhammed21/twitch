@@ -1,0 +1,39 @@
+// Contexte channel (ADR 0003) : la chaîne permanente d'un compte, créée à l'inscription.
+
+/// Chaîne d'un compte : une par compte, slug unique (ADR 0035).
+model Channel {
+  id        String   @id @db.Uuid
+  /// @personal
+  ownerId   String   @unique @db.Uuid
+  /// Dérivé du nom d'affichage.
+  /// @personal
+  slug      String   @unique
+  title     String   @default("")
+  createdAt DateTime @default(now())
+
+  @@schema("channel")
+}
+
+model ChannelOutbox {
+  id            String    @id @db.Uuid
+  name          String
+  version       Int
+  payload       Json
+  occurredAt    DateTime
+  publishedAt   DateTime?
+  attempts      Int       @default(0)
+  nextAttemptAt DateTime  @default(now())
+  lastError     String?
+
+  @@index([publishedAt, nextAttemptAt])
+  @@schema("channel")
+}
+
+model ChannelProcessedEvent {
+  eventId     String   @db.Uuid
+  handlerName String
+  processedAt DateTime @default(now())
+
+  @@unique([eventId, handlerName])
+  @@schema("channel")
+}
