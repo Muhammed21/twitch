@@ -137,6 +137,9 @@ importers:
 
   apps/video:
     dependencies:
+      '@repo/result':
+        specifier: workspace:*
+        version: link:../../packages/result
       '@repo/video-contract':
         specifier: workspace:*
         version: link:../../packages/video-contract
