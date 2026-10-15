@@ -30,7 +30,7 @@ export const startHttpServer = async ({ port }: { port: number }): Promise<HttpS
   const state: { draining: boolean } = { draining: false };
 
   const server = createServer((request, response) => {
-    const target = URL.parse(request.url ?? "/", "http://localhost");
+    const target = URL.parse(String(request.url), "http://localhost");
     if (target === null) {
       sendProblem(response, { title: "Requête invalide", status: 400 });
       return;
