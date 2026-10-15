@@ -47,6 +47,7 @@ Chaque page de `docs/`, une ligne chacune : titre, [mode](README.md#carte), stat
 - [0033 — Claims `twitch_auth_time` et `twitch_amr` dans le jeton d'accès, à la place d'`auth_time` et `amr`](adr/0033-claims-twitch-auth-time-et-twitch-amr-dans-le-jeton-d-acces.md) — _explanation · Proposé_ — Comment porter l'heure et les méthodes d'authentification dans le jeton d'accès, quand better-auth réserve `auth_time` et `amr` sans les émettre ?
 - [0034 — Un stream Redis par contexte pour les events de l'outbox, plafonné à environ 100 000 entrées](adr/0034-un-stream-redis-par-contexte-pour-les-events-de-l-outbox.md) — _explanation · Accepté_ — Sur quels streams Redis le relais publie-t-il les events de l'outbox, sous quelle forme et avec quelle rétention ?
 - [0035 — Slug de chaîne dérivé du nom d'affichage, au format Twitch, jamais refusé à la création](adr/0035-slug-de-chaine-derive-du-nom-d-affichage-jamais-refuse.md) — _explanation · Proposé_ — D'où vient le slug d'une chaîne créée à l'inscription, quel format respecte-t-il, et que faire quand il est pris ou réservé ?
+- [0036 — Les valeurs visuelles reprennent l'app iOS Twitch, relevées sur captures](adr/0036-valeurs-visuelles-relevees-sur-l-app-ios-twitch.md) — _explanation · Accepté_ — L'app reprend-elle le design de l'app iOS Twitch à l'identique, valeurs visuelles comprises, ou seulement sa structure ?
 - [Décisions d'architecture (ADR)](adr/README.md) — _reference_ — Registre des décisions structurantes du projet. Format MADR.
 
 ## Spikes — recherche bornée
@@ -56,3 +57,7 @@ Chaque page de `docs/`, une ligne chacune : titre, [mode](README.md#carte), stat
 - [Spike — client iOS socket.io](spikes/2026-09-24-client-ios-socketio.md) — _explanation_ — Le client Swift officiel de socket.io peut-il servir de base à `ChatSession` (ADR 0011), avec les exigences de l'ADR 0022 : WebSocket uniquement, token dans l'en-tête…
 - [Spike — chaîne du contrat Zod → OpenAPI → Swift](spikes/2026-09-24-contrat-zod-swift.md) — _explanation_ — La chaîne prescrite par l'ADR 0009 produit-elle, sur les cas difficiles du projet, du Swift correct, compilé en Swift 6 strict, et qui respecte la politique de compatibilité de…
 - [Spike — Prisma multiSchema et rôles PostgreSQL](spikes/2026-09-24-prisma-multischema.md) — _explanation_ — Le montage décrit par l'ADR 0008 fonctionne-t-il tel quel avec la version actuelle de Prisma : un schéma PostgreSQL par contexte, un schéma Prisma découpé en plusieurs fichiers,…
+
+## reference-ui
+
+- [Référence UI : l'app iOS Twitch](reference-ui/README.md) — _reference_ — Captures de l'app iOS Twitch (mars 2025, iPhone, 1179×2676), référence du design de l'app iOS du produit : structure, comportement et valeurs visuelles (ADR 0036).
