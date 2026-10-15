@@ -20,6 +20,7 @@ export type LiveSession = { readonly providerSessionId: string };
 export interface LiveVideoProviderPort {
   provisionChannel(input: { channelId: string }): Promise<{ providerChannelId: string }>;
   getStreamKey(input: { providerChannelId: string }): Promise<StreamCredentials | null>;
+  revokeStreamKey(input: { providerChannelId: string }): Promise<void>;
   parseLifecycleWebhook(raw: RawWebhook): Result<ProviderLifecycleEvent, WebhookError>;
   listLiveSessions(): Promise<readonly LiveSession[]>;
 }

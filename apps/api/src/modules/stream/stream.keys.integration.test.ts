@@ -7,7 +7,7 @@ import { createContextClient } from "@repo/db";
 import { createAuthzContext, createAuthzRedis } from "../../authz/authz-context.ts";
 import { createApp } from "../../create-app.ts";
 import { toStreamEntry } from "../../platform/stream-entry.ts";
-import { getStreamKey } from "./application/stream-keys.ts";
+import { getStreamKey, rotateStreamKey } from "./application/stream-keys.ts";
 import { fakeLiveVideoProvider } from "./infrastructure/fake-live-video-provider.ts";
 import { prismaStreamChannels } from "./infrastructure/prisma-stream-channels.ts";
 
@@ -73,6 +73,24 @@ const readKey = getStreamKey({
   authz: createAuthzContext({ prisma: stream, redis, now: () => new Date() }),
 });
 
+const rotateKey = rotateStreamKey({
+  channels: prismaStreamChannels(stream),
+  provider,
+  authz: createAuthzContext({ prisma: stream, redis, now: () => new Date() }),
+});
+
+const seedProvisioned = async () => {
+  const channel = await seedChannel();
+  await prismaStreamChannels(stream).save({
+    channelId: channel.id,
+    providerChannelId: `fake-${channel.id}`,
+  });
+  return channel;
+};
+
+const keyOf = async (channel: { id: string; ownerId: string }) =>
+  readKey({ actorId: channel.ownerId, channelId: channel.id });
+
 beforeAll(async () => {
   await redis.connect();
 });
@@ -136,6 +154,29 @@ describe("clé de stream (ADR 0001)", () => {
     expect(second).toEqual(first);
     expect(first?.ingestUrl).toBe("rtmp://127.0.0.1:1935/live");
     expect(await provider.getStreamKey({ providerChannelId: "inconnu" })).toBeNull();
+  });
+
+  it("change à la rotation la clé de la chaîne, et pas celle des autres", async () => {
+    const [rotated, other] = await Promise.all([seedProvisioned(), seedProvisioned()]);
+    const [rotatedBefore, otherBefore] = await Promise.all([keyOf(rotated), keyOf(other)]);
+
+    const rotation = await rotateKey({ actorId: rotated.ownerId, channelId: rotated.id });
+
+    expect(rotation).toEqual({ ok: true, value: expect.any(Object) });
+    expect(rotation).not.toEqual(rotatedBefore);
+    expect(await keyOf(rotated)).toEqual(rotation);
+    expect(await keyOf(other)).toEqual(otherBefore);
+  });
+
+  it("refuse la rotation à un autre compte, sans changer la clé", async () => {
+    const channel = await seedProvisioned();
+    const before = await readKey({ actorId: channel.ownerId, channelId: channel.id });
+
+    expect(await rotateKey({ actorId: randomUUID(), channelId: channel.id })).toEqual({
+      ok: false,
+      error: "forbidden",
+    });
+    expect(await readKey({ actorId: channel.ownerId, channelId: channel.id })).toEqual(before);
   });
 
   it("donne une clé différente à chaque chaîne", async () => {

@@ -47,6 +47,7 @@ type Ability = ReturnType<typeof abilityOf>;
 const ACTIONS: Readonly<Record<string, (ability: Ability) => boolean>> = {
   "channel.update": (ability) => ability.can("update", channel(CHANNEL_A)),
   "channel.streamKey.read": (ability) => ability.can("readStreamKey", channel(CHANNEL_A)),
+  "channel.streamKey.rotate": (ability) => ability.can("rotateStreamKey", channel(CHANNEL_A)),
   "role.grant editor": (ability) => ability.can("grant", channelRole(CHANNEL_A, "editor")),
   "role.grant vip": (ability) => ability.can("grant", channelRole(CHANNEL_A, "vip")),
   "moderator.appoint": (ability) => ability.can("grant", channelRole(CHANNEL_A, "moderator")),
@@ -67,6 +68,7 @@ const ROLES: Readonly<Record<string, readonly RoleAssignment[]>> = {
 const MATRIX: Readonly<Record<string, readonly string[]>> = {
   "channel.update": ["owner", "editor"],
   "channel.streamKey.read": ["owner"],
+  "channel.streamKey.rotate": ["owner"],
   "role.grant editor": ["owner"],
   "role.grant vip": ["owner", "editor"],
   "moderator.appoint": ["owner"],
@@ -150,6 +152,7 @@ describe("portée par chaîne", () => {
 
     expect(ownerOfA.can("update", channel(CHANNEL_B))).toBe(false);
     expect(ownerOfA.can("readStreamKey", channel(CHANNEL_B))).toBe(false);
+    expect(ownerOfA.can("rotateStreamKey", channel(CHANNEL_B))).toBe(false);
     expect(ownerOfA.can("grant", channelRole(CHANNEL_B, "moderator"))).toBe(false);
     expect(ownerOfA.can("ban", memberOfB)).toBe(false);
   });
@@ -179,6 +182,7 @@ describe("portée par chaîne", () => {
 
     expect(ability.can("update", channel(CHANNEL_B))).toBe(true);
     expect(ability.can("readStreamKey", channel(CHANNEL_B))).toBe(true);
+    expect(ability.can("rotateStreamKey", channel(CHANNEL_B))).toBe(true);
     expect(ability.can("grant", channelRole(CHANNEL_B, "moderator"))).toBe(true);
     expect(ability.can("ban", memberOfB)).toBe(true);
     expect(ability.can("send", chat(CHANNEL_B))).toBe(true);

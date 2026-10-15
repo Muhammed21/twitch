@@ -45,7 +45,7 @@ type ChannelMember = ForcedSubject<"ChannelMember"> & {
 type Chat = ForcedSubject<"Chat"> & { readonly channelId: string };
 
 type Abilities =
-  | ["update" | "readStreamKey" | "suspend", "Channel" | Channel]
+  | ["update" | "readStreamKey" | "rotateStreamKey" | "suspend", "Channel" | Channel]
   | ["grant", "ChannelRole" | ChannelRoleGrant]
   | ["timeout" | "ban", "ChannelMember" | ChannelMember]
   | ["send", "Chat" | Chat];
@@ -68,7 +68,7 @@ type Builder = AbilityBuilder<AppAbility>;
 const CHANNEL_RULES: Readonly<Record<ChannelRole, (builder: Builder, channelId: string) => void>> =
   {
     owner: ({ can }, channelId) => {
-      can(["update", "readStreamKey"], "Channel", { id: channelId });
+      can(["update", "readStreamKey", "rotateStreamKey"], "Channel", { id: channelId });
       can("grant", "ChannelRole", { channelId, role: { $in: ["editor", "vip", "moderator"] } });
       can(["timeout", "ban"], "ChannelMember", { channelId, ...UNPROTECTED_FOR_OWNER });
     },
@@ -97,7 +97,7 @@ const isBan = (assignment: RoleAssignment): assignment is ChannelAssignment =>
   assignment.role === "banned";
 
 const applyBan = ({ cannot }: Builder, channelId: string) => {
-  cannot(["update", "readStreamKey"], "Channel", { id: channelId });
+  cannot(["update", "readStreamKey", "rotateStreamKey"], "Channel", { id: channelId });
   cannot("grant", "ChannelRole", { channelId });
   cannot(["timeout", "ban"], "ChannelMember", { channelId });
   cannot("send", "Chat", { channelId });

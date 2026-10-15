@@ -130,6 +130,46 @@ describe("StreamModule branché sur la base et Redis", () => {
     });
   });
 
+  it("change la clé de stream du propriétaire : la lecture suivante rend la nouvelle", async () => {
+    const { ownerId, channelId } = await seedProvisionedChannel();
+    const withToken = { headers: { authorization: "Bearer jeton" } };
+
+    await withStreamModule(ownerId, async (base) => {
+      const before = await (
+        await fetch(`${base}/channels/${channelId}/stream-key`, withToken)
+      ).json();
+      const rotation = await fetch(`${base}/channels/${channelId}/stream-key/rotate`, {
+        method: "POST",
+        ...withToken,
+      });
+      const rotated = await rotation.json();
+      const after = await (
+        await fetch(`${base}/channels/${channelId}/stream-key`, withToken)
+      ).json();
+
+      expect(rotation.status).toBe(200);
+      expect(rotated).toEqual({
+        streamKey: expect.stringMatching(/^sk_live_[0-9a-f]{32}$/),
+        ingestUrl: "rtmp://127.0.0.1:1935/live",
+      });
+      expect(rotated).not.toEqual(before);
+      expect(after).toEqual(rotated);
+    });
+  });
+
+  it("refuse la rotation à un autre compte", async () => {
+    const { channelId } = await seedProvisionedChannel();
+
+    await withStreamModule(randomUUID(), async (base) => {
+      const response = await fetch(`${base}/channels/${channelId}/stream-key/rotate`, {
+        method: "POST",
+        headers: { authorization: "Bearer jeton" },
+      });
+
+      expect(response.status).toBe(403);
+    });
+  });
+
   it("refuse la clé à un autre compte", async () => {
     const { channelId } = await seedProvisionedChannel();
 
