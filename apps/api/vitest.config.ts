@@ -19,6 +19,7 @@ export default defineConfig({
         "src/outbox-relay/outbox-relay.ts",
         "src/outbox-relay/main.ts",
         "src/platform/testing/**",
+        "src/platform/stream-consumer.ts",
       ],
       reporter: ["text"],
       thresholds: {

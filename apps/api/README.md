@@ -94,6 +94,14 @@ Une nouvelle outbox s'ajoute à `OUTBOXES` (`src/outbox-relay/outbox-relay.ts`),
 - après le commit, les attributions du propriétaire sont invalidées (`invalidateAssignments`) ; un échec est rendu dans le résultat (`cacheInvalidated: false`), sans annuler la chaîne ;
 - sans candidat libre, la transaction échoue sans rien écrire, et l'event se retente.
 
+L'API consomme `events.identity` dans le groupe `channel` (`platform/stream-consumer.ts`, ADR 0034), sous le nom de consommateur `<machine>-<pid>` et le client Redis `api-stream-consumer` :
+
+- le groupe se crée depuis le début du stream, et se recrée quand Redis répond `NOGROUP` ;
+- chaque passe reprend d'abord par `XAUTOCLAIM` les entrées en attente depuis plus de 30 s chez un autre consommateur, puis lit les nouvelles par `XREADGROUP` (attente de 1 s) ;
+- une entrée traitée, illisible ou d'un event sans handler est acquittée ; une entrée dont le handler échoue reste en attente et sera reprise ;
+- `identity.account.registered` appelle `createChannelForAccount` (`presentation/identity-event-handlers.ts`) ; une version autre que 1 reste en attente, un payload hors contrat est journalisé et écarté ;
+- une passe en échec est journalisée et suivie d'une pause de 1 s ; l'arrêt de l'API interrompt la pause.
+
 ## Autorisation (ADR 0006)
 
 Les droits se décident dans les use-cases, à partir de `AuthzContext` (`@repo/authorization`) ; un garde NestJS ne porte aucune règle métier. `apps/api/src/authz/` implémente ce port sur PostgreSQL et Redis :

@@ -6,7 +6,7 @@ import { createClient } from "redis";
 import { type OutboxPublisher, relayOutboxBatch, type TableRef } from "@repo/db";
 
 import { withRedisDeadline } from "../platform/redis-deadline.ts";
-import { STREAM_MAX_LENGTH, streamOf, toStreamEntry } from "./stream-entry.ts";
+import { STREAM_MAX_LENGTH, streamOf, toStreamEntry } from "../platform/stream-entry.ts";
 
 const COMMAND_TIMEOUT_MS = 2000;
 

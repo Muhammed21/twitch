@@ -6,6 +6,7 @@ import type { Express } from "express";
 import { assertSchemaVersion, createContextClient, LATEST_MIGRATION } from "@repo/db";
 
 import { AppModule } from "./app.module.ts";
+import { createAuthzRedis } from "./authz/authz-context.ts";
 import {
   createIdentityAccessTokenVerifier,
   createIdentityAuth,
@@ -15,6 +16,7 @@ import {
 import { type AppConfig, loadEnv } from "./platform/config/env.ts";
 import { configureApp } from "./platform/configure-app.ts";
 import { errorDetails, type LogSink, stdoutSink, writeLog } from "./platform/logging.ts";
+import { createStreamConsumerRedis } from "./platform/stream-consumer.ts";
 
 export const createApp = async ({
   env,
@@ -29,6 +31,14 @@ export const createApp = async ({
     writeLog(logSink, { level: "error", msg: "redis", ...errorDetails(error) });
   });
   redis.connect().catch(() => {});
+  const authzRedis = createAuthzRedis(config.redisUrl).on("error", (error: unknown) => {
+    writeLog(logSink, { level: "error", msg: "redis authz", ...errorDetails(error) });
+  });
+  authzRedis.connect().catch(() => {});
+  const consumerRedis = createStreamConsumerRedis(config.redisUrl).on("error", (error: unknown) => {
+    writeLog(logSink, { level: "error", msg: "redis stream consumer", ...errorDetails(error) });
+  });
+  consumerRedis.connect().catch(() => {});
   const auth = createIdentityAuth({
     prisma,
     redis,
@@ -49,6 +59,11 @@ export const createApp = async ({
         baseURL: config.authBaseUrl,
       }),
       identity: { prisma, redis },
+      channel: {
+        prisma: createContextClient({ context: "channel", env }),
+        authzRedis,
+        consumerRedis,
+      },
     }),
     { logger: new ConsoleLogger({ json: true }), bodyParser: false },
   );

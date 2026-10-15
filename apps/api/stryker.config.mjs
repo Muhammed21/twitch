@@ -18,6 +18,7 @@ export default {
     "!src/outbox-relay/outbox-relay.ts",
     "!src/outbox-relay/main.ts",
     "!src/platform/testing/**",
+    "!src/platform/stream-consumer.ts",
   ],
   tsconfigFile: "stryker-skips-tsconfig-rewrite.json",
   thresholds: { high: 100, low: 90, break: null },
