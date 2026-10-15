@@ -8,6 +8,7 @@ Définition unique des droits (ADR 0006), partagée par l'API et le process chat
 | ----------------------------------------- | ----- | ------ | --------- | --- | ---------- | ------ |
 | `update` `Channel`                        | ✓     | ✓      |           |     |            |        |
 | `readStreamKey` `Channel`                 | ✓     |        |           |     |            |        |
+| `rotateStreamKey` `Channel`               | ✓     |        |           |     |            |        |
 | `grant` `ChannelRole` editor ou moderator | ✓     |        |           |     |            |        |
 | `grant` `ChannelRole` vip                 | ✓     | ✓      |           |     |            |        |
 | `timeout`, `ban` `ChannelMember`          | ✓     |        | ✓         |     |            |        |

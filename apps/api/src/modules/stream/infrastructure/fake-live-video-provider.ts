@@ -71,7 +71,12 @@ export const fakeLiveVideoProvider = ({
 }: {
   webhookSecret: string;
 }): LiveVideoProviderPort => {
-  const state: { live: readonly string[] } = { live: [] };
+  const state: { live: readonly string[]; generations: Readonly<Record<string, number>> } = {
+    live: [],
+    generations: {},
+  };
+  const generationOf = (providerChannelId: string): number =>
+    state.generations[providerChannelId] ?? 0;
   const track = ({ kind, providerSessionId }: ProviderLifecycleEvent): void => {
     const others = state.live.filter((id) => id !== providerSessionId);
     state.live = kind === "started" ? [...others, providerSessionId] : others;
@@ -84,12 +89,18 @@ export const fakeLiveVideoProvider = ({
       providerChannelId.startsWith(PROVIDER_CHANNEL_PREFIX)
         ? {
             streamKey: `sk_live_${createHmac("sha256", webhookSecret)
-              .update(`stream-key:${providerChannelId}`)
+              .update(`stream-key:${providerChannelId}:${generationOf(providerChannelId)}`)
               .digest("hex")
               .slice(0, 32)}`,
             ingestUrl: INGEST_URL,
           }
         : null,
+    revokeStreamKey: async ({ providerChannelId }) => {
+      state.generations = {
+        ...state.generations,
+        [providerChannelId]: generationOf(providerChannelId) + 1,
+      };
+    },
     parseLifecycleWebhook: (raw) => {
       const parsed = parseLifecycleWebhook({ webhookSecret, raw });
       if (parsed.ok) {

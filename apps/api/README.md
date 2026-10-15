@@ -134,8 +134,9 @@ Clé de stream :
 
 - à la réception de `channel.created` (groupe `stream` sur `events.channel`, client Redis dédié), `provisionStreamChannel` crée le canal chez le provider et garde le lien dans `StreamChannel` ; une chaîne déjà provisionnée ne rappelle pas le provider. Une version autre que 1 reste en attente, un payload hors contrat est journalisé et écarté ;
 - `GET /v1/channels/{id}/stream-key` (jeton requis) rend `{ streamKey, ingestUrl }` avec `Cache-Control: no-store`, lus chez le provider à chaque appel : 403 sans le droit `readStreamKey` (propriétaire seulement, perdu par un banni, ADR 0006), 404 pour une chaîne non provisionnée ou un identifiant qui n'est pas un UUID ;
+- `POST /v1/channels/{id}/stream-key/rotate` (jeton requis) révoque la clé chez le provider (`revokeStreamKey`, ADR 0031) et rend la nouvelle, avec les mêmes réponses : 200 et `Cache-Control: no-store`, 403 sans le droit `rotateStreamKey` (propriétaire seulement, perdu par un banni), 404 ;
 - la clé n'est ni stockée par l'API, ni journalisée, ni présente dans une autre réponse (ADR 0001) ;
-- `FakeLiveVideoProvider` est déterministe : canal `fake-<channelId>`, clé dérivée par HMAC de `VIDEO_WEBHOOK_SECRET`, ingest `rtmp://127.0.0.1:1935/live`.
+- `FakeLiveVideoProvider` est déterministe : canal `fake-<channelId>`, clé dérivée par HMAC de `VIDEO_WEBHOOK_SECRET` et de la génération du canal, ingest `rtmp://127.0.0.1:1935/live`. Chaque rotation incrémente la génération, gardée en mémoire : un redémarrage de l'API rend la clé d'avant les rotations.
 
 Une erreur client exposée par une bibliothèque HTTP (`expose: true`, statut 4xx, comme celles de body-parser) garde son statut dans le `Problem`.
 

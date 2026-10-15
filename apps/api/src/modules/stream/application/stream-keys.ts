@@ -51,3 +51,32 @@ export const getStreamKey =
       providerChannelId === null ? null : await provider.getStreamKey({ providerChannelId });
     return credentials === null ? err("not_provisioned") : ok(credentials);
   };
+
+export const rotateStreamKey =
+  ({
+    channels,
+    provider,
+    authz,
+  }: {
+    channels: StreamChannels;
+    provider: Pick<LiveVideoProviderPort, "revokeStreamKey" | "getStreamKey">;
+    authz: AuthzContext;
+  }) =>
+  async ({
+    actorId,
+    channelId,
+  }: {
+    actorId: string;
+    channelId: string;
+  }): Promise<Result<StreamCredentials, StreamKeyError>> => {
+    if ((await authz.abilityFor(actorId)).cannot("rotateStreamKey", channel(channelId))) {
+      return err("forbidden");
+    }
+    const providerChannelId = await channels.providerChannelOf(channelId);
+    if (providerChannelId === null) {
+      return err("not_provisioned");
+    }
+    await provider.revokeStreamKey({ providerChannelId });
+    const credentials = await provider.getStreamKey({ providerChannelId });
+    return credentials === null ? err("not_provisioned") : ok(credentials);
+  };

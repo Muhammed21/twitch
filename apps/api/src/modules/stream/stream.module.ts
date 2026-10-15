@@ -17,7 +17,11 @@ import type { LiveVideoProviderPort } from "./application/live-video-provider.ts
 import { receiveProviderWebhook } from "./application/receive-provider-webhook.ts";
 import { reconcileStreamSessions } from "./application/reconcile-stream-sessions.ts";
 import { recordStreamLifecycle } from "./application/record-stream-lifecycle.ts";
-import { getStreamKey, provisionStreamChannel } from "./application/stream-keys.ts";
+import {
+  getStreamKey,
+  provisionStreamChannel,
+  rotateStreamKey,
+} from "./application/stream-keys.ts";
 import { fakeLiveVideoProvider } from "./infrastructure/fake-live-video-provider.ts";
 import { prismaStreamChannels } from "./infrastructure/prisma-stream-channels.ts";
 import {
@@ -27,7 +31,11 @@ import {
 } from "./infrastructure/prisma-stream-sessions.ts";
 import { reconciliationEndEventId } from "./infrastructure/reconciliation-end-event-id.ts";
 import { channelEventHandlers } from "./presentation/channel-event-handlers.ts";
-import { GET_STREAM_KEY, StreamKeyController } from "./presentation/stream-key.controller.ts";
+import {
+  GET_STREAM_KEY,
+  ROTATE_STREAM_KEY,
+  StreamKeyController,
+} from "./presentation/stream-key.controller.ts";
 import {
   RECEIVE_PROVIDER_WEBHOOK,
   VideoWebhookController,
@@ -78,6 +86,11 @@ export class StreamModule implements OnModuleInit, OnModuleDestroy {
       record,
       endEventIdOf: reconciliationEndEventId,
     });
+    const streamKeyDependencies = {
+      channels: prismaStreamChannels(prisma),
+      provider,
+      authz: createAuthzContext({ prisma, redis: authzRedis, now: () => new Date() }),
+    };
     return {
       module: StreamModule,
       controllers: [VideoWebhookController, StreamKeyController],
@@ -92,11 +105,11 @@ export class StreamModule implements OnModuleInit, OnModuleDestroy {
         },
         {
           provide: GET_STREAM_KEY,
-          useValue: getStreamKey({
-            channels: prismaStreamChannels(prisma),
-            provider,
-            authz: createAuthzContext({ prisma, redis: authzRedis, now: () => new Date() }),
-          }),
+          useValue: getStreamKey(streamKeyDependencies),
+        },
+        {
+          provide: ROTATE_STREAM_KEY,
+          useValue: rotateStreamKey(streamKeyDependencies),
         },
       ],
     };

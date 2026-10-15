@@ -75,3 +75,55 @@ describe("sessions en direct du provider factice", () => {
     expect(await fakeLiveVideoProvider({ webhookSecret: SECRET }).listLiveSessions()).toEqual([]);
   });
 });
+
+const keyOf = async (
+  provider: ReturnType<typeof fakeLiveVideoProvider>,
+  providerChannelId: string,
+) => (await provider.getStreamKey({ providerChannelId }))?.streamKey;
+
+describe("rotation de la clé de stream du provider factice (ADR 0031)", () => {
+  it("remplace la clé du canal, et ne rend plus l'ancienne", async () => {
+    const provider = fakeLiveVideoProvider({ webhookSecret: SECRET });
+    const { providerChannelId } = await provider.provisionChannel({ channelId: "chaine-a" });
+    const before = await keyOf(provider, providerChannelId);
+
+    await provider.revokeStreamKey({ providerChannelId });
+    const after = await keyOf(provider, providerChannelId);
+
+    expect(after).toMatch(/^sk_live_[0-9a-f]{32}$/);
+    expect(after).not.toBe(before);
+    expect(await keyOf(provider, providerChannelId)).toBe(after);
+  });
+
+  it("donne une nouvelle clé à chaque rotation", async () => {
+    const provider = fakeLiveVideoProvider({ webhookSecret: SECRET });
+    const { providerChannelId } = await provider.provisionChannel({ channelId: "chaine-a" });
+    const first = await keyOf(provider, providerChannelId);
+
+    await provider.revokeStreamKey({ providerChannelId });
+    const second = await keyOf(provider, providerChannelId);
+    await provider.revokeStreamKey({ providerChannelId });
+    const third = await keyOf(provider, providerChannelId);
+
+    expect(new Set([first, second, third]).size).toBe(3);
+  });
+
+  it("ne change pas la clé des autres canaux", async () => {
+    const provider = fakeLiveVideoProvider({ webhookSecret: SECRET });
+    const rotated = await provider.provisionChannel({ channelId: "chaine-a" });
+    const other = await provider.provisionChannel({ channelId: "chaine-b" });
+    const otherBefore = await keyOf(provider, other.providerChannelId);
+
+    await provider.revokeStreamKey({ providerChannelId: rotated.providerChannelId });
+
+    expect(await keyOf(provider, other.providerChannelId)).toBe(otherBefore);
+  });
+
+  it("ne crée pas de clé pour un canal qu'il ne connaît pas", async () => {
+    const provider = fakeLiveVideoProvider({ webhookSecret: SECRET });
+
+    await provider.revokeStreamKey({ providerChannelId: "inconnu" });
+
+    expect(await provider.getStreamKey({ providerChannelId: "inconnu" })).toBeNull();
+  });
+});
