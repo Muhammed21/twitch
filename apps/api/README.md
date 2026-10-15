@@ -115,9 +115,9 @@ L'API consomme `events.identity` dans le groupe `channel` (`platform/stream-cons
 `modules/stream` tient l'état des lives : le provider est la source de vérité technique, `StreamSession` la source de vérité métier.
 
 - `recordStreamLifecycle` traite un event de cycle de vie du provider (`started` ou `ended`, avec son canal et sa session provider) dans une transaction du client `stream` : l'event est inscrit dans `StreamProcessedEvent` (handler `stream.record-lifecycle`), le canal provider est retrouvé dans `StreamChannel`, puis `decideLifecycle` (`domain/stream-lifecycle.ts`) décide.
-- Un démarrage ouvre une session et publie `stream.started` ; s'il trouve une autre session ouverte sur la chaîne, il la clôt d'abord et publie son `stream.ended`. Un démarrage déjà connu, même sous un autre identifiant d'event, ne fait rien.
+- Un démarrage ouvre une session et publie `stream.started` ; s'il trouve une autre session ouverte sur la chaîne, il la clôt d'abord et publie son `stream.ended`. Un démarrage déjà connu, même sous un autre identifiant d'event, ne fait rien (`unchanged`).
 - Les webhooks arrivent dans le désordre (ADR 0001). Un démarrage plus ancien qu'une session déjà connue de la chaîne est archivé clos, de son début au début de la session qui le suit, sans event ; le live en cours reste ouvert.
-- Une fin clôt la session ouverte et publie `stream.ended` ; une session déjà close ne change pas. Une session n'est jamais close avant son début.
+- Une fin clôt la session ouverte et publie `stream.ended` ; une session déjà close ne change pas (`unchanged`). Une session n'est jamais close avant son début.
 - Une fin dont la session est encore inconnue n'est pas enregistrée (`not-yet-started`) : la transaction est annulée, l'event n'est pas marqué traité, et le provider la réémet.
 - Un canal provider inconnu n'ouvre rien (`unknown-channel`).
 - La base n'admet qu'une session ouverte par chaîne (index unique partiel `StreamSession_channelId_open_key`).
@@ -138,6 +138,14 @@ Clé de stream :
 - `FakeLiveVideoProvider` est déterministe : canal `fake-<channelId>`, clé dérivée par HMAC de `VIDEO_WEBHOOK_SECRET`, ingest `rtmp://127.0.0.1:1935/live`.
 
 Une erreur client exposée par une bibliothèque HTTP (`expose: true`, statut 4xx, comme celles de body-parser) garde son statut dans le `Problem`.
+
+Un webhook de fin perdu laisse un live fantôme : `reconcileStreamSessions` le rattrape (ADR 0001, 0031) :
+
+- toutes les minutes, à partir d'une minute après le démarrage de l'API (`platform/periodic-job.ts`), elle demande au provider ses sessions en direct (`LiveVideoProviderPort.listLiveSessions`), puis lit les sessions ouvertes par pages de 100, triées par `id` ;
+- une session ouverte depuis au moins 5 minutes que le provider ne liste pas reçoit une fin à l'instant de la réconciliation, par `recordStreamLifecycle` : même décision, même `stream.ended` dans l'outbox, et une session déjà close ne change pas. L'identifiant de cette fin est dérivé de la session provider (UUID v5, `reconciliationEndEventId`) : deux instances qui réconcilient la même session ne publient qu'un `stream.ended` ;
+- une session plus récente attend la réconciliation suivante, le temps que le provider la liste ;
+- si le provider ou la base ne répond pas, rien n'est clos : l'échec est journalisé (`réconciliation en échec`) et la réconciliation suivante réessaie ;
+- `FakeLiveVideoProvider` liste les sessions dont il a lu le webhook de démarrage, et non celui de fin, depuis le démarrage du process.
 
 ## Autorisation (ADR 0006)
 

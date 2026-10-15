@@ -11,17 +11,21 @@ import {
 
 import { type AuthzRedis, createAuthzContext } from "../../authz/authz-context.ts";
 import { errorDetails, type LogSink, writeLog } from "../../platform/logging.ts";
+import { startPeriodicJob } from "../../platform/periodic-job.ts";
 import { startStreamConsumer, type StreamConsumerRedis } from "../../platform/stream-consumer.ts";
 import type { LiveVideoProviderPort } from "./application/live-video-provider.ts";
 import { receiveProviderWebhook } from "./application/receive-provider-webhook.ts";
+import { reconcileStreamSessions } from "./application/reconcile-stream-sessions.ts";
 import { recordStreamLifecycle } from "./application/record-stream-lifecycle.ts";
 import { getStreamKey, provisionStreamChannel } from "./application/stream-keys.ts";
 import { fakeLiveVideoProvider } from "./infrastructure/fake-live-video-provider.ts";
 import { prismaStreamChannels } from "./infrastructure/prisma-stream-channels.ts";
 import {
+  prismaOpenStreamSessions,
   prismaStreamSessions,
   type StreamPrisma,
 } from "./infrastructure/prisma-stream-sessions.ts";
+import { reconciliationEndEventId } from "./infrastructure/reconciliation-end-event-id.ts";
 import { channelEventHandlers } from "./presentation/channel-event-handlers.ts";
 import { GET_STREAM_KEY, StreamKeyController } from "./presentation/stream-key.controller.ts";
 import {
@@ -30,6 +34,8 @@ import {
 } from "./presentation/video-webhook.controller.ts";
 
 export type { StreamPrisma } from "./infrastructure/prisma-stream-sessions.ts";
+
+export const RECONCILIATION_INTERVAL_MS = 60_000;
 
 const STREAM_DEPENDENCIES = Symbol("STREAM_DEPENDENCIES");
 
@@ -44,37 +50,45 @@ type StreamDependencies = {
   authzRedis: AuthzRedis;
   consumerRedis: StreamConsumerRedis;
   logSink: LogSink;
+  reconciliationIntervalMs?: number;
 };
 
-type ModuleState = StreamDependencies & { readonly provider: LiveVideoProviderPort };
+type ModuleState = StreamDependencies & {
+  readonly provider: LiveVideoProviderPort;
+  readonly reconcile: (now: Date) => Promise<{ readonly closed: readonly string[] }>;
+};
 
 @Module({})
 export class StreamModule implements OnModuleInit, OnModuleDestroy {
   #consumer: { stop: () => Promise<void> } | undefined;
+  #reconciliation: { stop: () => Promise<void> } | undefined;
 
   constructor(@Inject(STREAM_DEPENDENCIES) private readonly dependencies: ModuleState) {}
 
   static register(dependencies: StreamDependencies): DynamicModule {
     const { prisma, webhookSecret, authzRedis } = dependencies;
     const provider = fakeLiveVideoProvider({ webhookSecret });
+    const record = recordStreamLifecycle({
+      sessions: prismaStreamSessions(prisma),
+      newId: randomUUID,
+    });
+    const reconcile = reconcileStreamSessions({
+      provider,
+      openSessions: prismaOpenStreamSessions({ prisma }),
+      record,
+      endEventIdOf: reconciliationEndEventId,
+    });
     return {
       module: StreamModule,
       controllers: [VideoWebhookController, StreamKeyController],
       providers: [
         {
           provide: STREAM_DEPENDENCIES,
-          useValue: { ...dependencies, provider } satisfies ModuleState,
+          useValue: { ...dependencies, provider, reconcile } satisfies ModuleState,
         },
         {
           provide: RECEIVE_PROVIDER_WEBHOOK,
-          useValue: receiveProviderWebhook({
-            provider,
-            record: recordStreamLifecycle({
-              sessions: prismaStreamSessions(prisma),
-              newId: randomUUID,
-            }),
-            now: () => new Date(),
-          }),
+          useValue: receiveProviderWebhook({ provider, record, now: () => new Date() }),
         },
         {
           provide: GET_STREAM_KEY,
@@ -89,7 +103,14 @@ export class StreamModule implements OnModuleInit, OnModuleDestroy {
   }
 
   onModuleInit(): void {
-    const { prisma, provider, consumerRedis, logSink } = this.dependencies;
+    const {
+      prisma,
+      provider,
+      consumerRedis,
+      logSink,
+      reconcile,
+      reconciliationIntervalMs = RECONCILIATION_INTERVAL_MS,
+    } = this.dependencies;
     this.#consumer = startStreamConsumer({
       redis: consumerRedis,
       stream: CHANNEL_STREAM,
@@ -113,10 +134,30 @@ export class StreamModule implements OnModuleInit, OnModuleDestroy {
           ...errorDetails(error),
         }),
     });
+    this.#reconciliation = startPeriodicJob({
+      intervalMs: reconciliationIntervalMs,
+      run: async () => {
+        const { closed } = await reconcile(new Date());
+        if (closed.length > 0) {
+          writeLog(logSink, {
+            level: "info",
+            msg: "sessions closes par la réconciliation",
+            closed,
+          });
+        }
+      },
+      onError: (error) =>
+        writeLog(logSink, {
+          level: "error",
+          msg: "réconciliation en échec",
+          ...errorDetails(error),
+        }),
+    });
   }
 
   async onModuleDestroy(): Promise<void> {
     const { prisma, consumerRedis } = this.dependencies;
+    await this.#reconciliation?.stop();
     await this.#consumer?.stop();
     await prisma.$disconnect();
     if (consumerRedis.isOpen) {

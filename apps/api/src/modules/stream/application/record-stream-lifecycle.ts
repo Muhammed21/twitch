@@ -46,7 +46,12 @@ export interface StreamSessions {
 }
 
 export type LifecycleOutcome = {
-  readonly status: "recorded" | "already-processed" | "unknown-channel" | "not-yet-started";
+  readonly status:
+    | "recorded"
+    | "unchanged"
+    | "already-processed"
+    | "unknown-channel"
+    | "not-yet-started";
 };
 
 class WaitForStart extends Error {}
@@ -95,7 +100,7 @@ const applyDecision = async ({
   event: ProviderLifecycleEvent;
   channelId: string;
   newId: () => string;
-}): Promise<void> => {
+}): Promise<"recorded" | "unchanged"> => {
   const decision = decideLifecycle({
     event,
     open: await tx.openSessionOf(channelId),
@@ -105,12 +110,16 @@ const applyDecision = async ({
   if (decision.kind === "wait-for-start") {
     throw new WaitForStart();
   }
+  if (decision.kind === "nothing") {
+    return "unchanged";
+  }
   if (decision.kind === "archive") {
     await tx.archiveSession({ ...decision.session, id: newId(), channelId });
   }
   if (decision.kind === "apply") {
     await applyChanges({ tx, decision, channelId, newId });
   }
+  return "recorded";
 };
 
 export const recordStreamLifecycle =
@@ -125,8 +134,7 @@ export const recordStreamLifecycle =
         if (channelId === null) {
           return { status: "unknown-channel" };
         }
-        await applyDecision({ tx, event, channelId, newId });
-        return { status: "recorded" };
+        return { status: await applyDecision({ tx, event, channelId, newId }) };
       })
       .catch((error: unknown) => {
         if (error instanceof WaitForStart) {
