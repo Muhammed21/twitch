@@ -72,6 +72,18 @@ Une inscription est une transaction (`transaction: true` de l'adapter Prisma) : 
 
 Sans paramètre `resource`, le jeton d'accès est opaque : l'app iOS l'envoie toujours. Un client OAuth n'obtient de jeton pour `/v1` que s'il est lié à cette ressource (`IdentityOAuthClientResource`).
 
+## Relais de l'outbox (ADR 0034)
+
+`pnpm --filter @repo/api start:outbox-relay` lance le process `outbox-relay` (`src/outbox-relay/main.ts`), sur la même image que l'API (ADR 0028). Il lit `DATABASE_URL_OUTBOX_RELAY` (rôle `app_outbox_relay`), `REDIS_URL` et `OUTBOX_RELAY_INTERVAL_MS` (1000 par défaut), puis, à chaque passe, relaie chaque outbox de `OUTBOXES` avec `relayOutboxBatch` (`@repo/db`) :
+
+- chaque event part sur le stream `events.<contexte>` (`events.identity`), coupé à environ 100 000 entrées ;
+- une entrée porte `id`, `name`, `version`, `occurredAt` (ISO 8601, UTC) et `payload` (JSON) ; un consommateur déduplique par `id` ;
+- une publication en échec reprogramme l'event ; une outbox illisible est journalisée sans bloquer les suivantes.
+
+`SIGTERM` ou `SIGINT` termine la passe en cours, puis ferme Redis et le pool.
+
+Une nouvelle outbox s'ajoute à `OUTBOXES` (`src/outbox-relay/outbox-relay.ts`), et sa migration accorde les droits du relais (voir [`packages/db`](../../packages/db/README.md)).
+
 ## Autorisation (ADR 0006)
 
 Les droits se décident dans les use-cases, à partir de `AuthzContext` (`@repo/authorization`) ; un garde NestJS ne porte aucune règle métier. `apps/api/src/authz/` implémente ce port sur PostgreSQL et Redis :

@@ -15,6 +15,8 @@ export default {
     "!src/modules/*/infrastructure/**",
     "!src/modules/*/*.module.ts",
     "!src/authz/authz-context.ts",
+    "!src/outbox-relay/outbox-relay.ts",
+    "!src/outbox-relay/main.ts",
   ],
   tsconfigFile: "stryker-skips-tsconfig-rewrite.json",
   thresholds: { high: 100, low: 90, break: null },

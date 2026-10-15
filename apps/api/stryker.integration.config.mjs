@@ -8,6 +8,7 @@ export default {
     "src/modules/*/infrastructure/**/*.ts",
     "src/modules/*/*.module.ts",
     "src/authz/authz-context.ts",
+    "src/outbox-relay/outbox-relay.ts",
   ],
   coverageAnalysis: "off",
   inPlace: true,
