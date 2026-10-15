@@ -5,6 +5,7 @@ import { createClient } from "redis";
 
 import { type OutboxPublisher, relayOutboxBatch, type TableRef } from "@repo/db";
 
+import { withRedisDeadline } from "../platform/redis-deadline.ts";
 import { STREAM_MAX_LENGTH, streamOf, toStreamEntry } from "./stream-entry.ts";
 
 const COMMAND_TIMEOUT_MS = 2000;
@@ -28,9 +29,11 @@ type RelayDependencies = {
 const streamPublisher =
   (redis: RelayRedis, stream: string): OutboxPublisher =>
   async (event) => {
-    await redis.xAdd(stream, "*", toStreamEntry(event), {
-      TRIM: { strategy: "MAXLEN", strategyModifier: "~", threshold: STREAM_MAX_LENGTH },
-    });
+    await withRedisDeadline(
+      redis.xAdd(stream, "*", toStreamEntry(event), {
+        TRIM: { strategy: "MAXLEN", strategyModifier: "~", threshold: STREAM_MAX_LENGTH },
+      }),
+    );
   };
 
 export const relayOutboxes = async ({

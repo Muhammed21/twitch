@@ -5,13 +5,13 @@ import { afterAll, describe, expect, it, vi } from "vitest";
 import { channel } from "@repo/authorization";
 import { createContextClient } from "@repo/db";
 
+import { settledWithin, withPausedRedis } from "../platform/testing/paused-redis.ts";
 import {
   ASSIGNMENTS_TTL_SECONDS,
   cacheIfUnchanged,
   createAuthzContext,
   createAuthzRedis,
   invalidateAssignments,
-  readGeneration,
 } from "./authz-context.ts";
 
 const urlOf = (variable: string): string => {
@@ -25,6 +25,11 @@ const urlOf = (variable: string): string => {
 const NOW = new Date("2026-10-12T12:00:00.000Z");
 
 const assignmentsKey = (userId: string) => `authz:assign:${userId}`;
+
+const generationOf = async (
+  redis: { get: (key: string) => Promise<string | null> },
+  userId: string,
+) => (await redis.get(`authz:gen:${userId}`)) ?? "0";
 
 const AUTHZ_INVALIDATED_CHANNEL = "authz.invalidated";
 
@@ -134,7 +139,7 @@ describe("AuthzContext sur PostgreSQL et Redis (ADR 0006 §5)", () => {
   it("n'écrit pas en cache une lecture devancée par une invalidation", async () => {
     await withRedis(async (redis) => {
       const userId = randomUUID();
-      const generation = await readGeneration({ redis, userId });
+      const generation = await generationOf(redis, userId);
       await invalidateAssignments({ redis, userId });
 
       await cacheIfUnchanged({ redis, userId, generation, assignments: [] });
@@ -147,7 +152,7 @@ describe("AuthzContext sur PostgreSQL et Redis (ADR 0006 §5)", () => {
     await withRedis(async (redis) => {
       const userId = randomUUID();
       await invalidateAssignments({ redis, userId });
-      const generation = await readGeneration({ redis, userId });
+      const generation = await generationOf(redis, userId);
 
       await cacheIfUnchanged({ redis, userId, generation, assignments: [] });
 
@@ -159,12 +164,12 @@ describe("AuthzContext sur PostgreSQL et Redis (ADR 0006 §5)", () => {
   it("change de génération à chaque invalidation", async () => {
     await withRedis(async (redis) => {
       const userId = randomUUID();
-      const before = await readGeneration({ redis, userId });
+      const before = await generationOf(redis, userId);
       await invalidateAssignments({ redis, userId });
-      const after = await readGeneration({ redis, userId });
+      const after = await generationOf(redis, userId);
       await invalidateAssignments({ redis, userId });
 
-      expect(new Set([before, after, await readGeneration({ redis, userId })]).size).toBe(3);
+      expect(new Set([before, after, await generationOf(redis, userId)]).size).toBe(3);
     });
   });
 
@@ -213,5 +218,37 @@ describe("AuthzContext sur PostgreSQL et Redis (ADR 0006 §5)", () => {
     expect(assignments).toHaveLength(1);
     expect(elapsed).toBeLessThan(8000);
     expect(await withRedis((redis) => redis.exists(assignmentsKey(subjectId)))).toBe(0);
+  });
+
+  it("lit la base sans attendre Redis quand il ne répond plus en 2 s", async () => {
+    await withRedis(async (redis) => {
+      const subjectId = randomUUID();
+      const { scopeId } = await grant({ subjectId });
+      const context = createAuthzContext({ prisma, redis, now: () => NOW });
+
+      const read = await withPausedRedis(urlOf("REDIS_URL"), () =>
+        settledWithin(() => context.assignmentsOf(subjectId), 3000),
+      );
+
+      expect(read).toEqual({
+        status: "fulfilled",
+        value: [expect.objectContaining({ scope: { type: "channel", channelId: scopeId } })],
+        inTime: true,
+      });
+    });
+  });
+
+  it("échoue l'invalidation au lieu d'attendre quand Redis ne répond plus en 2 s", async () => {
+    await withRedis(async (redis) => {
+      const invalidation = await withPausedRedis(urlOf("REDIS_URL"), () =>
+        settledWithin(() => invalidateAssignments({ redis, userId: randomUUID() }), 3000),
+      );
+
+      expect(invalidation).toEqual({
+        status: "rejected",
+        reason: expect.objectContaining({ message: expect.stringContaining("2000 ms") }),
+        inTime: true,
+      });
+    });
   });
 });

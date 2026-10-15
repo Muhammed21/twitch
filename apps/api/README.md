@@ -27,6 +27,7 @@ Une variable invalide arrête le démarrage avec le nom de la variable, jamais s
 - Chaque requête reçoit un `x-correlation-id`, repris de l'appelant s'il est bien formé, présent dans le journal et dans les erreurs.
 - Journal en JSON sur la sortie standard : méthode, chemin sans paramètres, statut, durée. Jamais d'en-tête, donc ni `Authorization` ni cookie.
 - Les dépendances s'injectent par jeton (`@Inject(TOKEN)`), jamais par le type du paramètre.
+- Chaque commande Redis passe par `withRedisDeadline` (`platform/redis-deadline.ts`) : sans réponse en 2 s, elle échoue côté appelant, même déjà envoyée, et l'appelant applique son repli (révocation « indisponible », lecture de la base, event reprogrammé). Le `timeout` du client `redis` ne borne que l'attente avant l'envoi.
 
 ## Contrat OpenAPI
 

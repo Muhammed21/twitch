@@ -6,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import type { TableRef } from "@repo/db";
 
+import { withPausedRedis } from "../platform/testing/paused-redis.ts";
 import {
   createRelayRedis,
   OUTBOXES,
@@ -234,5 +235,20 @@ describe("relais de l'outbox vers Redis Streams", () => {
     expect(await redis.clientList()).toContainEqual(
       expect.objectContaining({ name: "outbox-relay" }),
     );
+  });
+
+  it("reprogramme l'event quand Redis ne répond plus en 2 s", async () => {
+    const outbox = await freshOutbox();
+    const event = await seedEvent(outbox);
+
+    await withPausedRedis(urlOf("REDIS_URL"), () =>
+      relayOutboxes({ pool, redis, outboxes: [outbox], onError: ignoreErrors }),
+    );
+
+    expect(await rowOf(outbox, event.id)).toMatchObject({
+      attempts: 1,
+      lastError: expect.stringContaining("2000 ms"),
+      published: false,
+    });
   });
 });
