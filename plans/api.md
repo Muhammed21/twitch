@@ -166,6 +166,9 @@ _Tests d'abord_ : clé de stream refusée à un autre que le propriétaire ; cl�
 **PR 10d — Réconciliation.** Job qui interroge le provider et clôt toute session qu'il ne connaît plus.
 _Tests d'abord_ : session ouverte que le provider ne connaît plus → close par la réconciliation, avec `stream.ended`.
 
+**PR 10e — Rotation de la clé de stream.** Clé révocable par canal (ADR 0001, ADR 0031 `POST /channels/{id}/stream-key/rotate`) : `revokeStreamKey` du port, génération par canal dans le message HMAC du provider factice ou secret dédié aux clés, distinct de `VIDEO_WEBHOOK_SECRET` ; route de rotation réservée au propriétaire.
+_Tests d'abord_ : une rotation change la clé de la chaîne et pas celle des autres ; l'ancienne clé n'est plus rendue ; rotation refusée à un autre que le propriétaire.
+
 **PR 11 — Adapter `apps/video` (jalon A3).** Adapter de `LiveVideoProviderPort` sur le plan de contrôle du service vidéo (`packages/video-contract`), avec le secret de service et la vérification HMAC de ses webhooks. Plus `discovery` minimal : projection `LiveChannelView` alimentée par `stream.started`, `stream.ended` et `channel.metadata.updated` ; `GET /v1/lives` paginé par curseur à tri total ; commande de reconstruction de la projection (exigée dès la tranche 1 par l'ADR 0003).
 _Tests d'abord_ : même suite de contrat pour l'adapter factice et l'adapter `apps/video` ; un live terminé disparaît de la liste ; pagination stable quand un live démarre entre deux pages ; reconstruction qui redonne la même projection.
 
