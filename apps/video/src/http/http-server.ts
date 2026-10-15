@@ -30,7 +30,7 @@ export const startHttpServer = async ({ port }: { port: number }): Promise<HttpS
   const state: { draining: boolean } = { draining: false };
 
   const server = createServer((request, response) => {
-    const route = `${request.method} ${request.url}`;
+    const route = `${request.method} ${new URL(request.url ?? "/", "http://localhost").pathname}`;
     if (route === "GET /health/live") {
       sendJson(response, { status: "ok" });
       return;

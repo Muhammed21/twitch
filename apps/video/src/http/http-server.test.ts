@@ -46,6 +46,18 @@ describe("sondes de santé", () => {
     });
   });
 
+  it.each([
+    ["/health/live?probe=1", { status: "ok" }],
+    ["/health/ready?probe=1", { status: "ready" }],
+  ])("%s répond comme sans paramètre de requête", async (path, body) => {
+    const server = await startServer();
+
+    const response = await fetch(server.url(path));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual(body);
+  });
+
   it("/health/live répond toujours 200 pendant l'arrêt", async () => {
     const server = await startServer();
 
@@ -60,6 +72,7 @@ describe("routes inconnues", () => {
   it.each([
     ["GET", "/inconnu"],
     ["GET", "/health"],
+    ["GET", "/health?x=1"],
     ["POST", "/health/live"],
     ["POST", "/health/ready"],
   ])("%s %s répond 404 en RFC 9457", async (method, path) => {
