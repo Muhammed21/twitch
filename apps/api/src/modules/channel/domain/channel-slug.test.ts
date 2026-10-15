@@ -59,7 +59,7 @@ describe("candidats dérivés du nom d'affichage (ADR 0035 §3)", () => {
     expect(candidatesOf("Streamer de test")).toEqual([
       "streamer_de_test",
       ...[2, 3, 4, 5, 6, 7, 8, 9].map((n) => `streamer_de_test_${n}`),
-      "streamer_de_test_4f2a9c",
+      "streamer_de_4f2a9c1e7b3d",
     ]);
   });
 
@@ -80,8 +80,12 @@ describe("candidats dérivés du nom d'affichage (ADR 0035 §3)", () => {
     const candidates = candidatesOf("x".repeat(40));
 
     expect(candidates).toContain(`${"x".repeat(23)}_2`);
-    expect(candidates).toContain(`${"x".repeat(18)}_4f2a9c`);
+    expect(candidates).toContain(`${"x".repeat(12)}_4f2a9c1e7b3d`);
     expect(candidates.every((slug) => slug.length <= 25)).toBe(true);
+  });
+
+  it("garde au moins le candidat de l'identifiant du compte pour un nom d'une lettre", () => {
+    expect(candidatesOf("A")).toEqual(["a_4f2a9c1e7b3d"]);
   });
 
   it("écarte les candidats réservés ou trop courts", () => {

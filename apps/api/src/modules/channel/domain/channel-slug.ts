@@ -4,7 +4,7 @@ const SLUG_FORMAT = /^[a-z0-9_]{4,25}$/;
 const MAX_LENGTH = 25;
 const FALLBACK_BASE = "user";
 const NUMBERED_SUFFIXES = [2, 3, 4, 5, 6, 7, 8, 9].map((n) => `_${n}`);
-const ACCOUNT_SUFFIX_LENGTH = 6;
+const ACCOUNT_SUFFIX_LENGTH = 12;
 
 export const RESERVED_SLUGS: readonly string[] = [
   "admin",
@@ -63,7 +63,7 @@ export const slugCandidates = ({
   accountId: string;
 }): readonly ChannelSlug[] => {
   const base = normalize(displayName);
-  const accountSuffix = `_${accountId.slice(0, ACCOUNT_SUFFIX_LENGTH)}`;
+  const accountSuffix = `_${accountId.replaceAll("-", "").slice(0, ACCOUNT_SUFFIX_LENGTH)}`;
   return [base, ...[...NUMBERED_SUFFIXES, accountSuffix].map((suffix) => withSuffix(base, suffix))]
     .map(parseChannelSlug)
     .flatMap((candidate) => (candidate.ok ? [candidate.value] : []));

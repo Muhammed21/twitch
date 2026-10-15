@@ -89,7 +89,7 @@ Une nouvelle outbox s'ajoute à `OUTBOXES` (`src/outbox-relay/outbox-relay.ts`),
 
 `modules/channel` crée la chaîne d'un compte à la réception de `identity.account.registered` :
 
-- le slug se déduit du nom d'affichage (`domain/channel-slug.ts`) : format `^[a-z0-9_]{4,25}$`, mots réservés refusés, puis candidats `nom`, `nom_2` à `nom_9` et `nom_<6 premiers caractères de l'identifiant du compte>` ; le premier libre est retenu ;
+- le slug se déduit du nom d'affichage (`domain/channel-slug.ts`) : format `^[a-z0-9_]{4,25}$`, mots réservés refusés, puis candidats `nom`, `nom_2` à `nom_9` et `nom_<12 premiers caractères hexadécimaux de l'identifiant du compte>` ; le premier libre est retenu ;
 - `createChannelForAccount` écrit, dans une transaction du client `channel` : l'event dans `ChannelProcessedEvent` (handler `channel.create-on-registration`), la chaîne, l'attribution `owner` (`grantedBy` `svc:channel-registration`) et `channel.created` dans `ChannelOutbox`. Un event déjà traité, ou un compte qui a déjà sa chaîne, n'écrit rien ;
 - après le commit, les attributions du propriétaire sont invalidées (`invalidateAssignments`) ; un échec est rendu dans le résultat (`cacheInvalidated: false`), sans annuler la chaîne ;
 - sans candidat libre, la transaction échoue sans rien écrire, et l'event se retente.

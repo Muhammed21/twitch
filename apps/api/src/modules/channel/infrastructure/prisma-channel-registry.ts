@@ -31,6 +31,7 @@ export const prismaChannelRegistry = (prisma: ChannelPrisma): ChannelRegistry =>
         return { status: "already-processed" };
       }
       const taken = await tx.channel.findMany({
+        take: request.candidates.length,
         where: { slug: { in: [...request.candidates] } },
         select: { slug: true },
       });

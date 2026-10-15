@@ -1,6 +1,6 @@
 # 0035 — Slug de chaîne dérivé du nom d'affichage, au format Twitch, jamais refusé à la création
 
-- Statut : Accepté
+- Statut : Proposé
 - Date : 2026-10-15
 - Décideurs : Muhammed Cavus
 
@@ -67,7 +67,7 @@ Une liste fermée, dans le domaine `channel`, refuse les slugs qui imitent une r
 2. chaque suite de caractères hors `[a-z0-9]` devient un `_`, sans `_` en bord ;
 3. coupe à 25 caractères ; un nom vide donne `user`.
 
-Les candidats sont, dans l'ordre, ce résultat, puis le résultat suivi de `_2` à `_9`, puis suivi de `_` et des 6 premiers caractères hexadécimaux de l'identifiant du compte, la base étant raccourcie pour tenir dans 25 caractères. Le premier candidat valide et libre est retenu. Les candidats ne dépendent que de l'event : un event rejoué donne les mêmes.
+Les candidats sont, dans l'ordre, ce résultat, puis le résultat suivi de `_2` à `_9`, puis suivi de `_` et des 12 premiers caractères hexadécimaux de l'identifiant du compte (48 bits), la base étant raccourcie pour tenir dans 25 caractères. Avec 12 caractères, deux comptes de même base n'ont une chance sur deux de partager ce dernier candidat qu'au-delà d'environ 16 millions de comptes ; avec 6, ce serait dès environ 4 800, et les noms sans lettre latine, qui partagent tous la base `user`, y arriveraient vite. Le premier candidat valide et libre est retenu. Les candidats ne dépendent que de l'event : un event rejoué donne les mêmes.
 
 ### 4. Une chaîne par compte
 
@@ -90,7 +90,7 @@ Le slug et le propriétaire sont uniques en base. Le changement de slug par l'ut
 ### Risques et mitigations
 
 - **Risque : deux créations concurrentes visent le même slug.** L'unicité en base fait échouer l'une des transactions ; l'event est rejoué (at-least-once, ADR 0002) et choisit un autre candidat.
-- **Risque : les dix candidats sont pris.** Le dernier dépend de l'identifiant du compte ; si lui aussi est pris, la création échoue et se retente, ce qui se verra dans les journaux.
+- **Risque : les dix candidats sont pris.** Le dernier porte 48 bits de l'identifiant du compte ; s'il est pris malgré tout, la création échoue à chaque tentative, puisque les candidats ne dépendent que de l'event, et se verra dans les journaux. Un nom d'une seule lettre ne garde que ce dernier candidat, `a_2` à `a_9` étant trop courts.
 
 ## Notes d'implémentation
 
