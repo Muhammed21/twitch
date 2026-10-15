@@ -54,6 +54,11 @@ export const toInvalidRequest = (error: unknown): Error =>
     ? new InvalidRequestException(error)
     : new Error("Validation impossible : erreur de validation inattendue");
 
+const ExposedClientError = z.looseObject({
+  expose: z.literal(true),
+  status: z.int().min(400).max(499),
+});
+
 const toProblem = (exception: unknown): Problem => {
   if (exception instanceof ProblemException) {
     return exception.problem;
@@ -68,6 +73,11 @@ const toProblem = (exception: unknown): Problem => {
         message: issue.message,
       })),
     };
+  }
+  const clientError = ExposedClientError.safeParse(exception);
+  if (clientError.success) {
+    const { status } = clientError.data;
+    return { type: "about:blank", title: STATUS_CODES[status] ?? "Erreur", status };
   }
   if (exception instanceof HttpException) {
     const status = exception.getStatus();

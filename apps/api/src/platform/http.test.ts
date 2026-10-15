@@ -1,6 +1,6 @@
 import { connect } from "node:net";
 
-import { Controller, Get, HttpException } from "@nestjs/common";
+import { Controller, Get, HttpException, Param } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
@@ -44,6 +44,14 @@ class FaultyController {
   @Get("nonstandard")
   nonstandard(): never {
     throw new HttpException("client parti", 499);
+  }
+
+  @Get("client-error/:status/:expose")
+  clientError(@Param("status") status: string, @Param("expose") expose: string): never {
+    throw Object.assign(new Error("corps refusé par body-parser"), {
+      status: Number(status),
+      expose: expose === "oui",
+    });
   }
 
   @Get("ok")
@@ -162,6 +170,34 @@ describe("erreurs au format RFC 9457", () => {
           correlationId: response.headers.get("x-correlation-id"),
         }),
       );
+    });
+  });
+
+  it.each([
+    [400, "Bad Request"],
+    [413, "Payload Too Large"],
+    [499, "Erreur"],
+  ])(
+    "garde le statut %i d'une erreur client exposée, comme celles de body-parser",
+    async (status, title) => {
+      await withApp(async ({ request }) => {
+        const response = await request(`/v1/faulty/client-error/${status}/oui`);
+
+        expect(response.status).toBe(status);
+        expect(await response.json()).toMatchObject({ type: "about:blank", title, status });
+      });
+    },
+  );
+
+  it.each([
+    ["non exposée", "413/non"],
+    ["sous 400", "399/oui"],
+    ["serveur", "500/oui"],
+  ])("traite une erreur %s comme une erreur interne", async (_name, path) => {
+    await withApp(async ({ request }) => {
+      const response = await request(`/v1/faulty/client-error/${path}`);
+
+      expect(response.status).toBe(500);
     });
   });
 

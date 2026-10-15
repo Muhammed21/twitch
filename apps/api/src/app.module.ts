@@ -7,6 +7,7 @@ import {
   type IdentityPrisma,
   type IdentityRedis,
 } from "./modules/identity/identity.module.ts";
+import { StreamModule, type StreamPrisma } from "./modules/stream/stream.module.ts";
 import type { AccessTokenVerifier } from "./platform/authentication.ts";
 import type { LogSink } from "./platform/logging.ts";
 import { PlatformModule, type SchemaVersionCheck } from "./platform/platform.module.ts";
@@ -17,6 +18,7 @@ export class AppModule {
   static register({
     identity,
     channel,
+    stream,
     ...platform
   }: {
     schemaVersionCheck: SchemaVersionCheck;
@@ -28,6 +30,7 @@ export class AppModule {
       authzRedis: AuthzRedis;
       consumerRedis: StreamConsumerRedis;
     };
+    stream: { prisma: StreamPrisma; webhookSecret: string };
   }): DynamicModule {
     return {
       module: AppModule,
@@ -35,6 +38,7 @@ export class AppModule {
         PlatformModule.register(platform),
         IdentityModule.register(identity),
         ChannelModule.register({ ...channel, logSink: platform.logSink }),
+        StreamModule.register(stream),
       ],
     };
   }
