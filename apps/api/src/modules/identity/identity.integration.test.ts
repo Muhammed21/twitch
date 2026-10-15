@@ -48,6 +48,80 @@ const storedUser = async (email: string) => {
   }
 };
 
+const asMigrator = async <T>(run: (client: Client) => Promise<T>): Promise<T> => {
+  const client = new Client({ connectionString: urlOf("DATABASE_URL_MIGRATOR") });
+  await client.connect();
+  try {
+    return await run(client);
+  } finally {
+    await client.end();
+  }
+};
+
+type OutboxRow = {
+  id: string;
+  name: string;
+  version: number;
+  payload: unknown;
+  publishedAt: Date | null;
+};
+
+const outboxOf = (accountId: string) =>
+  asMigrator(async (client) => {
+    const { rows } = await client.query<OutboxRow>(
+      `SELECT "id", "name", "version", "payload", "publishedAt"
+         FROM "identity"."IdentityOutbox" WHERE "payload"->>'accountId' = $1`,
+      [accountId],
+    );
+    return rows;
+  });
+
+const outboxCount = () =>
+  asMigrator(async (client) => {
+    const { rows } = await client.query<{ count: string }>(
+      `SELECT count(*) AS "count" FROM "identity"."IdentityOutbox"`,
+    );
+    return Number(rows[0]?.count);
+  });
+
+const userIdOf = (email: string) =>
+  asMigrator(async (client) => {
+    const { rows } = await client.query<{ id: string }>(
+      `SELECT "id" FROM "identity"."IdentityUser" WHERE "email" = $1`,
+      [email],
+    );
+    return rows[0]?.id;
+  });
+
+const FAILING_ACCOUNT_PREFIX = "echec-compte-";
+
+const withFailingAccountWrite = async (run: () => Promise<void>) => {
+  await asMigrator((client) =>
+    client.query(`
+      CREATE OR REPLACE FUNCTION "identity"."test_fail_account"() RETURNS trigger AS $$
+      BEGIN
+        IF EXISTS (SELECT 1 FROM "identity"."IdentityUser"
+                    WHERE "id" = NEW."userId" AND "email" LIKE '${FAILING_ACCOUNT_PREFIX}%') THEN
+          RAISE EXCEPTION 'écriture du compte refusée par le test';
+        END IF;
+        RETURN NEW;
+      END $$ LANGUAGE plpgsql;
+      CREATE TRIGGER "test_fail_account" BEFORE INSERT ON "identity"."IdentityAccount"
+        FOR EACH ROW EXECUTE FUNCTION "identity"."test_fail_account"();
+    `),
+  );
+  try {
+    await run();
+  } finally {
+    await asMigrator((client) =>
+      client.query(`
+        DROP TRIGGER IF EXISTS "test_fail_account" ON "identity"."IdentityAccount";
+        DROP FUNCTION IF EXISTS "identity"."test_fail_account"();
+      `),
+    );
+  }
+};
+
 const makeAccount = () => ({
   name: "Streamer de test",
   email: `test-${randomUUID()}@twitch.local`,
@@ -68,6 +142,44 @@ describe("identity : better-auth monté sous /auth, contre la base locale migré
     expect(rows).toHaveLength(1);
     expect(rows[0]?.name).toBe(account.name);
     expect(rows[0]?.password).not.toContain(account.password);
+  });
+
+  it("écrit identity.account.registered dans l'outbox à l'inscription", async () => {
+    const account = makeAccount();
+
+    await withApi(async (base) => {
+      await postJson(`${base}/auth/sign-up/email`, account);
+    });
+
+    const accountId = await userIdOf(account.email);
+    expect(await outboxOf(accountId ?? "")).toEqual([
+      {
+        id: expect.stringMatching(/^[0-9a-f-]{36}$/),
+        name: "identity.account.registered",
+        version: 1,
+        payload: { accountId },
+        publishedAt: null,
+      },
+    ]);
+  });
+
+  it("n'écrit ni compte ni event quand l'inscription échoue en cours de transaction", async () => {
+    const account = {
+      ...makeAccount(),
+      email: `${FAILING_ACCOUNT_PREFIX}${randomUUID()}@twitch.local`,
+    };
+    const before = await outboxCount();
+
+    await withFailingAccountWrite(async () => {
+      await withApi(async (base) => {
+        const response = await postJson(`${base}/auth/sign-up/email`, account);
+
+        expect(response.status).toBeGreaterThanOrEqual(400);
+      });
+    });
+
+    expect(await userIdOf(account.email)).toBeUndefined();
+    expect(await outboxCount()).toBe(before);
   });
 
   it("connecte le compte inscrit et pose un cookie de session", async () => {

@@ -288,3 +288,19 @@ model IdentityOAuthClientAssertion {
 
   @@schema("identity")
 }
+
+/// Events durables du contexte identity (ADR 0002, ADR 0025 §3), écrits dans la transaction de l'état métier.
+model IdentityOutbox {
+  id            String    @id @db.Uuid
+  name          String
+  version       Int
+  payload       Json
+  occurredAt    DateTime
+  publishedAt   DateTime?
+  attempts      Int       @default(0)
+  nextAttemptAt DateTime  @default(now())
+  lastError     String?
+
+  @@index([publishedAt, nextAttemptAt])
+  @@schema("identity")
+}
