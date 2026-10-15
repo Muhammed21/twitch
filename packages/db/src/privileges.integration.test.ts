@@ -11,7 +11,11 @@ const PERMISSION_DENIED = "42501";
 const AUTHZ_WRITERS: readonly Context[] = ["channel", "moderation"];
 const SHARED_SCHEMAS = ["authz", "audit"] as const;
 const SCHEMAS = [...contexts, ...SHARED_SCHEMAS];
-const OUTBOXES = [`"identity"."IdentityOutbox"`, `"channel"."ChannelOutbox"`];
+const OUTBOXES = [
+  `"identity"."IdentityOutbox"`,
+  `"channel"."ChannelOutbox"`,
+  `"stream"."StreamOutbox"`,
+];
 const PROBE = `probe_${randomUUID().replaceAll("-", "")}`;
 
 const urlOf = (variable: string): string => {

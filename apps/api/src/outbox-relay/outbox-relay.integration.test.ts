@@ -120,8 +120,12 @@ afterAll(async () => {
 });
 
 describe("relais de l'outbox vers Redis Streams", () => {
-  it("relaie les outbox d'identity et de channel", () => {
-    expect(OUTBOXES).toEqual([IDENTITY_OUTBOX, { schema: "channel", table: "ChannelOutbox" }]);
+  it("relaie les outbox d'identity, de channel et de stream", () => {
+    expect(OUTBOXES).toEqual([
+      IDENTITY_OUTBOX,
+      { schema: "channel", table: "ChannelOutbox" },
+      { schema: "stream", table: "StreamOutbox" },
+    ]);
   });
 
   it("publie un event de l'outbox d'identity sur events.identity, puis le marque publié", async () => {

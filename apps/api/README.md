@@ -107,6 +107,17 @@ L'API consomme `events.identity` dans le groupe `channel` (`platform/stream-cons
 - `identity.account.registered` appelle `createChannelForAccount` (`presentation/identity-event-handlers.ts`) ; une version autre que 1 reste en attente, un payload hors contrat est journalisé et écarté ;
 - une passe en échec est journalisée et suivie d'une pause de 1 s ; l'arrêt de l'API interrompt la pause.
 
+## Sessions de diffusion (ADR 0001)
+
+`modules/stream` tient l'état des lives : le provider est la source de vérité technique, `StreamSession` la source de vérité métier.
+
+- `recordStreamLifecycle` traite un event de cycle de vie du provider (`started` ou `ended`, avec son canal et sa session provider) dans une transaction du client `stream` : l'event est inscrit dans `StreamProcessedEvent` (handler `stream.record-lifecycle`), le canal provider est retrouvé dans `StreamChannel`, puis `decideLifecycle` (`domain/stream-lifecycle.ts`) décide.
+- Un démarrage ouvre une session et publie `stream.started` ; s'il trouve une autre session ouverte sur la chaîne, il la clôt d'abord et publie son `stream.ended`. Un démarrage déjà connu, même sous un autre identifiant d'event, ne fait rien.
+- Une fin clôt la session ouverte et publie `stream.ended` ; une session déjà close ou inconnue ne change pas. Une session n'est jamais close avant son début.
+- Un canal provider inconnu n'ouvre rien (`unknown-channel`).
+- La base n'admet qu'une session ouverte par chaîne (index unique partiel `StreamSession_channelId_open_key`).
+- Les events d'un même instant (clôture et nouveau démarrage) n'ont pas d'ordre garanti dans l'outbox : un consommateur raisonne par `sessionId`.
+
 ## Autorisation (ADR 0006)
 
 Les droits se décident dans les use-cases, à partir de `AuthzContext` (`@repo/authorization`) ; un garde NestJS ne porte aucune règle métier. `apps/api/src/authz/` implémente ce port sur PostgreSQL et Redis :

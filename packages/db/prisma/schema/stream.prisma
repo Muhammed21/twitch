@@ -1,0 +1,45 @@
+// Contexte stream (ADR 0003, ADR 0001) : les sessions de diffusion d'une chaîne.
+
+/// Canal d'une chaîne chez le provider vidéo, créé au provisionnement.
+model StreamChannel {
+  channelId         String @id @db.Uuid
+  providerChannelId String @unique
+
+  @@schema("stream")
+}
+
+/// Session de diffusion. Une seule session ouverte (endedAt nul) par chaîne : index unique partiel de la migration.
+model StreamSession {
+  id                String    @id @db.Uuid
+  channelId         String    @db.Uuid
+  providerSessionId String    @unique
+  startedAt         DateTime
+  endedAt           DateTime?
+
+  @@index([channelId, endedAt])
+  @@schema("stream")
+}
+
+model StreamOutbox {
+  id            String    @id @db.Uuid
+  name          String
+  version       Int
+  payload       Json
+  occurredAt    DateTime
+  publishedAt   DateTime?
+  attempts      Int       @default(0)
+  nextAttemptAt DateTime  @default(now())
+  lastError     String?
+
+  @@index([publishedAt, nextAttemptAt])
+  @@schema("stream")
+}
+
+model StreamProcessedEvent {
+  eventId     String   @db.Uuid
+  handlerName String
+  processedAt DateTime @default(now())
+
+  @@unique([eventId, handlerName])
+  @@schema("stream")
+}
