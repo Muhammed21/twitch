@@ -13,6 +13,7 @@
     "mutation": "stryker run"
   },
   "dependencies": {
+    "@repo/result": "workspace:*",
     "@repo/video-contract": "workspace:*",
     "zod": "4.6.5"
   },
