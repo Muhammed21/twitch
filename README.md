@@ -10,13 +10,13 @@ Décisions, spikes et où écrire : [`docs/README.md`](docs/README.md). Chaque p
 
 Monorepo pnpm et Turborepo, en TypeScript 7.
 
-| Chemin                       | Contenu                                                                        |
-| ---------------------------- | ------------------------------------------------------------------------------ |
-| `apps/`                      | Les applications. `api`, `chat` et `video` arrivent avec leur premier use-case |
-| `packages/design-tokens`     | Tokens DTCG compilés en Swift et en CSS (ADR 0019)                             |
-| `packages/docs-catalog`      | Générateur de `docs/CATALOG.md`                                                |
-| `packages/typescript-config` | Configuration TypeScript partagée                                              |
-| `docker/`, `compose.yaml`    | Environnement local : PostgreSQL, Redis, stockage S3, Mailpit (ADR 0028)       |
+| Chemin                       | Contenu                                                                                |
+| ---------------------------- | -------------------------------------------------------------------------------------- |
+| `apps/`                      | Les applications : `api`, `video` (ADR 0031) ; `chat` arrive avec son premier use-case |
+| `packages/design-tokens`     | Tokens DTCG compilés en Swift et en CSS (ADR 0019)                                     |
+| `packages/docs-catalog`      | Générateur de `docs/CATALOG.md`                                                        |
+| `packages/typescript-config` | Configuration TypeScript partagée                                                      |
+| `docker/`, `compose.yaml`    | Environnement local : PostgreSQL, Redis, stockage S3, Mailpit (ADR 0028)               |
 
 ## Commandes
 

@@ -9,6 +9,7 @@ review:critical:
           - apps/api/src/**/auth/**
           - apps/api/src/platform/authentication.ts
           - apps/chat/src/**/auth/**
+          - apps/video/src/**/auth/**
           - packages/auth-verifier/**
           - packages/authorization/**
           - packages/db/src/contexts.ts
