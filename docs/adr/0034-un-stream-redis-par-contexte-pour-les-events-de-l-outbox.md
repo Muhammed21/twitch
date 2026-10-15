@@ -65,7 +65,7 @@ L'identifiant de l'entrée Redis est généré par Redis (`*`). Un consommateur 
 
 ### 3. Environ 100 000 entrées par stream
 
-Chaque `XADD` coupe le stream à environ 100 000 entrées (`MAXLEN ~ 100000`). L'outbox reste la source de vérité : un event coupé du stream avant d'avoir été lu se rejoue depuis l'outbox.
+Chaque `XADD` coupe le stream à environ 100 000 entrées (`MAXLEN ~ 100000`). L'outbox reste la source de vérité : un event coupé du stream avant d'avoir été lu est déjà marqué publié, et se rejoue en remettant son `publishedAt` à `NULL`, ce que le relais reprend à sa passe suivante.
 
 ## Conséquences
 
@@ -79,7 +79,7 @@ Chaque `XADD` coupe le stream à environ 100 000 entrées (`MAXLEN ~ 100000`). L
 
 - Un consommateur lit et ignore les events qui ne le concernent pas.
 - Un event dont la publication échoue est reprogrammé pendant que les suivants partent : l'ordre n'est plus garanti pour lui.
-- Un consommateur arrêté assez longtemps pour que 100 000 events passent perd les plus anciens ; il faut les rejouer depuis l'outbox.
+- Un consommateur arrêté assez longtemps pour que 100 000 events passent perd les plus anciens ; il faut les rejouer en remettant leur `publishedAt` à `NULL` dans l'outbox, par une opération manuelle tant qu'aucun outil de rejeu n'existe.
 
 ### Risques et mitigations
 
@@ -90,7 +90,7 @@ Chaque `XADD` coupe le stream à environ 100 000 entrées (`MAXLEN ~ 100000`). L
 
 - Adapter du port `OutboxPublisher` (`@repo/db`) dans `apps/api`, sur le client `redis` : `XADD events.<contexte> MAXLEN ~ 100000 * id … name … version … occurredAt … payload …`.
 - Le process `outbox-relay` parcourt la liste des outbox avec `relayOutboxBatch` (`@repo/db`) et le rôle `app_outbox_relay`.
-- Le premier consommateur (`channel`, plan `api`, PR 9c) crée son groupe par `XGROUP CREATE events.identity channel $ MKSTREAM`.
+- Le premier consommateur (`channel`, plan `api`, PR 9c) crée son groupe par `XGROUP CREATE events.identity channel 0 MKSTREAM` : il part du début du stream et lit les events publiés avant sa création, en dédupliquant par `id`. Un groupe créé avec `$` les perdrait.
 
 ## Liens
 
