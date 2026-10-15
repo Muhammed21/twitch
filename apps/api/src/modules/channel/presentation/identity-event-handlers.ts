@@ -17,6 +17,9 @@ export const identityEventHandlers = ({
   logSink: LogSink;
 }): Readonly<Record<string, StreamHandler>> => ({
   [accountRegistered.name]: async (event) => {
+    if (event.version !== accountRegistered.version) {
+      throw new Error(`${event.name} version ${event.version} non gérée`);
+    }
     const payload = accountRegistered.payload.safeParse(event.payload);
     if (!payload.success) {
       writeLog(logSink, {

@@ -10,10 +10,13 @@ import { identityEventHandlers } from "./identity-event-handlers.ts";
 const ACCOUNT_ID = "4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b";
 const EVENT_ID = "0e1d2c3b-4a59-4687-9a1b-2c3d4e5f6a7b";
 
-const makeEvent = (payload: unknown = { accountId: ACCOUNT_ID, displayName: "Streamer" }) => ({
+const makeEvent = (
+  payload: unknown = { accountId: ACCOUNT_ID, displayName: "Streamer" },
+  version = 1,
+) => ({
   id: EVENT_ID,
   name: "identity.account.registered",
-  version: 1,
+  version,
   occurredAt: new Date("2026-10-15T10:00:00.000Z"),
   payload,
 });
@@ -103,6 +106,16 @@ describe("handlers de channel pour events.identity", () => {
     await handle(makeEvent());
 
     expect(lines).toEqual([]);
+  });
+
+  it("laisse en attente une version qu'il ne gère pas, sans créer de chaîne", async () => {
+    const { requests, createChannel } = answering(CREATED);
+    const { handle } = setup(createChannel);
+
+    await expect(handle(makeEvent(undefined, 2))).rejects.toThrow(
+      new Error("identity.account.registered version 2 non gérée"),
+    );
+    expect(requests).toEqual([]);
   });
 
   it("laisse remonter l'échec de la création, pour que l'event reste en attente", async () => {

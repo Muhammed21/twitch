@@ -99,7 +99,7 @@ L'API consomme `events.identity` dans le groupe `channel` (`platform/stream-cons
 - le groupe se crée depuis le début du stream, et se recrée quand Redis répond `NOGROUP` ;
 - chaque passe reprend d'abord par `XAUTOCLAIM` les entrées en attente depuis plus de 30 s chez un autre consommateur, puis lit les nouvelles par `XREADGROUP` (attente de 1 s) ;
 - une entrée traitée, illisible ou d'un event sans handler est acquittée ; une entrée dont le handler échoue reste en attente et sera reprise ;
-- `identity.account.registered` appelle `createChannelForAccount` (`presentation/identity-event-handlers.ts`) ; un payload hors contrat est journalisé et écarté ;
+- `identity.account.registered` appelle `createChannelForAccount` (`presentation/identity-event-handlers.ts`) ; une version autre que 1 reste en attente, un payload hors contrat est journalisé et écarté ;
 - une passe en échec est journalisée et suivie d'une pause de 1 s ; l'arrêt de l'API interrompt la pause.
 
 ## Autorisation (ADR 0006)
