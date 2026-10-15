@@ -79,3 +79,32 @@ describe("Me", () => {
     expect(responses.Me.safeParse(makeMe(overrides)).success).toBe(false);
   });
 });
+
+const makeChannel = (overrides: Record<string, unknown> = {}) => ({
+  id: "9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69",
+  slug: "streamer_de_test",
+  title: "Speedrun du dimanche",
+  ownerId: "4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b",
+  ...overrides,
+});
+
+describe("Channel", () => {
+  it("décode une chaîne, son slug, son titre et son propriétaire", () => {
+    expect(responses.Channel.parse(makeChannel())).toEqual(makeChannel());
+  });
+
+  it("garde un champ ajouté plus tard par le serveur", () => {
+    expect(responses.Channel.parse(makeChannel({ isLive: true }))).toMatchObject({
+      isLive: true,
+    });
+  });
+
+  it.each([
+    ["avec un identifiant qui n'est pas un UUID", { id: "chaine-1" }],
+    ["sans slug", { slug: undefined }],
+    ["sans titre", { title: undefined }],
+    ["avec un propriétaire qui n'est pas un UUID", { ownerId: "moi" }],
+  ])("refuse une chaîne %s", (_name, overrides) => {
+    expect(responses.Channel.safeParse(makeChannel(overrides)).success).toBe(false);
+  });
+});
