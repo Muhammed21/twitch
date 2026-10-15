@@ -1,8 +1,15 @@
 import type { z } from "zod";
 
 import { events } from "@repo/contracts";
-import { alreadyProcessed, appendToOutbox, type createContextClient } from "@repo/db";
+import {
+  alreadyProcessed,
+  appendToOutbox,
+  collectByKeyset,
+  type createContextClient,
+  type KeysetPage,
+} from "@repo/db";
 
+import type { OpenStreamSessions } from "../application/reconcile-stream-sessions.ts";
 import type {
   LifecycleTransaction,
   StreamLifecyclePublication,
@@ -74,4 +81,48 @@ const lifecycleTransaction = (tx: StreamTransaction): LifecycleTransaction => ({
 
 export const prismaStreamSessions = (prisma: StreamPrisma): StreamSessions => ({
   transaction: (work) => prisma.$transaction((tx) => work(lifecycleTransaction(tx))),
+});
+
+const OPEN_SESSIONS_PAGE_SIZE = 100;
+
+const openSessionsPage = async (prisma: StreamPrisma, { take, after }: KeysetPage) => {
+  const sessions = await prisma.streamSession.findMany({
+    where: { endedAt: null, id: { gt: after } },
+    orderBy: { id: "asc" },
+    take,
+    select: { id: true, channelId: true, providerSessionId: true, startedAt: true },
+  });
+  const channels = await prisma.streamChannel.findMany({
+    where: { channelId: { in: sessions.map(({ channelId }) => channelId) } },
+    take: sessions.length,
+    select: { channelId: true, providerChannelId: true },
+  });
+  const providerChannelOf = new Map(
+    channels.map(({ channelId, providerChannelId }) => [channelId, providerChannelId]),
+  );
+  return sessions.map(({ id, channelId, providerSessionId, startedAt }) => ({
+    id,
+    providerSessionId,
+    providerChannelId: providerChannelOf.get(channelId),
+    startedAt,
+  }));
+};
+
+export const prismaOpenStreamSessions = ({
+  prisma,
+  pageSize = OPEN_SESSIONS_PAGE_SIZE,
+}: {
+  prisma: StreamPrisma;
+  pageSize?: number;
+}): OpenStreamSessions => ({
+  list: async () =>
+    (
+      await collectByKeyset({
+        pageSize,
+        fetchPage: (page) => openSessionsPage(prisma, page),
+        keyOf: ({ id }) => id,
+      })
+    ).flatMap(({ providerSessionId, providerChannelId, startedAt }) =>
+      providerChannelId === undefined ? [] : [{ providerSessionId, providerChannelId, startedAt }],
+    ),
 });
