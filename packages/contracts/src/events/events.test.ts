@@ -82,3 +82,36 @@ describe("channel.created", () => {
     expect(events.channel.channelCreated.payload.safeParse(payload).success).toBe(false);
   });
 });
+
+describe("channel.metadata.updated", () => {
+  const makeUpdate = (overrides: Record<string, unknown> = {}) => ({
+    channelId: CHANNEL_ID,
+    title: "Speedrun du dimanche",
+    ...overrides,
+  });
+
+  it("porte son nom et sa version", () => {
+    expect(events.channel.channelMetadataUpdated).toMatchObject({
+      name: "channel.metadata.updated",
+      version: 1,
+    });
+  });
+
+  it("décode la chaîne et son nouveau titre", () => {
+    expect(events.channel.channelMetadataUpdated.payload.parse(makeUpdate())).toEqual(makeUpdate());
+  });
+
+  it("garde un champ ajouté plus tard par l'émetteur", () => {
+    expect(
+      events.channel.channelMetadataUpdated.payload.parse(makeUpdate({ category: "jeux" })),
+    ).toMatchObject({ category: "jeux" });
+  });
+
+  it.each([
+    ["sans chaîne", makeUpdate({ channelId: undefined })],
+    ["avec une chaîne qui n'est pas un UUID", makeUpdate({ channelId: "chaine-1" })],
+    ["sans titre", makeUpdate({ title: undefined })],
+  ])("refuse un event %s", (_name, payload) => {
+    expect(events.channel.channelMetadataUpdated.payload.safeParse(payload).success).toBe(false);
+  });
+});
