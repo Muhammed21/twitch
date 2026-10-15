@@ -1,3 +1,5 @@
+import { connect } from "node:net";
+
 import { describe, expect, it, onTestFinished } from "vitest";
 
 import { Problem } from "@repo/video-contract";
@@ -88,6 +90,41 @@ describe("routes inconnues", () => {
       status: 404,
     });
   });
+});
+
+const sendRaw = (port: number, request: string): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const socket = connect(port, "127.0.0.1", () => socket.end(request));
+    const chunks: Buffer[] = [];
+    socket.on("data", (chunk: Buffer) => chunks.push(chunk));
+    socket.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+    socket.on("error", reject);
+  });
+
+describe("cible de requête invalide", () => {
+  it.each(["http://[", "http://a:99999/"])(
+    "GET %s répond 400 en RFC 9457, et le serveur continue de répondre",
+    async (target) => {
+      const server = await startServer();
+
+      const raw = await sendRaw(
+        server.port,
+        `GET ${target} HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n`,
+      );
+      const live = await fetch(server.url("/health/live"));
+
+      expect(raw).toMatch(/^HTTP\/1\.1 400 /);
+      expect(raw).toContain("content-type: application/problem+json");
+      expect(
+        Problem.parse(JSON.parse(raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1))),
+      ).toEqual({
+        type: "about:blank",
+        title: "Requête invalide",
+        status: 400,
+      });
+      expect(live.status).toBe(200);
+    },
+  );
 });
 
 describe("démarrage", () => {

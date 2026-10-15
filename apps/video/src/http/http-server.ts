@@ -30,7 +30,12 @@ export const startHttpServer = async ({ port }: { port: number }): Promise<HttpS
   const state: { draining: boolean } = { draining: false };
 
   const server = createServer((request, response) => {
-    const route = `${request.method} ${new URL(request.url ?? "/", "http://localhost").pathname}`;
+    const target = URL.parse(request.url ?? "/", "http://localhost");
+    if (target === null) {
+      sendProblem(response, { title: "Requête invalide", status: 400 });
+      return;
+    }
+    const route = `${request.method} ${target.pathname}`;
     if (route === "GET /health/live") {
       sendJson(response, { status: "ok" });
       return;
