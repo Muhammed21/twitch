@@ -115,3 +115,42 @@ describe("channel.metadata.updated", () => {
     expect(events.channel.channelMetadataUpdated.payload.safeParse(payload).success).toBe(false);
   });
 });
+
+const SESSION_ID = "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d";
+
+describe.each([
+  ["stream.started", () => events.stream.streamStarted, "startedAt"],
+  ["stream.ended", () => events.stream.streamEnded, "endedAt"],
+] as const)("%s", (name, contractOf, dateField) => {
+  const makeLifecycle = (overrides: Record<string, unknown> = {}) => ({
+    sessionId: SESSION_ID,
+    channelId: CHANNEL_ID,
+    [dateField]: "2026-10-15T20:00:00.000Z",
+    ...overrides,
+  });
+
+  it("porte son nom et sa version", () => {
+    expect(contractOf()).toMatchObject({ name, version: 1 });
+  });
+
+  it("décode la session, sa chaîne et sa date", () => {
+    expect(contractOf().payload.parse(makeLifecycle())).toEqual(makeLifecycle());
+  });
+
+  it("garde un champ ajouté plus tard par l'émetteur", () => {
+    expect(contractOf().payload.parse(makeLifecycle({ category: "jeux" }))).toMatchObject({
+      category: "jeux",
+    });
+  });
+
+  it.each([
+    ["sans session", { sessionId: undefined }],
+    ["avec une session qui n'est pas un UUID", { sessionId: "session-1" }],
+    ["sans chaîne", { channelId: undefined }],
+    ["avec une chaîne qui n'est pas un UUID", { channelId: "chaine-1" }],
+    ["sans date", { [dateField]: undefined }],
+    ["avec une date sans fuseau", { [dateField]: "2026-10-15T20:00:00" }],
+  ])("refuse un event %s", (_name, overrides) => {
+    expect(contractOf().payload.safeParse(makeLifecycle(overrides)).success).toBe(false);
+  });
+});

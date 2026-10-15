@@ -154,8 +154,17 @@ _Tests d'abord_ : inscription → chaîne créée ; un event non acquitté est r
 **PR 9d — Routes de `channel`.** `GET /v1/channels/{slug}`, `PATCH /v1/channels/{id}` (titre, propriétaire et editor).
 _Tests d'abord_ : modification du titre par un autre que le propriétaire ou un editor → 403.
 
-**PR 10 — `stream`, contre le provider factice.** Agrégat `StreamSession`, port `LiveVideoProviderPort` et `FakeLiveVideoProvider` (ADR 0001), route de webhook qui vérifie la signature **avant** toute désérialisation, `stream.started` et `stream.ended` par l'outbox, job de réconciliation, `GET /v1/channels/{id}/stream-key` (propriétaire seulement), URL de lecture.
-_Tests d'abord_ : webhook mal signé → 401 sans parsing ; `stream.started` rejoué → une seule session ; session ouverte que le provider ne connaît plus → close par la réconciliation ; clé de stream absente de tout log et de toute liste.
+**PR 10a — Sessions de diffusion.** Contrats `stream.started` et `stream.ended` ; tables `StreamChannel`, `StreamSession` (une seule session ouverte par chaîne, index unique partiel), `StreamOutbox`, `StreamProcessedEvent` ; décision pure `decideLifecycle` ; use-case `recordStreamLifecycle`, idempotent par identifiant d'event et par session provider, events par l'outbox.
+_Tests d'abord_ : `stream.started` rejoué → une seule session ; un nouveau démarrage clôt la session restée ouverte ; une fin ne clôt qu'une fois.
+
+**PR 10b — Webhook du provider.** Port `LiveVideoProviderPort` et `FakeLiveVideoProvider` (ADR 0001), `parseLifecycleWebhook` ; route de webhook qui vérifie la signature HMAC horodatée (fenêtre de 5 minutes, ADR 0031) **avant** toute désérialisation, puis `recordStreamLifecycle`.
+_Tests d'abord_ : webhook mal signé ou trop ancien → 401 sans parsing ; webhook rejoué → une seule session.
+
+**PR 10c — Clé de stream et lecture.** Provisionnement du canal provider à la réception de `channel.created` ; `GET /v1/channels/{id}/stream-key` (propriétaire seulement) ; URL de lecture signée.
+_Tests d'abord_ : clé de stream refusée à un autre que le propriétaire ; clé absente de tout log et de toute liste.
+
+**PR 10d — Réconciliation.** Job qui interroge le provider et clôt toute session qu'il ne connaît plus.
+_Tests d'abord_ : session ouverte que le provider ne connaît plus → close par la réconciliation, avec `stream.ended`.
 
 **PR 11 — Adapter `apps/video` (jalon A3).** Adapter de `LiveVideoProviderPort` sur le plan de contrôle du service vidéo (`packages/video-contract`), avec le secret de service et la vérification HMAC de ses webhooks. Plus `discovery` minimal : projection `LiveChannelView` alimentée par `stream.started`, `stream.ended` et `channel.metadata.updated` ; `GET /v1/lives` paginé par curseur à tri total ; commande de reconstruction de la projection (exigée dès la tranche 1 par l'ADR 0003).
 _Tests d'abord_ : même suite de contrat pour l'adapter factice et l'adapter `apps/video` ; un live terminé disparaît de la liste ; pagination stable quand un live démarre entre deux pages ; reconstruction qui redonne la même projection.

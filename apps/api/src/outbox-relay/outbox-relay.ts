@@ -13,6 +13,7 @@ const COMMAND_TIMEOUT_MS = 2000;
 export const OUTBOXES: readonly TableRef[] = [
   { schema: "identity", table: "IdentityOutbox" },
   { schema: "channel", table: "ChannelOutbox" },
+  { schema: "stream", table: "StreamOutbox" },
 ];
 
 export const createRelayRedis = (url?: string) =>
