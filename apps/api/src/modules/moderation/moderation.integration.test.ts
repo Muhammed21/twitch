@@ -172,7 +172,7 @@ describe("timeout en base (ADR 0006)", () => {
     expect(await auditOf(second)).toEqual([]);
   });
 
-  it("refuse un timeout à un autre que le propriétaire, sans rien écrire", async () => {
+  it("refuse un timeout à un acteur sans rôle sur la chaîne, sans rien écrire", async () => {
     const channel = await seedOwnedChannel();
     const viewer = randomUUID();
 

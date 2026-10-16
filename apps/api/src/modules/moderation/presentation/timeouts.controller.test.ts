@@ -108,7 +108,7 @@ describe("POST /v1/channels/{id}/timeouts", () => {
     });
   });
 
-  it("répond 403 à un autre que le propriétaire", async () => {
+  it("répond 403 à un acteur sans rôle sur la chaîne", async () => {
     await withTimeouts(err("forbidden"), async (base) => {
       const response = await postTimeout(base);
 
