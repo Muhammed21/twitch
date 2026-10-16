@@ -1,4 +1,4 @@
-# Plan — app iOS (`ios/`)
+# Plan — app iOS (`apps/ios/`)
 
 Décisions de référence : [ADR 0010](../docs/adr/0010-modularisation-ios-packages-spm-locaux.md) (packages SPM locaux, Swift 6 strict), [ADR 0011](../docs/adr/0011-architecture-presentation-ios-mv-observable.md) (MV avec `@Observable`), [ADR 0019](../docs/adr/0019-package-design-tokens.md) (design tokens), [ADR 0023](../docs/adr/0023-client-ios-socketio-minimal-et-refus-http-au-handshake.md) (client de chat minimal), [ADR 0024](../docs/adr/0024-conventions-de-contrat-pour-la-compatibilite.md) (décodage tolérant), [ADR 0005](../docs/adr/0005-strategie-tokens-et-sessions.md) et [0026](../docs/adr/0026-better-auth-oauth-provider-et-revocation-sur-reutilisation.md) (OAuth PKCE, Keychain), [ADR 0018](../docs/adr/0018-qualite-de-code-et-discipline-de-depot.md) (§4, volet Swift), [ADR 0030](../docs/adr/0030-pas-de-client-web-app-ios-seul-client.md) (seul client, Maestro).
 
@@ -7,7 +7,7 @@ Chaque PR suit le TDD (RED, GREEN, REFACTOR) avec Swift Testing, reste sous le p
 ## Architecture
 
 ```
-ios/
+apps/ios/
 ├── App/                       # target Xcode mince : @main, racine de composition, routage racine
 └── Packages/Package.swift     # un seul package, plusieurs targets ; le graphe se lit dans ce fichier
     ├── Domain/                # modèles immuables et Sendable, value objects, protocoles de repositories
@@ -34,7 +34,7 @@ ios/
 | Lecture HLS servie par le service vidéo     | [Service vidéo](service-video.md), PR 10 |
 | Serveur de chat avec handshake et diffusion | [Chat](chat.md), PR 3 et 4               |
 
-Les PR 1 et 2 ne dépendent de rien : elles démarrent tout de suite. Les features se construisent d'abord contre les fakes de leurs targets `…Fixtures` (ADR 0010), puis se branchent sur les vrais services.
+Les PR 1a, 1b et 2 ne dépendent de rien : elles démarrent tout de suite. Les features se construisent d'abord contre les fakes de leurs targets `…Fixtures` (ADR 0010), puis se branchent sur les vrais services.
 
 ## Jalons
 
@@ -46,10 +46,15 @@ Les PR 1 et 2 ne dépendent de rien : elles démarrent tout de suite. Les featur
 
 ## Les PR de la tranche 1
 
-### PR 1 — Projet, package et outillage
+### PR 1a — Projet et package
 
-Projet Xcode mince dans `ios/App`, `Packages/Package.swift` avec `swiftLanguageMode(.v6)` sur tous les targets, `Domain` et `Core/DesignSystem` (dépendance `../packages/design-tokens/platforms/swift`). SwiftFormat en pre-commit sur `*.swift` (lint-staged), SwiftLint en CI avec les règles de formatage désactivées, script de lint des `import` (feature → feature, `DesignTokens` hors de `DesignSystem`). Workflow iOS en `workflow_dispatch` seulement, activé selon les déclencheurs de l'ADR 0018 (§4). Scope de commit `ios` déjà présent.
-_Tests d'abord_ : le script de lint refuse une fixture où une feature importe une autre feature, et une fixture qui importe `DesignTokens` hors de `DesignSystem` ; un composant de `DesignSystem` lit ses couleurs depuis les tokens dans les deux thèmes.
+Projet Xcode mince dans `apps/ios/App.xcodeproj` (dossier synchronisé `App/`), `Packages/Package.swift` avec `swiftLanguageMode(.v6)` sur tous les targets et `Core/DesignSystem` (dépendance `../../../packages/design-tokens/platforms/swift`). `Domain` arrive avec ses premiers modèles, en PR 2. Tests : `xcodebuild test -scheme Packages` sur un simulateur iOS, depuis `apps/ios/Packages`.
+_Tests d'abord_ : un rôle de couleur de `DesignSystem` prend la valeur de son token dans les deux thèmes.
+
+### PR 1b — Outillage Swift
+
+SwiftFormat en pre-commit sur `*.swift` (lint-staged), SwiftLint en CI avec les règles de formatage désactivées, versions épinglées dans un `Mintfile` (ADR 0018, §4). Script de lint des `import` (feature → feature, `DesignTokens` hors de `DesignSystem`). Workflow iOS en `workflow_dispatch` seulement, activé selon les déclencheurs de l'ADR 0018 (§4). Scope de commit `ios` déjà présent.
+_Tests d'abord_ : le script de lint refuse une fixture où une feature importe une autre feature, et une fixture qui importe `DesignTokens` hors de `DesignSystem`.
 
 ### PR 2 — `Domain` de la tranche 1
 
@@ -100,7 +105,7 @@ _Tests d'abord_ : la clé n'apparaît dans aucun log ; un viewer qui n'est pas p
 
 ### PR 11 — Maestro et CI iOS
 
-Flows Maestro (CLI gratuite, simulateur) des parcours critiques : connexion, ouvrir un live, envoyer un message, mettre en timeout. Les éléments touchés portent un `.accessibilityIdentifier`, et les flows attendent un élément plutôt qu'un délai (ADR 0030, §4). Le workflow iOS passe de `workflow_dispatch` à un déclenchement sur les diffs de `ios/`, tests `Domain` et `Core` d'abord (ADR 0018, §4). Le job Maestro reste non bloquant jusqu'à dix exécutions vertes d'affilée.
+Flows Maestro (CLI gratuite, simulateur) des parcours critiques : connexion, ouvrir un live, envoyer un message, mettre en timeout. Les éléments touchés portent un `.accessibilityIdentifier`, et les flows attendent un élément plutôt qu'un délai (ADR 0030, §4). Le workflow iOS passe de `workflow_dispatch` à un déclenchement sur les diffs de `apps/ios/`, tests `Domain` et `Core` d'abord (ADR 0018, §4). Le job Maestro reste non bloquant jusqu'à dix exécutions vertes d'affilée.
 _Tests d'abord_ : chaque flow échoue quand l'identifiant qu'il attend disparaît (vérifié une fois à la main, consigné dans la PR).
 
 **Test manuel avant la fin de la tranche 1** (ADR 0023, point ouvert) : sur iPhone réel, passage en arrière-plan, bascule Wi-Fi / 4G, mode basse consommation, retour au premier plan après 10 minutes. Maestro ne pilote pas d'appareil physique.
@@ -122,5 +127,5 @@ _Tests d'abord_ : chaque flow échoue quand l'identifiant qu'il attend disparaî
 
 - **LL-HLS refusé par `AVPlayer` en local** : vérifié au jalon I2, avec le repli HLS standard du [plan vidéo](service-video.md).
 - **Swift 6 strict et API Apple mal annotées** (`AVFoundation`) : encapsulation dans `PlayerController`, `@preconcurrency import` localisé, aucun type non `Sendable` vers les features.
-- **Coût de la CI macOS** : tests `Domain` et `Core` seulement au départ, déclenchement limité aux diffs de `ios/` (ADR 0018).
+- **Coût de la CI macOS** : tests `Domain` et `Core` seulement au départ, déclenchement limité aux diffs de `apps/ios/` (ADR 0018).
 - **Profil de développement qui expire avant une démonstration** : réinstaller l'app la veille.
