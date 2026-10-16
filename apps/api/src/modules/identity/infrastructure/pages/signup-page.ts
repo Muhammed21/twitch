@@ -28,6 +28,7 @@ export const SIGNUP_ERRORS = {
   birthDate: "Please enter a valid date of birth.",
   tooYoung: "You must be 13 or older to sign up.",
   unknown: "Something went wrong. Please try again.",
+  expired: "This sign-up link has expired. Go back to the app and try again.",
 } as const;
 
 const ERROR_BY_CODE: ReadonlyMap<string, string> = new Map([
