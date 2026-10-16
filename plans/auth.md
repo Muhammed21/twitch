@@ -32,7 +32,7 @@ _Tests d'abord_ : un second lancement ne crée rien ; une autorisation PKCE avec
 
 ### A3a — Nom d'utilisateur
 
-Plugin `username` (`^[A-Za-z0-9_]{4,25}$`, unicité sans casse) ; les mots réservés quittent le domaine `channel` pour `@repo/contracts` (`RESERVED_NAMES`), partagés par `identity` et `channel` (ADR 0039, §2). Le compte du seed porte le nom `viewer_dev`.
+Plugin `username` (`^[A-Za-z0-9_]{4,25}$`, unicité sans casse) ; les mots réservés quittent le domaine `channel` pour `@repo/reserved-names` (`RESERVED_NAMES`, sans dépendance), partagés par `identity` et `channel` (ADR 0039, §2). Le compte du seed porte le nom `viewer_dev`.
 _Tests d'abord_ : nom trop court, trop long, à caractère interdit ou réservé (toute casse) refusé sans compte créé ; 4 et 25 caractères acceptés ; doublon à la casse près refusé ; connexion par nom d'utilisateur, quelle que soit la casse, et toujours par e-mail.
 
 ### A3b — Date de naissance

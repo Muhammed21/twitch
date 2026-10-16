@@ -76,6 +76,9 @@ importers:
       '@repo/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@repo/reserved-names':
+        specifier: workspace:*
+        version: link:../../packages/reserved-names
       '@repo/result':
         specifier: workspace:*
         version: link:../../packages/result
@@ -407,6 +410,15 @@ importers:
       vitest:
         specifier: 4.1.11
         version: 4.1.11(@types/node@26.6.2)(@vitest/coverage-v8@4.1.11)(vite@8.3.0(@types/node@26.6.2)(jiti@2.6.1)(yaml@2.9.1))
+
+  packages/reserved-names:
+    devDependencies:
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: 7.0.2
+        version: 7.0.2
 
   packages/result:
     devDependencies:

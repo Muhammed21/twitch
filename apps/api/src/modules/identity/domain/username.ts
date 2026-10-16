@@ -1,4 +1,4 @@
-import { RESERVED_NAMES } from "@repo/contracts";
+import { RESERVED_NAMES } from "@repo/reserved-names";
 
 export const USERNAME_LENGTH = { min: 4, max: 25 } as const;
 

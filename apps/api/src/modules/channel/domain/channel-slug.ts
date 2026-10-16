@@ -1,4 +1,4 @@
-import { RESERVED_NAMES } from "@repo/contracts";
+import { RESERVED_NAMES } from "@repo/reserved-names";
 import { err, ok, type Result } from "@repo/result";
 
 const SLUG_FORMAT = /^[a-z0-9_]{4,25}$/;

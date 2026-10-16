@@ -10,14 +10,15 @@ Décisions, spikes et où écrire : [`docs/README.md`](docs/README.md). Chaque p
 
 Monorepo pnpm et Turborepo, en TypeScript 7.
 
-| Chemin                       | Contenu                                                                                                  |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `apps/`                      | Les applications : `api`, `video` (ADR 0031), `ios` (ADR 0038) ; `chat` arrive avec son premier use-case |
-| `packages/design-tokens`     | Tokens DTCG compilés en Swift et en CSS (ADR 0019)                                                       |
-| `packages/docs-catalog`      | Générateur de `docs/CATALOG.md`                                                                          |
-| `packages/ios-imports`       | Lint des `import` Swift de `apps/ios` (ADR 0010, règle 4 ; ADR 0019, règle 5 bis)                        |
-| `packages/typescript-config` | Configuration TypeScript partagée                                                                        |
-| `docker/`, `compose.yaml`    | Environnement local : PostgreSQL, Redis, stockage S3, Mailpit (ADR 0028)                                 |
+| Chemin                       | Contenu                                                                                                                                                   |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/`                      | Les applications : `api`, `video` (ADR 0031), `ios` (ADR 0038) ; `chat` arrive avec son premier use-case                                                  |
+| `packages/design-tokens`     | Tokens DTCG compilés en Swift et en CSS (ADR 0019)                                                                                                        |
+| `packages/docs-catalog`      | Générateur de `docs/CATALOG.md`                                                                                                                           |
+| `packages/ios-imports`       | Lint des `import` Swift de `apps/ios` (ADR 0010, règle 4 ; ADR 0019, règle 5 bis)                                                                         |
+| `packages/reserved-names`    | Noms réservés aux routes de l'app, refusés comme slug de chaîne et comme nom d'utilisateur (ADR 0039, §2) ; sans dépendance, importable depuis un domaine |
+| `packages/typescript-config` | Configuration TypeScript partagée                                                                                                                         |
+| `docker/`, `compose.yaml`    | Environnement local : PostgreSQL, Redis, stockage S3, Mailpit (ADR 0028)                                                                                  |
 
 ## Commandes
 

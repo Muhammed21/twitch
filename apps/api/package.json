@@ -27,6 +27,7 @@
     "@repo/authorization": "workspace:*",
     "@repo/contracts": "workspace:*",
     "@repo/db": "workspace:*",
+    "@repo/reserved-names": "workspace:*",
     "@repo/result": "workspace:*",
     "better-auth": "1.7.7",
     "nestjs-zod": "5.5.0",
