@@ -3,7 +3,7 @@
 - Statut : Proposé
 - Date : 2026-10-16
 - Décideurs : Muhammed Cavus
-- Amende : ADR 0035 (§2, emplacement de la liste des mots réservés)
+- Amende : ADR 0035 (option B, plugin `username`, reprise ; §2, emplacement de la liste des mots réservés)
 
 ## Contexte et problématique
 
@@ -17,6 +17,7 @@ Problématique : comment les écrans d'authentification des captures s'affichent
 
 - **ADR 0005 et 0030** : identifiants saisis hors de l'app, dans une page servie par l'API.
 - **Fidélité aux captures** (ADR 0036) : mêmes écrans, mêmes champs, mêmes valeurs visuelles.
+- **Connexion par nom d'utilisateur** : les captures se connectent par nom d'utilisateur, pas par e-mail.
 - **Testabilité** : chaque écran se teste en intégration, sans navigateur.
 - **Robustesse dans la feuille système** : la page doit marcher dans `ASWebAuthenticationSession`.
 
@@ -78,11 +79,13 @@ Le client iOS est public, PKCE obligatoire, et redirige vers `twitch://oauth/cal
 - La barre système de `ASWebAuthenticationSession` s'affiche au-dessus des écrans : écart avec les captures.
 - L'API porte une couche HTML et du CSS à tenir alignés sur les tokens.
 - Les écrans de réinitialisation n'ont pas de capture : ils suivent le style des autres.
+- Le format `[A-Za-z0-9_]{4,25}` est tenu à deux endroits, le nom d'utilisateur dans `identity` et le slug dans `channel`. L'ADR 0035 avait écarté le plugin `username` pour cette raison ; il est repris parce que les captures se connectent par nom d'utilisateur.
 
 ### Risques et mitigations
 
 - **CSS qui dérive des tokens.** Mitigation : le CSS est généré depuis les tokens (sortie CSS prévue par l'ADR 0019), jamais écrit en dur.
 - **Formulaire rejoué ou forgé.** Mitigation : chaque `POST` vérifie l'origine et un jeton CSRF lié à la session d'autorisation.
+- **Les deux formats divergent.** Mitigation : la liste des mots réservés est partagée, et un test de chaque côté fixe le même format.
 - **Énumération des comptes.** Mitigation : la réinitialisation répond pareil que l'adresse existe ou non ; la connexion ne dit pas lequel des deux champs est faux.
 
 ## Liens

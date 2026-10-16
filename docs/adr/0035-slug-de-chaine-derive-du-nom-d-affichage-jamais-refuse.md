@@ -1,6 +1,6 @@
 # 0035 — Slug de chaîne dérivé du nom d'affichage, au format Twitch, jamais refusé à la création
 
-- Statut : Accepté — emplacement de la liste des mots réservés (§2) amendé par [0039](0039-pages-d-authentification-servies-par-l-api-en-html-sans-javascript.md)
+- Statut : Accepté — option B (plugin `username`) reprise et emplacement de la liste des mots réservés (§2) amendés par [0039](0039-pages-d-authentification-servies-par-l-api-en-html-sans-javascript.md)
 - Date : 2026-10-15
 - Décideurs : Muhammed Cavus
 
