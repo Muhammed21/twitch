@@ -10,6 +10,7 @@ import {
   createIdentityAuth,
 } from "../modules/identity/infrastructure/better-auth.ts";
 import { createIdentityRedis } from "../modules/identity/infrastructure/redis-session-revocation.ts";
+import { createSmtpMailer } from "../modules/identity/infrastructure/smtp-mailer.ts";
 import { loadEnv } from "../platform/config/env.ts";
 
 export const DEV_CLIENT_ID = "twitch-ios-dev";
@@ -78,6 +79,7 @@ const seedAccount = async (env: Env): Promise<Outcome> => {
       redis,
       secret: config.authSecret,
       baseURL: config.authBaseUrl,
+      mailer: createSmtpMailer(config.smtp),
     });
     await auth.api.signUpEmail({ body: { ...DEV_ACCOUNT } });
     return "created";

@@ -11,18 +11,20 @@ API NestJS 11 (ADR 0002, 0009). Architecture et découpage : [plan de l'API](../
 | `pnpm test:integration` | Sondes contre la base locale migrée (`pnpm infra:up` puis `pnpm migrate`)                                                                                                                                               |
 | `pnpm seed:dev`         | Enregistre le client iOS `twitch-ios-dev` (`twitch://oauth/callback`) et le compte `viewer_dev` (`viewer@twitch.local`) / `twitch-dev-password` ; idempotent, refusé si `BETTER_AUTH_URL` ne vise pas la machine locale |
 
-| Variable                  | Rôle                                                                                     |
-| ------------------------- | ---------------------------------------------------------------------------------------- |
-| `API_PORT`                | Port d'écoute, 3000 par défaut                                                           |
-| `DATABASE_URL_HEALTH`     | Rôle `app_health`, lecture de la version du schéma, requis                               |
-| `DATABASE_URL_IDENTITY`   | Rôle `app_identity`, tables de better-auth, requis                                       |
-| `DATABASE_URL_CHANNEL`    | Rôle `app_channel`, chaînes et attributions, requis                                      |
-| `DATABASE_URL_STREAM`     | Rôle `app_stream`, sessions de diffusion, requis                                         |
-| `DATABASE_URL_MODERATION` | Rôle `app_moderation`, sanctions, requis                                                 |
-| `BETTER_AUTH_SECRET`      | Secret de better-auth, au moins 32 caractères, requis                                    |
-| `BETTER_AUTH_URL`         | URL publique de l'API, origine de confiance de better-auth, requis                       |
-| `REDIS_URL`               | Redis (`redis://` ou `rediss://`) : liste de révocation des sessions et Pub/Sub, requis  |
-| `VIDEO_WEBHOOK_SECRET`    | Secret partagé des webhooks du provider vidéo (ADR 0031), au moins 32 caractères, requis |
+| Variable                  | Rôle                                                                                                                                                        |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `API_PORT`                | Port d'écoute, 3000 par défaut                                                                                                                              |
+| `DATABASE_URL_HEALTH`     | Rôle `app_health`, lecture de la version du schéma, requis                                                                                                  |
+| `DATABASE_URL_IDENTITY`   | Rôle `app_identity`, tables de better-auth, requis                                                                                                          |
+| `DATABASE_URL_CHANNEL`    | Rôle `app_channel`, chaînes et attributions, requis                                                                                                         |
+| `DATABASE_URL_STREAM`     | Rôle `app_stream`, sessions de diffusion, requis                                                                                                            |
+| `DATABASE_URL_MODERATION` | Rôle `app_moderation`, sanctions, requis                                                                                                                    |
+| `BETTER_AUTH_SECRET`      | Secret de better-auth, au moins 32 caractères, requis                                                                                                       |
+| `BETTER_AUTH_URL`         | URL publique de l'API, origine de confiance de better-auth, requis                                                                                          |
+| `REDIS_URL`               | Redis (`redis://` ou `rediss://`) : liste de révocation des sessions et Pub/Sub, requis                                                                     |
+| `VIDEO_WEBHOOK_SECRET`    | Secret partagé des webhooks du provider vidéo (ADR 0031), au moins 32 caractères, requis                                                                    |
+| `SMTP_HOST`, `SMTP_PORT`  | Serveur SMTP des e-mails (codes de vérification), sans authentification ni TLS : Mailpit en local ; un relais authentifié arrive avec l'hébergement. Requis |
+| `SMTP_FROM`               | Expéditeur des e-mails, `Twitch <no-reply@twitch.local>` par défaut                                                                                         |
 
 Une variable invalide arrête le démarrage avec le nom de la variable, jamais sa valeur.
 
