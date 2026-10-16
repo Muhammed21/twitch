@@ -228,6 +228,64 @@ struct OAuthSessionTests {
     #expect(harness.store.tokens == nil)
   }
 
+  @Test("une connexion qui se termine pendant une déconnexion attend sa fin, et la nouvelle session survit")
+  func signInDuringSignOut() async throws {
+    let gate = Gate()
+    let transport = FakeTransport { request in
+      guard request.url == revokeURL else {
+        return HTTPResponse(status: 200, body: Data(tokenJSON(access: "access-new", refresh: "refresh-new").utf8))
+      }
+      await gate.wait()
+      return HTTPResponse(status: 200, body: Data("{}".utf8))
+    }
+    let harness = Harness(transport: transport)
+    let session = harness.session
+
+    let signOut = Task { try await session.signOut() }
+    try await Task.sleep(for: .milliseconds(50))
+    let signIn = Task { try await session.signIn(code: "code", verifier: "verifier", at: now) }
+    try await Task.sleep(for: .milliseconds(50))
+    await gate.open()
+    try await signOut.value
+    try await signIn.value
+
+    #expect(harness.store.tokens?.refreshToken == "refresh-new")
+    #expect(await session.status() == .signedIn)
+    #expect(await harness.transport.requests(to: revokeURL).map { form(of: $0)["token"] } == ["refresh-1"])
+  }
+
+  @Test("après une déconnexion, une nouvelle connexion redonne des access tokens")
+  func signInAgainAfterSignOut() async throws {
+    let harness = Harness(transport: FakeTransport(json: tokenJSON(access: "access-new", refresh: "refresh-new")))
+
+    try await harness.session.signOut()
+    try await harness.session.signIn(code: "code", verifier: "verifier", at: now)
+
+    #expect(try await harness.session.accessToken(at: now) == "access-new")
+  }
+
+  @Test("deux déconnexions simultanées ne révoquent qu'une fois, et la seconde attend la première")
+  func concurrentSignOuts() async throws {
+    let gate = Gate()
+    let transport = FakeTransport { _ in
+      await gate.wait()
+      return HTTPResponse(status: 200, body: Data("{}".utf8))
+    }
+    let harness = Harness(transport: transport)
+    let session = harness.session
+
+    let first = Task { try await session.signOut() }
+    try await Task.sleep(for: .milliseconds(50))
+    let second = Task { try await session.signOut() }
+    try await Task.sleep(for: .milliseconds(50))
+    await gate.open()
+    try await first.value
+    try await second.value
+
+    #expect(await harness.transport.requests(to: revokeURL).count == 1)
+    #expect(harness.store.tokens == nil)
+  }
+
   @Test("fournit les access tokens au reste de l'app par le protocole du Domain")
   func conformsToDomainProtocol() async throws {
     let provider: any AccessTokenProvider = Harness().session

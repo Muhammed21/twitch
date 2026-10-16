@@ -10,7 +10,7 @@ public actor OAuthSession: AccessTokenProvider {
   private let endpoint: TokenEndpoint
   private let store: any TokenStore
   private var refreshInFlight: Task<TokenSet, any Error>?
-  private var isSigningOut = false
+  private var signOutInFlight: Task<Void, any Error>?
 
   public init(endpoint: TokenEndpoint, store: any TokenStore) {
     (statusUpdates, continuation) = AsyncStream.makeStream()
@@ -24,12 +24,13 @@ public actor OAuthSession: AccessTokenProvider {
 
   public func signIn(code: String, verifier: String, at now: Date) async throws {
     let tokens = try await endpoint.exchange(code: code, verifier: verifier, at: now)
+    if let signOutInFlight { try? await signOutInFlight.value }
     try store.save(tokens)
     continuation.yield(.signedIn)
   }
 
   public func accessToken(at now: Date) async throws -> String {
-    guard !isSigningOut else { throw SessionError.signedOut }
+    guard signOutInFlight == nil else { throw SessionError.signedOut }
     if let refreshInFlight { return try await refreshInFlight.value.accessToken }
     let tokens = try currentTokens()
     guard now < tokens.expiresAt.addingTimeInterval(-Self.refreshMargin) else {
@@ -39,7 +40,7 @@ public actor OAuthSession: AccessTokenProvider {
   }
 
   public func accessTokenRejected(_ token: String, at now: Date) async throws -> String {
-    guard !isSigningOut else { throw SessionError.signedOut }
+    guard signOutInFlight == nil else { throw SessionError.signedOut }
     if let refreshInFlight { return try await refreshInFlight.value.accessToken }
     let tokens = try currentTokens()
     guard tokens.accessToken == token else { return tokens.accessToken }
@@ -47,8 +48,14 @@ public actor OAuthSession: AccessTokenProvider {
   }
 
   public func signOut() async throws {
-    isSigningOut = true
-    defer { isSigningOut = false }
+    if let signOutInFlight { return try await signOutInFlight.value }
+    let task = Task { try await revokeAndClear() }
+    signOutInFlight = task
+    defer { signOutInFlight = nil }
+    try await task.value
+  }
+
+  private func revokeAndClear() async throws {
     if let refreshInFlight { _ = try? await refreshInFlight.value }
     if let tokens = try? store.load() {
       try? await endpoint.revoke(tokens.refreshToken)
