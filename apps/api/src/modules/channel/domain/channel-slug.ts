@@ -1,3 +1,4 @@
+import { RESERVED_NAMES } from "@repo/contracts";
 import { err, ok, type Result } from "@repo/result";
 
 const SLUG_FORMAT = /^[a-z0-9_]{4,25}$/;
@@ -6,25 +7,7 @@ const FALLBACK_BASE = "user";
 const NUMBERED_SUFFIXES = [2, 3, 4, 5, 6, 7, 8, 9].map((n) => `_${n}`);
 const ACCOUNT_SUFFIX_LENGTH = 12;
 
-export const RESERVED_SLUGS: readonly string[] = [
-  "admin",
-  "api",
-  "auth",
-  "directory",
-  "help",
-  "login",
-  "logout",
-  "moderator",
-  "privacy",
-  "search",
-  "settings",
-  "signup",
-  "staff",
-  "support",
-  "terms",
-  "twitch",
-  "well_known",
-];
+export const RESERVED_SLUGS: readonly string[] = RESERVED_NAMES;
 
 export type ChannelSlug = string & { readonly __brand: "ChannelSlug" };
 
