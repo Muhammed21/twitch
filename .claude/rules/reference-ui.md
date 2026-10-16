@@ -30,7 +30,7 @@ Ne se mesure pas : la barre « curated by Mobbin » en bas de chaque capture, qu
 
 On ne reprend pas :
 
-- le logo et le wordmark Twitch ;
+- le wordmark Twitch. Le Glitch, lui, est repris depuis le SVG officiel, sans retouche (ADR 0037) ;
 - une fonctionnalité hors du périmètre de l'ADR 0021. Un écran présent dans la référence n'entre pas au produit pour autant.
 
 Quand un écran du produit s'écarte de la référence, l'écart se décide avec le développeur : n'invente pas de variante.
