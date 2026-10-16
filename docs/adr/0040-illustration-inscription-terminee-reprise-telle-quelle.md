@@ -45,7 +45,7 @@ L'illustration de « You're All Set! » est reprise, sur cette page seulement. L
 
 ### 2. Source
 
-Le fichier est `docs/brand/you-are-all-set.png` (PNG 270 × 268, fond transparent), fourni par Muhammed Cavus le 2026-10-16. Il est versionné tel quel : ni recadré, ni recoloré, ni redessiné.
+Le fichier est `docs/brand/you-are-all-set.png` (PNG 270 × 268, opaque, sur le fond clair `#f7f7f7` des captures), fourni par Muhammed Cavus le 2026-10-16. Il est versionné tel quel : ni recadré, ni recoloré, ni redessiné.
 
 ### 3. Rendu dans la page
 
@@ -61,6 +61,7 @@ L'API sert ce fichier sans le transformer, et la page l'affiche à sa taille d'o
 ### Négatives
 
 - Le dépôt public contient une œuvre de Twitch.
+- En mode sombre, l'image opaque s'affiche dans un carré clair : la page n'est pas forcée en clair et le fichier n'est pas retouché.
 
 ### Risques et mitigations
 
