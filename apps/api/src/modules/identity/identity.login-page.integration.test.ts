@@ -221,6 +221,25 @@ describe("page de connexion servie par l'API (ADR 0039, §1)", () => {
     });
   });
 
+  it("ne prétend pas que le mot de passe est faux quand la page a été ouverte sans requête OAuth", async () => {
+    await withApi(async (base) => {
+      const clientId = await seedClient();
+      const account = await signUp(base);
+      const { cookie, csrf } = await openLoginPage(base, clientId, pkce().challenge);
+
+      const response = await submit(
+        base,
+        { identifier: account.username, password: PASSWORD, csrf, oauth_query: "" },
+        { cookie },
+      );
+      const body = await response.text();
+
+      expect(response.status).toBe(400);
+      expect(body).toContain("This sign-in link has expired. Go back to the app and try again.");
+      expect(body).not.toContain("Incorrect username or password.");
+    });
+  });
+
   it("échappe l'identifiant renvoyé dans la page", async () => {
     await withApi(async (base) => {
       const clientId = await seedClient();

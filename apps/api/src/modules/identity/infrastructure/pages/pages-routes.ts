@@ -127,7 +127,8 @@ export const mountAuthPages = (server: Express, auth: IdentityAuth, baseURL: str
         response.redirect(302, target);
         return;
       }
-      const expired = (await result.text().catch(() => "")).includes("invalid_signature");
+      const expired =
+        result.ok || (await result.text().catch(() => "")).includes("invalid_signature");
       sendPage(
         response,
         {
