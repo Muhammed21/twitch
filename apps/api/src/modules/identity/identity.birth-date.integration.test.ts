@@ -90,4 +90,53 @@ describe("identity : date de naissance à l'inscription (ADR 0039, §3)", () => 
     });
     expect(await storedBirthDate(email)).toEqual([]);
   });
+
+  it.each([
+    ["plus jeune", yearsAgo(5)],
+    ["dans le futur", yearsAgo(0, 1)],
+    ["plus âgée", "1990-01-01"],
+  ])("refuse de changer la date de naissance après l'inscription, %s", async (_case, birthDate) => {
+    const email = `${randomUUID()}@twitch.local`;
+
+    await withApi(async (base) => {
+      const signedUp = await signUp(base, email, "2000-01-01");
+      const cookie = signedUp.headers
+        .getSetCookie()
+        .map((value) => value.split(";")[0])
+        .join("; ");
+      const update = await fetch(`${base}/auth/update-user`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          origin: urlOf("BETTER_AUTH_URL"),
+          cookie,
+        },
+        body: JSON.stringify({ birthDate }),
+      });
+
+      expect(update.status).toBe(400);
+      expect(await update.json()).toMatchObject({ code: "BIRTH_DATE_IMMUTABLE" });
+    });
+    expect(await storedBirthDate(email)).toEqual(["2000-01-01"]);
+  });
+
+  it("laisse modifier le reste du profil", async () => {
+    const email = `${randomUUID()}@twitch.local`;
+
+    await withApi(async (base) => {
+      const signedUp = await signUp(base, email, "2000-01-01");
+      const cookie = signedUp.headers
+        .getSetCookie()
+        .map((value) => value.split(";")[0])
+        .join("; ");
+      const update = await fetch(`${base}/auth/update-user`, {
+        method: "POST",
+        headers: { "content-type": "application/json", origin: urlOf("BETTER_AUTH_URL"), cookie },
+        body: JSON.stringify({ name: "Nouveau nom" }),
+      });
+
+      expect(update.status).toBe(200);
+    });
+    expect(await storedBirthDate(email)).toEqual(["2000-01-01"]);
+  });
 });

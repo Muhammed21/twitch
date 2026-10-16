@@ -85,6 +85,7 @@ const guardRefreshGrant =
   };
 
 const SIGN_UP_PATH = "/sign-up/email";
+const UPDATE_USER_PATH = "/update-user";
 
 const BIRTH_DATE_MESSAGES = {
   missing: "La date de naissance est requise.",
@@ -92,6 +93,15 @@ const BIRTH_DATE_MESSAGES = {
   future: "La date de naissance ne peut pas être dans le futur.",
   too_young: "Il faut avoir au moins 13 ans pour créer un compte.",
 } as const;
+
+const guardBirthDateUpdate = (ctx: HookContext) => {
+  if (ctx.body !== undefined && "birthDate" in ctx.body) {
+    throw new APIError("BAD_REQUEST", {
+      code: "BIRTH_DATE_IMMUTABLE",
+      message: "La date de naissance ne se modifie pas après l'inscription.",
+    });
+  }
+};
 
 const guardSignUpBirthDate = (ctx: HookContext) => {
   const birthDate = parseBirthDate({ value: ctx.body?.birthDate, now: new Date() });
@@ -142,9 +152,15 @@ export const createIdentityAuth = ({
     disabledPaths: ["/token"],
     advanced: { database: { generateId: () => randomUUID() } },
     hooks: {
-      before: createAuthMiddleware(async (ctx) =>
-        ctx.path === SIGN_UP_PATH ? guardSignUpBirthDate(ctx) : refreshGuard(ctx),
-      ),
+      before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path === SIGN_UP_PATH) {
+          return guardSignUpBirthDate(ctx);
+        }
+        if (ctx.path === UPDATE_USER_PATH) {
+          return guardBirthDateUpdate(ctx);
+        }
+        return refreshGuard(ctx);
+      }),
     },
     emailAndPassword: { enabled: true },
     user: {
