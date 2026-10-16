@@ -29,6 +29,17 @@ struct OAuthConfigurationTests {
     #expect(configuration.resource == "http://127.0.0.1:3000/v1")
   }
 
+  @Test("calcule la ressource et les endpoints depuis l'origine, comme l'API (new URL(\"/v1\", base))")
+  func originRelative() throws {
+    let configuration = try OAuthConfiguration(
+      apiBaseURL: #require(URL(string: "https://hote.example/api?x=1#f")),
+      clientID: "twitch-ios-dev"
+    )
+
+    #expect(configuration.resource == "https://hote.example/v1")
+    #expect(configuration.tokenEndpoint.absoluteString == "https://hote.example/auth/oauth2/token")
+  }
+
   @Test("redirige vers twitch://oauth/callback et demande openid, profile, email et offline_access")
   func redirectAndScopes() {
     #expect(OAuthConfiguration.redirectURI.absoluteString == "twitch://oauth/callback")
@@ -46,7 +57,7 @@ struct OAuthConfigurationTests {
   }
 
   @Test("refuse une API_BASE_URL qui n'est pas une URL http(s) absolue",
-        arguments: ["$(API_BASE_URL)", "127.0.0.1:3000", "ftp://127.0.0.1", "http://"])
+        arguments: ["$(API_BASE_URL)", "127.0.0.1:3000", "ftp://127.0.0.1", "http://", "http://127.0.0.1:3000/api", "https://hote.example/api/"])
   func invalidBaseURL(value: String) {
     #expect(throws: ConfigurationError.invalidAPIBaseURL(value)) { try configuration(baseURL: value) }
   }
