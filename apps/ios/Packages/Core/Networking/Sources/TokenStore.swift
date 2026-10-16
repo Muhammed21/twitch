@@ -32,12 +32,15 @@ public struct KeychainTokenStore: TokenStore {
   }
 
   public func save(_ tokens: TokenSet) throws {
-    try clear()
-    let status = try SecItemAdd(query(adding: [
+    let contents: [CFString: Any] = try [
       kSecValueData: JSONEncoder().encode(tokens),
       kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
-    ]) as CFDictionary, nil)
-    guard status == errSecSuccess else { throw KeychainError(status: status) }
+    ]
+    let updated = SecItemUpdate(query(adding: [:]) as CFDictionary, contents as CFDictionary)
+    if updated == errSecSuccess { return }
+    guard updated == errSecItemNotFound else { throw KeychainError(status: updated) }
+    let added = SecItemAdd(query(adding: contents) as CFDictionary, nil)
+    guard added == errSecSuccess else { throw KeychainError(status: added) }
   }
 
   public func clear() throws {

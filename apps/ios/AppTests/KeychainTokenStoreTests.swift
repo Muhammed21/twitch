@@ -48,6 +48,23 @@ struct KeychainTokenStoreTests {
     #expect(attributes[kSecAttrAccessible as String] as? String == kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly as String)
   }
 
+  @Test("remplace les tokens en place : l'élément n'est jamais supprimé, donc jamais absent")
+  func replacesInPlace() async throws {
+    let store = makeStore()
+    defer { try? store.clear() }
+    let rotated = TokenSet(accessToken: "access-2", refreshToken: "refresh-2", expiresAt: tokens.expiresAt + 900)
+
+    try store.save(tokens)
+    let created = try #require(storedAttributes(service: store.service)?[kSecAttrCreationDate as String] as? Date)
+    try await Task.sleep(for: .milliseconds(1100))
+    try store.save(rotated)
+
+    let attributes = try #require(storedAttributes(service: store.service))
+    #expect(attributes[kSecAttrCreationDate as String] as? Date == created)
+    #expect(attributes[kSecAttrAccessible as String] as? String == kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly as String)
+    #expect(try store.load() == rotated)
+  }
+
   @Test("un nouvel enregistrement remplace le précédent")
   func overwrite() throws {
     let store = makeStore()
