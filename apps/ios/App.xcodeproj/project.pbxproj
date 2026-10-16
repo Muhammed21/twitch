@@ -7,9 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A10000000000000000000100 /* Networking in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000101 /* Networking */; };
 		A10000000000000000000010 /* DesignSystem in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000011 /* DesignSystem */; };
 		A10000000000000000000013 /* Onboarding in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000014 /* Onboarding */; };
+		A10000000000000000000015 /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000016 /* Auth */; };
+		A10000000000000000000017 /* Networking in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000018 /* Networking */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -37,7 +38,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A10000000000000000000100 /* Networking in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -47,6 +47,8 @@
 			files = (
 				A10000000000000000000010 /* DesignSystem in Frameworks */,
 				A10000000000000000000013 /* Onboarding in Frameworks */,
+				A10000000000000000000015 /* Auth in Frameworks */,
+				A10000000000000000000017 /* Networking in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -92,7 +94,6 @@
 			);
 			name = AppTests;
 			packageProductDependencies = (
-				A10000000000000000000101 /* Networking */,
 			);
 			productName = AppTests;
 			productReference = A10000000000000000000102 /* AppTests.xctest */;
@@ -117,6 +118,8 @@
 			packageProductDependencies = (
 				A10000000000000000000011 /* DesignSystem */,
 				A10000000000000000000014 /* Onboarding */,
+				A10000000000000000000016 /* Auth */,
+				A10000000000000000000018 /* Networking */,
 			);
 			productName = App;
 			productReference = A10000000000000000000020 /* Twitch.app */;
@@ -352,10 +355,6 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		A10000000000000000000101 /* Networking */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = Networking;
-		};
 		A10000000000000000000011 /* DesignSystem */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = DesignSystem;
@@ -363,6 +362,14 @@
 		A10000000000000000000014 /* Onboarding */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Onboarding;
+		};
+		A10000000000000000000016 /* Auth */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Auth;
+		};
+		A10000000000000000000018 /* Networking */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Networking;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
