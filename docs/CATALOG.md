@@ -60,6 +60,10 @@ Chaque page de `docs/`, une ligne chacune : titre, [mode](README.md#carte), stat
 - [Spike — chaîne du contrat Zod → OpenAPI → Swift](spikes/2026-09-24-contrat-zod-swift.md) — _explanation_ — La chaîne prescrite par l'ADR 0009 produit-elle, sur les cas difficiles du projet, du Swift correct, compilé en Swift 6 strict, et qui respecte la politique de compatibilité de…
 - [Spike — Prisma multiSchema et rôles PostgreSQL](spikes/2026-09-24-prisma-multischema.md) — _explanation_ — Le montage décrit par l'ADR 0008 fonctionne-t-il tel quel avec la version actuelle de Prisma : un schéma PostgreSQL par contexte, un schéma Prisma découpé en plusieurs fichiers,…
 
+## brand
+
+- [Marque : le Glitch Twitch](brand/README.md) — _reference_ — SVG officiels du Glitch, tirés du brand kit Twitch (brand.twitch.com) et téléchargés le 2026-10-16.
+
 ## reference-ui
 
 - [Référence UI : l'app iOS Twitch](reference-ui/README.md) — _reference_ — Captures de l'app iOS Twitch (mars 2025, iPhone, 1179×2676), référence du design de l'app iOS du produit : structure, comportement et valeurs visuelles (ADR 0036).

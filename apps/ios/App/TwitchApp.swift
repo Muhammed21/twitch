@@ -3,9 +3,16 @@ import SwiftUI
 
 @main
 struct TwitchApp: App {
+  @State private var isSplashVisible = true
+
   var body: some Scene {
     WindowGroup {
-      ColorRole.background.color.ignoresSafeArea()
+      ZStack {
+        ColorRole.background.color.ignoresSafeArea()
+        if isSplashVisible {
+          SplashScreen { isSplashVisible = false }
+        }
+      }
     }
   }
 }
