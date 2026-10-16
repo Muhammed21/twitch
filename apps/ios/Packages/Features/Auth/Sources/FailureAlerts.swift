@@ -14,4 +14,18 @@ public extension View {
       Text(AuthText.signInFailedMessage)
     }
   }
+
+  func logOutFailureAlert(_ session: SessionStore) -> some View {
+    alert(
+      AuthText.logOutFailedTitle,
+      isPresented: Binding(
+        get: { session.hasLogOutFailure },
+        set: { isPresented in if !isPresented { session.dismissLogOutFailure() } }
+      )
+    ) {
+      Button(AuthText.dismiss, role: .cancel) {}
+    } message: {
+      Text(AuthText.logOutFailedMessage)
+    }
+  }
 }

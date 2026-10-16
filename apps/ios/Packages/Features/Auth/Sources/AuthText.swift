@@ -7,5 +7,7 @@ public enum AuthText {
   public static var cancel: String { String(localized: "auth.cancel", bundle: .module) }
   public static var signInFailedTitle: String { String(localized: "auth.signInFailedTitle", bundle: .module) }
   public static var signInFailedMessage: String { String(localized: "auth.signInFailedMessage", bundle: .module) }
+  public static var logOutFailedTitle: String { String(localized: "auth.logOutFailedTitle", bundle: .module) }
+  public static var logOutFailedMessage: String { String(localized: "auth.logOutFailedMessage", bundle: .module) }
   public static var dismiss: String { String(localized: "auth.dismiss", bundle: .module) }
 }

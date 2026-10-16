@@ -47,6 +47,7 @@ struct RootView: View {
   var body: some View {
     screen
       .signInFailureAlert(session)
+      .logOutFailureAlert(session)
       .task { await session.run() }
   }
 

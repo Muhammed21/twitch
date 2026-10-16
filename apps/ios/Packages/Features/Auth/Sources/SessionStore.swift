@@ -20,6 +20,7 @@ public enum LogOutChoice: Equatable, Sendable {
 public final class SessionStore {
   public private(set) var phase: SessionPhase = .launching
   public private(set) var hasSignInFailure = false
+  public private(set) var hasLogOutFailure = false
 
   private let configuration: OAuthConfiguration
   private let session: OAuthSession
@@ -74,11 +75,19 @@ public final class SessionStore {
 
   public func resolveLogOut(_ choice: LogOutChoice) async {
     guard choice == .logOut else { return }
-    try? await session.signOut()
+    do {
+      try await session.signOut()
+    } catch {
+      hasLogOutFailure = true
+    }
   }
 
   public func dismissSignInFailure() {
     hasSignInFailure = false
+  }
+
+  public func dismissLogOutFailure() {
+    hasLogOutFailure = false
   }
 
   private func follow() async {

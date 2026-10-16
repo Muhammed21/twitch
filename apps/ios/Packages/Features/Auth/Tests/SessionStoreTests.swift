@@ -183,6 +183,45 @@ struct SessionStoreTests {
     #expect(harness.store.phase == .signedIn(viewer))
   }
 
+  @Test("un Log Out qui ne vide pas le Keychain laisse l'app connectée et signale l'échec")
+  func logOutFailed() async {
+    let harness = Harness(tokens: storedTokens, clearFails: true)
+    let running = await harness.launch()
+    defer { running.cancel() }
+    _ = await eventually { harness.store.phase == .signedIn(viewer) }
+
+    await harness.store.resolveLogOut(.logOut)
+
+    #expect(harness.store.hasLogOutFailure)
+    #expect(harness.store.phase == .signedIn(viewer))
+  }
+
+  @Test("l'alerte d'échec du Log Out se referme")
+  func dismissLogOutFailure() async throws {
+    let harness = Harness(tokens: storedTokens, clearFails: true)
+    let running = await harness.launch()
+    defer { running.cancel() }
+    _ = await eventually { harness.store.phase == .signedIn(viewer) }
+    await harness.store.resolveLogOut(.logOut)
+    try #require(harness.store.hasLogOutFailure)
+
+    harness.store.dismissLogOutFailure()
+
+    #expect(harness.store.hasLogOutFailure == false)
+  }
+
+  @Test("un Log Out réussi ne signale pas d'échec")
+  func logOutSucceededWithoutFailure() async {
+    let harness = Harness(tokens: storedTokens)
+    let running = await harness.launch()
+    defer { running.cancel() }
+    _ = await eventually { harness.store.phase == .signedIn(viewer) }
+
+    await harness.store.resolveLogOut(.logOut)
+
+    #expect(harness.store.hasLogOutFailure == false)
+  }
+
   @Test("la session qui publie .signedOut (invalid_grant au refresh) ramène l'app à l'accueil")
   func sessionSignedOut() async {
     let harness = Harness(tokens: storedTokens)

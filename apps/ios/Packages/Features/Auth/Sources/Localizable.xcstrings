@@ -41,6 +41,26 @@
         }
       }
     },
+    "auth.logOutFailedMessage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Something went wrong. Please try again."
+          }
+        }
+      }
+    },
+    "auth.logOutFailedTitle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't Log Out"
+          }
+        }
+      }
+    },
     "auth.logOutQuestion" : {
       "localizations" : {
         "en" : {

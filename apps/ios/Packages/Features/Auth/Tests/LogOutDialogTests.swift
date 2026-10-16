@@ -24,4 +24,10 @@ struct LogOutDialogTests {
     #expect(AuthText.signInFailedMessage == "Something went wrong. Please try again.")
     #expect(AuthText.dismiss == "OK")
   }
+
+  @Test("l'alerte d'échec de déconnexion est en anglais, comme l'interface")
+  func logOutFailureTexts() {
+    #expect(AuthText.logOutFailedTitle == "Couldn't Log Out")
+    #expect(AuthText.logOutFailedMessage == "Something went wrong. Please try again.")
+  }
 }

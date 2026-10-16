@@ -22,11 +22,15 @@ let sequentialRandomBytes: PKCE.RandomBytes = {
   }
 }()
 
+struct KeychainUnavailable: Error {}
+
 struct InMemoryTokenStore: TokenStore {
   private let state: OSAllocatedUnfairLock<TokenSet?>
+  private let clearFails: Bool
 
-  init(_ tokens: TokenSet?) {
+  init(_ tokens: TokenSet?, clearFails: Bool = false) {
     state = OSAllocatedUnfairLock(initialState: tokens)
+    self.clearFails = clearFails
   }
 
   var tokens: TokenSet? { state.withLock { $0 } }
@@ -40,6 +44,7 @@ struct InMemoryTokenStore: TokenStore {
   }
 
   func clear() throws {
+    guard !clearFails else { throw KeychainUnavailable() }
     state.withLock { $0 = nil }
   }
 }
@@ -154,12 +159,13 @@ struct Harness {
 
   init(
     tokens stored: TokenSet? = nil,
+    clearFails: Bool = false,
     reply: @escaping FakeWebAuthenticator.Reply = approved,
     account: Result<Account, any Error> = .success(viewer),
     accountGate: Gate? = nil
   ) {
     transport = FakeTransport()
-    tokens = InMemoryTokenStore(stored)
+    tokens = InMemoryTokenStore(stored, clearFails: clearFails)
     session = OAuthSession(endpoint: TokenEndpoint(configuration: configuration, transport: transport), store: tokens)
     authenticator = FakeWebAuthenticator(reply: reply)
     store = SessionStore(
