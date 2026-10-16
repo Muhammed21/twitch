@@ -20,6 +20,8 @@ review:critical:
           - docker/postgres/**
           - .oxlintrc.json
           - packages/lint/**
+          - packages/ios-imports/**
+          - apps/ios/.swiftlint.yml
           - .github/workflows/**
           - .github/scripts/**
           - .github/actions/**
