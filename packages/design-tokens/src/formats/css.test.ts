@@ -60,6 +60,7 @@ describe("sortie CSS des tokens (ADR 0019, ADR 0039)", () => {
     ["subheadline", "-apple-system-subheadline"],
     ["footnote", "-apple-system-footnote"],
     ["body", "-apple-system-body"],
+    ["title2", "-apple-system-title2"],
   ])("traduit le style iOS %s en police système de Safari %s", (textStyle, font) => {
     const css = formatCssVariables({
       themes: { light: [], dark: [] },

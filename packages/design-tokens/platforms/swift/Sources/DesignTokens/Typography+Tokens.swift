@@ -14,4 +14,8 @@ public extension Font {
     static let heroText = Font.largeTitle.weight(.bold)
     /// Libellés des boutons de l'accueil. Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : hauteur de capitale 11,7 pt, soit 17 pt, text style iOS headline ; gras pour être un grand texte WCAG (paire du bouton Log In).
     static let actionLabel = Font.headline.weight(.bold)
+    /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/auth/connexion-code-2fa--rempli) : titre « Welcome back », hauteur de capitale 16,7 pt, soit 22 pt gras, text style iOS title2.
+    static let titleText = Font.title2.weight(.bold)
+    /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/auth/connexion-code-2fa--rempli) : texte d'explication sous un titre, 17 pt normal, text style iOS body.
+    static let supportingText = Font.body.weight(.regular)
 }

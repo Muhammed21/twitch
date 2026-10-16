@@ -46,6 +46,32 @@ label {
   font: -apple-system-body;
 }
 .field:focus { outline: 2px solid var(--color-accent-default); outline-offset: 0; }
+main.top {
+  justify-content: flex-start;
+  padding-top: calc(var(--spacing-x40) * 2 + var(--spacing-x20) + var(--spacing-x8));
+}
+.title {
+  margin: 0;
+  font: var(--typography-title-text-font);
+  font-weight: var(--typography-title-text-weight);
+}
+.supporting {
+  margin: var(--spacing-x4) 0 var(--spacing-x20);
+  font: var(--typography-supporting-text-font);
+  font-weight: var(--typography-supporting-text-weight);
+}
+.code {
+  display: block;
+  width: 100%;
+  min-height: var(--spacing-x44);
+  border: 2px solid var(--color-surface-secondary);
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--color-text-primary);
+  font: -apple-system-body;
+  text-align: center;
+}
+.code:focus { outline: 0; border-color: var(--color-accent-default); }
 .error {
   margin: 0 0 var(--spacing-x16);
   font: var(--typography-heading-text-font);
