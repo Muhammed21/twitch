@@ -1,6 +1,6 @@
 import { execFileSync, spawnSync } from "node:child_process";
 
-const GENERATED = ["platforms/swift"];
+const GENERATED = ["platforms/swift", "platforms/css"];
 
 execFileSync("node", ["./scripts/build.ts"], { stdio: "inherit" });
 
