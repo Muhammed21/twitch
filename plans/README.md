@@ -9,7 +9,7 @@ Un plan découpe une décision des ADR en PR livrables une par une, chacune en T
 | [API](api.md)                     | `apps/api`, architecture et contextes | T1      |
 | [Service vidéo](service-video.md) | `apps/video`                          | T1      |
 | [Chat](chat.md)                   | `apps/chat`                           | T1      |
-| [App iOS](ios.md)                 | `ios/`                                | T1      |
+| [App iOS](ios.md)                 | `apps/ios`                            | T1      |
 | [Back-office Payload](payload.md) | `apps/payload`                        | T2      |
 
 ## Ordre de la tranche 1

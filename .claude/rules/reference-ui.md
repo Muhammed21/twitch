@@ -1,6 +1,6 @@
 ---
 paths:
-  - "Packages/**"
+  - "apps/ios/**"
   - "**/*.swift"
   - "packages/design-tokens/tokens/**"
   - "docs/reference-ui/**"

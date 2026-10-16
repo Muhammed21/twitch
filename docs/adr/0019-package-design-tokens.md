@@ -1,6 +1,6 @@
 # 0019 — Package de design tokens : source unique DTCG compilée en Swift et en CSS
 
-- Statut : Accepté — provenance des valeurs (§9) et contrepartie 2 (§10) amendées par [0036](0036-valeurs-visuelles-relevees-sur-l-app-ios-twitch.md)
+- Statut : Accepté — provenance des valeurs (§9) et contrepartie 2 (§10) amendées par [0036](0036-valeurs-visuelles-relevees-sur-l-app-ios-twitch.md) — chemin du package `DesignTokens` amendé par [0038](0038-app-ios-sous-apps-ios.md)
 - Date : 2026-09-23
 - Décideurs : Muhammed Cavus
 
