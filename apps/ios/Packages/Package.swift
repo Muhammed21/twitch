@@ -13,6 +13,8 @@ let package = Package(
   ],
   dependencies: [
     .package(path: "../../../packages/design-tokens/platforms/swift"),
+    .package(url: "https://github.com/apple/swift-openapi-generator", exact: "1.13.1"),
+    .package(url: "https://github.com/apple/swift-openapi-runtime", exact: "1.12.2"),
   ],
   targets: [
     .target(
@@ -22,9 +24,13 @@ let package = Package(
     ),
     .target(
       name: "Networking",
-      dependencies: ["Domain"],
+      dependencies: [
+        "Domain",
+        .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
+      ],
       path: "Core/Networking/Sources",
-      swiftSettings: [.swiftLanguageMode(.v6)]
+      swiftSettings: [.swiftLanguageMode(.v6)],
+      plugins: [.plugin(name: "OpenAPIGenerator", package: "swift-openapi-generator")]
     ),
     .testTarget(
       name: "NetworkingTests",

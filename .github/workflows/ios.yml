@@ -49,15 +49,18 @@ jobs:
       - name: SwiftLint
         run: mint run swiftlint lint --strict
 
+      - name: Générateur OpenAPI sans partie sautée (ADR 0024, §8)
+        run: scripts/check-openapi-generator.sh
+
       - name: Tests (Swift Testing)
         working-directory: apps/ios/Packages
         run: |
           simulator=$(xcrun simctl list devices available --json \
             | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | startswith("iPhone"))][0].udid')
-          xcodebuild test -scheme Packages-Package -destination "id=$simulator"
+          xcodebuild test -skipPackagePluginValidation -scheme Packages-Package -destination "id=$simulator"
       - name: Tests hébergés par l'app (Keychain, Info.plist)
         working-directory: apps/ios
         run: |
           simulator=$(xcrun simctl list devices available --json \
             | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | startswith("iPhone"))][0].udid')
-          xcodebuild test -project App.xcodeproj -scheme App -destination "id=$simulator"
+          xcodebuild test -skipPackagePluginValidation -project App.xcodeproj -scheme App -destination "id=$simulator"
