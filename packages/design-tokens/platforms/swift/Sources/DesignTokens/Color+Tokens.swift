@@ -67,6 +67,27 @@ public extension Color {
             ? UIColor(red: 0.569, green: 0.278, blue: 1, alpha: 1)
             : UIColor(red: 0.569, green: 0.278, blue: 1, alpha: 1)
     })
+    /// Texte fort posé sur l'accent, ou sur un bouton blanc posé sur l'accent : slogan et libellé Sign Up de l'accueil.
+    /// clair #000000 · sombre #000000
+    static let accentOnAccentStrong = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0, green: 0, blue: 0, alpha: 1)
+            : UIColor(red: 0, green: 0, blue: 0, alpha: 1)
+    })
+    /// Texte décoratif posé sur l'accent : sous-catégories de l'accueil, masquées à VoiceOver. Mesuré #5c16c7 sur le texte lissé, valeur de la charte retenue.
+    /// clair #5C16C5 · sombre #5C16C5
+    static let accentOnAccentMuted = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.361, green: 0.086, blue: 0.773, alpha: 1)
+            : UIColor(red: 0.361, green: 0.086, blue: 0.773, alpha: 1)
+    })
+    /// Fond d'un bouton secondaire posé sur l'accent : bouton Log In de l'accueil.
+    /// clair #A05FFF · sombre #A05FFF
+    static let accentSubtle = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.627, green: 0.373, blue: 1, alpha: 1)
+            : UIColor(red: 0.627, green: 0.373, blue: 1, alpha: 1)
+    })
 
     /// Valeurs fixes par thème, réservées aux contextes sans traits et aux tests (ADR 0019 §2.2).
     enum Static {
@@ -88,5 +109,11 @@ public extension Color {
         public static let accentOnAccentDark = Color(.sRGB, red: 1, green: 1, blue: 1, opacity: 1)
         public static let accentFallbackLight = Color(.sRGB, red: 0.569, green: 0.278, blue: 1, opacity: 1)
         public static let accentFallbackDark = Color(.sRGB, red: 0.569, green: 0.278, blue: 1, opacity: 1)
+        public static let accentOnAccentStrongLight = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 1)
+        public static let accentOnAccentStrongDark = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 1)
+        public static let accentOnAccentMutedLight = Color(.sRGB, red: 0.361, green: 0.086, blue: 0.773, opacity: 1)
+        public static let accentOnAccentMutedDark = Color(.sRGB, red: 0.361, green: 0.086, blue: 0.773, opacity: 1)
+        public static let accentSubtleLight = Color(.sRGB, red: 0.627, green: 0.373, blue: 1, opacity: 1)
+        public static let accentSubtleDark = Color(.sRGB, red: 0.627, green: 0.373, blue: 1, opacity: 1)
     }
 }

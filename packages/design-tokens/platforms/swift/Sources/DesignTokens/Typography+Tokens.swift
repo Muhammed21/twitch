@@ -10,4 +10,8 @@ public extension Font {
     static let headingText = Font.subheadline.weight(.semibold)
     /// Texte courant, titres de stream, métadonnées (body de la charte, 12 px / 600). Convention : text style iOS footnote.
     static let bodyText = Font.footnote.weight(.semibold)
+    /// Catégories et slogan de l'accueil. Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : hauteur de capitale 24 pt, soit 34 pt, text style iOS largeTitle.
+    static let heroText = Font.largeTitle.weight(.bold)
+    /// Libellés des boutons de l'accueil. Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : hauteur de capitale 11,7 pt, soit 17 pt, text style iOS headline ; gras pour être un grand texte WCAG (paire du bouton Log In).
+    static let actionLabel = Font.headline.weight(.bold)
 }

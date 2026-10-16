@@ -51,6 +51,21 @@
         "$type": "color",
         "$value": "{core.color.purple.60}",
         "$description": "Repli quand la couleur d'accent d'une chaîne est inutilisable (ADR 0019 §3)."
+      },
+      "onAccentStrong": {
+        "$type": "color",
+        "$value": "{core.color.neutral.0}",
+        "$description": "Texte fort posé sur l'accent, ou sur un bouton blanc posé sur l'accent : slogan et libellé Sign Up de l'accueil."
+      },
+      "onAccentMuted": {
+        "$type": "color",
+        "$value": "{core.color.purple.40}",
+        "$description": "Texte décoratif posé sur l'accent : sous-catégories de l'accueil, masquées à VoiceOver. Mesuré #5c16c7 sur le texte lissé, valeur de la charte retenue."
+      },
+      "subtle": {
+        "$type": "color",
+        "$value": "{core.color.purple.65}",
+        "$description": "Fond d'un bouton secondaire posé sur l'accent : bouton Log In de l'accueil."
       }
     }
   }

@@ -54,6 +54,21 @@
       "$type": "dimension",
       "$value": "{core.dimension.16}",
       "$description": "Marge latérale des écrans, relevée sur l'app iOS Twitch (16 pt)."
+    },
+    "x20": {
+      "$type": "dimension",
+      "$value": "{core.dimension.20}",
+      "$description": "Marges latérales et basse des boutons de l'accueil, relevées sur l'app iOS Twitch (20 pt)."
+    },
+    "x40": {
+      "$type": "dimension",
+      "$value": "{core.dimension.40}",
+      "$description": "Retrait du contenu de l'accueil, relevé sur l'app iOS Twitch (40 pt)."
+    },
+    "x44": {
+      "$type": "dimension",
+      "$value": "{core.dimension.44}",
+      "$description": "Hauteur des boutons d'action, relevée sur l'app iOS Twitch (44 pt), cible tactile minimale d'iOS."
     }
   },
   "radius": {
