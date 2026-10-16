@@ -84,8 +84,17 @@ _Tests d'abord_ : décodage d'une réponse `Me` réelle ; champ ajouté toléré
 
 ### I3 — Feature Auth
 
-`SessionStore` (`@Observable`) ; `ASWebAuthenticationSession` éphémère branchée sur `WelcomeIntent.logIn` et `.signUp` ; écran connecté provisoire qui affiche `GET /v1/me` et « Log Out », avec la modale `parametres/menu-parametres--modale-deconnexion` ; retour à l'accueil après déconnexion ou `invalid_grant`. Remplacé par l'accueil connecté (PR 5 de `ios.md`).
-_Tests d'abord_ : Log In ouvre l'autorisation sans `prompt`, Sign Up avec `prompt=create` ; annulation de la feuille ⇒ reste sur l'accueil ; callback valide ⇒ connecté ; Log Out confirmé ⇒ révocation puis accueil.
+`Features/Auth` porte `SessionStore` (`@MainActor @Observable`), injecté par `@Environment` depuis la racine de composition de `App`. Ses phases : `launching`, `signedOut`, `signingIn`, `signedIn(Account?)`.
+
+- Au lancement, `run()` lit `OAuthSession.status()` : avec des tokens, l'app est connectée et charge `GET /v1/me` ; sans tokens, elle montre l'accueil. Puis il suit `statusUpdates` : `.signedOut` (dont `invalid_grant`) ramène à l'accueil.
+- `WelcomeIntent.logIn` et `.signUp` deviennent `AuthorizationIntent.signIn` et `.signUp` dans `App` (une feature n'importe pas une autre, ADR 0010). `signIn(_:)` construit l'`AuthorizationAttempt` (sans `prompt` pour la connexion, `prompt=create` pour l'inscription), ouvre la feuille par le protocole `WebAuthenticator`, valide le callback et échange le code avec le verifier de la tentative. Un second appui pendant la feuille est ignoré.
+- `SystemWebAuthenticator` implémente `WebAuthenticator` sur `ASWebAuthenticationSession`, éphémère (`prefersEphemeralWebBrowserSession`), schéma de callback `twitch`, présentée depuis la fenêtre active de l'app.
+- Feuille fermée par la personne : l'app reste sur l'accueil, sans message. Callback refusé (`state` différent, `error` du serveur) ou échange refusé : l'accueil affiche une alerte « Couldn't Log In ».
+- Écran connecté provisoire `SignedInScreen` : nom et e-mail du compte, bouton « Log Out » qui ouvre `LogOutDialog`, la modale de `parametres/menu-parametres--modale-deconnexion` (nom du compte, « Are you sure you want to log out? », Logout rouge, Cancel gris clair). Logout ⇒ `OAuthSession.signOut()` (révocation, puis Keychain vidé) ⇒ accueil ; Cancel ferme la modale. Un second `401` de `GET /v1/me` (`SessionError.signedOut`) vide aussi la session. Un compte qui ne se charge pas (réseau) laisse l'app connectée, sans compte affiché.
+- Les valeurs de la modale sont relevées sur la capture (ADR 0036) : largeur 300 pt, rayon 12 pt, marges 16 pt, voile noir à 60 %, rouge `#fe504d`, gris `#eeedf0`.
+
+L'écran connecté est remplacé par l'accueil connecté (PR 5 de `ios.md`).
+_Tests d'abord_ : lancement avec et sans tokens ; Log In ouvre l'autorisation sans `prompt`, Sign Up avec `prompt=create` ; annulation de la feuille ⇒ reste sur l'accueil, sans erreur ; callback valide ⇒ échange du code avec le bon verifier ⇒ connecté et compte chargé ; `state` différent, `error` du serveur ou échange refusé ⇒ déconnecté avec alerte ; second appui ignoré ; Logout ⇒ révocation, Keychain vidé, accueil ; Cancel ⇒ rien ; `.signedOut` publié ⇒ accueil ; second `401` ⇒ session vidée ; session web éphémère ; routage racine splash, accueil ou écran connecté.
 _Vérification au jalon_ : parcours complet sur simulateur contre l'API locale, captures comparées aux références.
 
 ## Hors de ce plan
