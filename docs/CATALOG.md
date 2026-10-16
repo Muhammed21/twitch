@@ -49,6 +49,7 @@ Chaque page de `docs/`, une ligne chacune : titre, [mode](README.md#carte), stat
 - [0035 — Slug de chaîne dérivé du nom d'affichage, au format Twitch, jamais refusé à la création](adr/0035-slug-de-chaine-derive-du-nom-d-affichage-jamais-refuse.md) — _explanation · Accepté_ — D'où vient le slug d'une chaîne créée à l'inscription, quel format respecte-t-il, et que faire quand il est pris ou réservé ?
 - [0036 — Les valeurs visuelles reprennent l'app iOS Twitch, relevées sur captures](adr/0036-valeurs-visuelles-relevees-sur-l-app-ios-twitch.md) — _explanation · Accepté_ — L'app reprend-elle le design de l'app iOS Twitch à l'identique, valeurs visuelles comprises, ou seulement sa structure ?
 - [0037 — Le logo Twitch est repris, depuis le SVG officiel du brand kit](adr/0037-logo-twitch-repris-depuis-le-svg-officiel.md) — _explanation · Accepté_ — L'écran de lancement montre-t-il le logo Twitch, et d'où vient son tracé ?
+- [0038 — L'app iOS vit sous `apps/ios/`, à côté des autres applications](adr/0038-app-ios-sous-apps-ios.md) — _explanation · Proposé_ — Où vit l'app iOS dans le monorepo ?
 - [Décisions d'architecture (ADR)](adr/README.md) — _reference_ — Registre des décisions structurantes du projet. Format MADR.
 
 ## Spikes — recherche bornée
