@@ -42,6 +42,12 @@ const app = configureApp(
         webhookSecret: "openapi-aucun-webhook-recu-par-ce-document",
         consumerRedis: createStreamConsumerRedis(),
       },
+      moderation: {
+        prisma: createContextClient({
+          context: "moderation",
+          env: { DATABASE_URL_MODERATION: "postgresql://openapi@localhost/aucune-connexion" },
+        }),
+      },
     }),
     { logger: false },
   ),
