@@ -16,6 +16,7 @@ export const DEV_CLIENT_ID = "twitch-ios-dev";
 export const DEV_REDIRECT_URI = "twitch://oauth/callback";
 export const DEV_ACCOUNT = {
   name: "viewer_dev",
+  username: "viewer_dev",
   email: "viewer@twitch.local",
   password: "twitch-dev-password",
 } as const;
