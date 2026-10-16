@@ -19,7 +19,7 @@ apps/ios/
     └── Features/              # Auth, Home, Channel, Player, Chat, Profile ; aucune feature n'importe une autre
 ```
 
-- Règles de dépendance de l'ADR 0010, garanties par `Package.swift` (erreur de link), doublées d'un script de lint des `import` pour un message clair (ADR 0018, §4).
+- Règles de dépendance de l'ADR 0010, garanties par `Package.swift` (erreur de link), doublées d'un script de lint des `import` pour un message clair (ADR 0018, §4) : `packages/ios-imports`, lancé par `pnpm lint`.
 - `Core/Persistence` et `Core/Analytics` ne sont créés qu'avec leur premier consommateur (ADR 0010, risque « sur-découpage »).
 - Objets d'état scopés par capacité, injectés par `@Environment` depuis la racine de composition (ADR 0011) : `SessionStore`, `PlayerController`, `ChatSession`, `LiveStatusChannel`, `ChannelStore`. Pas de ViewModel par écran.
 - Types générés confinés à `Core/Networking`, jamais exposés : il expose des types de `Domain` (ADR 0010, règle 2 ; ADR 0024).
@@ -53,7 +53,7 @@ _Tests d'abord_ : un rôle de couleur de `DesignSystem` prend la valeur de son t
 
 ### PR 1b — Outillage Swift
 
-SwiftFormat en pre-commit sur `*.swift` (lint-staged), SwiftLint en CI avec les règles de formatage désactivées, versions épinglées dans un `Mintfile` (ADR 0018, §4). Script de lint des `import` (feature → feature, `DesignTokens` hors de `DesignSystem`). Workflow iOS en `workflow_dispatch` seulement, activé selon les déclencheurs de l'ADR 0018 (§4). Scope de commit `ios` déjà présent.
+SwiftFormat en pre-commit sur `apps/ios/**/*.swift` (lint-staged, par `apps/ios/scripts/swiftformat.sh`, qui refuse le commit si Mint manque). SwiftLint en CI avec les règles de formatage désactivées, et deux `custom_rules` : `@unchecked Sendable` sans commentaire sur la ligne précédente, suffixe `ViewModel` (ADR 0018, §4). Configurations dans `apps/ios/.swiftformat` et `apps/ios/.swiftlint.yml` ; versions épinglées dans `apps/ios/Mintfile`. Le code généré de `packages/design-tokens/platforms/swift` est hors de `apps/ios/`, donc hors des deux outils. Script de lint des `import` dans `packages/ios-imports` (feature → feature, `DesignTokens` hors de `Core/DesignSystem`), lancé par `pnpm lint` : il tourne donc au pre-push et dans la CI Linux, sans runner macOS. Workflow iOS `.github/workflows/ios.yml` en `workflow_dispatch` seulement, activé selon les déclencheurs de l'ADR 0018 (§4) : lint des `import`, SwiftFormat en mode `--lint`, SwiftLint, `xcodebuild test`. Scope de commit `ios` déjà présent.
 _Tests d'abord_ : le script de lint refuse une fixture où une feature importe une autre feature, et une fixture qui importe `DesignTokens` hors de `DesignSystem`.
 
 ### PR 2 — `Domain` de la tranche 1
