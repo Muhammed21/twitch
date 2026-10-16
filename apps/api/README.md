@@ -2,13 +2,14 @@
 
 API NestJS 11 (ADR 0002, 0009). Architecture et découpage : [plan de l'API](../../plans/api.md).
 
-| Commande                | Effet                                                                     |
-| ----------------------- | ------------------------------------------------------------------------- |
-| `pnpm build`            | Compile `src/` vers `dist/` avec `tsc`                                    |
-| `pnpm generate`         | Compile, puis écrit `openapi.json`, versionné                             |
-| `pnpm start`            | Lance `dist/main.js` avec le `.env` racine                                |
-| `pnpm test`             | Tests unitaires et HTTP (application NestJS sur un port libre)            |
-| `pnpm test:integration` | Sondes contre la base locale migrée (`pnpm infra:up` puis `pnpm migrate`) |
+| Commande                | Effet                                                                                                                                                                                                    |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm build`            | Compile `src/` vers `dist/` avec `tsc`                                                                                                                                                                   |
+| `pnpm generate`         | Compile, puis écrit `openapi.json`, versionné                                                                                                                                                            |
+| `pnpm start`            | Lance `dist/main.js` avec le `.env` racine                                                                                                                                                               |
+| `pnpm test`             | Tests unitaires et HTTP (application NestJS sur un port libre)                                                                                                                                           |
+| `pnpm test:integration` | Sondes contre la base locale migrée (`pnpm infra:up` puis `pnpm migrate`)                                                                                                                                |
+| `pnpm seed:dev`         | Enregistre le client iOS `twitch-ios-dev` (`twitch://oauth/callback`) et le compte `viewer@twitch.local` / `twitch-dev-password` ; idempotent, refusé si `BETTER_AUTH_URL` ne vise pas la machine locale |
 
 | Variable                  | Rôle                                                                                     |
 | ------------------------- | ---------------------------------------------------------------------------------------- |

@@ -8,6 +8,7 @@
     "generate": "tsc -p tsconfig.build.json && node dist/openapi/generate.js",
     "start": "node --env-file-if-exists=../../.env dist/main.js",
     "start:outbox-relay": "node --env-file-if-exists=../../.env dist/outbox-relay/main.js",
+    "seed:dev": "node --env-file-if-exists=../../.env dist/seed-dev/main.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
