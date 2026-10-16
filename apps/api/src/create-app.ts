@@ -11,6 +11,7 @@ import {
   createIdentityAccessTokenVerifier,
   createIdentityAuth,
   createIdentityRedis,
+  mountAuthPages,
   mountIdentityRoutes,
 } from "./modules/identity/identity.module.ts";
 import { createSmtpMailer } from "./modules/identity/infrastructure/smtp-mailer.ts";
@@ -86,6 +87,7 @@ export const createApp = async ({
   configureApp(app);
   const server: Express = app.getHttpAdapter().getInstance();
   mountIdentityRoutes(server, auth);
+  mountAuthPages(server, auth, config.authBaseUrl);
   useRawWebhookBodies(app);
   app.useBodyParser("json");
   return { app, config };

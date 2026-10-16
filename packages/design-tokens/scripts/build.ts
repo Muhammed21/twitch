@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
+import { formatCssVariables } from "../src/formats/css.ts";
 import {
   formatDimensions,
   formatTextStyles,
@@ -10,6 +11,7 @@ import {
 import { resolveColorThemes, resolveSharedTokens } from "../src/resolve-themes.ts";
 
 const SWIFT_SOURCES = "platforms/swift/Sources/DesignTokens";
+const CSS_OUTPUT = "platforms/css";
 
 const [themes, shared] = await Promise.all([resolveColorThemes(), resolveSharedTokens()]);
 const inCategory = (category: string): readonly DesignToken[] =>
@@ -30,3 +32,6 @@ await mkdir(SWIFT_SOURCES, { recursive: true });
 await Promise.all(
   Object.entries(files).map(([name, contents]) => writeFile(join(SWIFT_SOURCES, name), contents)),
 );
+
+await mkdir(CSS_OUTPUT, { recursive: true });
+await writeFile(join(CSS_OUTPUT, "tokens.css"), formatCssVariables({ themes, shared }));
