@@ -8,6 +8,7 @@ let package = Package(
   products: [
     .library(name: "DesignSystem", targets: ["DesignSystem"]),
     .library(name: "Onboarding", targets: ["Onboarding"]),
+    .library(name: "Auth", targets: ["Auth"]),
     .library(name: "Domain", targets: ["Domain"]),
     .library(name: "Networking", targets: ["Networking"]),
   ],
@@ -63,6 +64,19 @@ let package = Package(
       name: "OnboardingTests",
       dependencies: ["Onboarding", "DesignSystem"],
       path: "Features/Onboarding/Tests",
+      swiftSettings: [.swiftLanguageMode(.v6)]
+    ),
+    .target(
+      name: "Auth",
+      dependencies: ["Domain", "Networking", "DesignSystem"],
+      path: "Features/Auth/Sources",
+      resources: [.process("Localizable.xcstrings")],
+      swiftSettings: [.swiftLanguageMode(.v6)]
+    ),
+    .testTarget(
+      name: "AuthTests",
+      dependencies: ["Auth", "Domain", "Networking", "DesignSystem"],
+      path: "Features/Auth/Tests",
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
   ]
