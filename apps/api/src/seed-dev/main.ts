@@ -12,7 +12,7 @@ if (!result.ok) {
 process.stdout.write(
   [
     `Client OAuth ${DEV_CLIENT_ID} (${DEV_REDIRECT_URI}) : ${result.value.client}.`,
-    `Compte de test ${DEV_ACCOUNT.email} / ${DEV_ACCOUNT.password} : ${result.value.account}.`,
+    `Compte de test ${DEV_ACCOUNT.username} (${DEV_ACCOUNT.email}) / ${DEV_ACCOUNT.password} : ${result.value.account}.`,
     "",
   ].join("\n"),
 );

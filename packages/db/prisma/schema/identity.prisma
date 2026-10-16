@@ -6,6 +6,10 @@ model IdentityUser {
   name             String
   /// @personal
   email            String                      @unique
+  /// @personal
+  username         String?                     @unique
+  /// @personal
+  displayUsername  String?
   /// @not-personal
   emailVerified    Boolean                     @default(false)
   /// @personal

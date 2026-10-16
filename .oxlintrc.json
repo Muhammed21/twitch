@@ -98,8 +98,16 @@
             ],
             "patterns": [
               {
-                "group": ["@nestjs/*", "nestjs-zod", "@prisma/*", "zod", "zod/*", "@repo/db"],
-                "message": "Le domaine ne dépend ni de NestJS, ni de Prisma, ni de Zod, ni de @repo/db : ces dépendances vivent dans infrastructure et presentation (ADR 0002, ADR 0009). La couche application recevra la même règle avec son premier fichier."
+                "group": [
+                  "@nestjs/*",
+                  "nestjs-zod",
+                  "@prisma/*",
+                  "zod",
+                  "zod/*",
+                  "@repo/db",
+                  "@repo/contracts"
+                ],
+                "message": "Le domaine ne dépend ni de NestJS, ni de Prisma, ni de Zod (ni de @repo/contracts, qui le charge), ni de @repo/db : ces dépendances vivent dans infrastructure et presentation (ADR 0002, ADR 0009). La couche application recevra la même règle avec son premier fichier."
               }
             ]
           }

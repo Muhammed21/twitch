@@ -148,6 +148,22 @@ describe("seed de développement (ADR 0039, §6)", () => {
     });
   });
 
+  it("connecte le compte de test par son nom d'utilisateur", async () => {
+    await forgetSeed();
+    await seedDevelopment(process.env);
+
+    await withApi(async (base) => {
+      const signIn = await fetch(`${base}/auth/sign-in/username`, {
+        method: "POST",
+        headers: { "content-type": "application/json", origin: urlOf("BETTER_AUTH_URL") },
+        body: JSON.stringify({ username: DEV_ACCOUNT.username, password: DEV_ACCOUNT.password }),
+      });
+
+      expect(DEV_ACCOUNT.username).toBe("viewer_dev");
+      expect(signIn.status).toBe(200);
+    });
+  });
+
   it("s'arrête en nommant DATABASE_URL_MIGRATOR quand elle manque", async () => {
     await expect(
       seedDevelopment({ ...process.env, DATABASE_URL_MIGRATOR: undefined }),

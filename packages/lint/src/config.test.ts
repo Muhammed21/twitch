@@ -92,6 +92,12 @@ describe("règles d'architecture, avec la vraie configuration", () => {
       "no-restricted-imports",
     ],
     [
+      "un domaine qui importe @repo/contracts, le package des schémas Zod",
+      `${IDENTITY}/domain/bad.ts`,
+      'import { Uuid } from "@repo/contracts";\nexport const a = Uuid;\n',
+      "no-restricted-imports",
+    ],
+    [
       "un import vers un autre module",
       "apps/api/src/modules/channel/domain/bad.ts",
       'import { a } from "../../identity/domain/account-id.ts";\nexport const b = a;\n',

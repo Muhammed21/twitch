@@ -11,7 +11,7 @@ Depuis le simulateur, avec l'API locale : « Sign Up » crée un compte (code re
 ## Ordre
 
 ```
-api A1 (ADR) ──▶ api A2 (seed) ──▶ api A3 (identité) ──▶ api A4 (pages) ──▶ api A5 (réinitialisation)
+api A1 (ADR) ──▶ api A2 (seed) ──▶ api A3a-c (identité) ──▶ api A4 (pages) ──▶ api A5 (réinitialisation)
                                                                       │
 api A6 (révocation) ──────────────────────────────────────────────────┤
 ios I1 (OAuth, Keychain, refresh) ──▶ ios I2 (client généré, /v1/me) ─┴──▶ ios I3 (feature Auth)
@@ -30,10 +30,20 @@ Tests d'abord : sans objet (documentation).
 `pnpm seed:dev` enregistre le client iOS public `twitch-ios-dev` (PKCE obligatoire, `token_endpoint_auth_method: none`, consentement sauté, redirection `twitch://oauth/callback`, scopes `openid profile email offline_access`), son lien vers la ressource `/v1`, et un compte de test. Idempotent ; refuse de tourner hors du développement.
 _Tests d'abord_ : un second lancement ne crée rien ; une autorisation PKCE avec ce client et `resource` émet un token `/v1` ; le seed refuse `NODE_ENV=production`.
 
-### A3 — Identité : nom d'utilisateur, date de naissance, code e-mail
+### A3a — Nom d'utilisateur
 
-Plugins `username` (`^[A-Za-z0-9_]{4,25}$`, unicité sans casse, mots réservés partagés avec `channel`) et `emailOTP` (code à 6 chiffres) ; date de naissance stockée, moins de 13 ans refusés ; envoi SMTP configurable, Mailpit en local. La liste des mots réservés quitte le domaine `channel` pour un module partagé (ADR 0039, §2).
-_Tests d'abord_ : nom trop court, trop long, à caractère interdit ou réservé refusé ; doublon à la casse près refusé ; 12 ans et 364 jours refusé, 13 ans pile accepté ; un code e-mail est envoyé à Mailpit et l'adresse est vérifiée après sa saisie ; connexion par nom d'utilisateur et par e-mail.
+Plugin `username` (`^[A-Za-z0-9_]{4,25}$`, unicité sans casse) ; les mots réservés quittent le domaine `channel` pour `@repo/reserved-names` (`RESERVED_NAMES`, sans dépendance), partagés par `identity` et `channel` (ADR 0039, §2). Le compte du seed porte le nom `viewer_dev`.
+_Tests d'abord_ : nom trop court, trop long, à caractère interdit ou réservé (toute casse) refusé sans compte créé ; 4 et 25 caractères acceptés ; doublon à la casse près refusé ; connexion par nom d'utilisateur, quelle que soit la casse, et toujours par e-mail.
+
+### A3b — Date de naissance
+
+Date de naissance stockée, moins de 13 ans refusés.
+_Tests d'abord_ : 12 ans et 364 jours refusé, 13 ans pile accepté, date absente ou dans le futur refusée.
+
+### A3c — Code e-mail
+
+Plugin `emailOTP` (code à 6 chiffres) ; envoi SMTP configurable, Mailpit en local.
+_Tests d'abord_ : un code est envoyé à Mailpit et l'adresse est vérifiée après sa saisie ; code faux refusé.
 
 ### A4 — Pages de connexion et d'inscription
 
