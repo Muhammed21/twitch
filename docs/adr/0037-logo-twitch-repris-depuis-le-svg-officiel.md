@@ -49,7 +49,7 @@ Le tracé vient du SVG officiel du brand kit Twitch (brand.twitch.com), versionn
 
 ### 3. Rendu dans l'app
 
-Le SVG est converti en `Shape` SwiftUI dans `Core/DesignSystem` (ADR 0010). Une animation peut révéler le Glitch, mais son état final est le logo tel quel. Ses couleurs passent par les tokens (ADR 0019).
+Le SVG est converti en `Shape` SwiftUI dans `Core/DesignSystem` (ADR 0010). Une animation peut révéler le Glitch, mais son état final est le logo tel quel. Sa couleur est celle de la variante officielle choisie pour le fond (le Glitch blanc sur `color.accent.default`, par exemple) ; elle entre dans un token qui vaut exactement la couleur du fichier, et l'écran lit ce token (ADR 0019). La couleur du fichier l'emporte : un token qui s'en écarte est une erreur.
 
 ## Conséquences
 

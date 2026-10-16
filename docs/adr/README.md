@@ -46,7 +46,7 @@ Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes
 | [0034](0034-un-stream-redis-par-contexte-pour-les-events-de-l-outbox.md)     | Un stream Redis par contexte pour les events de l'outbox, plafonné à environ 100 000 entrées                   | Accepté                                                         | Données      |
 | [0035](0035-slug-de-chaine-derive-du-nom-d-affichage-jamais-refuse.md)       | Slug de chaîne dérivé du nom d'affichage, au format Twitch, jamais refusé à la création                        | Accepté                                                         | Domaine      |
 | [0036](0036-valeurs-visuelles-relevees-sur-l-app-ios-twitch.md)              | Les valeurs visuelles reprennent l'app iOS Twitch, relevées sur captures                                       | Accepté — §6 remplacé pour le Glitch par 0037                   | Design       |
-| [0037](0037-logo-twitch-repris-depuis-le-svg-officiel.md)                    | Le logo Twitch (Glitch) est repris, depuis le SVG officiel du brand kit                                        | Accepté                                                         | Design       |
+| [0037](0037-logo-twitch-repris-depuis-le-svg-officiel.md)                    | Le logo Twitch est repris, depuis le SVG officiel du brand kit                                                 | Accepté                                                         | Design       |
 
 ## Dépendances principales
 

@@ -1,6 +1,6 @@
 # 0033 — Claims `twitch_auth_time` et `twitch_amr` dans le jeton d'accès, à la place d'`auth_time` et `amr`
 
-- Statut : Proposé
+- Statut : Accepté
 - Date : 2026-10-12
 - Décideurs : Muhammed Cavus
 - Amende : ADR 0026 (§4, claims `amr` et `auth_time` du jeton d'accès)
