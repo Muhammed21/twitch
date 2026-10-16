@@ -124,6 +124,19 @@ describe("machine à états d'une session d'ingest", () => {
     expect(publishOn({ channelSessions: [ended, idleSession({ id: "session-2" })] }).ok).toBe(true);
   });
 
+  it.each<[string, IngestSession]>([
+    ["en direct", LIVE_ON_CANAL_1],
+    ["terminée", { ...LIVE_ON_CANAL_1, state: "ended", endedAt: ENDED_AT }],
+  ])(
+    "vérifie la clé avant l'état d'une session %s, pour ne rien révéler à une clé invalide",
+    (_name, session) => {
+      expect(publishOn({ presentedKey: keyOf(9), session })).toEqual({
+        ok: false,
+        error: "invalid_key",
+      });
+    },
+  );
+
   it("vérifie la clé avant l'état du canal, pour ne rien révéler à une clé invalide", () => {
     expect(publishOn({ presentedKey: keyOf(9), channelSessions: [LIVE_ON_CANAL_1] })).toEqual({
       ok: false,
