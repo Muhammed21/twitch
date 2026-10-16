@@ -45,10 +45,11 @@ Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes
 | [0033](0033-claims-twitch-auth-time-et-twitch-amr-dans-le-jeton-d-acces.md)        | Claims `twitch_auth_time` et `twitch_amr` dans le jeton d'accès, à la place d'`auth_time` et `amr`             | Accepté                                                            | Auth         |
 | [0034](0034-un-stream-redis-par-contexte-pour-les-events-de-l-outbox.md)           | Un stream Redis par contexte pour les events de l'outbox, plafonné à environ 100 000 entrées                   | Accepté                                                            | Données      |
 | [0035](0035-slug-de-chaine-derive-du-nom-d-affichage-jamais-refuse.md)             | Slug de chaîne dérivé du nom d'affichage, au format Twitch, jamais refusé à la création                        | Accepté — option B et §2 amendés par 0039                          | Domaine      |
-| [0036](0036-valeurs-visuelles-relevees-sur-l-app-ios-twitch.md)                    | Les valeurs visuelles reprennent l'app iOS Twitch, relevées sur captures                                       | Accepté — §6 remplacé pour le Glitch par 0037                      | Design       |
+| [0036](0036-valeurs-visuelles-relevees-sur-l-app-ios-twitch.md)                    | Les valeurs visuelles reprennent l'app iOS Twitch, relevées sur captures                                       | Accepté — §6 remplacé pour le Glitch par 0037, amendé par 0040     | Design       |
 | [0037](0037-logo-twitch-repris-depuis-le-svg-officiel.md)                          | Le logo Twitch est repris, depuis le SVG officiel du brand kit                                                 | Accepté                                                            | Design       |
 | [0038](0038-app-ios-sous-apps-ios.md)                                              | L'app iOS vit sous `apps/ios/`, à côté des autres applications                                                 | Proposé                                                            | iOS          |
 | [0039](0039-pages-d-authentification-servies-par-l-api-en-html-sans-javascript.md) | Les pages d'authentification sont servies par l'API, en HTML sans JavaScript                                   | Proposé                                                            | Auth         |
+| [0040](0040-illustration-inscription-terminee-reprise-telle-quelle.md)             | L'illustration de « You're All Set! » est reprise telle quelle                                                 | Proposé                                                            | Design       |
 
 ## Dépendances principales
 
@@ -80,6 +81,7 @@ Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes
 0019, 0030 ── 0036 (valeurs visuelles relevées sur l'app iOS Twitch) ── 0037 (logo Twitch repris, amende 0036 §6)
 0010, 0018, 0019 ── 0038 (app iOS sous apps/ios/)
 0005, 0026, 0030, 0035 ── 0039 (pages d'authentification servies par l'API, amende 0035)
+0036, 0039 ── 0040 (illustration de « You're All Set! » reprise, amende 0036 §6)
 ```
 
 ## Points ouverts
