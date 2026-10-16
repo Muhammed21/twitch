@@ -47,6 +47,7 @@ Le pre-commit formate les `*.swift` indexés sous `apps/ios/` avec SwiftFormat. 
 cd apps/ios
 mint run swiftformat --lint .
 mint run swiftlint lint --strict
+scripts/check-swiftlint-rules.sh   # les règles maison de SwiftLint contre leurs fixtures
 cd Packages
 xcodebuild test -scheme Packages -destination 'id=<udid>'   # udid : xcrun simctl list devices available
 ```

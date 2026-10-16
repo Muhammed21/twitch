@@ -3,6 +3,7 @@
 excluded:
   - Packages/.build
   - DerivedData
+  - lint-fixtures
 
 disabled_rules:
   - attribute_name_spacing
@@ -49,7 +50,7 @@ identifier_name:
 custom_rules:
   unchecked_sendable_justifie:
     name: "@unchecked Sendable justifié"
-    regex: '(?<!(?://[^\n]{0,500}|\*/[ \t]{0,20})\n[^\n]{0,500})@unchecked[ \t]+Sendable'
+    regex: '(?<!(?:^|\n)[ \t]{0,20}(?://|/\*|\*)[^\n]{0,500}\n[^\n]{0,500})@unchecked[ \t]+Sendable'
     excluded_match_kinds: [comment, doccomment, string]
     message: "@unchecked Sendable sans commentaire sur la ligne précédente : justifiez l'invariant tenu à la main (ADR 0010 ; ADR 0018, §4)."
     severity: error

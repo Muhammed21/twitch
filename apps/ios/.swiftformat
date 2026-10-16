@@ -1,4 +1,4 @@
 --swiftversion 6.0
 --indent 2
 --disable wrapPropertyBodies,wrapIfStatementBodies
---exclude Packages/.build,DerivedData
+--exclude Packages/.build,DerivedData,lint-fixtures
