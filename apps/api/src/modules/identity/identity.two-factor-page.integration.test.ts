@@ -315,6 +315,41 @@ describe("étape 2FA de la connexion (ADR 0039, §5)", () => {
   });
 
   it.each([
+    [
+      "un cookie 2FA expiré ou invalide",
+      (step: { cookie: string; oauthQuery: string }) => ({
+        cookie: step.cookie.replace(/(better-auth\.two_factor=)[^;]*/, "$1invalide"),
+        oauthQuery: step.oauthQuery,
+      }),
+    ],
+    [
+      "une requête OAuth expirée ou modifiée",
+      (step: { cookie: string; oauthQuery: string }) => ({
+        cookie: step.cookie,
+        oauthQuery: step.oauthQuery.replace("twitch-ios-2fa", "evil-app"),
+      }),
+    ],
+  ])("renvoie vers la connexion, sans parler de code faux, après %s", async (_case, alter) => {
+    await withApi(async (base) => {
+      const clientId = await seedClient();
+      const account = await signUpWithTwoFactor(base);
+      const step = await passwordStep(base, clientId, pkce().challenge, account.username);
+      const altered = alter(step);
+
+      const response = await submitCode(
+        base,
+        { code: totpOf(account.secret), csrf: step.csrf, oauth_query: altered.oauthQuery },
+        { cookie: altered.cookie },
+      );
+      const body = await response.text();
+
+      expect(response.status).toBe(400);
+      expect(body).toContain("This sign-in link has expired. Go back to the app and try again.");
+      expect(body).not.toContain("Incorrect code.");
+    });
+  });
+
+  it.each([
     ["sans jeton CSRF", { csrf: "", origin: ORIGIN }],
     ["depuis une autre origine", { csrf: undefined, origin: "https://evil.example" }],
   ])("refuse un code envoyé %s", async (_case, forged) => {

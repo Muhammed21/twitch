@@ -11,6 +11,7 @@ import { renderTwoFactorPage, TWO_FACTOR_ERRORS } from "./two-factor-page.ts";
 
 const CSRF_COOKIE = "twitch_csrf";
 const TWO_FACTOR_COOKIE = /(^|;\s*)(__Secure-)?better-auth\.two_factor=/;
+const EXPIRED_STEP = /invalid_signature|INVALID_TWO_FACTOR_COOKIE/;
 
 const newCsrfToken = (): string => randomBytes(32).toString("base64url");
 
@@ -170,6 +171,16 @@ export const mountAuthPages = (server: Express, auth: IdentityAuth, baseURL: str
     const outcome = await outcomeOf(result);
     if (outcome.url !== undefined) {
       response.redirect(302, outcome.url);
+      return;
+    }
+    const refusal = await result.text().catch(() => "");
+    if (EXPIRED_STEP.test(refusal)) {
+      sendHtml(
+        response,
+        400,
+        csrf,
+        renderLoginPage({ csrf, oauthQuery, error: LOGIN_ERRORS.expired }),
+      );
       return;
     }
     sendHtml(
