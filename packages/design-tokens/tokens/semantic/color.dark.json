@@ -17,6 +17,11 @@
         "$type": "color",
         "$value": "{core.color.neutral.16}",
         "$description": "Champs de recherche et de saisie, boutons secondaires (notifications, création), posés sur le fond."
+      },
+      "tertiary": {
+        "$type": "color",
+        "$value": "{core.color.neutral.16}",
+        "$description": "Bouton d'annulation posé sur une modale : Cancel de la modale de déconnexion. Convention en thème sombre : la valeur de color.surface.secondary."
       }
     },
     "text": {
@@ -66,6 +71,25 @@
         "$type": "color",
         "$value": "{core.color.purple.65}",
         "$description": "Fond d'un bouton secondaire posé sur l'accent : bouton Log In de l'accueil."
+      }
+    },
+    "danger": {
+      "default": {
+        "$type": "color",
+        "$value": "{core.color.red.60}",
+        "$description": "Fond d'un bouton d'action destructrice : Logout de la modale de déconnexion."
+      },
+      "onDanger": {
+        "$type": "color",
+        "$value": "{core.color.neutral.0}",
+        "$description": "Libellé posé sur color.danger.default : Logout de la modale de déconnexion."
+      }
+    },
+    "overlay": {
+      "scrim": {
+        "$type": "color",
+        "$value": "{core.color.scrim.60}",
+        "$description": "Voile posé sur l'écran sous une modale."
       }
     }
   }
