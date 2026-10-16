@@ -1,0 +1,62 @@
+# Rôles disjoints (ADR 0018 §4) : SwiftFormat formate, SwiftLint ne porte aucune règle de mise en forme.
+
+excluded:
+  - Packages/.build
+  - DerivedData
+  - lint-fixtures
+
+disabled_rules:
+  - attribute_name_spacing
+  - closing_brace
+  - closure_parameter_position
+  - colon
+  - comma
+  - comment_spacing
+  - control_statement
+  - duplicate_imports
+  - empty_enum_arguments
+  - empty_parameters
+  - empty_parentheses_with_trailing_closure
+  - function_name_whitespace
+  - implicit_getter
+  - implicit_optional_initialization
+  - leading_whitespace
+  - line_length
+  - mark
+  - no_space_in_method_call
+  - opening_brace
+  - redundant_discardable_let
+  - redundant_objc_attribute
+  - redundant_string_enum_value
+  - redundant_void_return
+  - return_arrow_whitespace
+  - statement_position
+  - switch_case_alignment
+  - syntactic_sugar
+  - trailing_comma
+  - trailing_newline
+  - trailing_semicolon
+  - trailing_whitespace
+  - unneeded_break_in_switch
+  - unneeded_synthesized_initializer
+  - unused_closure_parameter
+  - vertical_parameter_alignment
+  - vertical_whitespace
+  - void_return
+
+identifier_name:
+  excluded: [id, x, y]
+
+custom_rules:
+  unchecked_sendable_justifie:
+    name: "@unchecked Sendable justifié"
+    regex: '(?<!(?:^|\n)[ \t]{0,20}(?://|/\*|\*)[^\n]{0,500}\n[^\n]{0,500})@unchecked[ \t]+Sendable'
+    excluded_match_kinds: [comment, doccomment, string]
+    message: "@unchecked Sendable sans commentaire sur la ligne précédente : justifiez l'invariant tenu à la main (ADR 0010 ; ADR 0018, §4)."
+    severity: error
+  suffixe_view_model:
+    name: "Suffixe ViewModel"
+    regex: '\b(?:class|struct|actor|enum|protocol|typealias|extension)[ \t]+\w*ViewModel\b'
+    excluded_match_kinds: [comment, doccomment, string]
+    message: "Pas de ViewModel par écran : un objet d'état scopé par capacité, injecté par @Environment (ADR 0011 ; ADR 0018, §4)."
+    severity: error

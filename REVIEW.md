@@ -21,7 +21,7 @@ Le résumé compte les findings et ne répète jamais leur texte.
 
 Le palier plancher vient des chemins touchés (`.github/labeler.yml`). La revue peut le monter, jamais le descendre.
 
-- `critical` : identité, authentification, autorisation (`authz`), monétisation, schéma ou migrations Prisma, rôles PostgreSQL, règles de lint d'architecture (`.oxlintrc.json`, `packages/lint/`), CI. Une erreur ici fuit des données, perd de l'argent ou désarme un garde-fou.
+- `critical` : identité, authentification, autorisation (`authz`), monétisation, schéma ou migrations Prisma, rôles PostgreSQL, règles de lint d'architecture (`.oxlintrc.json`, `packages/lint/`, `packages/ios-imports/`, `apps/ios/.swiftlint.yml`), CI. Une erreur ici fuit des données, perd de l'argent ou désarme un garde-fou.
 - `standard` : tout autre code applicatif, infrastructure locale, ADR.
 - `low` : documentation hors ADR, outillage sans effet sur le code livré. Les findings ne bloquent pas.
 
