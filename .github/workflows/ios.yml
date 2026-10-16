@@ -52,6 +52,9 @@ jobs:
       - name: Générateur OpenAPI sans partie sautée (ADR 0024, §8)
         run: scripts/check-openapi-generator.sh
 
+      - name: Le contrôle du générateur refuse un schéma non pris en charge
+        run: "! scripts/check-openapi-generator.sh scripts/fixtures/openapi-unsupported.json"
+
       - name: Tests (Swift Testing)
         working-directory: apps/ios/Packages
         run: |
