@@ -47,7 +47,7 @@ const signUp = (base: string, account: { name: string; email: string; password: 
   fetch(`${base}/auth/sign-up/email`, {
     method: "POST",
     headers: { "content-type": "application/json", origin: urlOf("BETTER_AUTH_URL") },
-    body: JSON.stringify(account),
+    body: JSON.stringify({ ...account, birthDate: "2000-01-01" }),
   });
 
 const accountIdOf = async (email: string) => {

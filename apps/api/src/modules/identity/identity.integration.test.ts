@@ -126,6 +126,7 @@ const makeAccount = () => ({
   name: "Streamer de test",
   email: `test-${randomUUID()}@twitch.local`,
   password: "un-mot-de-passe-solide-42",
+  birthDate: "2000-01-01",
 });
 
 describe("identity : better-auth monté sous /auth, contre la base locale migrée", () => {
