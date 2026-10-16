@@ -576,6 +576,17 @@ describe("inscription servie par l'API (ADR 0039, §3)", () => {
     });
   });
 
+  it("embarque l'illustration dans le paquet de l'API, l'image Docker n'ayant pas docs/ (ADR 0028)", async () => {
+    const embedded = await readFile(
+      new URL("../../../assets/you-are-all-set.png", import.meta.url),
+    );
+    const versioned = await readFile(
+      new URL("../../../../../docs/brand/you-are-all-set.png", import.meta.url),
+    );
+
+    expect(embedded.equals(versioned)).toBe(true);
+  });
+
   it("propose les mois de janvier à décembre, les jours de 1 à 31 et les 121 dernières années, sans rien présélectionner", async () => {
     await withApi(async (base) => {
       const clientId = await seedClient();
@@ -669,6 +680,120 @@ describe("inscription servie par l'API (ADR 0039, §3)", () => {
       const body = await (await fetch(`${base}/signup`)).text();
 
       expect(fieldIn(body, "oauth_query")).toBe("");
+    });
+  });
+
+  it("après trop d'essais, même le bon code invite à demander un nouveau code", async () => {
+    await withApi(async (base) => {
+      const clientId = await seedClient();
+      const { account, cookie, csrf, oauthQuery, code } = await signedUp(
+        base,
+        clientId,
+        pkce().challenge,
+      );
+      const wrong = code === "000000" ? "111111" : "000000";
+      const attempt = async (session: { cookie: string; csrf: string }, otp: string) => {
+        const response = await post(
+          base,
+          "/signup/code",
+          { email: account.email, code: otp, csrf: session.csrf, oauth_query: oauthQuery },
+          { cookie: session.cookie },
+        );
+        const body = await response.text();
+        return {
+          response,
+          body,
+          cookie: withCookies(session.cookie, response),
+          csrf: fieldIn(body, "csrf"),
+        };
+      };
+
+      const first = await attempt({ cookie, csrf }, wrong);
+      const second = await attempt(first, wrong);
+      const third = await attempt(second, wrong);
+      const last = await attempt(third, code);
+
+      expect(last.response.status).toBe(401);
+      expect(last.body).toContain(SIGNUP_CODE_MESSAGES.expired);
+      expect((await userRow(account.email))?.emailVerified).toBe(false);
+    });
+  });
+
+  it("un code expiré invite à demander un nouveau code", async () => {
+    await withApi(async (base) => {
+      const clientId = await seedClient();
+      const { account, cookie, csrf, oauthQuery, code } = await signedUp(
+        base,
+        clientId,
+        pkce().challenge,
+      );
+      await asMigrator((client) =>
+        client.query(
+          `UPDATE "identity"."IdentityVerification" SET "expiresAt" = now() - interval '1 minute'
+            WHERE "identifier" LIKE $1`,
+          [`%${account.email}%`],
+        ),
+      );
+
+      const response = await post(
+        base,
+        "/signup/code",
+        { email: account.email, code, csrf, oauth_query: oauthQuery },
+        { cookie },
+      );
+
+      expect(response.status).toBe(401);
+      expect(await response.text()).toContain(SIGNUP_CODE_MESSAGES.expired);
+    });
+  });
+
+  it("renvoie le code à l'adresse de la session, pas à une adresse glissée dans le formulaire", async () => {
+    await withApi(async (base) => {
+      const clientId = await seedClient();
+      const { account, cookie, csrf, oauthQuery } = await signedUp(
+        base,
+        clientId,
+        pkce().challenge,
+      );
+      const other = newAccount();
+      const opened = await openSignupPage(base, clientId, pkce().challenge);
+      await post(
+        base,
+        "/signup",
+        { ...other, csrf: opened.csrf, oauth_query: opened.oauthQuery },
+        { cookie: opened.cookie },
+      );
+      await mailsTo(other.email, 1);
+
+      const response = await post(
+        base,
+        "/signup/resend",
+        { email: other.email, csrf, oauth_query: oauthQuery },
+        { cookie },
+      );
+      const body = await response.text();
+
+      expect(fieldIn(body, "email")).toBe(account.email);
+      expect(await mailsTo(account.email, 2)).toHaveLength(2);
+      await sleep(500);
+      expect(await mailsTo(other.email, 1)).toHaveLength(1);
+    });
+  });
+
+  it("sans session, ne renvoie aucun code et invite à recommencer", async () => {
+    await withApi(async (base) => {
+      const clientId = await seedClient();
+      const { cookie, csrf, oauthQuery } = await openSignupPage(base, clientId, pkce().challenge);
+
+      const response = await post(
+        base,
+        "/signup/resend",
+        { email: newAccount().email, csrf, oauth_query: oauthQuery },
+        { cookie },
+      );
+
+      expect(response.status).toBe(400);
+      expect(await response.text()).toContain(SIGNUP_ERRORS.expired);
     });
   });
 });

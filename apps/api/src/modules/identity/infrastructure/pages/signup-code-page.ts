@@ -10,6 +10,7 @@ import {
 export const SIGNUP_CODE_MESSAGES = {
   code: "Incorrect code. Try again.",
   resent: "We sent you a new code.",
+  expired: "This code is no longer valid. Tap Resend code to get a new one.",
 } as const;
 
 export const renderSignupCodePage = ({
@@ -50,7 +51,6 @@ export const renderSignupCodePage = ({
           <button class="action" type="submit">Submit</button>
         </form>
         <form method="post" action="${SIGNUP_RESEND_PATH}">
-          <input type="hidden" name="email" value="${email}" />
           ${hiddenFields({ csrf, oauthQuery })}
           <button class="link" type="submit">Resend code</button>
         </form>

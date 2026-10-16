@@ -32,10 +32,7 @@ const CSRF_COOKIE = "twitch_csrf";
 const TWO_FACTOR_COOKIE = /(^|;\s*)(__Secure-)?better-auth\.two_factor=/;
 const EXPIRED_STEP = /invalid_signature|INVALID_TWO_FACTOR_COOKIE/;
 
-const ALL_SET_ILLUSTRATION = new URL(
-  "../../../../../../../docs/brand/you-are-all-set.png",
-  import.meta.url,
-);
+const ALL_SET_ILLUSTRATION = new URL("../../../../../assets/you-are-all-set.png", import.meta.url);
 
 const newCsrfToken = (): string => randomBytes(32).toString("base64url");
 
@@ -91,6 +88,8 @@ const relayCookies = (from: globalThis.Response, to: Response): void => {
 
 const AuthError = z.object({ code: z.string() });
 
+const SPENT_CODE = new Set(["OTP_EXPIRED", "TOO_MANY_ATTEMPTS"]);
+
 const errorCodeOf = async (response: globalThis.Response): Promise<string> => {
   const parsed = AuthError.safeParse(await response.json().catch(() => null));
   return parsed.success ? parsed.data.code : "";
@@ -138,6 +137,17 @@ export const mountAuthPages = (server: Express, auth: IdentityAuth, baseURL: str
       .type("html")
       .set("cache-control", "no-store")
       .send(html);
+  };
+
+  const sendExpiredSignup = (response: Response, oauthQuery: string) => {
+    const csrf = newCsrfToken();
+    sendHtml(
+      response,
+      400,
+      csrf,
+      renderSignupPage({ csrf, oauthQuery, now: new Date(), error: SIGNUP_ERRORS.expired }),
+      SIGNUP_PATH,
+    );
   };
 
   const isForged = (request: Request): boolean =>
@@ -237,7 +247,14 @@ export const mountAuthPages = (server: Express, auth: IdentityAuth, baseURL: str
         response,
         401,
         csrf,
-        renderSignupCodePage({ csrf, oauthQuery, email, message: SIGNUP_CODE_MESSAGES.code }),
+        renderSignupCodePage({
+          csrf,
+          oauthQuery,
+          email,
+          message: SPENT_CODE.has(await errorCodeOf(result))
+            ? SIGNUP_CODE_MESSAGES.expired
+            : SIGNUP_CODE_MESSAGES.code,
+        }),
         SIGNUP_PATH,
       );
       return;
@@ -251,13 +268,18 @@ export const mountAuthPages = (server: Express, auth: IdentityAuth, baseURL: str
       return;
     }
     const oauthQuery = field(request, "oauth_query");
-    const email = field(request, "email");
+    const csrf = newCsrfToken();
+    const session = await auth.api.getSession({ headers: fromNodeHeaders(request.headers) });
+    if (session === null) {
+      sendExpiredSignup(response, oauthQuery);
+      return;
+    }
+    const { email } = session.user;
     await callAuth(auth, request, {
       baseURL,
       path: "email-otp/send-verification-otp",
       body: { email, type: "email-verification" },
     });
-    const csrf = newCsrfToken();
     sendHtml(
       response,
       200,
@@ -276,13 +298,7 @@ export const mountAuthPages = (server: Express, auth: IdentityAuth, baseURL: str
     const csrf = newCsrfToken();
     const session = await auth.api.getSession({ headers: fromNodeHeaders(request.headers) });
     if (session === null) {
-      sendHtml(
-        response,
-        400,
-        csrf,
-        renderSignupPage({ csrf, oauthQuery, now: new Date(), error: SIGNUP_ERRORS.expired }),
-        SIGNUP_PATH,
-      );
+      sendExpiredSignup(response, oauthQuery);
       return;
     }
     if (!session.user.emailVerified) {
@@ -305,13 +321,7 @@ export const mountAuthPages = (server: Express, auth: IdentityAuth, baseURL: str
       response.redirect(302, outcome.url);
       return;
     }
-    sendHtml(
-      response,
-      400,
-      csrf,
-      renderSignupPage({ csrf, oauthQuery, now: new Date(), error: SIGNUP_ERRORS.expired }),
-      SIGNUP_PATH,
-    );
+    sendExpiredSignup(response, oauthQuery);
   });
 
   server.post(LOGIN_PATH, form, async (request, response) => {
