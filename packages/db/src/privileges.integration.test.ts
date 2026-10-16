@@ -15,6 +15,7 @@ const OUTBOXES = [
   `"identity"."IdentityOutbox"`,
   `"channel"."ChannelOutbox"`,
   `"stream"."StreamOutbox"`,
+  `"moderation"."ModerationOutbox"`,
 ];
 const PROBE = `probe_${randomUUID().replaceAll("-", "")}`;
 

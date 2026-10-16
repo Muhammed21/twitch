@@ -135,3 +135,33 @@ describe("StreamKey", () => {
     expect(responses.StreamKey.safeParse(makeStreamKey(overrides)).success).toBe(false);
   });
 });
+
+const makeTimeout = (overrides: Record<string, unknown> = {}) => ({
+  channelId: "9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69",
+  userId: "2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+  expiresAt: "2026-10-15T20:10:00.000Z",
+  ...overrides,
+});
+
+describe("Timeout", () => {
+  it("décode la chaîne, l'utilisateur sanctionné et la fin du timeout", () => {
+    expect(responses.Timeout.parse(makeTimeout())).toEqual(makeTimeout());
+  });
+
+  it("garde un champ ajouté plus tard par le serveur", () => {
+    expect(responses.Timeout.parse(makeTimeout({ reason: "spam" }))).toMatchObject({
+      reason: "spam",
+    });
+  });
+
+  it.each([
+    ["sans chaîne", { channelId: undefined }],
+    ["avec une chaîne qui n'est pas un UUID", { channelId: "chaine-1" }],
+    ["sans utilisateur", { userId: undefined }],
+    ["avec un utilisateur qui n'est pas un UUID", { userId: "viewer" }],
+    ["sans fin", { expiresAt: undefined }],
+    ["avec une fin sans fuseau", { expiresAt: "2026-10-15T20:10:00" }],
+  ])("refuse une réponse %s", (_name, overrides) => {
+    expect(responses.Timeout.safeParse(makeTimeout(overrides)).success).toBe(false);
+  });
+});

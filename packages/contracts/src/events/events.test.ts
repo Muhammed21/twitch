@@ -154,3 +154,44 @@ describe.each([
     expect(contractOf().payload.safeParse(makeLifecycle(overrides)).success).toBe(false);
   });
 });
+
+describe("moderation.user.timed_out", () => {
+  const USER_ID = "2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e";
+
+  const makeTimeout = (overrides: Record<string, unknown> = {}) => ({
+    channelId: CHANNEL_ID,
+    userId: USER_ID,
+    expiresAt: "2026-10-15T20:10:00.000Z",
+    ...overrides,
+  });
+
+  it("porte son nom et sa version", () => {
+    expect(events.moderation.userTimedOut).toMatchObject({
+      name: "moderation.user.timed_out",
+      version: 1,
+    });
+  });
+
+  it("décode la chaîne, l'utilisateur sanctionné et la fin du timeout", () => {
+    expect(events.moderation.userTimedOut.payload.parse(makeTimeout())).toEqual(makeTimeout());
+  });
+
+  it("garde un champ ajouté plus tard par l'émetteur", () => {
+    expect(
+      events.moderation.userTimedOut.payload.parse(makeTimeout({ reason: "spam" })),
+    ).toMatchObject({ reason: "spam" });
+  });
+
+  it.each([
+    ["sans chaîne", { channelId: undefined }],
+    ["avec une chaîne qui n'est pas un UUID", { channelId: "chaine-1" }],
+    ["sans utilisateur", { userId: undefined }],
+    ["avec un utilisateur qui n'est pas un UUID", { userId: "viewer" }],
+    ["sans fin", { expiresAt: undefined }],
+    ["avec une fin sans fuseau", { expiresAt: "2026-10-15T20:10:00" }],
+  ])("refuse un event %s", (_name, overrides) => {
+    expect(events.moderation.userTimedOut.payload.safeParse(makeTimeout(overrides)).success).toBe(
+      false,
+    );
+  });
+});
