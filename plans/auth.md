@@ -52,8 +52,8 @@ _Tests d'abord_ : une autorisation sans session affiche la connexion, avec la re
 
 ### A4b — Étape 2FA
 
-Compte TOTP : la connexion passe par « Welcome back » (`auth/connexion-code-2fa--*`), le code reprend l'autorisation.
-_Tests d'abord_ : compte TOTP ⇒ étape code, puis callback ; code faux refusé.
+Compte TOTP : le `POST /login` répond par la page « Welcome back » (`auth/connexion-code-2fa--rempli`) en relayant le cookie 2FA de better-auth ; `POST /login/two-factor` vérifie le code (`/two-factor/verify-totp`, avec `oauth_query`) et reprend l'autorisation. Mêmes contrôles d'`Origin` et de CSRF. Tokens `titleText` (title2 gras) et `supportingText` (body) relevés sur la capture. « Resend code » (SMS) n'a pas lieu d'être avec le TOTP ; « Need help? » (codes de secours) arrive avec les écrans de sécurité.
+_Tests d'abord_ : compte TOTP ⇒ étape code sans session ouverte ; bon code ⇒ callback et token `/v1` à `twitch_amr` `pwd otp mfa` ; code faux ⇒ 401 sur la même étape ; sans cookie 2FA ⇒ 400 ; sans CSRF ou d'une autre origine ⇒ 403.
 
 ### A4c — Inscription
 
