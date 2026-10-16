@@ -23,6 +23,8 @@ API NestJS 11 (ADR 0002, 0009). Architecture et découpage : [plan de l'API](../
 | `BETTER_AUTH_URL`         | URL publique de l'API, origine de confiance de better-auth, requis                       |
 | `REDIS_URL`               | Redis (`redis://` ou `rediss://`) : liste de révocation des sessions et Pub/Sub, requis  |
 | `VIDEO_WEBHOOK_SECRET`    | Secret partagé des webhooks du provider vidéo (ADR 0031), au moins 32 caractères, requis |
+| `SMTP_HOST`, `SMTP_PORT`  | Serveur SMTP des e-mails (codes de vérification) ; Mailpit en local, requis              |
+| `SMTP_FROM`               | Expéditeur des e-mails, `Twitch <no-reply@twitch.local>` par défaut                      |
 
 Une variable invalide arrête le démarrage avec le nom de la variable, jamais sa valeur.
 

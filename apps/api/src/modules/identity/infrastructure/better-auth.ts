@@ -4,7 +4,7 @@ import { type OAuthClaimExtensionInput, oauthProvider } from "@better-auth/oauth
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { APIError, createAuthMiddleware } from "better-auth/api";
-import { jwt, twoFactor, username } from "better-auth/plugins";
+import { emailOTP, jwt, twoFactor, username } from "better-auth/plugins";
 import { z } from "zod";
 
 import type { createContextClient } from "@repo/db";
@@ -19,6 +19,7 @@ import { parseBirthDate } from "../domain/birth-date.ts";
 import { isRefreshTokenReuse } from "../domain/refresh-token-reuse.ts";
 import { ACCESS_TOKEN_LIFETIME_SECONDS } from "../domain/token-lifetimes.ts";
 import { isValidUsername, USERNAME_LENGTH } from "../domain/username.ts";
+import { EMAIL_CODE, emailCodeMessage } from "../domain/verification-email.ts";
 import { identityOutbox } from "./identity-outbox.ts";
 import { prismaSessionRevocationStore } from "./prisma-session-revocation-store.ts";
 import {
@@ -26,6 +27,7 @@ import {
   redisRevokedSessionList,
   redisSessionRevocationBroadcast,
 } from "./redis-session-revocation.ts";
+import type { Mailer } from "./smtp-mailer.ts";
 
 export type IdentityPrisma = ReturnType<typeof createContextClient>;
 
@@ -130,11 +132,13 @@ export const createIdentityAuth = ({
   redis,
   secret,
   baseURL,
+  mailer,
 }: {
   prisma: IdentityPrisma;
   redis: IdentityRedis;
   secret: string;
   baseURL: string;
+  mailer: Mailer;
 }) => {
   const revokeAll = revokeAllSessions({
     store: prismaSessionRevocationStore(prisma),
@@ -149,7 +153,7 @@ export const createIdentityAuth = ({
     secret,
     baseURL,
     database: prismaAdapter(prisma, { provider: "postgresql", transaction: true }),
-    disabledPaths: ["/token"],
+    disabledPaths: ["/token", "/sign-in/email-otp"],
     advanced: { database: { generateId: () => randomUUID() } },
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
@@ -195,6 +199,14 @@ export const createIdentityAuth = ({
         minUsernameLength: USERNAME_LENGTH.min,
         maxUsernameLength: USERNAME_LENGTH.max,
         usernameValidator: isValidUsername,
+      }),
+      emailOTP({
+        otpLength: EMAIL_CODE.length,
+        expiresIn: EMAIL_CODE.lifetimeSeconds,
+        sendVerificationOnSignUp: true,
+        storeOTP: "hashed",
+        sendVerificationOTP: ({ email, otp, type }) =>
+          mailer.send({ to: email, ...emailCodeMessage({ code: otp, purpose: type }) }),
       }),
       twoFactor({
         issuer: "Twitch",

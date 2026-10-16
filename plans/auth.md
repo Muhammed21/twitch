@@ -42,8 +42,8 @@ _Tests d'abord_ : 12 ans et 364 jours refusé, 13 ans pile accepté, date absent
 
 ### A3c — Code e-mail
 
-Plugin `emailOTP` (code à 6 chiffres) ; envoi SMTP configurable, Mailpit en local.
-_Tests d'abord_ : un code est envoyé à Mailpit et l'adresse est vérifiée après sa saisie ; code faux refusé.
+Plugin `emailOTP` : code à 6 chiffres valable 5 minutes, envoyé à l'inscription, stocké haché ; la connexion par code e-mail (`/sign-in/email-otp`) est fermée, elle contournerait le mot de passe et la 2FA. Envoi SMTP (`SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM`), Mailpit en local.
+_Tests d'abord_ : un code est envoyé à Mailpit et l'adresse est vérifiée après sa saisie ; code faux refusé ; code jamais stocké en clair ; `/sign-in/email-otp` répond 404.
 
 ### A4 — Pages de connexion et d'inscription
 

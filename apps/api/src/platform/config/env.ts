@@ -7,6 +7,9 @@ const envSchema = z.object({
   BETTER_AUTH_URL: z.url({ protocol: /^https?$/ }),
   REDIS_URL: z.url({ protocol: /^rediss?$/ }),
   VIDEO_WEBHOOK_SECRET: z.string().min(32),
+  SMTP_HOST: z.string().min(1),
+  SMTP_PORT: z.coerce.number().int().min(1).max(65_535),
+  SMTP_FROM: z.string().min(1).default("Twitch <no-reply@twitch.local>"),
 });
 
 export const parseVariables = <T>(
@@ -28,6 +31,7 @@ export type AppConfig = {
   readonly authBaseUrl: string;
   readonly redisUrl: string;
   readonly videoWebhookSecret: string;
+  readonly smtp: { readonly host: string; readonly port: number; readonly from: string };
 };
 
 export const loadEnv = (env: Readonly<Record<string, string | undefined>>): AppConfig => {
@@ -39,5 +43,6 @@ export const loadEnv = (env: Readonly<Record<string, string | undefined>>): AppC
     authBaseUrl: variables.BETTER_AUTH_URL,
     redisUrl: variables.REDIS_URL,
     videoWebhookSecret: variables.VIDEO_WEBHOOK_SECRET,
+    smtp: { host: variables.SMTP_HOST, port: variables.SMTP_PORT, from: variables.SMTP_FROM },
   };
 };

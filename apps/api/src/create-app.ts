@@ -13,6 +13,7 @@ import {
   createIdentityRedis,
   mountIdentityRoutes,
 } from "./modules/identity/identity.module.ts";
+import { createSmtpMailer } from "./modules/identity/infrastructure/smtp-mailer.ts";
 import { type AppConfig, loadEnv } from "./platform/config/env.ts";
 import { configureApp } from "./platform/configure-app.ts";
 import { errorDetails, type LogSink, stdoutSink, writeLog } from "./platform/logging.ts";
@@ -52,6 +53,7 @@ export const createApp = async ({
     redis,
     secret: config.authSecret,
     baseURL: config.authBaseUrl,
+    mailer: createSmtpMailer(config.smtp),
   });
   const app = await NestFactory.create<NestExpressApplication>(
     AppModule.register({

@@ -14,6 +14,8 @@ const makeEnv = (overrides: Record<string, string | undefined> = {}) => ({
   BETTER_AUTH_URL: "http://127.0.0.1:3000",
   REDIS_URL: "redis://127.0.0.1:6379",
   VIDEO_WEBHOOK_SECRET: WEBHOOK_SECRET,
+  SMTP_HOST: "127.0.0.1",
+  SMTP_PORT: "1025",
   ...overrides,
 });
 
@@ -26,7 +28,22 @@ describe("loadEnv", () => {
       authBaseUrl: "http://127.0.0.1:3000",
       redisUrl: "redis://127.0.0.1:6379",
       videoWebhookSecret: WEBHOOK_SECRET,
+      smtp: { host: "127.0.0.1", port: 1025, from: "Twitch <no-reply@twitch.local>" },
     });
+  });
+
+  it("lit l'expéditeur des e-mails", () => {
+    expect(loadEnv(makeEnv({ SMTP_FROM: "Twitch <hello@twitch.example>" })).smtp.from).toBe(
+      "Twitch <hello@twitch.example>",
+    );
+  });
+
+  it.each([undefined, ""])("refuse SMTP_HOST %j en la nommant", (host) => {
+    expect(() => loadEnv(makeEnv({ SMTP_HOST: host }))).toThrow("SMTP_HOST");
+  });
+
+  it.each([undefined, "0", "65536", "abc"])("refuse SMTP_PORT %j en la nommant", (port) => {
+    expect(() => loadEnv(makeEnv({ SMTP_PORT: port }))).toThrow("SMTP_PORT");
   });
 
   it("lit le port", () => {
@@ -46,7 +63,7 @@ describe("loadEnv", () => {
 
   it("nomme toutes les variables invalides à la fois", () => {
     expect(() => loadEnv({ API_PORT: "abc" })).toThrow(
-      "Configuration invalide, variables à corriger : API_PORT, DATABASE_URL_HEALTH, BETTER_AUTH_SECRET, BETTER_AUTH_URL, REDIS_URL, VIDEO_WEBHOOK_SECRET",
+      "Configuration invalide, variables à corriger : API_PORT, DATABASE_URL_HEALTH, BETTER_AUTH_SECRET, BETTER_AUTH_URL, REDIS_URL, VIDEO_WEBHOOK_SECRET, SMTP_HOST, SMTP_PORT",
     );
   });
 
