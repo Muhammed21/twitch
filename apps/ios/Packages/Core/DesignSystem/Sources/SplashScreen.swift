@@ -18,6 +18,7 @@ public struct SplashScreen: View {
           GlitchBubble()
             .trim(from: 0, to: frame.outline)
             .stroke(ColorRole.onAccent.color, lineWidth: 2)
+            .opacity(frame.stroke)
           GlitchBubble()
             .fill(ColorRole.onAccent.color, style: FillStyle(eoFill: true))
             .opacity(frame.fill)

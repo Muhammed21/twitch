@@ -60,6 +60,14 @@ struct SplashTimelineTests {
     #expect(isClose(frame(at: elapsed), expected))
   }
 
+  @Test(
+    "le trait du contour s'efface pendant le remplissage : le logo final est le remplissage seul",
+    arguments: [(0.3, false, 1.0), (0.65, false, 0.5), (0.7, false, 0.0), (1.4, false, 0.0), (0.0, true, 0.0)]
+  )
+  func strokeFadesOut(elapsed: TimeInterval, reduceMotion: Bool, expected: Double) {
+    #expect(abs(frame(at: elapsed, reduceMotion: reduceMotion).stroke - expected) < 1e-9)
+  }
+
   @Test("reste sur la première image avant le départ et sur la dernière après la fin")
   func clamped() {
     #expect(isClose(frame(at: -1), blank))

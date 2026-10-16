@@ -8,6 +8,8 @@ public struct SplashFrame: Equatable, Sendable {
   public let scale: Double
   public let opacity: Double
 
+  public var stroke: Double { 1 - fill }
+
   public init(outline: Double, fill: Double, eyes: Double, eyeScale: Double, scale: Double, opacity: Double) {
     self.outline = outline
     self.fill = fill
