@@ -48,7 +48,7 @@ Les PR 1a, 1b et 2 ne dépendent de rien : elles démarrent tout de suite. Les f
 
 ### PR 1a — Projet et package
 
-Projet Xcode mince dans `apps/ios/App.xcodeproj` (dossier synchronisé `App/`), `Packages/Package.swift` avec `swiftLanguageMode(.v6)` sur tous les targets et `Core/DesignSystem` (dépendance `../../../packages/design-tokens/platforms/swift`). `Domain` arrive avec ses premiers modèles, en PR 2. Tests : `xcodebuild test -scheme Packages-Package` sur un simulateur iOS, depuis `apps/ios/Packages`.
+Projet Xcode mince dans `apps/ios/App.xcodeproj` (dossier synchronisé `App/`), `Packages/Package.swift` avec `swiftLanguageMode(.v6)` sur tous les targets et `Core/DesignSystem` (dépendance `../../../packages/design-tokens/platforms/swift`). Tests : `xcodebuild test -scheme Packages-Package` sur un simulateur iOS, depuis `apps/ios/Packages`. Les tests qui ont besoin d'une app hôte (Keychain, Info.plist) vivent dans le target `AppTests` du projet : `xcodebuild test -project App.xcodeproj -scheme App`, depuis `apps/ios`.
 _Tests d'abord_ : un rôle de couleur de `DesignSystem` prend la valeur de son token dans les deux thèmes.
 
 ### PR 1b — Outillage Swift
@@ -62,7 +62,7 @@ Feature `Onboarding` : l'écran d'accueil des personnes déconnectées, fidèle 
 
 ### PR 2 — `Domain` de la tranche 1
 
-Modèles et value objects : `ChannelID`, `ChannelSlug`, `Channel`, `LiveChannel`, `StreamSession`, `ChatMessage`, `ViewerCount`. Tout enum issu du serveur a un cas `.unknown(String)` (ADR 0009, garde-fou n°4). Protocoles : `ChannelRepository`, `LiveDirectory`, `ChatConnection`, `AccessTokenProvider`.
+Modèles et value objects : `ChannelID`, `ChannelSlug`, `Channel`, `LiveChannel`, `StreamSession`, `ChatMessage`, `ViewerCount`. Tout enum issu du serveur a un cas `.unknown(String)` (ADR 0009, garde-fou n°4). Protocoles : `ChannelRepository`, `LiveDirectory`, `ChatConnection`. `Domain` porte déjà `AccessTokenProvider`, `SessionStatus` et `SessionError` (PR 4a).
 _Tests d'abord_ : slug invalide refusé à la construction ; une valeur d'enum inconnue devient `.unknown` sans erreur ; types `Sendable` (vérifié par le compilateur).
 
 ### PR 3 — `Core/Networking` : client généré et mappers
@@ -72,8 +72,22 @@ _Tests d'abord_ : décodage de fixtures JSON réelles produites par le serveur ;
 
 ### PR 4 — Connexion et session (jalon I1)
 
-Feature `Auth` et `SessionStore` : OAuth 2.1 PKCE S256 par `ASWebAuthenticationSession`, paramètre `resource` toujours envoyé (sinon le token est opaque, ADR 0026). Tokens dans le Keychain avec `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`, jamais dans `UserDefaults`. **Refresh sérialisé par un acteur unique** : plusieurs `401` simultanés attendent un seul rafraîchissement (ADR 0005). `invalid_grant` → retour à l'écran de connexion. Déconnexion : révocation côté serveur, Keychain vidé.
-_Tests d'abord_ : dix requêtes qui reçoivent `401` en même temps déclenchent un seul refresh ; attribut Keychain vérifié ; `invalid_grant` → état déconnecté ; la requête d'autorisation porte `code_challenge_method=S256` et `resource`.
+Deux PR : 4a pose le protocole OAuth et la session dans `Core/Networking`, 4b les branche sur l'accueil.
+
+**4a — OAuth et session dans `Core/Networking`.** Le target `Domain` naît avec `AccessTokenProvider` (que consommeront `Core/Networking` et `Core/ChatTransport`, qui ne dépendent pas l'un de l'autre), `SessionStatus` et `SessionError`. `Core/Networking` contient :
+
+- `PKCE` : `code_verifier` de 43 caractères tiré de 32 octets d'aléa injecté, `code_challenge` S256 en base64url sans padding.
+- `OAuthConfiguration` : `API_BASE_URL` et `OAUTH_CLIENT_ID` lus dans l'Info.plist, endpoints better-auth construits depuis `API_BASE_URL` (`/auth/oauth2/authorize`, `/token`, `/revoke`), ressource `<API_BASE_URL>/v1`, redirection `twitch://oauth/callback`, scopes `openid profile email offline_access`.
+- `AuthorizationAttempt` : URL d'autorisation (PKCE S256, `state`, `resource` toujours envoyé, sinon le token est opaque, ADR 0026 ; `prompt=create` pour l'inscription) et validation du callback (redirection attendue, puis `state` identique, puis `error` du serveur, puis code).
+- `TokenEndpoint` : échange de code, refresh et révocation en form-urlencoded sur un `HTTPTransport` injecté ; décodage tolérant (champs inconnus ignorés, `token_type` sans casse) ; `invalid_grant` traduit en `TokenEndpointError.invalidGrant`.
+- `TokenStore` et `KeychainTokenStore` : un élément du Keychain avec `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`, jamais `UserDefaults`.
+- `OAuthSession`, acteur unique : access token gardé jusqu'à 60 s de son expiration, puis rafraîchi ; un `401` sur le token courant le rafraîchit ; **un seul refresh en vol** pour tous les appels concurrents (ADR 0005) ; `invalid_grant` vide le Keychain et publie `.signedOut` ; déconnexion : attente du refresh en vol, révocation du refresh token, puis Keychain vidé même si la révocation échoue. L'instant arrive en paramètre.
+
+Le projet déclare le schéma d'URL `twitch`, l'exception ATS `NSAllowsLocalNetworking` seule, et `API_BASE_URL` = `http://127.0.0.1:3000` et `OAUTH_CLIENT_ID` = `twitch-ios-dev` en Debug, par des réglages de build. Le client `twitch-ios-dev` est enregistré par le seed de développement de l'API.
+_Tests d'abord_ : vecteur de la RFC 7636 (annexe B) ; la requête d'autorisation porte `code_challenge_method=S256` et `resource` ; `state` différent refusé ; dix requêtes qui reçoivent `401` en même temps déclenchent un seul refresh ; `invalid_grant` → état déconnecté ; déconnexion qui vide le Keychain malgré une révocation en échec ; attribut Keychain relu sur simulateur, dans `AppTests`.
+
+**4b — Feature `Auth` et `SessionStore`.** `ASWebAuthenticationSession` (`prefersEphemeralWebBrowserSession`) ouverte par les boutons Log In et Sign Up de l'accueil, transport `URLSession`, `SessionStore` `@MainActor @Observable` qui suit `OAuthSession.statusUpdates`. `invalid_grant` → retour à l'écran de connexion.
+_Tests d'abord_ : Log In ouvre l'autorisation, Sign Up l'ouvre avec `prompt=create` ; un callback valide passe à l'état connecté ; `.signedOut` publié → accueil.
 
 ### PR 5 — Navigation, racine de composition et accueil
 

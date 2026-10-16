@@ -51,6 +51,7 @@ mint run swiftlint lint --strict
 scripts/check-swiftlint-rules.sh   # les règles maison de SwiftLint contre leurs fixtures
 cd Packages
 xcodebuild test -scheme Packages-Package -destination 'id=<udid>'   # udid : xcrun simctl list devices available
+cd .. && xcodebuild test -project App.xcodeproj -scheme App -destination 'id=<udid>'   # tests hébergés (Keychain, Info.plist)
 ```
 
 La CI iOS (`.github/workflows/ios.yml`) se lance à la main (ADR 0018, §4).
