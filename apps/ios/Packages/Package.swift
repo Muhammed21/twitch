@@ -15,6 +15,7 @@ let package = Package(
     .package(path: "../../../packages/design-tokens/platforms/swift"),
     .package(url: "https://github.com/apple/swift-openapi-generator", exact: "1.13.1"),
     .package(url: "https://github.com/apple/swift-openapi-runtime", exact: "1.12.2"),
+    .package(url: "https://github.com/apple/swift-http-types", exact: "1.8.0"),
   ],
   targets: [
     .target(
@@ -27,6 +28,7 @@ let package = Package(
       dependencies: [
         "Domain",
         .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
+        .product(name: "HTTPTypes", package: "swift-http-types"),
       ],
       path: "Core/Networking/Sources",
       swiftSettings: [.swiftLanguageMode(.v6)],
