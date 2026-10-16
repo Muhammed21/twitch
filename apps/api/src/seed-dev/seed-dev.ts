@@ -19,6 +19,7 @@ export const DEV_ACCOUNT = {
   username: "viewer_dev",
   email: "viewer@twitch.local",
   password: "twitch-dev-password",
+  birthDate: new Date("2000-01-01T00:00:00.000Z"),
 } as const;
 
 type Outcome = "created" | "existing";

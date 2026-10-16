@@ -35,7 +35,13 @@ const PASSWORD = "un-mot-de-passe-solide-42";
 const uniqueUsername = () => `v_${randomUUID().replaceAll("-", "").slice(0, 10)}`;
 
 const signUp = (base: string, username: string, email = `${randomUUID()}@twitch.local`) =>
-  postJson(`${base}/auth/sign-up/email`, { name: username, email, password: PASSWORD, username });
+  postJson(`${base}/auth/sign-up/email`, {
+    name: username,
+    email,
+    password: PASSWORD,
+    username,
+    birthDate: "2000-01-01",
+  });
 
 const accountsNamed = async (username: string) => {
   const client = new Client({ connectionString: urlOf("DATABASE_URL_MIGRATOR") });

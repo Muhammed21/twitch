@@ -57,7 +57,7 @@ const postJson = async (
 const signUp = async (base: string) => {
   const email = `two-factor-${randomUUID()}@twitch.local`;
   const { cookie } = await postJson(`${base}/auth/sign-up/email`, {
-    body: { name: "Streamer de test", email, password: PASSWORD },
+    body: { name: "Streamer de test", email, password: PASSWORD, birthDate: "2000-01-01" },
   });
   expect(cookie).toMatch(SESSION_TOKEN);
   return { email, cookie };

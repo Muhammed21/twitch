@@ -37,8 +37,8 @@ _Tests d'abord_ : nom trop court, trop long, à caractère interdit ou réservé
 
 ### A3b — Date de naissance
 
-Date de naissance stockée, moins de 13 ans refusés.
-_Tests d'abord_ : 12 ans et 364 jours refusé, 13 ans pile accepté, date absente ou dans le futur refusée.
+`birthDate` (`AAAA-MM-JJ`, colonne `date`) exigée à l'inscription par un garde sur `/auth/sign-up/email` ; moins de 13 ans refusés (le 29 février fête ses 13 ans le 1er mars), codes `BIRTH_DATE_MISSING`, `_MALFORMED`, `_FUTURE`, `_TOO_YOUNG` en 400. Elle ne se modifie plus ensuite : `/auth/update-user` la refuse (`BIRTH_DATE_IMMUTABLE`).
+_Tests d'abord_ : 12 ans et 364 jours refusé, 13 ans pile accepté, date absente, mal formée ou dans le futur refusée, sans compte créé ; la réponse d'inscription ne renvoie jamais le mot de passe.
 
 ### A3c — Code e-mail
 

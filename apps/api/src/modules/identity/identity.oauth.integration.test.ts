@@ -64,6 +64,7 @@ const sessionCookieOf = async (base: string) => {
       name: "Viewer de test",
       email: `oauth-${randomUUID()}@twitch.local`,
       password: "un-mot-de-passe-solide-42",
+      birthDate: "2000-01-01",
     }),
   });
   const cookie = response.headers
