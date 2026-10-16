@@ -85,14 +85,17 @@ const seedAccount = async (env: Env): Promise<Outcome> => {
   }
 };
 
-export const seedDevelopment = async (env: Env): Promise<Result<SeedReport, "production">> => {
-  if (env.NODE_ENV === "production") {
-    return err("production");
+const LOOPBACK_HOSTS: ReadonlySet<string> = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
+export const seedDevelopment = async (env: Env): Promise<Result<SeedReport, "not_local">> => {
+  const { authBaseUrl } = loadEnv(env);
+  if (!LOOPBACK_HOSTS.has(new URL(authBaseUrl).hostname)) {
+    return err("not_local");
   }
   const client = new Client({ connectionString: migratorUrlOf(env) });
   await client.connect();
   try {
-    const clientOutcome = await seedClient(client, apiResourceOf(loadEnv(env).authBaseUrl));
+    const clientOutcome = await seedClient(client, apiResourceOf(authBaseUrl));
     return ok({ client: clientOutcome, account: await seedAccount(env) });
   } finally {
     await client.end();

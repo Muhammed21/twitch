@@ -3,7 +3,9 @@ import { DEV_ACCOUNT, DEV_CLIENT_ID, DEV_REDIRECT_URI, seedDevelopment } from ".
 const result = await seedDevelopment(process.env);
 
 if (!result.ok) {
-  process.stderr.write("seed:dev refuse de tourner avec NODE_ENV=production.\n");
+  process.stderr.write(
+    "seed:dev ne tourne que contre une API locale : BETTER_AUTH_URL doit viser localhost, 127.0.0.1 ou [::1].\n",
+  );
   process.exit(1);
 }
 

@@ -154,13 +154,24 @@ describe("seed de développement (ADR 0039, §6)", () => {
     ).rejects.toThrow("DATABASE_URL_MIGRATOR manquante");
   });
 
-  it("refuse de tourner en production, sans rien écrire", async () => {
+  it.each([
+    ["une API publique", "https://api.twitch.example"],
+    ["une base de staging sur le réseau", "http://10.0.0.12:3000"],
+    ["un nom qui contient localhost", "http://localhost.twitch.example"],
+  ])("refuse de tourner contre %s, sans rien écrire", async (_name, url) => {
     await forgetSeed();
 
-    expect(await seedDevelopment({ ...process.env, NODE_ENV: "production" })).toEqual({
+    expect(await seedDevelopment({ ...process.env, BETTER_AUTH_URL: url })).toEqual({
       ok: false,
-      error: "production",
+      error: "not_local",
     });
     expect(await seeded()).toEqual({ clients: 0, resources: 0, accounts: 0 });
   });
+
+  it.each(["http://localhost:3000", "http://127.0.0.1:3000", "http://[::1]:3000"])(
+    "accepte une API locale (%s)",
+    async (url) => {
+      expect((await seedDevelopment({ ...process.env, BETTER_AUTH_URL: url })).ok).toBe(true);
+    },
+  );
 });
