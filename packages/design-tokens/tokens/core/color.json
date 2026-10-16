@@ -2,6 +2,11 @@
   "core": {
     "color": {
       "neutral": {
+        "0": {
+          "$type": "color",
+          "$value": "#000000",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : slogan et libellé du bouton blanc de l'accueil (onboarding/accueil-bienvenue--defaut)."
+        },
         "5": {
           "$type": "color",
           "$value": "#0e0e10",
@@ -58,6 +63,11 @@
           "$type": "color",
           "$value": "#9147ff",
           "$description": "Charte publique de la marque Twitch (violet de marque). Relevé sur l'app iOS : fond des boutons d'action dans les deux thèmes."
+        },
+        "65": {
+          "$type": "color",
+          "$value": "#a05fff",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : fond du bouton Log In de l'accueil, posé sur l'accent (onboarding/accueil-bienvenue--defaut)."
         },
         "80": {
           "$type": "color",

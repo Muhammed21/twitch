@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		A10000000000000000000010 /* DesignSystem in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000011 /* DesignSystem */; };
+		A10000000000000000000013 /* Onboarding in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000014 /* Onboarding */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +25,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000000000000000010 /* DesignSystem in Frameworks */,
+				A10000000000000000000013 /* Onboarding in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -67,6 +69,7 @@
 			name = App;
 			packageProductDependencies = (
 				A10000000000000000000011 /* DesignSystem */,
+				A10000000000000000000014 /* Onboarding */,
 			);
 			productName = App;
 			productReference = A10000000000000000000020 /* Twitch.app */;
@@ -236,6 +239,10 @@
 		A10000000000000000000011 /* DesignSystem */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = DesignSystem;
+		};
+		A10000000000000000000014 /* Onboarding */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Onboarding;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

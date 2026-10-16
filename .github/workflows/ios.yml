@@ -54,4 +54,4 @@ jobs:
         run: |
           simulator=$(xcrun simctl list devices available --json \
             | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | startswith("iPhone"))][0].udid')
-          xcodebuild test -scheme Packages -destination "id=$simulator"
+          xcodebuild test -scheme Packages-Package -destination "id=$simulator"

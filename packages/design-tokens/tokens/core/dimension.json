@@ -56,6 +56,21 @@
         "$value": "16px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : marge latérale des écrans."
       },
+      "20": {
+        "$type": "dimension",
+        "$value": "20px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : marges latérales et basse des boutons de l'accueil."
+      },
+      "40": {
+        "$type": "dimension",
+        "$value": "40px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : retrait du contenu de l'accueil (catégories et slogan)."
+      },
+      "44": {
+        "$type": "dimension",
+        "$value": "44px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : hauteur des boutons de l'accueil."
+      },
       "full": {
         "$type": "dimension",
         "$value": "9999px",

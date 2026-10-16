@@ -26,4 +26,10 @@ public enum Spacing {
     public static let x15: CGFloat = 15
     /// Marge latérale des écrans, relevée sur l'app iOS Twitch (16 pt).
     public static let x16: CGFloat = 16
+    /// Marges latérales et basse des boutons de l'accueil, relevées sur l'app iOS Twitch (20 pt).
+    public static let x20: CGFloat = 20
+    /// Retrait du contenu de l'accueil, relevé sur l'app iOS Twitch (40 pt).
+    public static let x40: CGFloat = 40
+    /// Hauteur des boutons d'action, relevée sur l'app iOS Twitch (44 pt), cible tactile minimale d'iOS.
+    public static let x44: CGFloat = 44
 }

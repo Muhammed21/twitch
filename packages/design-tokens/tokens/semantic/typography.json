@@ -23,6 +23,22 @@
         "fontWeight": 600
       },
       "$description": "Texte courant, titres de stream, métadonnées (body de la charte, 12 px / 600). Convention : text style iOS footnote."
+    },
+    "heroText": {
+      "$type": "iosTextStyle",
+      "$value": {
+        "textStyle": "largeTitle",
+        "fontWeight": 700
+      },
+      "$description": "Catégories et slogan de l'accueil. Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : hauteur de capitale 24 pt, soit 34 pt, text style iOS largeTitle."
+    },
+    "actionLabel": {
+      "$type": "iosTextStyle",
+      "$value": {
+        "textStyle": "headline",
+        "fontWeight": 700
+      },
+      "$description": "Libellés des boutons de l'accueil. Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : hauteur de capitale 11,7 pt, soit 17 pt, text style iOS headline ; gras pour être un grand texte WCAG (paire du bouton Log In)."
     }
   }
 }
