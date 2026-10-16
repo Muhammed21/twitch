@@ -1,0 +1,16 @@
+// Contexte moderation (ADR 0003, ADR 0006) : les sanctions d'une chaîne. Une sanction est une attribution banned dans authz.
+
+model ModerationOutbox {
+  id            String    @id @db.Uuid
+  name          String
+  version       Int
+  payload       Json
+  occurredAt    DateTime
+  publishedAt   DateTime?
+  attempts      Int       @default(0)
+  nextAttemptAt DateTime  @default(now())
+  lastError     String?
+
+  @@index([publishedAt, nextAttemptAt])
+  @@schema("moderation")
+}
