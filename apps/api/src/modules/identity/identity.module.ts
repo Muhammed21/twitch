@@ -10,6 +10,7 @@ export {
   type IdentityRedis,
 } from "./infrastructure/redis-session-revocation.ts";
 export { mountIdentityRoutes } from "./infrastructure/routes.ts";
+export { mountAuthPages } from "./infrastructure/pages/pages-routes.ts";
 export { createIdentityAccessTokenVerifier } from "./infrastructure/access-token-verifier.ts";
 
 export {

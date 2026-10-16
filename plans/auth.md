@@ -11,7 +11,7 @@ Depuis le simulateur, avec l'API locale : « Sign Up » crée un compte (code re
 ## Ordre
 
 ```
-api A1 (ADR) ──▶ api A2 (seed) ──▶ api A3a-c (identité) ──▶ api A4 (pages) ──▶ api A5 (réinitialisation)
+api A1 (ADR) ──▶ api A2 (seed) ──▶ api A3a-c (identité) ──▶ api A4a-c (pages) ──▶ api A5 (réinitialisation)
                                                                       │
 api A6 (révocation) ──────────────────────────────────────────────────┤
 ios I1 (OAuth, Keychain, refresh) ──▶ ios I2 (client généré, /v1/me) ─┴──▶ ios I3 (feature Auth)
@@ -45,10 +45,20 @@ _Tests d'abord_ : 12 ans et 364 jours refusé, 13 ans pile accepté, date absent
 Plugin `emailOTP` : code à 6 chiffres valable 5 minutes, envoyé à l'inscription, stocké haché ; la connexion par code e-mail (`/sign-in/email-otp`) est fermée, elle contournerait le mot de passe et la 2FA ; la réinitialisation par code (`/email-otp/request-password-reset`, `/forget-password/email-otp`, `/email-otp/reset-password`) est fermée jusqu'à A5. Envoi SMTP (`SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM`), Mailpit en local.
 _Tests d'abord_ : un code est envoyé à Mailpit et l'adresse est vérifiée après sa saisie ; code faux refusé ; code jamais stocké en clair ; `/sign-in/email-otp` et les routes de réinitialisation répondent 404.
 
-### A4 — Pages de connexion et d'inscription
+### A4a — Socle des pages et connexion
 
-Routes HTML `GET`/`POST` : connexion (`auth/connexion--*`), étape 2FA si le TOTP est actif (`auth/connexion-code-2fa--*`), inscription (`auth/inscription--*`, variante e-mail), code (`auth/inscription-code-telephone--*`, appliqué à l'e-mail), « You're All Set! » (`auth/inscription-terminee--defaut`). `prompt=create` ouvre l'inscription. Chaque `POST` vérifie l'origine et un jeton CSRF ; après connexion ou inscription, l'autorisation OAuth reprend et redirige vers `twitch://oauth/callback`. CSS depuis les tokens.
-_Tests d'abord_ : une autorisation sans session affiche la connexion ; identifiants faux ⇒ même message quel que soit le champ ; bonne connexion ⇒ redirection vers le callback avec `code` et `state` ; compte TOTP ⇒ étape code, puis callback ; `prompt=create` ⇒ inscription ; inscription ⇒ code ⇒ « You're All Set! » ⇒ callback ; `POST` sans jeton CSRF refusé.
+`GET`/`POST /login` (capture `auth/connexion--rempli`) : formulaire HTML sans JavaScript, rendu par un gabarit qui échappe chaque valeur, feuille `/login/styles.css` = sortie CSS des tokens (`packages/design-tokens/platforms/css/tokens.css`, polices système de Safari pour les styles de texte iOS) + règles des pages. Connexion par nom d'utilisateur ou e-mail ; la requête OAuth signée par better-auth (`oauth_query`) est relayée au gestionnaire HTTP de better-auth, qui reprend l'autorisation jusqu'au callback. Chaque `POST` vérifie l'`Origin` (= `BETTER_AUTH_URL`) et un jeton CSRF en double soumission (cookie `twitch_csrf` `HttpOnly`, `SameSite=Strict`). Même message quel que soit le champ faux ; requête OAuth modifiée refusée.
+_Tests d'abord_ : une autorisation sans session affiche la connexion, avec la requête signée et un jeton CSRF ; connexion par nom ou e-mail ⇒ callback avec `code` et `state`, échangeable contre un token `/v1` ; mauvais mot de passe et compte inconnu ⇒ même réponse ; identifiant échappé ; formulaire sans CSRF, à CSRF différent, sans cookie, à CSRF vide ou d'une autre origine ⇒ 403 ; requête OAuth modifiée ⇒ 400 ; feuille de style servie.
+
+### A4b — Étape 2FA
+
+Compte TOTP : la connexion passe par « Welcome back » (`auth/connexion-code-2fa--*`), le code reprend l'autorisation.
+_Tests d'abord_ : compte TOTP ⇒ étape code, puis callback ; code faux refusé.
+
+### A4c — Inscription
+
+`prompt=create` ouvre l'inscription (`auth/inscription--*`, variante e-mail), puis le code (`auth/inscription-code-telephone--*`, appliqué à l'e-mail) et « You're All Set! » (`auth/inscription-terminee--defaut`) ; l'autorisation reprend par `/oauth2/continue`, après la vérification de l'adresse.
+_Tests d'abord_ : `prompt=create` ⇒ inscription ; inscription ⇒ code ⇒ « You're All Set! » ⇒ callback ; aucune session OAuth avant le code.
 
 ### A5 — Réinitialisation du mot de passe
 
