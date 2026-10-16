@@ -1,2 +1,3 @@
 packages/design-tokens/platforms/** linguist-generated=true
 docs/CATALOG.md linguist-generated=true
+apps/ios/Packages/Core/Networking/Sources/openapi.json linguist-generated=true

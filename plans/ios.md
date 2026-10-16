@@ -48,7 +48,7 @@ Les PR 1a, 1b et 2 ne dépendent de rien : elles démarrent tout de suite. Les f
 
 ### PR 1a — Projet et package
 
-Projet Xcode mince dans `apps/ios/App.xcodeproj` (dossier synchronisé `App/`), `Packages/Package.swift` avec `swiftLanguageMode(.v6)` sur tous les targets et `Core/DesignSystem` (dépendance `../../../packages/design-tokens/platforms/swift`). Tests : `xcodebuild test -scheme Packages-Package` sur un simulateur iOS, depuis `apps/ios/Packages`. Les tests qui ont besoin d'une app hôte (Keychain, Info.plist) vivent dans le target `AppTests` du projet : `xcodebuild test -project App.xcodeproj -scheme App`, depuis `apps/ios`.
+Projet Xcode mince dans `apps/ios/App.xcodeproj` (dossier synchronisé `App/`), `Packages/Package.swift` avec `swiftLanguageMode(.v6)` sur tous les targets et `Core/DesignSystem` (dépendance `../../../packages/design-tokens/platforms/swift`). Tests : `xcodebuild test -skipPackagePluginValidation -scheme Packages-Package` sur un simulateur iOS, depuis `apps/ios/Packages`. Les tests qui ont besoin d'une app hôte (Keychain, Info.plist) vivent dans le target `AppTests` du projet : `xcodebuild test -skipPackagePluginValidation -project App.xcodeproj -scheme App`, depuis `apps/ios`.
 _Tests d'abord_ : un rôle de couleur de `DesignSystem` prend la valeur de son token dans les deux thèmes.
 
 ### PR 1b — Outillage Swift
@@ -65,10 +65,17 @@ Feature `Onboarding` : l'écran d'accueil des personnes déconnectées, fidèle 
 Modèles et value objects : `ChannelID`, `ChannelSlug`, `Channel`, `LiveChannel`, `StreamSession`, `ChatMessage`, `ViewerCount`. Tout enum issu du serveur a un cas `.unknown(String)` (ADR 0009, garde-fou n°4). Protocoles : `ChannelRepository`, `LiveDirectory`, `ChatConnection`. `Domain` porte déjà `AccessTokenProvider`, `SessionStatus` et `SessionError` (PR 4a).
 _Tests d'abord_ : slug invalide refusé à la construction ; une valeur d'enum inconnue devient `.unknown` sans erreur ; types `Sendable` (vérifié par le compilateur).
 
-### PR 3 — `Core/Networking` : client généré et mappers
+### PR 3 — `Core/Networking` : client généré et `GET /v1/me`
 
-`swift-openapi-generator` en build plugin sur une copie d'`openapi.json`, synchronisée par `pnpm generate` et vérifiée par le gate des artefacts générés (ADR 0018). Configuration : transcodeur ISO 8601 tolérant, `Uuid` mappé sur `Foundation.UUID` (ADR 0024, §6). Mappers des types générés vers `Domain`, y compris la variante de repli des unions et les enums ouverts. Erreurs RFC 9457 traduites en erreurs de `Domain`. En-tête `X-Client-Version` sur chaque requête.
-_Tests d'abord_ : décodage de fixtures JSON réelles produites par le serveur ; champ ajouté, valeur d'enum ajoutée et variante d'union ajoutée décodés sans échec (le test de compatibilité ascendante de l'ADR 0024, §8) ; date avec et sans millisecondes ; échec si le log du générateur contient `is not supported` ou `skipping`.
+`swift-openapi-generator` 1.13.1, en build plugin du target `Networking`, lit `Core/Networking/Sources/openapi.json` : une copie d'`apps/api/openapi.json` que `pnpm generate` resynchronise (tâche `generate` de `@repo/ios`, après celle de `@repo/api`) et que le gate des artefacts générés vérifie (ADR 0018, §5). Le code généré naît au build, n'est pas versionné, et reste `internal` au target (ADR 0010, règle 2). `openapi-generator-config.yaml` filtre sur les opérations consommées (`MeController_read`) et mappe `Uuid` sur `Foundation.UUID` (ADR 0024, §6). `apps/ios/scripts/check-openapi-generator.sh` lance le même générateur sur la copie et échoue si son log contient `is not supported` ou `skipping` (ADR 0024, §8) ; le workflow iOS le lance avant les tests. En ligne de commande, `xcodebuild` prend `-skipPackagePluginValidation` ; dans Xcode, le plugin s'active une fois par « Trust & Enable ».
+
+`Domain` porte `Account` (`id`, `name`, `email`) et le protocole `AccountRepository`. `AccountClient` l'implémente sur le client généré :
+
+- un `ClientMiddleware` pose `Authorization: Bearer` avec le token de l'`AccessTokenProvider` ; sur `401`, il signale le token rejeté (`accessTokenRejected`) et réessaie une seule fois ; un second `401` remonte `SessionError.signedOut`. L'instant vient d'une horloge injectée ;
+- le transport du client généré passe par `HTTPTransport`, dont `URLSessionHTTPTransport` est l'implémentation sur `URLSession` ;
+- les erreurs du client généré sont déballées, pour qu'aucun type généré ne sorte du module ; une réponse d'erreur devient `APIError.unexpectedStatus`.
+
+_Tests d'abord_ : décodage d'une réponse `Me` réelle (celle des tests de l'API) ; champ ajouté toléré (ADR 0024, §8) ; identifiant qui n'est pas un UUID refusé ; en-tête Bearer posé ; `401` ⇒ un rejet signalé puis une seconde tentative avec le nouveau token ; deux `401` ⇒ erreur de session, sans troisième tentative ; session déconnectée ⇒ aucun appel ; `URLSessionHTTPTransport` contre un `URLProtocol` qui renvoie la requête reçue ; échec du script de contrôle sur un schéma que le générateur saute.
 
 ### PR 4 — Connexion et session (jalon I1)
 
@@ -86,13 +93,13 @@ Deux PR : 4a pose le protocole OAuth et la session dans `Core/Networking`, 4b le
 Le projet déclare le schéma d'URL `twitch`, l'exception ATS `NSAllowsLocalNetworking` seule, et `API_BASE_URL` = `http://127.0.0.1:3000` et `OAUTH_CLIENT_ID` = `twitch-ios-dev` en Debug, par des réglages de build. Le client `twitch-ios-dev` est enregistré par le seed de développement de l'API.
 _Tests d'abord_ : vecteur de la RFC 7636 (annexe B) ; la requête d'autorisation porte `code_challenge_method=S256` et `resource` ; `state` différent refusé ; dix requêtes qui reçoivent `401` en même temps déclenchent un seul refresh ; `invalid_grant` → état déconnecté ; déconnexion qui vide le Keychain malgré une révocation en échec ; attribut Keychain relu sur simulateur, dans `AppTests`.
 
-**4b — Feature `Auth` et `SessionStore`.** `ASWebAuthenticationSession` (`prefersEphemeralWebBrowserSession`) ouverte par les boutons Log In et Sign Up de l'accueil, transport `URLSession`, `SessionStore` `@MainActor @Observable` qui suit `OAuthSession.statusUpdates`. `invalid_grant` → retour à l'écran de connexion.
+**4b — Feature `Auth` et `SessionStore`.** `ASWebAuthenticationSession` (`prefersEphemeralWebBrowserSession`) ouverte par les boutons Log In et Sign Up de l'accueil, `SessionStore` `@MainActor @Observable` qui suit `OAuthSession.statusUpdates`. `invalid_grant` → retour à l'écran de connexion.
 _Tests d'abord_ : Log In ouvre l'autorisation, Sign Up l'ouvre avec `prompt=create` ; un callback valide passe à l'état connecté ; `.signedOut` publié → accueil.
 
 ### PR 5 — Navigation, racine de composition et accueil
 
-`Core/Navigation` (`Route` ne transporte que des identifiants), racine de composition dans `App` qui injecte tous les objets d'état, `navigationDestination(for: Route.self)` unique. Appel de `GET /v1/mobile/bootstrap` au lancement : version minimale supportée → écran « mettez à jour » ; flags avec leurs valeurs par défaut sûres, l'app démarre même si l'appel échoue (ADR 0009, 0012). Feature `Home` : liste des lives paginée par curseur, miniature par défaut.
-_Tests d'abord_ : version minimale supérieure à celle de l'app → écran de mise à jour ; bootstrap en échec → démarrage avec les défauts ; page suivante chargée par curseur sans doublon ; un deep link `twitch://channel/<slug>` se décode en `Route`.
+`Core/Navigation` (`Route` ne transporte que des identifiants), racine de composition dans `App` qui injecte tous les objets d'état, `navigationDestination(for: Route.self)` unique. Appel de `GET /v1/mobile/bootstrap` au lancement : version minimale supportée → écran « mettez à jour » ; flags avec leurs valeurs par défaut sûres, l'app démarre même si l'appel échoue (ADR 0009, 0012). Feature `Home` : liste des lives paginée par curseur, miniature par défaut. Les premiers champs qui en ont besoin apportent dans `Core/Networking` le transcodeur ISO 8601 tolérant (ADR 0024, §6), les mappers des enums ouverts et des unions à variante de repli vers des cas `.unknown` de `Domain` (§3 et §4), la traduction des erreurs RFC 9457 en erreurs de `Domain` et l'en-tête `X-Client-Version` sur chaque requête.
+_Tests d'abord_ : date avec et sans millisecondes ; valeur d'enum ajoutée et variante d'union ajoutée décodées sans échec (ADR 0024, §8) ; version minimale supérieure à celle de l'app → écran de mise à jour ; bootstrap en échec → démarrage avec les défauts ; page suivante chargée par curseur sans doublon ; un deep link `twitch://channel/<slug>` se décode en `Route`.
 
 ### PR 6 — Player (jalon I2)
 

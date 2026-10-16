@@ -9,6 +9,7 @@
     "packages/design-tokens/reports/**",
     "docs/CATALOG.md",
     "apps/api/openapi.json",
+    "apps/ios/Packages/Core/Networking/Sources/openapi.json",
     "packages/docs-catalog/reports/**"
   ],
   "sortImports": {

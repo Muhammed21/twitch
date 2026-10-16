@@ -1,0 +1,13 @@
+generate:
+  - types
+  - client
+accessModifier: internal
+namingStrategy: idiomatic
+filter:
+  operations:
+    - MeController_read
+additionalImports:
+  - Foundation
+typeOverrides:
+  schemas:
+    Uuid: Foundation.UUID

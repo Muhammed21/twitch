@@ -1,0 +1,8 @@
+{
+  "name": "@repo/ios",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "generate": "cp ../api/openapi.json Packages/Core/Networking/Sources/openapi.json"
+  }
+}
