@@ -24,6 +24,12 @@ struct ColorRoleTests {
       (ColorRole.accent, ColorScheme.dark, "9147FF"),
       (ColorRole.onAccent, ColorScheme.light, "FFFFFF"),
       (ColorRole.onAccent, ColorScheme.dark, "FFFFFF"),
+      (ColorRole.onAccentStrong, ColorScheme.light, "000000"),
+      (ColorRole.onAccentStrong, ColorScheme.dark, "000000"),
+      (ColorRole.onAccentMuted, ColorScheme.light, "5C16C5"),
+      (ColorRole.onAccentMuted, ColorScheme.dark, "5C16C5"),
+      (ColorRole.accentSubtle, ColorScheme.light, "A05FFF"),
+      (ColorRole.accentSubtle, ColorScheme.dark, "A05FFF"),
     ]
   )
   func resolvesToken(role: ColorRole, scheme: ColorScheme, expected: String) {
