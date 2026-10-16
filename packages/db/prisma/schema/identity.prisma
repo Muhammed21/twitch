@@ -10,6 +10,8 @@ model IdentityUser {
   username         String?                     @unique
   /// @personal
   displayUsername  String?
+  /// @personal
+  birthDate        DateTime?                   @db.Date
   /// @not-personal
   emailVerified    Boolean                     @default(false)
   /// @personal

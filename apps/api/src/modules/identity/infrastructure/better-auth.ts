@@ -15,6 +15,7 @@ import {
   authenticationClaims,
   authenticationMethodsFor,
 } from "../domain/authentication-context.ts";
+import { parseBirthDate } from "../domain/birth-date.ts";
 import { isRefreshTokenReuse } from "../domain/refresh-token-reuse.ts";
 import { ACCESS_TOKEN_LIFETIME_SECONDS } from "../domain/token-lifetimes.ts";
 import { isValidUsername, USERNAME_LENGTH } from "../domain/username.ts";
@@ -57,10 +58,11 @@ type StoredRefreshToken = {
   rotationReplayExpiresAt: Date | null;
 };
 
-const guardRefreshGrant = (
-  onReuse: (input: { userId: string; userAgent: string | null }) => Promise<unknown>,
-) =>
-  createAuthMiddleware(async (ctx) => {
+type HookContext = Parameters<Parameters<typeof createAuthMiddleware>[0]>[0];
+
+const guardRefreshGrant =
+  (onReuse: (input: { userId: string; userAgent: string | null }) => Promise<unknown>) =>
+  async (ctx: HookContext) => {
     const grant = RefreshGrant.safeParse(ctx.body);
     if (!grant.success) {
       return;
@@ -80,7 +82,27 @@ const guardRefreshGrant = (
     if (exceedsAbsoluteLifetime({ authTime: stored.authTime, now })) {
       throw new APIError("BAD_REQUEST", { error: "invalid_grant" });
     }
-  });
+  };
+
+const SIGN_UP_PATH = "/sign-up/email";
+
+const BIRTH_DATE_MESSAGES = {
+  missing: "La date de naissance est requise.",
+  malformed: "La date de naissance doit être au format AAAA-MM-JJ.",
+  future: "La date de naissance ne peut pas être dans le futur.",
+  too_young: "Il faut avoir au moins 13 ans pour créer un compte.",
+} as const;
+
+const guardSignUpBirthDate = (ctx: HookContext) => {
+  const birthDate = parseBirthDate({ value: ctx.body?.birthDate, now: new Date() });
+  if (!birthDate.ok) {
+    throw new APIError("BAD_REQUEST", {
+      code: `BIRTH_DATE_${birthDate.error.toUpperCase()}`,
+      message: BIRTH_DATE_MESSAGES[birthDate.error],
+    });
+  }
+  return { context: { body: { ...ctx.body, birthDate: birthDate.value } } };
+};
 
 const sessionAuthenticationClaims = async ({ ctx, sessionId }: OAuthClaimExtensionInput) => {
   if (typeof sessionId !== "string") {
@@ -109,6 +131,9 @@ export const createIdentityAuth = ({
     revokedSessions: redisRevokedSessionList(redis),
     broadcast: redisSessionRevocationBroadcast(redis),
   });
+  const refreshGuard = guardRefreshGrant((input) =>
+    revokeAll({ ...input, reason: "refresh_token_reuse" }),
+  );
   return betterAuth({
     basePath: "/auth",
     secret,
@@ -117,10 +142,15 @@ export const createIdentityAuth = ({
     disabledPaths: ["/token"],
     advanced: { database: { generateId: () => randomUUID() } },
     hooks: {
-      before: guardRefreshGrant((input) => revokeAll({ ...input, reason: "refresh_token_reuse" })),
+      before: createAuthMiddleware(async (ctx) =>
+        ctx.path === SIGN_UP_PATH ? guardSignUpBirthDate(ctx) : refreshGuard(ctx),
+      ),
     },
     emailAndPassword: { enabled: true },
-    user: { modelName: "IdentityUser" },
+    user: {
+      modelName: "IdentityUser",
+      additionalFields: { birthDate: { type: "date", required: false, input: true } },
+    },
     session: {
       modelName: "IdentitySession",
       additionalFields: { amr: { type: "string[]", input: false } },
