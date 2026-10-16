@@ -50,6 +50,7 @@ Chaque page de `docs/`, une ligne chacune : titre, [mode](README.md#carte), stat
 - [0036 — Les valeurs visuelles reprennent l'app iOS Twitch, relevées sur captures](adr/0036-valeurs-visuelles-relevees-sur-l-app-ios-twitch.md) — _explanation · Accepté_ — L'app reprend-elle le design de l'app iOS Twitch à l'identique, valeurs visuelles comprises, ou seulement sa structure ?
 - [0037 — Le logo Twitch est repris, depuis le SVG officiel du brand kit](adr/0037-logo-twitch-repris-depuis-le-svg-officiel.md) — _explanation · Accepté_ — L'écran de lancement montre-t-il le logo Twitch, et d'où vient son tracé ?
 - [0038 — L'app iOS vit sous `apps/ios/`, à côté des autres applications](adr/0038-app-ios-sous-apps-ios.md) — _explanation · Proposé_ — Où vit l'app iOS dans le monorepo ?
+- [0039 — Les pages d'authentification sont servies par l'API, en HTML sans JavaScript](adr/0039-pages-d-authentification-servies-par-l-api-en-html-sans-javascript.md) — _explanation · Proposé_ — Comment les écrans d'authentification des captures s'affichent-ils, et que demandent-ils à l'API ?
 - [Décisions d'architecture (ADR)](adr/README.md) — _reference_ — Registre des décisions structurantes du projet. Format MADR.
 
 ## Spikes — recherche bornée
