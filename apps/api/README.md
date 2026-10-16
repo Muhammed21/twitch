@@ -10,17 +10,18 @@ API NestJS 11 (ADR 0002, 0009). Architecture et découpage : [plan de l'API](../
 | `pnpm test`             | Tests unitaires et HTTP (application NestJS sur un port libre)            |
 | `pnpm test:integration` | Sondes contre la base locale migrée (`pnpm infra:up` puis `pnpm migrate`) |
 
-| Variable                | Rôle                                                                                     |
-| ----------------------- | ---------------------------------------------------------------------------------------- |
-| `API_PORT`              | Port d'écoute, 3000 par défaut                                                           |
-| `DATABASE_URL_HEALTH`   | Rôle `app_health`, lecture de la version du schéma, requis                               |
-| `DATABASE_URL_IDENTITY` | Rôle `app_identity`, tables de better-auth, requis                                       |
-| `DATABASE_URL_CHANNEL`  | Rôle `app_channel`, chaînes et attributions, requis                                      |
-| `DATABASE_URL_STREAM`   | Rôle `app_stream`, sessions de diffusion, requis                                         |
-| `BETTER_AUTH_SECRET`    | Secret de better-auth, au moins 32 caractères, requis                                    |
-| `BETTER_AUTH_URL`       | URL publique de l'API, origine de confiance de better-auth, requis                       |
-| `REDIS_URL`             | Redis (`redis://` ou `rediss://`) : liste de révocation des sessions et Pub/Sub, requis  |
-| `VIDEO_WEBHOOK_SECRET`  | Secret partagé des webhooks du provider vidéo (ADR 0031), au moins 32 caractères, requis |
+| Variable                  | Rôle                                                                                     |
+| ------------------------- | ---------------------------------------------------------------------------------------- |
+| `API_PORT`                | Port d'écoute, 3000 par défaut                                                           |
+| `DATABASE_URL_HEALTH`     | Rôle `app_health`, lecture de la version du schéma, requis                               |
+| `DATABASE_URL_IDENTITY`   | Rôle `app_identity`, tables de better-auth, requis                                       |
+| `DATABASE_URL_CHANNEL`    | Rôle `app_channel`, chaînes et attributions, requis                                      |
+| `DATABASE_URL_STREAM`     | Rôle `app_stream`, sessions de diffusion, requis                                         |
+| `DATABASE_URL_MODERATION` | Rôle `app_moderation`, sanctions, requis                                                 |
+| `BETTER_AUTH_SECRET`      | Secret de better-auth, au moins 32 caractères, requis                                    |
+| `BETTER_AUTH_URL`         | URL publique de l'API, origine de confiance de better-auth, requis                       |
+| `REDIS_URL`               | Redis (`redis://` ou `rediss://`) : liste de révocation des sessions et Pub/Sub, requis  |
+| `VIDEO_WEBHOOK_SECRET`    | Secret partagé des webhooks du provider vidéo (ADR 0031), au moins 32 caractères, requis |
 
 Une variable invalide arrête le démarrage avec le nom de la variable, jamais sa valeur.
 
@@ -147,6 +148,15 @@ Un webhook de fin perdu laisse un live fantôme : `reconcileStreamSessions` le r
 - une session plus récente attend la réconciliation suivante, le temps que le provider la liste ;
 - si le provider ou la base ne répond pas, rien n'est clos : l'échec est journalisé (`réconciliation en échec`) et la réconciliation suivante réessaie ;
 - `FakeLiveVideoProvider` liste les sessions dont il a lu le webhook de démarrage, et non celui de fin, depuis le démarrage du process.
+
+## Modération (ADR 0006)
+
+`modules/moderation` met un utilisateur en timeout sur une chaîne :
+
+- `POST /v1/channels/{id}/timeouts` (jeton requis, corps `{ "userId": Uuid, "durationSeconds": entier }`) rend `Timeout` (`channelId`, `userId`, `expiresAt`) en 201 : 404 pour un identifiant de chaîne qui n'est pas un UUID, 400 pour un corps invalide, 403 sans le droit `timeout` sur la cible (propriétaire ou modérateur de la chaîne, jamais contre le propriétaire, perdu par un banni), puis 422 pour une durée hors de 1 à 1 209 600 secondes (14 jours) ;
+- `timeoutUser` écrit, dans une transaction du client `moderation` : l'attribution `banned` de la cible sur la chaîne avec `expiresAt` (`grantedBy` l'acteur), l'entrée `moderation.user.timed_out` de `audit.AuditEntry` (`actorId` l'humain du jeton) et `moderation.user.timed_out` (`{ channelId, userId, expiresAt }`) dans `ModerationOutbox`, relayé sur `events.moderation` pour le chat ;
+- après le commit, les attributions de la cible sont invalidées ; un échec est rendu dans le résultat (`cacheInvalidated: false`) sans annuler le timeout ;
+- le timeout expire seul : l'attribution n'est ni révoquée ni supprimée, elle cesse de compter à `expiresAt`. Un nouveau timeout ajoute une attribution ; la plus longue restriction en cours s'applique.
 
 ## Autorisation (ADR 0006)
 
