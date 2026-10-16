@@ -89,6 +89,18 @@
       "background": "color.accent.default",
       "min": 1.0,
       "note": "Sous-catégories de l'accueil : texte purement décoratif, masqué à VoiceOver, exception de SC 1.4.3"
+    },
+    {
+      "foreground": "color.danger.onDanger",
+      "background": "color.danger.default",
+      "min": 4.5,
+      "note": "Libellé du bouton Logout de la modale de déconnexion"
+    },
+    {
+      "foreground": "color.text.primary",
+      "background": "color.surface.tertiary",
+      "min": 4.5,
+      "note": "Libellé du bouton Cancel de la modale de déconnexion"
     }
   ]
 }

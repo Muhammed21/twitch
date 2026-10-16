@@ -55,6 +55,22 @@
         "fontWeight": 400
       },
       "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/auth/connexion-code-2fa--rempli) : texte d'explication sous un titre, 17 pt normal, text style iOS body."
+    },
+    "dialogTitle": {
+      "$type": "iosTextStyle",
+      "$value": {
+        "textStyle": "headline",
+        "fontWeight": 700
+      },
+      "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : titre d'une modale (nom du compte), hauteur d'ascendante 13 pt, soit 17 pt, text style iOS headline (parametres/menu-parametres--modale-deconnexion)."
+    },
+    "dialogMessage": {
+      "$type": "iosTextStyle",
+      "$value": {
+        "textStyle": "body",
+        "fontWeight": 400
+      },
+      "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : question d'une modale, « Are you sure you want to log out? » large de 251 pt, soit 17 pt régulier, text style iOS body (parametres/menu-parametres--modale-deconnexion)."
     }
   }
 }

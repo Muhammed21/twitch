@@ -69,6 +69,11 @@
       "$type": "dimension",
       "$value": "{core.dimension.44}",
       "$description": "Hauteur des boutons d'action, relevée sur l'app iOS Twitch (44 pt), cible tactile minimale d'iOS."
+    },
+    "x300": {
+      "$type": "dimension",
+      "$value": "{core.dimension.300}",
+      "$description": "Largeur des modales de confirmation, relevée sur l'app iOS Twitch (300 pt)."
     }
   },
   "radius": {
@@ -91,6 +96,11 @@
       "$type": "dimension",
       "$value": "{core.dimension.8}",
       "$description": "Charte relevée : rayon xl."
+    },
+    "xxl": {
+      "$type": "dimension",
+      "$value": "{core.dimension.12}",
+      "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : rayon des modales, 36 px à @3x (parametres/menu-parametres--modale-deconnexion)."
     },
     "pill": {
       "$type": "dimension",

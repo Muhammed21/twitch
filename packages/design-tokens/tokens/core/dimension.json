@@ -71,6 +71,11 @@
         "$value": "44px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : hauteur des boutons de l'accueil."
       },
+      "300": {
+        "$type": "dimension",
+        "$value": "300px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : largeur de la modale de déconnexion, 900 px à @3x (parametres/menu-parametres--modale-deconnexion)."
+      },
       "full": {
         "$type": "dimension",
         "$value": "9999px",

@@ -18,4 +18,8 @@ public extension Font {
     static let titleText = Font.title2.weight(.bold)
     /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/auth/connexion-code-2fa--rempli) : texte d'explication sous un titre, 17 pt normal, text style iOS body.
     static let supportingText = Font.body.weight(.regular)
+    /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : titre d'une modale (nom du compte), hauteur d'ascendante 13 pt, soit 17 pt, text style iOS headline (parametres/menu-parametres--modale-deconnexion).
+    static let dialogTitle = Font.headline.weight(.bold)
+    /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : question d'une modale, « Are you sure you want to log out? » large de 251 pt, soit 17 pt régulier, text style iOS body (parametres/menu-parametres--modale-deconnexion).
+    static let dialogMessage = Font.body.weight(.regular)
 }

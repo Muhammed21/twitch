@@ -25,6 +25,13 @@ public extension Color {
             ? UIColor(red: 0.161, green: 0.157, blue: 0.184, alpha: 1)
             : UIColor(red: 0.91, green: 0.906, blue: 0.918, alpha: 1)
     })
+    /// Bouton d'annulation posé sur une modale : Cancel de la modale de déconnexion.
+    /// clair #EEEDF0 · sombre #29282F
+    static let surfaceTertiary = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.161, green: 0.157, blue: 0.184, alpha: 1)
+            : UIColor(red: 0.933, green: 0.929, blue: 0.941, alpha: 1)
+    })
     /// Texte courant.
     /// clair #0E0E10 · sombre #EFEFF1
     static let textPrimary = Color(uiColor: UIColor { trait in
@@ -88,6 +95,27 @@ public extension Color {
             ? UIColor(red: 0.627, green: 0.373, blue: 1, alpha: 1)
             : UIColor(red: 0.627, green: 0.373, blue: 1, alpha: 1)
     })
+    /// Fond d'un bouton d'action destructrice : Logout de la modale de déconnexion.
+    /// clair #FE504D · sombre #FE504D
+    static let dangerDefault = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.996, green: 0.314, blue: 0.302, alpha: 1)
+            : UIColor(red: 0.996, green: 0.314, blue: 0.302, alpha: 1)
+    })
+    /// Libellé posé sur color.danger.default : Logout de la modale de déconnexion.
+    /// clair #000000 · sombre #000000
+    static let dangerOnDanger = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0, green: 0, blue: 0, alpha: 1)
+            : UIColor(red: 0, green: 0, blue: 0, alpha: 1)
+    })
+    /// Voile posé sur l'écran sous une modale.
+    /// clair #00000099 · sombre #00000099
+    static let overlayScrim = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0, green: 0, blue: 0, alpha: 0.6)
+            : UIColor(red: 0, green: 0, blue: 0, alpha: 0.6)
+    })
 
     /// Valeurs fixes par thème, réservées aux contextes sans traits et aux tests (ADR 0019 §2.2).
     enum Static {
@@ -97,6 +125,8 @@ public extension Color {
         public static let surfacePrimaryDark = Color(.sRGB, red: 0.094, green: 0.094, blue: 0.106, opacity: 1)
         public static let surfaceSecondaryLight = Color(.sRGB, red: 0.91, green: 0.906, blue: 0.918, opacity: 1)
         public static let surfaceSecondaryDark = Color(.sRGB, red: 0.161, green: 0.157, blue: 0.184, opacity: 1)
+        public static let surfaceTertiaryLight = Color(.sRGB, red: 0.933, green: 0.929, blue: 0.941, opacity: 1)
+        public static let surfaceTertiaryDark = Color(.sRGB, red: 0.161, green: 0.157, blue: 0.184, opacity: 1)
         public static let textPrimaryLight = Color(.sRGB, red: 0.055, green: 0.055, blue: 0.063, opacity: 1)
         public static let textPrimaryDark = Color(.sRGB, red: 0.937, green: 0.937, blue: 0.945, opacity: 1)
         public static let textSecondaryLight = Color(.sRGB, red: 0.325, green: 0.325, blue: 0.373, opacity: 1)
@@ -115,5 +145,11 @@ public extension Color {
         public static let accentOnAccentMutedDark = Color(.sRGB, red: 0.361, green: 0.086, blue: 0.773, opacity: 1)
         public static let accentSubtleLight = Color(.sRGB, red: 0.627, green: 0.373, blue: 1, opacity: 1)
         public static let accentSubtleDark = Color(.sRGB, red: 0.627, green: 0.373, blue: 1, opacity: 1)
+        public static let dangerDefaultLight = Color(.sRGB, red: 0.996, green: 0.314, blue: 0.302, opacity: 1)
+        public static let dangerDefaultDark = Color(.sRGB, red: 0.996, green: 0.314, blue: 0.302, opacity: 1)
+        public static let dangerOnDangerLight = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 1)
+        public static let dangerOnDangerDark = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 1)
+        public static let overlayScrimLight = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 0.6)
+        public static let overlayScrimDark = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 0.6)
     }
 }

@@ -5,6 +5,7 @@
   --color-background-primary: #f7f7f8;
   --color-surface-primary: #ffffff;
   --color-surface-secondary: #e8e7ea;
+  --color-surface-tertiary: #eeedf0;
   --color-text-primary: #0e0e10;
   --color-text-secondary: #53535f;
   --color-text-link: #5c16c5;
@@ -14,6 +15,9 @@
   --color-accent-on-accent-strong: #000000;
   --color-accent-on-accent-muted: #5c16c5;
   --color-accent-subtle: #a05fff;
+  --color-danger-default: #fe504d;
+  --color-danger-on-danger: #000000;
+  --color-overlay-scrim: #00000099;
   --typography-display-text-font: -apple-system-headline;
   --typography-display-text-weight: 600;
   --typography-heading-text-font: -apple-system-subheadline;
@@ -28,6 +32,10 @@
   --typography-title-text-weight: 700;
   --typography-supporting-text-font: -apple-system-body;
   --typography-supporting-text-weight: 400;
+  --typography-dialog-title-font: -apple-system-headline;
+  --typography-dialog-title-weight: 700;
+  --typography-dialog-message-font: -apple-system-body;
+  --typography-dialog-message-weight: 400;
   --spacing-x1: 1px;
   --spacing-x2: 2px;
   --spacing-x3: 3px;
@@ -42,10 +50,12 @@
   --spacing-x20: 20px;
   --spacing-x40: 40px;
   --spacing-x44: 44px;
+  --spacing-x300: 300px;
   --radius-sm: 2px;
   --radius-md: 4px;
   --radius-lg: 6px;
   --radius-xl: 8px;
+  --radius-xxl: 12px;
   --radius-pill: 9999px;
 }
 
@@ -54,6 +64,7 @@
     --color-background-primary: #0e0e10;
     --color-surface-primary: #18181b;
     --color-surface-secondary: #29282f;
+    --color-surface-tertiary: #29282f;
     --color-text-primary: #efeff1;
     --color-text-secondary: #adadb8;
     --color-text-link: #bf94ff;
@@ -63,5 +74,8 @@
     --color-accent-on-accent-strong: #000000;
     --color-accent-on-accent-muted: #5c16c5;
     --color-accent-subtle: #a05fff;
+    --color-danger-default: #fe504d;
+    --color-danger-on-danger: #000000;
+    --color-overlay-scrim: #00000099;
   }
 }

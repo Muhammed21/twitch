@@ -42,6 +42,11 @@
           "$value": "#e8e7ea",
           "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : champs et boutons secondaires, thème clair."
         },
+        "94": {
+          "$type": "color",
+          "$value": "#eeedf0",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : bouton Cancel de la modale de déconnexion, thème clair (parametres/menu-parametres--modale-deconnexion)."
+        },
         "97": {
           "$type": "color",
           "$value": "#f7f7f8",
@@ -73,6 +78,20 @@
           "$type": "color",
           "$value": "#bf94ff",
           "$description": "Relevé sur l'app iOS Twitch : texte d'accent et onglet actif du thème sombre."
+        }
+      },
+      "red": {
+        "60": {
+          "$type": "color",
+          "$value": "#fe504d",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : bouton Logout de la modale de déconnexion (parametres/menu-parametres--modale-deconnexion)."
+        }
+      },
+      "scrim": {
+        "60": {
+          "$type": "color",
+          "$value": "#00000099",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : voile noir à 60 % sous la modale de déconnexion : les lignes blanches passent à #666666 et le fond #f7f7f8 à #636363 (parametres/menu-parametres--modale-deconnexion)."
         }
       }
     }
