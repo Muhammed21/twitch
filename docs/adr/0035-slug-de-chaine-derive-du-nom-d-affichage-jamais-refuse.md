@@ -1,6 +1,6 @@
 # 0035 — Slug de chaîne dérivé du nom d'affichage, au format Twitch, jamais refusé à la création
 
-- Statut : Proposé
+- Statut : Accepté
 - Date : 2026-10-15
 - Décideurs : Muhammed Cavus
 
