@@ -1,4 +1,5 @@
 import DesignSystem
+import Onboarding
 import SwiftUI
 
 @main
@@ -7,11 +8,13 @@ struct TwitchApp: App {
 
   var body: some Scene {
     WindowGroup {
-      ZStack {
-        ColorRole.background.color.ignoresSafeArea()
-        if isSplashVisible {
+      if isSplashVisible {
+        ZStack {
+          ColorRole.accent.color.ignoresSafeArea()
           SplashScreen { isSplashVisible = false }
         }
+      } else {
+        WelcomeScreen { _ in }
       }
     }
   }

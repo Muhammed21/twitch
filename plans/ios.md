@@ -48,13 +48,17 @@ Les PR 1a, 1b et 2 ne dépendent de rien : elles démarrent tout de suite. Les f
 
 ### PR 1a — Projet et package
 
-Projet Xcode mince dans `apps/ios/App.xcodeproj` (dossier synchronisé `App/`), `Packages/Package.swift` avec `swiftLanguageMode(.v6)` sur tous les targets et `Core/DesignSystem` (dépendance `../../../packages/design-tokens/platforms/swift`). `Domain` arrive avec ses premiers modèles, en PR 2. Tests : `xcodebuild test -scheme Packages` sur un simulateur iOS, depuis `apps/ios/Packages`.
+Projet Xcode mince dans `apps/ios/App.xcodeproj` (dossier synchronisé `App/`), `Packages/Package.swift` avec `swiftLanguageMode(.v6)` sur tous les targets et `Core/DesignSystem` (dépendance `../../../packages/design-tokens/platforms/swift`). `Domain` arrive avec ses premiers modèles, en PR 2. Tests : `xcodebuild test -scheme Packages-Package` sur un simulateur iOS, depuis `apps/ios/Packages`.
 _Tests d'abord_ : un rôle de couleur de `DesignSystem` prend la valeur de son token dans les deux thèmes.
 
 ### PR 1b — Outillage Swift
 
 SwiftFormat en pre-commit sur `apps/ios/**/*.swift` (lint-staged, par `apps/ios/scripts/swiftformat.sh`, qui refuse le commit si Mint manque). SwiftLint en CI avec les règles de formatage désactivées, et deux `custom_rules` : `@unchecked Sendable` sans commentaire sur la ligne précédente, suffixe `ViewModel` (ADR 0018, §4). Ces deux règles sont tenues par des fixtures (`apps/ios/lint-fixtures/refuse` et `accepte`) que `apps/ios/scripts/check-swiftlint-rules.sh` passe au vrai SwiftLint ; le job `SwiftLint (règles maison)` de la CI Linux le lance sur chaque PR. Configurations dans `apps/ios/.swiftformat` et `apps/ios/.swiftlint.yml` ; versions épinglées dans `apps/ios/Mintfile`. Le code généré de `packages/design-tokens/platforms/swift` est hors de `apps/ios/`, donc hors des deux outils. Script de lint des `import` dans `packages/ios-imports` (feature → feature, `DesignTokens` hors de `Core/DesignSystem`), lancé par `pnpm lint` : il tourne donc au pre-push et dans la CI Linux, sans runner macOS. Workflow iOS `.github/workflows/ios.yml` en `workflow_dispatch` seulement, activé selon les déclencheurs de l'ADR 0018 (§4) : lint des `import`, SwiftFormat en mode `--lint`, SwiftLint, `xcodebuild test`. Scope de commit `ios` déjà présent.
 _Tests d'abord_ : le script de lint refuse une fixture où une feature importe une autre feature, et une fixture qui importe `DesignTokens` hors de `DesignSystem`.
+
+### Accueil
+
+Feature `Onboarding` : l'écran d'accueil des personnes déconnectées, fidèle à `docs/reference-ui/onboarding/accueil-bienvenue--defaut.png` (catégories, slogan, boutons Log In et Sign Up). Les catégories entrent en glissant, une ligne sur deux depuis la gauche, et se posent sur la composition de la capture ; avec Réduire les animations, elles sont posées dès le départ. Textes en anglais dans un String Catalog. Les deux boutons émettent `WelcomeIntent.logIn` et `.signUp`, branchés sur la connexion en PR 4. L'incitation aux notifications arrive avec les notifications push (T2) ; l'écran de suivi publicitaire n'entre pas au produit (ADR 0021, publicité hors scope).
 
 ### PR 2 — `Domain` de la tranche 1
 
