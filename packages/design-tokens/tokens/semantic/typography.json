@@ -39,6 +39,22 @@
         "fontWeight": 700
       },
       "$description": "Libellés des boutons de l'accueil. Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : hauteur de capitale 11,7 pt, soit 17 pt, text style iOS headline ; gras pour être un grand texte WCAG (paire du bouton Log In)."
+    },
+    "titleText": {
+      "$type": "iosTextStyle",
+      "$value": {
+        "textStyle": "title2",
+        "fontWeight": 700
+      },
+      "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/auth/connexion-code-2fa--rempli) : titre « Welcome back », hauteur de capitale 16,7 pt, soit 22 pt gras, text style iOS title2."
+    },
+    "supportingText": {
+      "$type": "iosTextStyle",
+      "$value": {
+        "textStyle": "body",
+        "fontWeight": 400
+      },
+      "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/auth/connexion-code-2fa--rempli) : texte d'explication sous un titre, 17 pt normal, text style iOS body."
     }
   }
 }

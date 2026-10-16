@@ -24,6 +24,10 @@
   --typography-hero-text-weight: 700;
   --typography-action-label-font: -apple-system-headline;
   --typography-action-label-weight: 700;
+  --typography-title-text-font: -apple-system-title2;
+  --typography-title-text-weight: 700;
+  --typography-supporting-text-font: -apple-system-body;
+  --typography-supporting-text-weight: 400;
   --spacing-x1: 1px;
   --spacing-x2: 2px;
   --spacing-x3: 3px;

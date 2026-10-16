@@ -8,6 +8,7 @@ const GENERATED_HEADER = [
 
 const SAFARI_SYSTEM_FONTS: Readonly<Record<string, string>> = {
   largeTitle: "-apple-system-title0",
+  title2: "-apple-system-title2",
   headline: "-apple-system-headline",
   subheadline: "-apple-system-subheadline",
   body: "-apple-system-body",
