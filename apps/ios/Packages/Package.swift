@@ -8,6 +8,7 @@ let package = Package(
   products: [
     .library(name: "DesignSystem", targets: ["DesignSystem"]),
     .library(name: "Onboarding", targets: ["Onboarding"]),
+    .library(name: "Domain", targets: ["Domain"]),
     .library(name: "Networking", targets: ["Networking"]),
   ],
   dependencies: [
@@ -15,13 +16,19 @@ let package = Package(
   ],
   targets: [
     .target(
+      name: "Domain",
+      path: "Domain/Sources",
+      swiftSettings: [.swiftLanguageMode(.v6)]
+    ),
+    .target(
       name: "Networking",
+      dependencies: ["Domain"],
       path: "Core/Networking/Sources",
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
     .testTarget(
       name: "NetworkingTests",
-      dependencies: ["Networking"],
+      dependencies: ["Networking", "Domain"],
       path: "Core/Networking/Tests",
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
