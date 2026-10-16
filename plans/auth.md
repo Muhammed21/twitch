@@ -69,8 +69,8 @@ _Tests d'abord_ : vecteur de la RFC 7636 ; l'URL porte `code_challenge_method=S2
 
 ### I2 — Client généré et `/v1/me` (PR 3 de `ios.md`)
 
-`swift-openapi-generator` sur `apps/api/openapi.json`, mapper de `Me` vers `Domain`, en-tête `Authorization` fourni par l'acteur de session.
-_Tests d'abord_ : décodage d'une réponse `Me` réelle ; champ ajouté toléré ; 401 ⇒ un refresh puis une seconde tentative.
+`swift-openapi-generator` en build plugin sur une copie d'`apps/api/openapi.json` synchronisée par `pnpm generate` ; `Account` et `AccountRepository` dans `Domain` ; `AccountClient` sur le client généré, avec un middleware qui pose `Authorization: Bearer` depuis l'acteur de session et réessaie une fois après un `401` ; transport `URLSessionHTTPTransport`.
+_Tests d'abord_ : décodage d'une réponse `Me` réelle ; champ ajouté toléré ; 401 ⇒ un rejet signalé à l'acteur de session (qui rafraîchit) puis une seconde tentative ; deux 401 ⇒ erreur de session.
 
 ### I3 — Feature Auth
 
