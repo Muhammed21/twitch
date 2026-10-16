@@ -9,22 +9,22 @@ private let iosRoot = URL(fileURLWithPath: #filePath)
   .appending(path: "../../../..")
   .standardized
 
+private struct ColorSetComponents: Decodable {
+  let red: String
+  let green: String
+  let blue: String
+}
+
+private struct ColorSetValue: Decodable {
+  let components: ColorSetComponents
+}
+
+private struct ColorSetEntry: Decodable {
+  let color: ColorSetValue
+}
+
 private struct ColorSet: Decodable {
-  struct Entry: Decodable {
-    struct Value: Decodable {
-      struct Components: Decodable {
-        let red: String
-        let green: String
-        let blue: String
-      }
-
-      let components: Components
-    }
-
-    let color: Value
-  }
-
-  let colors: [Entry]
+  let colors: [ColorSetEntry]
 }
 
 private func hex(of resolved: Color.Resolved) -> String? {
@@ -63,6 +63,6 @@ struct LaunchScreenTests {
         .joined()
     }
 
-    #expect(asset == [try #require(hex(of: ColorRole.accent.color.resolved(in: scheme)))])
+    #expect(try asset == [#require(hex(of: ColorRole.accent.color.resolved(in: scheme)))])
   }
 }
