@@ -153,7 +153,13 @@ export const createIdentityAuth = ({
     secret,
     baseURL,
     database: prismaAdapter(prisma, { provider: "postgresql", transaction: true }),
-    disabledPaths: ["/token", "/sign-in/email-otp"],
+    disabledPaths: [
+      "/token",
+      "/sign-in/email-otp",
+      "/email-otp/request-password-reset",
+      "/forget-password/email-otp",
+      "/email-otp/reset-password",
+    ],
     advanced: { database: { generateId: () => randomUUID() } },
     hooks: {
       before: createAuthMiddleware(async (ctx) => {

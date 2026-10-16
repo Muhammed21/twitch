@@ -145,11 +145,23 @@ describe("identity : code de vérification de l'e-mail (ADR 0039, §3)", () => {
     expect(values.every((value) => !value.includes(otp))).toBe(true);
   });
 
-  it("n'ouvre pas de connexion par code e-mail, qui contournerait le mot de passe et la 2FA", async () => {
+  it.each([
+    [
+      "la connexion par code e-mail, qui contournerait le mot de passe et la 2FA",
+      "/sign-in/email-otp",
+    ],
+    ["la demande de réinitialisation par code, avant A5", "/email-otp/request-password-reset"],
+    ["l'ancien nom de cette demande", "/forget-password/email-otp"],
+    [
+      "la réinitialisation par code, avant A5 et la révocation des sessions",
+      "/email-otp/reset-password",
+    ],
+  ])("n'ouvre pas %s", async (_name, path) => {
     await withApi(async (base) => {
-      const response = await postJson(`${base}/auth/sign-in/email-otp`, {
+      const response = await postJson(`${base}/auth${path}`, {
         email: `${randomUUID()}@twitch.local`,
         otp: "123456",
+        password: "un-autre-mot-de-passe-42",
       });
 
       expect(response.status).toBe(404);

@@ -42,8 +42,8 @@ _Tests d'abord_ : 12 ans et 364 jours refusé, 13 ans pile accepté, date absent
 
 ### A3c — Code e-mail
 
-Plugin `emailOTP` : code à 6 chiffres valable 5 minutes, envoyé à l'inscription, stocké haché ; la connexion par code e-mail (`/sign-in/email-otp`) est fermée, elle contournerait le mot de passe et la 2FA. Envoi SMTP (`SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM`), Mailpit en local.
-_Tests d'abord_ : un code est envoyé à Mailpit et l'adresse est vérifiée après sa saisie ; code faux refusé ; code jamais stocké en clair ; `/sign-in/email-otp` répond 404.
+Plugin `emailOTP` : code à 6 chiffres valable 5 minutes, envoyé à l'inscription, stocké haché ; la connexion par code e-mail (`/sign-in/email-otp`) est fermée, elle contournerait le mot de passe et la 2FA ; la réinitialisation par code (`/email-otp/request-password-reset`, `/forget-password/email-otp`, `/email-otp/reset-password`) est fermée jusqu'à A5. Envoi SMTP (`SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM`), Mailpit en local.
+_Tests d'abord_ : un code est envoyé à Mailpit et l'adresse est vérifiée après sa saisie ; code faux refusé ; code jamais stocké en clair ; `/sign-in/email-otp` et les routes de réinitialisation répondent 404.
 
 ### A4 — Pages de connexion et d'inscription
 
@@ -53,6 +53,7 @@ _Tests d'abord_ : une autorisation sans session affiche la connexion ; identifia
 ### A5 — Réinitialisation du mot de passe
 
 « Trouble logging in? » : saisie de l'e-mail, code e-mail, nouveau mot de passe. Même réponse que l'adresse existe ou non.
+Rouvre les routes de réinitialisation du plugin `emailOTP`, fermées en A3c, et révoque toutes les sessions et refresh tokens du compte après une réinitialisation.
 _Tests d'abord_ : adresse inconnue et adresse connue donnent la même page ; code faux refusé ; après réinitialisation, l'ancien mot de passe est refusé et le nouveau accepté.
 
 ### A6 — Révocation pour la déconnexion
