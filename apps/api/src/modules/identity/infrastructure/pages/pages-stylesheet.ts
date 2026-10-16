@@ -89,6 +89,45 @@ main.top {
   font: var(--typography-action-label-font);
   font-weight: var(--typography-action-label-weight);
 }
+.heading {
+  margin: var(--spacing-x20) 0 0;
+  font: var(--typography-heading-text-font);
+  font-weight: var(--typography-heading-text-weight);
+}
+.title + label, .title + .error { margin-top: var(--spacing-x40); }
+.hint {
+  margin: var(--spacing-x8) 0 0;
+  color: var(--color-text-secondary);
+  font: var(--typography-supporting-text-font);
+}
+.hint + label, .dates + label { margin-top: var(--spacing-x20); }
+.dates {
+  display: grid;
+  grid-template-columns: 4fr 3fr 3fr;
+  gap: var(--spacing-x12);
+  margin: var(--spacing-x20) 0 0;
+  padding: 0;
+  border: 0;
+}
+.dates legend {
+  margin-bottom: var(--spacing-x8);
+  padding: 0;
+  font: var(--typography-display-text-font);
+  font-weight: var(--typography-display-text-weight);
+}
+select.field { appearance: none; }
+.legal { margin-top: var(--spacing-x20); }
+.link {
+  margin-top: var(--spacing-x16);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-accent-default);
+  font: -apple-system-body;
+}
+.all-set { margin-top: var(--spacing-x40); text-align: center; }
+.all-set p { margin: var(--spacing-x8) 0 0; }
+.action.trailing { width: auto; margin-left: auto; padding: 0 var(--spacing-x16); }
 `;
 
 const tokensCss = (): string =>
