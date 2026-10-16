@@ -20,6 +20,27 @@ public enum WelcomeContent {
   ]
 }
 
+public struct WelcomeAction: Sendable, Equatable {
+  public let title: String
+  public let kind: ActionButtonKind
+  public let intent: WelcomeIntent
+
+  public init(title: String, kind: ActionButtonKind, intent: WelcomeIntent) {
+    self.title = title
+    self.kind = kind
+    self.intent = intent
+  }
+}
+
+public extension WelcomeContent {
+  static var actions: [WelcomeAction] {
+    [
+      WelcomeAction(title: WelcomeText.logIn, kind: .secondaryOnAccent, intent: .logIn),
+      WelcomeAction(title: WelcomeText.signUp, kind: .primaryOnAccent, intent: .signUp),
+    ]
+  }
+}
+
 public enum WelcomeText {
   public static var slogan: String { String(localized: "welcome.slogan", bundle: .module) }
   public static var logIn: String { String(localized: "welcome.logIn", bundle: .module) }
@@ -84,10 +105,10 @@ public struct WelcomeScreen: View {
           .padding(.leading, LayoutRole.heroInset.points)
         Spacer(minLength: 0)
         HStack(spacing: LayoutRole.actionGap.points) {
-          Button(WelcomeText.logIn) { onIntent(.logIn) }
-            .buttonStyle(ActionButtonStyle(.secondaryOnAccent))
-          Button(WelcomeText.signUp) { onIntent(.signUp) }
-            .buttonStyle(ActionButtonStyle(.primaryOnAccent))
+          ForEach(WelcomeContent.actions, id: \.title) { action in
+            Button(action.title) { onIntent(action.intent) }
+              .buttonStyle(ActionButtonStyle(action.kind))
+          }
         }
         .padding([.horizontal, .bottom], LayoutRole.actionInset.points)
       }

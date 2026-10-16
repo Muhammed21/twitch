@@ -1,3 +1,4 @@
+import DesignSystem
 import Foundation
 import Onboarding
 import Testing
@@ -32,6 +33,14 @@ struct WelcomeTests {
   func trailingFragments() {
     #expect(WelcomeContent.rows.count == captureTrailingStarts.count)
     #expect(zip(WelcomeContent.rows, captureTrailingStarts).allSatisfy { $0.trailing.hasPrefix($1) })
+  }
+
+  @Test("Log In, à gauche sur violet clair, demande la connexion ; Sign Up, à droite sur blanc, l'inscription")
+  func actions() {
+    #expect(WelcomeContent.actions == [
+      WelcomeAction(title: "Log In", kind: .secondaryOnAccent, intent: .logIn),
+      WelcomeAction(title: "Sign Up", kind: .primaryOnAccent, intent: .signUp),
+    ])
   }
 
   @Test("le slogan et les boutons reprennent les textes anglais de la capture")

@@ -34,7 +34,7 @@ let package = Package(
     ),
     .testTarget(
       name: "OnboardingTests",
-      dependencies: ["Onboarding"],
+      dependencies: ["Onboarding", "DesignSystem"],
       path: "Features/Onboarding/Tests",
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
