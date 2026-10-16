@@ -8,11 +8,23 @@ let package = Package(
   products: [
     .library(name: "DesignSystem", targets: ["DesignSystem"]),
     .library(name: "Onboarding", targets: ["Onboarding"]),
+    .library(name: "Networking", targets: ["Networking"]),
   ],
   dependencies: [
     .package(path: "../../../packages/design-tokens/platforms/swift"),
   ],
   targets: [
+    .target(
+      name: "Networking",
+      path: "Core/Networking/Sources",
+      swiftSettings: [.swiftLanguageMode(.v6)]
+    ),
+    .testTarget(
+      name: "NetworkingTests",
+      dependencies: ["Networking"],
+      path: "Core/Networking/Tests",
+      swiftSettings: [.swiftLanguageMode(.v6)]
+    ),
     .target(
       name: "DesignSystem",
       dependencies: [.product(name: "DesignTokens", package: "swift")],
