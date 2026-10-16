@@ -4,7 +4,7 @@ import { type OAuthClaimExtensionInput, oauthProvider } from "@better-auth/oauth
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { APIError, createAuthMiddleware } from "better-auth/api";
-import { jwt, twoFactor } from "better-auth/plugins";
+import { jwt, twoFactor, username } from "better-auth/plugins";
 import { z } from "zod";
 
 import type { createContextClient } from "@repo/db";
@@ -17,6 +17,7 @@ import {
 } from "../domain/authentication-context.ts";
 import { isRefreshTokenReuse } from "../domain/refresh-token-reuse.ts";
 import { ACCESS_TOKEN_LIFETIME_SECONDS } from "../domain/token-lifetimes.ts";
+import { isValidUsername, USERNAME_LENGTH } from "../domain/username.ts";
 import { identityOutbox } from "./identity-outbox.ts";
 import { prismaSessionRevocationStore } from "./prisma-session-revocation-store.ts";
 import {
@@ -143,6 +144,11 @@ export const createIdentityAuth = ({
           gracePeriod: IDENTITY_TOKEN_SETTINGS.jwksGracePeriod,
         },
         schema: { jwks: { modelName: "IdentityJwks" } },
+      }),
+      username({
+        minUsernameLength: USERNAME_LENGTH.min,
+        maxUsernameLength: USERNAME_LENGTH.max,
+        usernameValidator: isValidUsername,
       }),
       twoFactor({
         issuer: "Twitch",
