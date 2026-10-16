@@ -222,6 +222,7 @@ export const createIdentityAuth = ({
       oauthProvider({
         loginPage: "/login",
         consentPage: "/consent",
+        signup: { page: "/signup" },
         resources: [apiResourceOf(baseURL)],
         accessTokenExpiresIn: IDENTITY_TOKEN_SETTINGS.accessTokenExpiresIn,
         refreshTokenExpiresIn: IDENTITY_TOKEN_SETTINGS.refreshTokenExpiresIn,
