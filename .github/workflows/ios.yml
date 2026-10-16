@@ -1,0 +1,57 @@
+name: iOS
+
+# Runner macOS non activé (ADR 0018 §4) : lancement à la main jusqu'au premier déclencheur,
+# puis déclenchement sur les diffs de apps/ios/ (ADR 0038).
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ios:
+    name: iOS
+    runs-on: macos-15
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/ios
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+
+      - name: Imports (ADR 0010 règle 4, ADR 0019 règle 5 bis)
+        working-directory: .
+        run: node packages/ios-imports/scripts/check.ts
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.mint
+          key: mint-v1-${{ runner.os }}-${{ hashFiles('apps/ios/Mintfile') }}
+
+      - name: Mint
+        run: |
+          brew install mint
+          mint bootstrap
+
+      - name: SwiftFormat
+        run: mint run swiftformat --lint .
+
+      - name: SwiftLint
+        run: mint run swiftlint lint --strict
+
+      - name: Tests (Swift Testing)
+        working-directory: apps/ios/Packages
+        run: |
+          simulator=$(xcrun simctl list devices available --json \
+            | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | startswith("iPhone"))][0].udid')
+          xcodebuild test -scheme Packages -destination "id=$simulator"
