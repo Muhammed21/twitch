@@ -339,7 +339,8 @@ describe("réinitialisation du mot de passe servie par l'API (plan auth, A5)", (
 
       expect(response.status).toBe(200);
       expect(body).toContain("<title>Log In</title>");
-      expect(body).toContain(RESET_MESSAGES.done);
+      expect(body).toContain(`<p class="notice" role="status">${RESET_MESSAGES.done}</p>`);
+      expect(body).not.toContain('role="alert"');
       expect(fieldIn(body, "identifier")).toBe(email);
       expect(fieldIn(body, "oauth_query")).toBe(oauthQuery);
       expect(oldPassword.status).toBe(401);

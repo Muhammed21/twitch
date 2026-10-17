@@ -1,6 +1,7 @@
 import { markup } from "./html.ts";
 import {
   errorMessage,
+  noticeMessage,
   hiddenFields,
   LOGIN_PATH,
   renderDocument,
@@ -30,7 +31,7 @@ export const renderLoginPage = ({
     body: markup`<header class="top-bar"><h1>Log In</h1></header>
       <main>
         <form method="post" action="${LOGIN_PATH}">
-          ${errorMessage(error ?? notice)}
+          ${error === undefined ? noticeMessage(notice) : errorMessage(error)}
           <label for="identifier">Username</label>
           <input
             class="field"

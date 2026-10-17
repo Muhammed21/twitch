@@ -26,6 +26,9 @@ export const renderDocument = ({ title, body }: { title: string; body: SafeHtml 
 export const errorMessage = (error: string | undefined): SafeHtml | string =>
   error === undefined ? "" : markup`<p class="error" role="alert">${error}</p>`;
 
+export const noticeMessage = (notice: string | undefined): SafeHtml | string =>
+  notice === undefined ? "" : markup`<p class="notice" role="status">${notice}</p>`;
+
 export const hiddenFields = ({
   csrf,
   oauthQuery,
