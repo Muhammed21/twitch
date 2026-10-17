@@ -153,14 +153,15 @@ export const createIdentityAuth = ({
     secret,
     baseURL,
     database: prismaAdapter(prisma, { provider: "postgresql", transaction: true }),
-    disabledPaths: [
-      "/token",
-      "/sign-in/email-otp",
-      "/email-otp/request-password-reset",
-      "/forget-password/email-otp",
-      "/email-otp/reset-password",
-    ],
-    advanced: { database: { generateId: () => randomUUID() } },
+    disabledPaths: ["/token", "/sign-in/email-otp", "/forget-password/email-otp"],
+    advanced: {
+      database: { generateId: () => randomUUID() },
+      backgroundTasks: {
+        handler: (task) => {
+          void task;
+        },
+      },
+    },
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
         if (ctx.path === SIGN_UP_PATH) {
@@ -172,7 +173,16 @@ export const createIdentityAuth = ({
         return refreshGuard(ctx);
       }),
     },
-    emailAndPassword: { enabled: true },
+    emailAndPassword: {
+      enabled: true,
+      onPasswordReset: async ({ user }, request) => {
+        await revokeAll({
+          userId: user.id,
+          reason: "password_reset",
+          userAgent: request?.headers.get("user-agent") ?? null,
+        });
+      },
+    },
     user: {
       modelName: "IdentityUser",
       additionalFields: { birthDate: { type: "date", required: false, input: true } },
