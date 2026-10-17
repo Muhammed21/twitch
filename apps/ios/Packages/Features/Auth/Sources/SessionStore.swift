@@ -21,6 +21,7 @@ public final class SessionStore {
   public private(set) var phase: SessionPhase = .launching
   public private(set) var hasSignInFailure = false
   public private(set) var hasLogOutFailure = false
+  public private(set) var isGreetingNewAccount = false
 
   private let configuration: OAuthConfiguration
   private let session: OAuthSession
@@ -70,6 +71,7 @@ public final class SessionStore {
       return
     }
     phase = .signedIn(nil)
+    isGreetingNewAccount = intent == .signUp
     await loadAccount()
   }
 
@@ -80,6 +82,10 @@ public final class SessionStore {
     } catch {
       hasLogOutFailure = true
     }
+  }
+
+  public func finishGreeting() {
+    isGreetingNewAccount = false
   }
 
   public func dismissSignInFailure() {
@@ -93,6 +99,7 @@ public final class SessionStore {
   private func follow() async {
     for await status in session.statusUpdates where status == .signedOut {
       phase = .signedOut
+      isGreetingNewAccount = false
     }
   }
 

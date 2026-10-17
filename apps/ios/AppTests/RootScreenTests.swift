@@ -15,12 +15,12 @@ struct RootScreenTests {
     arguments: [SessionPhase.launching, .signedOut, .signedIn(viewer)]
   )
   func splashFirst(phase: SessionPhase) {
-    #expect(RootScreen(isSplashVisible: true, phase: phase) == .splash)
+    #expect(RootScreen(isSplashVisible: true, phase: phase, isGreetingNewAccount: false) == .splash)
   }
 
   @Test("après le splash, le splash reste tant que la session n'est pas résolue")
   func launching() {
-    #expect(RootScreen(isSplashVisible: false, phase: .launching) == .splash)
+    #expect(RootScreen(isSplashVisible: false, phase: .launching, isGreetingNewAccount: false) == .splash)
   }
 
   @Test(
@@ -28,7 +28,7 @@ struct RootScreenTests {
     arguments: [SessionPhase.signedOut, .signingIn]
   )
   func welcome(phase: SessionPhase) {
-    #expect(RootScreen(isSplashVisible: false, phase: phase) == .welcome)
+    #expect(RootScreen(isSplashVisible: false, phase: phase, isGreetingNewAccount: false) == .welcome)
   }
 
   @Test(
@@ -36,7 +36,20 @@ struct RootScreenTests {
     arguments: [SessionPhase.signedIn(viewer), .signedIn(nil)]
   )
   func signedIn(phase: SessionPhase) {
-    #expect(RootScreen(isSplashVisible: false, phase: phase) == .signedIn)
+    #expect(RootScreen(isSplashVisible: false, phase: phase, isGreetingNewAccount: false) == .signedIn)
+  }
+
+  @Test(
+    "après une inscription, l'app montre « You're All Set! » avant l'écran connecté",
+    arguments: [SessionPhase.signedIn(viewer), .signedIn(nil)]
+  )
+  func allSet(phase: SessionPhase) {
+    #expect(RootScreen(isSplashVisible: false, phase: phase, isGreetingNewAccount: true) == .allSet)
+  }
+
+  @Test("le splash passe avant « You're All Set! »")
+  func splashBeforeAllSet() {
+    #expect(RootScreen(isSplashVisible: true, phase: .signedIn(viewer), isGreetingNewAccount: true) == .splash)
   }
 
   @Test("Log In de l'accueil demande la connexion, Sign Up l'inscription")

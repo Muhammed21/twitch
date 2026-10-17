@@ -60,6 +60,7 @@ public enum LayoutRole: Sendable {
 }
 
 public enum ActionButtonKind: Sendable {
+  case primary
   case primaryOnAccent
   case secondaryOnAccent
   case secondary
@@ -68,6 +69,7 @@ public enum ActionButtonKind: Sendable {
 
   public var background: ColorRole {
     switch self {
+    case .primary: .accent
     case .primaryOnAccent: .onAccent
     case .secondaryOnAccent: .accentSubtle
     case .secondary: .surfaceSecondary
@@ -79,7 +81,7 @@ public enum ActionButtonKind: Sendable {
   public var foreground: ColorRole {
     switch self {
     case .primaryOnAccent: .onAccentStrong
-    case .secondaryOnAccent: .onAccent
+    case .primary, .secondaryOnAccent: .onAccent
     case .secondary, .cancel: .textPrimary
     case .destructive: .onDanger
     }
