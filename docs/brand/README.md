@@ -13,4 +13,4 @@ SVG officiels du Glitch, tirés du brand kit Twitch ([brand.twitch.com](https://
 
 ## Illustration de « You're All Set! »
 
-[`you-are-all-set.png`](you-are-all-set.png) : illustration de la fin d'inscription (`docs/reference-ui/auth/inscription-terminee--defaut.png`), PNG 270 × 268, fournie par Muhammed Cavus le 2026-10-16. Elle appartient à Twitch Interactive, Inc. et n'est pas retouchée (ADR 0040). L'API en sert une copie identique, `apps/api/assets/you-are-all-set.png`.
+[`you-are-all-set.png`](you-are-all-set.png) : illustration de la fin d'inscription (`docs/reference-ui/auth/inscription-terminee--defaut.png`), PNG 270 × 268, fournie par Muhammed Cavus le 2026-10-16. Elle appartient à Twitch Interactive, Inc. et n'est pas retouchée (ADR 0040). L'app iOS en embarque une copie identique.

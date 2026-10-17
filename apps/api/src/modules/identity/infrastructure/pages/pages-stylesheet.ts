@@ -125,9 +125,6 @@ select.field { appearance: none; }
   color: var(--color-accent-default);
   font: -apple-system-body;
 }
-.all-set { margin-top: var(--spacing-x40); text-align: center; }
-.all-set p { margin: var(--spacing-x8) 0 0; }
-.action.trailing { width: auto; margin-left: auto; padding: 0 var(--spacing-x16); }
 `;
 
 const tokensCss = (): string =>

@@ -1,18 +1,14 @@
 import { randomBytes, timingSafeEqual } from "node:crypto";
-import { readFileSync } from "node:fs";
 
 import { fromNodeHeaders } from "better-auth/node";
 import { type Express, type Request, type Response, urlencoded } from "express";
 import { z } from "zod";
 
 import type { IdentityAuth } from "../better-auth.ts";
-import { renderAllSetPage } from "./all-set-page.ts";
 import { LOGIN_ERRORS, renderLoginPage } from "./login-page.ts";
 import {
-  ALL_SET_ILLUSTRATION_PATH,
   LOGIN_PATH,
   SIGNUP_CODE_PATH,
-  SIGNUP_CONTINUE_PATH,
   SIGNUP_PATH,
   SIGNUP_RESEND_PATH,
   STYLESHEET_PATH,
@@ -31,8 +27,6 @@ import { renderTwoFactorPage, TWO_FACTOR_ERRORS } from "./two-factor-page.ts";
 const CSRF_COOKIE = "twitch_csrf";
 const TWO_FACTOR_COOKIE = /(^|;\s*)(__Secure-)?better-auth\.two_factor=/;
 const EXPIRED_STEP = /invalid_signature|INVALID_TWO_FACTOR_COOKIE/;
-
-const ALL_SET_ILLUSTRATION = new URL("../../../../../assets/you-are-all-set.png", import.meta.url);
 
 const newCsrfToken = (): string => randomBytes(32).toString("base64url");
 
@@ -121,7 +115,6 @@ export const mountAuthPages = (server: Express, auth: IdentityAuth, baseURL: str
   const origin = new URL(baseURL).origin;
   const secure = new URL(baseURL).protocol === "https:";
   const stylesheet = pagesStylesheet();
-  const illustration = readFileSync(ALL_SET_ILLUSTRATION);
   const form = urlencoded({ extended: false, limit: "8kb" });
 
   const sendHtml = (
@@ -160,10 +153,6 @@ export const mountAuthPages = (server: Express, auth: IdentityAuth, baseURL: str
 
   server.get(STYLESHEET_PATH, (_request, response) => {
     response.type("css").send(stylesheet);
-  });
-
-  server.get(ALL_SET_ILLUSTRATION_PATH, (_request, response) => {
-    response.type("png").send(illustration);
   });
 
   server.get(LOGIN_PATH, (request, response) => {
@@ -259,7 +248,18 @@ export const mountAuthPages = (server: Express, auth: IdentityAuth, baseURL: str
       );
       return;
     }
-    sendHtml(response, 200, csrf, renderAllSetPage({ csrf, oauthQuery }), SIGNUP_PATH);
+    const outcome = await outcomeOf(
+      await callAuth(auth, request, {
+        baseURL,
+        path: "oauth2/continue",
+        body: { oauth_query: oauthQuery, created: true },
+      }),
+    );
+    if (outcome.url !== undefined) {
+      response.redirect(302, outcome.url);
+      return;
+    }
+    sendExpiredSignup(response, oauthQuery);
   });
 
   server.post(SIGNUP_RESEND_PATH, form, async (request, response) => {
@@ -287,41 +287,6 @@ export const mountAuthPages = (server: Express, auth: IdentityAuth, baseURL: str
       renderSignupCodePage({ csrf, oauthQuery, email, message: SIGNUP_CODE_MESSAGES.resent }),
       SIGNUP_PATH,
     );
-  });
-
-  server.post(SIGNUP_CONTINUE_PATH, form, async (request, response) => {
-    if (isForged(request)) {
-      refuse(response);
-      return;
-    }
-    const oauthQuery = field(request, "oauth_query");
-    const csrf = newCsrfToken();
-    const session = await auth.api.getSession({ headers: fromNodeHeaders(request.headers) });
-    if (session === null) {
-      sendExpiredSignup(response, oauthQuery);
-      return;
-    }
-    if (!session.user.emailVerified) {
-      sendHtml(
-        response,
-        403,
-        csrf,
-        renderSignupCodePage({ csrf, oauthQuery, email: session.user.email }),
-        SIGNUP_PATH,
-      );
-      return;
-    }
-    const result = await callAuth(auth, request, {
-      baseURL,
-      path: "oauth2/continue",
-      body: { oauth_query: oauthQuery, created: true },
-    });
-    const outcome = await outcomeOf(result);
-    if (outcome.url !== undefined) {
-      response.redirect(302, outcome.url);
-      return;
-    }
-    sendExpiredSignup(response, oauthQuery);
   });
 
   server.post(LOGIN_PATH, form, async (request, response) => {

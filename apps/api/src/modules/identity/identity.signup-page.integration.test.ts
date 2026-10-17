@@ -1,5 +1,4 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
-import { readFile } from "node:fs/promises";
 
 import { decodeJwt } from "jose";
 import { Client } from "pg";
@@ -359,13 +358,14 @@ describe("inscription servie par l'API (ADR 0039, §3)", () => {
     });
   });
 
-  it("vérifie l'adresse avec le code reçu et affiche « You're All Set! » avec l'illustration", async () => {
+  it("vérifie l'adresse avec le code reçu et renvoie vers l'app avec un code échangeable contre un token /v1", async () => {
     await withApi(async (base) => {
       const clientId = await seedClient();
-      const { account, cookie, csrf, oauthQuery, code } = await signedUp(
+      const { verifier, challenge } = pkce();
+      const { account, cookie, csrf, oauthQuery, code, state } = await signedUp(
         base,
         clientId,
-        pkce().challenge,
+        challenge,
       );
 
       const response = await post(
@@ -374,15 +374,25 @@ describe("inscription servie par l'API (ADR 0039, §3)", () => {
         { email: account.email, code, csrf, oauth_query: oauthQuery },
         { cookie },
       );
-      const body = await response.text();
+      const callback = new URL(response.headers.get("location") ?? "about:blank");
+      const exchange = await fetch(`${base}/auth/oauth2/token`, {
+        method: "POST",
+        headers: { "content-type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          grant_type: "authorization_code",
+          code: callback.searchParams.get("code") ?? "",
+          redirect_uri: REDIRECT_URI,
+          client_id: clientId,
+          code_verifier: verifier,
+          resource: API_RESOURCE,
+        }),
+      });
+      const { access_token } = (await exchange.json()) as { access_token: string };
 
-      expect(response.status).toBe(200);
-      expect(response.headers.get("location")).toBeNull();
-      expect(body).toContain("<title>Account Verification</title>");
-      expect(body).toContain("You're All Set!");
-      expect(body).toContain('src="/signup/you-are-all-set.png"');
-      expect(body).toContain('action="/signup/continue"');
-      expect(fieldIn(body, "oauth_query")).toBe(oauthQuery);
+      expect(response.status).toBe(302);
+      expect(`${callback.protocol}//${callback.host}${callback.pathname}`).toBe(REDIRECT_URI);
+      expect(callback.searchParams.get("state")).toBe(state);
+      expect(decodeJwt(access_token).aud).toContain(API_RESOURCE);
       expect((await userRow(account.email))?.emailVerified).toBe(true);
     });
   });
@@ -413,55 +423,13 @@ describe("inscription servie par l'API (ADR 0039, §3)", () => {
     });
   });
 
-  it("Done renvoie vers l'app avec un code échangeable contre un token /v1", async () => {
+  it.each([
+    ["sans la session de l'inscription", { withSession: false, readableQuery: true }],
+    ["avec une requête OAuth illisible", { withSession: true, readableQuery: false }],
+  ])("un bon code %s ne renvoie pas vers l'app et invite à recommencer", async (_case, setup) => {
     await withApi(async (base) => {
       const clientId = await seedClient();
-      const { verifier, challenge } = pkce();
-      const { account, cookie, csrf, oauthQuery, code, state } = await signedUp(
-        base,
-        clientId,
-        challenge,
-      );
-      const verified = await post(
-        base,
-        "/signup/code",
-        { email: account.email, code, csrf, oauth_query: oauthQuery },
-        { cookie },
-      );
-      const allSet = await verified.text();
-
-      const response = await post(
-        base,
-        "/signup/continue",
-        { csrf: fieldIn(allSet, "csrf"), oauth_query: fieldIn(allSet, "oauth_query") },
-        { cookie: withCookies(cookie, verified) },
-      );
-      const callback = new URL(response.headers.get("location") ?? "about:blank");
-      const exchange = await fetch(`${base}/auth/oauth2/token`, {
-        method: "POST",
-        headers: { "content-type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          grant_type: "authorization_code",
-          code: callback.searchParams.get("code") ?? "",
-          redirect_uri: REDIRECT_URI,
-          client_id: clientId,
-          code_verifier: verifier,
-          resource: API_RESOURCE,
-        }),
-      });
-      const { access_token } = (await exchange.json()) as { access_token: string };
-
-      expect(response.status).toBe(302);
-      expect(`${callback.protocol}//${callback.host}${callback.pathname}`).toBe(REDIRECT_URI);
-      expect(callback.searchParams.get("state")).toBe(state);
-      expect(decodeJwt(access_token).aud).toContain(API_RESOURCE);
-    });
-  });
-
-  it("ne renvoie pas vers l'app tant que l'adresse n'est pas vérifiée", async () => {
-    await withApi(async (base) => {
-      const clientId = await seedClient();
-      const { account, cookie, csrf, oauthQuery } = await signedUp(
+      const { account, cookie, csrf, oauthQuery, code } = await signedUp(
         base,
         clientId,
         pkce().challenge,
@@ -469,34 +437,16 @@ describe("inscription servie par l'API (ADR 0039, §3)", () => {
 
       const response = await post(
         base,
-        "/signup/continue",
-        { csrf, oauth_query: oauthQuery },
-        { cookie },
+        "/signup/code",
+        { email: account.email, code, csrf, oauth_query: setup.readableQuery ? oauthQuery : "" },
+        { cookie: setup.withSession ? cookie : `twitch_csrf=${csrf}` },
       );
       const body = await response.text();
 
-      expect(response.status).toBe(403);
-      expect(response.headers.get("location")).toBeNull();
-      expect(body).toContain("Verify your email");
-      expect(fieldIn(body, "email")).toBe(account.email);
-    });
-  });
-
-  it("ne renvoie pas vers l'app sans session", async () => {
-    await withApi(async (base) => {
-      const clientId = await seedClient();
-      const { cookie, csrf, oauthQuery } = await openSignupPage(base, clientId, pkce().challenge);
-
-      const response = await post(
-        base,
-        "/signup/continue",
-        { csrf, oauth_query: oauthQuery },
-        { cookie },
-      );
-
       expect(response.status).toBe(400);
       expect(response.headers.get("location")).toBeNull();
-      expect(await response.text()).toContain("Join Twitch today");
+      expect(body).toContain(SIGNUP_ERRORS.expired);
+      expect(body).toContain("Join Twitch today");
     });
   });
 
@@ -528,7 +478,7 @@ describe("inscription servie par l'API (ADR 0039, §3)", () => {
     });
   });
 
-  it.each(["/signup", "/signup/code", "/signup/resend", "/signup/continue"])(
+  it.each(["/signup", "/signup/code", "/signup/resend"])(
     "refuse sur %s un formulaire sans le jeton CSRF du cookie ou venu d'une autre origine",
     async (path) => {
       await withApi(async (base) => {
@@ -561,31 +511,6 @@ describe("inscription servie par l'API (ADR 0039, §3)", () => {
       });
     },
   );
-
-  it("sert l'illustration de « You're All Set! » telle que versionnée dans docs/brand (ADR 0040)", async () => {
-    await withApi(async (base) => {
-      const response = await fetch(`${base}/signup/you-are-all-set.png`);
-      const served = Buffer.from(await response.arrayBuffer());
-      const versioned = await readFile(
-        new URL("../../../../../docs/brand/you-are-all-set.png", import.meta.url),
-      );
-
-      expect(response.status).toBe(200);
-      expect(response.headers.get("content-type")).toBe("image/png");
-      expect(served.equals(versioned)).toBe(true);
-    });
-  });
-
-  it("embarque l'illustration dans le paquet de l'API, l'image Docker n'ayant pas docs/ (ADR 0028)", async () => {
-    const embedded = await readFile(
-      new URL("../../../assets/you-are-all-set.png", import.meta.url),
-    );
-    const versioned = await readFile(
-      new URL("../../../../../docs/brand/you-are-all-set.png", import.meta.url),
-    );
-
-    expect(embedded.equals(versioned)).toBe(true);
-  });
 
   it("propose les mois de janvier à décembre, les jours de 1 à 31 et les 121 dernières années, sans rien présélectionner", async () => {
     await withApi(async (base) => {
@@ -641,37 +566,6 @@ describe("inscription servie par l'API (ADR 0039, §3)", () => {
 
       expect(response.status).toBe(200);
       expect(await userRow(account.email)).toBeDefined();
-    });
-  });
-
-  it("Done avec une requête OAuth illisible ne renvoie pas vers l'app et invite à recommencer", async () => {
-    await withApi(async (base) => {
-      const clientId = await seedClient();
-      const { account, cookie, csrf, oauthQuery, code } = await signedUp(
-        base,
-        clientId,
-        pkce().challenge,
-      );
-      const verified = await post(
-        base,
-        "/signup/code",
-        { email: account.email, code, csrf, oauth_query: oauthQuery },
-        { cookie },
-      );
-      const allSet = await verified.text();
-
-      const response = await post(
-        base,
-        "/signup/continue",
-        { csrf: fieldIn(allSet, "csrf"), oauth_query: "" },
-        { cookie: withCookies(cookie, verified) },
-      );
-      const body = await response.text();
-
-      expect(response.status).toBe(400);
-      expect(response.headers.get("location")).toBeNull();
-      expect(body).toContain(SIGNUP_ERRORS.expired);
-      expect(body).toContain("Join Twitch today");
     });
   });
 

@@ -45,7 +45,7 @@ Problématique : comment les écrans d'authentification des captures s'affichent
 
 ### 1. Pages
 
-L'API sert en HTML, sans JavaScript, les écrans des captures `auth/` : connexion, étape 2FA, inscription, code e-mail, « You're All Set! », et la réinitialisation du mot de passe. Chaque formulaire poste vers une route de l'API, qui appelle better-auth en interne, pose le cookie de session et reprend l'autorisation OAuth en cours. Les textes sont en anglais, comme les captures ; le CSS reprend les valeurs des design tokens (ADR 0019, ADR 0036).
+L'API sert en HTML, sans JavaScript, les écrans des captures `auth/` : connexion, étape 2FA, inscription, code e-mail et réinitialisation du mot de passe. « You're All Set! » n'est pas une page de l'API : un bon code reprend l'autorisation OAuth et renvoie vers l'app, qui affiche cet écran elle-même (ADR 0040). Chaque formulaire poste vers une route de l'API, qui appelle better-auth en interne, pose le cookie de session et reprend l'autorisation OAuth en cours. Les textes sont en anglais, comme les captures ; le CSS reprend les valeurs des design tokens (ADR 0019, ADR 0036).
 
 ### 2. Identifiant
 
@@ -53,7 +53,7 @@ Le plugin `username` de better-auth permet la connexion par nom d'utilisateur ou
 
 ### 3. Inscription
 
-L'inscription demande un nom d'utilisateur, un mot de passe de 8 à 128 caractères, une date de naissance et un e-mail. Elle refuse les moins de 13 ans et stocke la date de naissance. Un code à 6 chiffres envoyé par e-mail (plugin `emailOTP`) vérifie l'adresse avant « You're All Set! ». Pas de téléphone ni de SMS (ADR 0005). En local, les e-mails partent vers Mailpit.
+L'inscription demande un nom d'utilisateur, un mot de passe de 8 à 128 caractères, une date de naissance et un e-mail. Elle refuse les moins de 13 ans et stocke la date de naissance. Un code à 6 chiffres envoyé par e-mail (plugin `emailOTP`) vérifie l'adresse avant le retour vers l'app. Pas de téléphone ni de SMS (ADR 0005). En local, les e-mails partent vers Mailpit.
 
 ### 4. Entrée dans le flux
 

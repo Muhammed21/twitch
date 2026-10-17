@@ -57,8 +57,8 @@ _Tests d'abord_ : compte TOTP ⇒ étape code sans session ouverte ; bon code �
 
 ### A4c — Inscription
 
-`prompt=create` ouvre l'inscription (`auth/inscription--*`, variante e-mail), puis le code (`auth/inscription-code-telephone--*`, appliqué à l'e-mail) et « You're All Set! » (`auth/inscription-terminee--defaut`) ; l'autorisation reprend par `/oauth2/continue`, après la vérification de l'adresse.
-_Tests d'abord_ : `prompt=create` ⇒ inscription ; inscription ⇒ code ⇒ « You're All Set! » ⇒ callback ; aucune session OAuth avant le code.
+`prompt=create` ouvre l'inscription (`auth/inscription--*`, variante e-mail), puis le code (`auth/inscription-code-telephone--*`, appliqué à l'e-mail) ; un bon code reprend l'autorisation par `/oauth2/continue` et renvoie vers l'app, qui affiche « You're All Set! » (`auth/inscription-terminee--defaut`, écran iOS).
+_Tests d'abord_ : `prompt=create` ⇒ inscription ; inscription ⇒ code ⇒ callback ; aucune session OAuth avant le code.
 
 ### A5 — Réinitialisation du mot de passe
 
