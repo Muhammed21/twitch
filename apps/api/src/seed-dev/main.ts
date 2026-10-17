@@ -4,7 +4,7 @@ const result = await seedDevelopment(process.env);
 
 if (!result.ok) {
   process.stderr.write(
-    "seed:dev ne tourne que contre une API locale : BETTER_AUTH_URL doit viser localhost, 127.0.0.1, [::1] ou une adresse de ce poste.\n",
+    "seed:dev ne tourne que contre une API locale : BETTER_AUTH_URL doit viser localhost, 127.0.0.1, [::1] ou une adresse privée de ce poste (réseau local).\n",
   );
   process.exit(1);
 }

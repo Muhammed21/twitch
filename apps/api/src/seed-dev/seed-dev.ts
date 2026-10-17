@@ -13,6 +13,7 @@ import {
 import { createIdentityRedis } from "../modules/identity/infrastructure/redis-session-revocation.ts";
 import { createSmtpMailer } from "../modules/identity/infrastructure/smtp-mailer.ts";
 import { loadEnv } from "../platform/config/env.ts";
+import { isLocalHost } from "./local-host.ts";
 
 export const DEV_CLIENT_ID = "twitch-ios-dev";
 export const DEV_REDIRECT_URI = "twitch://oauth/callback";
@@ -90,17 +91,16 @@ const seedAccount = async (env: Env): Promise<Outcome> => {
   }
 };
 
-const LOOPBACK_HOSTS: ReadonlySet<string> = new Set(["localhost", "127.0.0.1", "[::1]"]);
-
-const isThisMachine = (hostname: string): boolean =>
-  LOOPBACK_HOSTS.has(hostname) ||
+const machineAddresses = (): readonly string[] =>
   Object.values(networkInterfaces())
     .flatMap((addresses) => addresses ?? [])
-    .some(({ address }) => address === hostname);
+    .map(({ address }) => address);
 
 export const seedDevelopment = async (env: Env): Promise<Result<SeedReport, "not_local">> => {
   const { authBaseUrl } = loadEnv(env);
-  if (!isThisMachine(new URL(authBaseUrl).hostname)) {
+  if (
+    !isLocalHost({ hostname: new URL(authBaseUrl).hostname, machineAddresses: machineAddresses() })
+  ) {
     return err("not_local");
   }
   const client = new Client({ connectionString: migratorUrlOf(env) });
