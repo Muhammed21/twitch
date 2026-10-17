@@ -20,13 +20,14 @@ struct TwitchApp: App {
 enum RootScreen: Equatable {
   case splash
   case welcome
+  case allSet
   case signedIn
 
-  init(isSplashVisible: Bool, phase: SessionPhase) {
+  init(isSplashVisible: Bool, phase: SessionPhase, isGreetingNewAccount: Bool) {
     switch (isSplashVisible, phase) {
     case (true, _), (false, .launching): self = .splash
     case (false, .signedOut), (false, .signingIn): self = .welcome
-    case (false, .signedIn): self = .signedIn
+    case (false, .signedIn): self = isGreetingNewAccount ? .allSet : .signedIn
     }
   }
 }
@@ -52,7 +53,7 @@ struct RootView: View {
   }
 
   @ViewBuilder private var screen: some View {
-    switch RootScreen(isSplashVisible: isSplashVisible, phase: session.phase) {
+    switch RootScreen(isSplashVisible: isSplashVisible, phase: session.phase, isGreetingNewAccount: session.isGreetingNewAccount) {
     case .splash:
       ZStack {
         ColorRole.accent.color.ignoresSafeArea()
@@ -62,6 +63,8 @@ struct RootView: View {
       WelcomeScreen { intent in
         Task { await session.signIn(AuthorizationIntent(intent)) }
       }
+    case .allSet:
+      AllSetScreen()
     case .signedIn:
       SignedInScreen()
     }

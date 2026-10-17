@@ -76,4 +76,10 @@ struct RolesTests {
     #expect(ActionButtonKind.secondary.background == .surfaceSecondary)
     #expect(ActionButtonKind.secondary.foreground == .textPrimary)
   }
+
+  @Test("Done de « You're All Set! » est violet à libellé blanc (auth/inscription-terminee--defaut)")
+  func primaryButtonKind() {
+    #expect(ActionButtonKind.primary.background == .accent)
+    #expect(ActionButtonKind.primary.foreground == .onAccent)
+  }
 }

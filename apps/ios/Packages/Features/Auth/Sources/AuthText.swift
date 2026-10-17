@@ -9,5 +9,9 @@ public enum AuthText {
   public static var signInFailedMessage: String { String(localized: "auth.signInFailedMessage", bundle: .module) }
   public static var logOutFailedTitle: String { String(localized: "auth.logOutFailedTitle", bundle: .module) }
   public static var logOutFailedMessage: String { String(localized: "auth.logOutFailedMessage", bundle: .module) }
+  public static var accountVerification: String { String(localized: "auth.accountVerification", bundle: .module) }
+  public static var allSetTitle: String { String(localized: "auth.allSetTitle", bundle: .module) }
+  public static var allSetMessage: String { String(localized: "auth.allSetMessage", bundle: .module) }
+  public static var done: String { String(localized: "auth.done", bundle: .module) }
   public static var dismiss: String { String(localized: "auth.dismiss", bundle: .module) }
 }

@@ -70,7 +70,7 @@ let package = Package(
       name: "Auth",
       dependencies: ["Domain", "Networking", "DesignSystem"],
       path: "Features/Auth/Sources",
-      resources: [.process("Localizable.xcstrings")],
+      resources: [.process("Localizable.xcstrings"), .copy("Resources/you-are-all-set.png")],
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
     .testTarget(
