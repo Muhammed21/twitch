@@ -2,6 +2,8 @@ import { markup, type SafeHtml } from "./html.ts";
 
 export const LOGIN_PATH = "/login";
 export const TWO_FACTOR_PATH = `${LOGIN_PATH}/two-factor`;
+export const RESET_PATH = `${LOGIN_PATH}/reset`;
+export const RESET_PASSWORD_PATH = `${RESET_PATH}/password`;
 export const SIGNUP_PATH = "/signup";
 export const SIGNUP_CODE_PATH = `${SIGNUP_PATH}/code`;
 export const SIGNUP_RESEND_PATH = `${SIGNUP_PATH}/resend`;
@@ -23,6 +25,9 @@ export const renderDocument = ({ title, body }: { title: string; body: SafeHtml 
 
 export const errorMessage = (error: string | undefined): SafeHtml | string =>
   error === undefined ? "" : markup`<p class="error" role="alert">${error}</p>`;
+
+export const noticeMessage = (notice: string | undefined): SafeHtml | string =>
+  notice === undefined ? "" : markup`<p class="notice" role="status">${notice}</p>`;
 
 export const hiddenFields = ({
   csrf,

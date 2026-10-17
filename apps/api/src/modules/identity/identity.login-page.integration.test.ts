@@ -216,7 +216,9 @@ describe("page de connexion servie par l'API (ADR 0039, §1)", () => {
 
       expect(wrongPassword.status).toBe(401);
       expect(unknown.status).toBe(401);
-      expect(wrongPassword.body).toContain("Incorrect username or password.");
+      expect(wrongPassword.body).toContain(
+        '<p class="error" role="alert">Incorrect username or password.</p>',
+      );
       expect(unknown.body).toContain("Incorrect username or password.");
     });
   });

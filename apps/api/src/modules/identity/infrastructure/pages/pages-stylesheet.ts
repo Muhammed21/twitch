@@ -72,7 +72,8 @@ main.top {
   text-align: center;
 }
 .code:focus { outline: 0; border-color: var(--color-accent-default); }
-.error {
+.error,
+.notice {
   margin: 0 0 var(--spacing-x16);
   font: var(--typography-heading-text-font);
   font-weight: var(--typography-heading-text-weight);
@@ -94,7 +95,7 @@ main.top {
   font: var(--typography-heading-text-font);
   font-weight: var(--typography-heading-text-weight);
 }
-.title + label, .title + .error { margin-top: var(--spacing-x40); }
+.title + label, .title + .error, .title + .notice { margin-top: var(--spacing-x40); }
 .hint {
   margin: var(--spacing-x8) 0 0;
   color: var(--color-text-secondary);
