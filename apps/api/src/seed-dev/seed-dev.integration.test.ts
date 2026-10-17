@@ -1,4 +1,5 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { networkInterfaces } from "node:os";
 
 import { decodeJwt } from "jose";
 import { Client } from "pg";
@@ -190,4 +191,15 @@ describe("seed de développement (ADR 0039, §6)", () => {
       expect((await seedDevelopment({ ...process.env, BETTER_AUTH_URL: url })).ok).toBe(true);
     },
   );
+
+  it("accepte l'adresse de ce poste sur le réseau local, pour tester depuis un iPhone", async () => {
+    const lanAddress = Object.values(networkInterfaces())
+      .flatMap((addresses) => addresses ?? [])
+      .find(({ family, internal }) => family === "IPv4" && !internal)?.address;
+
+    expect(lanAddress).toBeDefined();
+    expect(
+      (await seedDevelopment({ ...process.env, BETTER_AUTH_URL: `http://${lanAddress}:3000` })).ok,
+    ).toBe(true);
+  });
 });

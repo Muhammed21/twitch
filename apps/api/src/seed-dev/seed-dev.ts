@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { networkInterfaces } from "node:os";
 
 import { Client } from "pg";
 
@@ -91,9 +92,15 @@ const seedAccount = async (env: Env): Promise<Outcome> => {
 
 const LOOPBACK_HOSTS: ReadonlySet<string> = new Set(["localhost", "127.0.0.1", "[::1]"]);
 
+const isThisMachine = (hostname: string): boolean =>
+  LOOPBACK_HOSTS.has(hostname) ||
+  Object.values(networkInterfaces())
+    .flatMap((addresses) => addresses ?? [])
+    .some(({ address }) => address === hostname);
+
 export const seedDevelopment = async (env: Env): Promise<Result<SeedReport, "not_local">> => {
   const { authBaseUrl } = loadEnv(env);
-  if (!LOOPBACK_HOSTS.has(new URL(authBaseUrl).hostname)) {
+  if (!isThisMachine(new URL(authBaseUrl).hostname)) {
     return err("not_local");
   }
   const client = new Client({ connectionString: migratorUrlOf(env) });
