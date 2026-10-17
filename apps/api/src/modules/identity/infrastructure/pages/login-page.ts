@@ -1,5 +1,11 @@
 import { markup } from "./html.ts";
-import { errorMessage, hiddenFields, LOGIN_PATH, renderDocument } from "./page-layout.ts";
+import {
+  errorMessage,
+  hiddenFields,
+  LOGIN_PATH,
+  renderDocument,
+  RESET_PATH,
+} from "./page-layout.ts";
 
 export const LOGIN_ERRORS = {
   credentials: "Incorrect username or password.",
@@ -11,18 +17,20 @@ export const renderLoginPage = ({
   csrf,
   identifier = "",
   error,
+  notice,
 }: {
   oauthQuery: string;
   csrf: string;
   identifier?: string;
   error?: string;
+  notice?: string;
 }): string =>
   renderDocument({
     title: "Log In",
     body: markup`<header class="top-bar"><h1>Log In</h1></header>
       <main>
         <form method="post" action="${LOGIN_PATH}">
-          ${errorMessage(error)}
+          ${errorMessage(error ?? notice)}
           <label for="identifier">Username</label>
           <input
             class="field"
@@ -47,5 +55,6 @@ export const renderLoginPage = ({
           ${hiddenFields({ csrf, oauthQuery })}
           <button class="action" type="submit">Log In</button>
         </form>
+        <a class="link" href="${RESET_PATH}?${oauthQuery}">Trouble logging in?</a>
       </main>`,
   });

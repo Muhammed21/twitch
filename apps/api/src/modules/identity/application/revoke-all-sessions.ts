@@ -1,6 +1,6 @@
 import { ACCESS_TOKEN_LIFETIME_SECONDS } from "../domain/token-lifetimes.ts";
 
-export type RevocationReason = "refresh_token_reuse";
+export type RevocationReason = "refresh_token_reuse" | "password_reset";
 
 export type RevokeAllSessionsCommand = {
   readonly userId: string;

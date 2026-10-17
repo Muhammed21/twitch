@@ -11,6 +11,8 @@ import { LOGIN_ERRORS, renderLoginPage } from "./login-page.ts";
 import {
   ALL_SET_ILLUSTRATION_PATH,
   LOGIN_PATH,
+  RESET_PASSWORD_PATH,
+  RESET_PATH,
   SIGNUP_CODE_PATH,
   SIGNUP_CONTINUE_PATH,
   SIGNUP_PATH,
@@ -19,6 +21,7 @@ import {
   TWO_FACTOR_PATH,
 } from "./page-layout.ts";
 import { pagesStylesheet } from "./pages-stylesheet.ts";
+import { renderResetCodePage, renderResetRequestPage, RESET_MESSAGES } from "./reset-page.ts";
 import { renderSignupCodePage, SIGNUP_CODE_MESSAGES } from "./signup-code-page.ts";
 import {
   renderSignupPage,
@@ -89,6 +92,8 @@ const relayCookies = (from: globalThis.Response, to: Response): void => {
 const AuthError = z.object({ code: z.string() });
 
 const SPENT_CODE = new Set(["OTP_EXPIRED", "TOO_MANY_ATTEMPTS"]);
+
+const PASSWORD_LENGTH_REFUSED = new Set(["PASSWORD_TOO_SHORT", "PASSWORD_TOO_LONG"]);
 
 const errorCodeOf = async (response: globalThis.Response): Promise<string> => {
   const parsed = AuthError.safeParse(await response.json().catch(() => null));
@@ -322,6 +327,64 @@ export const mountAuthPages = (server: Express, auth: IdentityAuth, baseURL: str
       return;
     }
     sendExpiredSignup(response, oauthQuery);
+  });
+
+  server.get(RESET_PATH, (request, response) => {
+    const csrf = newCsrfToken();
+    const oauthQuery = request.originalUrl.split("?")[1] ?? "";
+    sendHtml(response, 200, csrf, renderResetRequestPage({ csrf, oauthQuery }));
+  });
+
+  server.post(RESET_PATH, form, async (request, response) => {
+    if (isForged(request)) {
+      refuse(response);
+      return;
+    }
+    const oauthQuery = field(request, "oauth_query");
+    const email = field(request, "email").trim();
+    await callAuth(auth, request, {
+      baseURL,
+      path: "email-otp/request-password-reset",
+      body: { email },
+    });
+    const csrf = newCsrfToken();
+    sendHtml(response, 200, csrf, renderResetCodePage({ csrf, oauthQuery, email }));
+  });
+
+  server.post(RESET_PASSWORD_PATH, form, async (request, response) => {
+    if (isForged(request)) {
+      refuse(response);
+      return;
+    }
+    const oauthQuery = field(request, "oauth_query");
+    const email = field(request, "email");
+    const result = await callAuth(auth, request, {
+      baseURL,
+      path: "email-otp/reset-password",
+      body: { email, otp: field(request, "code"), password: field(request, "password") },
+    });
+    const csrf = newCsrfToken();
+    if (!result.ok) {
+      const tooShortOrLong = PASSWORD_LENGTH_REFUSED.has(await errorCodeOf(result));
+      sendHtml(
+        response,
+        tooShortOrLong ? 400 : 401,
+        csrf,
+        renderResetCodePage({
+          csrf,
+          oauthQuery,
+          email,
+          error: tooShortOrLong ? RESET_MESSAGES.password : RESET_MESSAGES.code,
+        }),
+      );
+      return;
+    }
+    sendHtml(
+      response,
+      200,
+      csrf,
+      renderLoginPage({ csrf, oauthQuery, identifier: email, notice: RESET_MESSAGES.done }),
+    );
   });
 
   server.post(LOGIN_PATH, form, async (request, response) => {
