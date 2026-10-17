@@ -2,6 +2,9 @@ import { markup, type SafeHtml } from "./html.ts";
 
 export const LOGIN_PATH = "/login";
 export const TWO_FACTOR_PATH = `${LOGIN_PATH}/two-factor`;
+export const SIGNUP_PATH = "/signup";
+export const SIGNUP_CODE_PATH = `${SIGNUP_PATH}/code`;
+export const SIGNUP_RESEND_PATH = `${SIGNUP_PATH}/resend`;
 export const STYLESHEET_PATH = `${LOGIN_PATH}/styles.css`;
 
 export const renderDocument = ({ title, body }: { title: string; body: SafeHtml }): string =>
