@@ -1,9 +1,12 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
 
+import { decodeJwt } from "jose";
 import { Client } from "pg";
 import { describe, expect, it } from "vitest";
 
 import { createApp } from "../../create-app.ts";
+import { SIGNUP_CODE_MESSAGES } from "./infrastructure/pages/signup-code-page.ts";
 import { SIGNUP_ERRORS } from "./infrastructure/pages/signup-page.ts";
 
 const urlOf = (variable: string): string => {
@@ -173,6 +176,36 @@ const userRow = (email: string) =>
     return rows[0];
   });
 
+const withCookies = (cookie: string, response: Response): string =>
+  [
+    ...new Map(
+      [...cookie.split("; "), ...cookiesOf(response).split("; ")]
+        .filter((part) => part !== "")
+        .map((part) => [part.split("=")[0], part] as const),
+    ).values(),
+  ].join("; ");
+
+const signedUp = async (base: string, clientId: string, challenge: string) => {
+  const opened = await openSignupPage(base, clientId, challenge);
+  const account = newAccount();
+  const response = await post(
+    base,
+    "/signup",
+    { ...account, csrf: opened.csrf, oauth_query: opened.oauthQuery },
+    { cookie: opened.cookie },
+  );
+  const body = await response.text();
+  const [mail] = await mailsTo(account.email, 1);
+  return {
+    account,
+    state: opened.state,
+    oauthQuery: opened.oauthQuery,
+    csrf: fieldIn(body, "csrf"),
+    cookie: withCookies(opened.cookie, response),
+    code: codeIn(mail ?? { Text: "" }),
+  };
+};
+
 const optionsOf = (body: string, name: string): readonly string[] =>
   [
     ...(new RegExp(`name="${name}"[^>]*>([\\s\\S]*?)</select>`).exec(body)?.[1] ?? "").matchAll(
@@ -326,7 +359,176 @@ describe("inscription servie par l'API (ADR 0039, §3)", () => {
     });
   });
 
-  it.each(["/signup"])(
+  it("vérifie l'adresse avec le code reçu et affiche « You're All Set! » avec l'illustration", async () => {
+    await withApi(async (base) => {
+      const clientId = await seedClient();
+      const { account, cookie, csrf, oauthQuery, code } = await signedUp(
+        base,
+        clientId,
+        pkce().challenge,
+      );
+
+      const response = await post(
+        base,
+        "/signup/code",
+        { email: account.email, code, csrf, oauth_query: oauthQuery },
+        { cookie },
+      );
+      const body = await response.text();
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get("location")).toBeNull();
+      expect(body).toContain("<title>Account Verification</title>");
+      expect(body).toContain("You're All Set!");
+      expect(body).toContain('src="/signup/you-are-all-set.png"');
+      expect(body).toContain('action="/signup/continue"');
+      expect(fieldIn(body, "oauth_query")).toBe(oauthQuery);
+      expect((await userRow(account.email))?.emailVerified).toBe(true);
+    });
+  });
+
+  it("refuse un code faux et redemande le code, sans vérifier l'adresse", async () => {
+    await withApi(async (base) => {
+      const clientId = await seedClient();
+      const { account, cookie, csrf, oauthQuery, code } = await signedUp(
+        base,
+        clientId,
+        pkce().challenge,
+      );
+      const wrong = code === "000000" ? "111111" : "000000";
+
+      const response = await post(
+        base,
+        "/signup/code",
+        { email: account.email, code: wrong, csrf, oauth_query: oauthQuery },
+        { cookie },
+      );
+      const body = await response.text();
+
+      expect(response.status).toBe(401);
+      expect(body).toContain(SIGNUP_CODE_MESSAGES.code);
+      expect(body).toContain("Verify your email");
+      expect(fieldIn(body, "email")).toBe(account.email);
+      expect((await userRow(account.email))?.emailVerified).toBe(false);
+    });
+  });
+
+  it("Done renvoie vers l'app avec un code échangeable contre un token /v1", async () => {
+    await withApi(async (base) => {
+      const clientId = await seedClient();
+      const { verifier, challenge } = pkce();
+      const { account, cookie, csrf, oauthQuery, code, state } = await signedUp(
+        base,
+        clientId,
+        challenge,
+      );
+      const verified = await post(
+        base,
+        "/signup/code",
+        { email: account.email, code, csrf, oauth_query: oauthQuery },
+        { cookie },
+      );
+      const allSet = await verified.text();
+
+      const response = await post(
+        base,
+        "/signup/continue",
+        { csrf: fieldIn(allSet, "csrf"), oauth_query: fieldIn(allSet, "oauth_query") },
+        { cookie: withCookies(cookie, verified) },
+      );
+      const callback = new URL(response.headers.get("location") ?? "about:blank");
+      const exchange = await fetch(`${base}/auth/oauth2/token`, {
+        method: "POST",
+        headers: { "content-type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          grant_type: "authorization_code",
+          code: callback.searchParams.get("code") ?? "",
+          redirect_uri: REDIRECT_URI,
+          client_id: clientId,
+          code_verifier: verifier,
+          resource: API_RESOURCE,
+        }),
+      });
+      const { access_token } = (await exchange.json()) as { access_token: string };
+
+      expect(response.status).toBe(302);
+      expect(`${callback.protocol}//${callback.host}${callback.pathname}`).toBe(REDIRECT_URI);
+      expect(callback.searchParams.get("state")).toBe(state);
+      expect(decodeJwt(access_token).aud).toContain(API_RESOURCE);
+    });
+  });
+
+  it("ne renvoie pas vers l'app tant que l'adresse n'est pas vérifiée", async () => {
+    await withApi(async (base) => {
+      const clientId = await seedClient();
+      const { account, cookie, csrf, oauthQuery } = await signedUp(
+        base,
+        clientId,
+        pkce().challenge,
+      );
+
+      const response = await post(
+        base,
+        "/signup/continue",
+        { csrf, oauth_query: oauthQuery },
+        { cookie },
+      );
+      const body = await response.text();
+
+      expect(response.status).toBe(403);
+      expect(response.headers.get("location")).toBeNull();
+      expect(body).toContain("Verify your email");
+      expect(fieldIn(body, "email")).toBe(account.email);
+    });
+  });
+
+  it("ne renvoie pas vers l'app sans session", async () => {
+    await withApi(async (base) => {
+      const clientId = await seedClient();
+      const { cookie, csrf, oauthQuery } = await openSignupPage(base, clientId, pkce().challenge);
+
+      const response = await post(
+        base,
+        "/signup/continue",
+        { csrf, oauth_query: oauthQuery },
+        { cookie },
+      );
+
+      expect(response.status).toBe(400);
+      expect(response.headers.get("location")).toBeNull();
+      expect(await response.text()).toContain("Join Twitch today");
+    });
+  });
+
+  it("renvoie un nouveau code et le redemande", async () => {
+    await withApi(async (base) => {
+      const clientId = await seedClient();
+      const { account, cookie, csrf, oauthQuery } = await signedUp(
+        base,
+        clientId,
+        pkce().challenge,
+      );
+
+      const response = await post(
+        base,
+        "/signup/resend",
+        { email: account.email, csrf, oauth_query: oauthQuery },
+        { cookie },
+      );
+      const body = await response.text();
+      const mails = await mailsTo(account.email, 2);
+
+      expect(response.status).toBe(200);
+      expect(body).toContain("Verify your email");
+      expect(body).toContain(SIGNUP_CODE_MESSAGES.resent);
+      expect(fieldIn(body, "email")).toBe(account.email);
+      expect(fieldIn(body, "oauth_query")).toBe(oauthQuery);
+      expect(body.match(new RegExp(`value="${fieldIn(body, "csrf")}"`, "g"))).toHaveLength(2);
+      expect(mails).toHaveLength(2);
+    });
+  });
+
+  it.each(["/signup", "/signup/code", "/signup/resend", "/signup/continue"])(
     "refuse sur %s un formulaire sans le jeton CSRF du cookie ou venu d'une autre origine",
     async (path) => {
       await withApi(async (base) => {
@@ -359,6 +561,31 @@ describe("inscription servie par l'API (ADR 0039, §3)", () => {
       });
     },
   );
+
+  it("sert l'illustration de « You're All Set! » telle que versionnée dans docs/brand (ADR 0040)", async () => {
+    await withApi(async (base) => {
+      const response = await fetch(`${base}/signup/you-are-all-set.png`);
+      const served = Buffer.from(await response.arrayBuffer());
+      const versioned = await readFile(
+        new URL("../../../../../docs/brand/you-are-all-set.png", import.meta.url),
+      );
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-type")).toBe("image/png");
+      expect(served.equals(versioned)).toBe(true);
+    });
+  });
+
+  it("embarque l'illustration dans le paquet de l'API, l'image Docker n'ayant pas docs/ (ADR 0028)", async () => {
+    const embedded = await readFile(
+      new URL("../../../assets/you-are-all-set.png", import.meta.url),
+    );
+    const versioned = await readFile(
+      new URL("../../../../../docs/brand/you-are-all-set.png", import.meta.url),
+    );
+
+    expect(embedded.equals(versioned)).toBe(true);
+  });
 
   it("propose les mois de janvier à décembre, les jours de 1 à 31 et les 121 dernières années, sans rien présélectionner", async () => {
     await withApi(async (base) => {
@@ -417,11 +644,156 @@ describe("inscription servie par l'API (ADR 0039, §3)", () => {
     });
   });
 
+  it("Done avec une requête OAuth illisible ne renvoie pas vers l'app et invite à recommencer", async () => {
+    await withApi(async (base) => {
+      const clientId = await seedClient();
+      const { account, cookie, csrf, oauthQuery, code } = await signedUp(
+        base,
+        clientId,
+        pkce().challenge,
+      );
+      const verified = await post(
+        base,
+        "/signup/code",
+        { email: account.email, code, csrf, oauth_query: oauthQuery },
+        { cookie },
+      );
+      const allSet = await verified.text();
+
+      const response = await post(
+        base,
+        "/signup/continue",
+        { csrf: fieldIn(allSet, "csrf"), oauth_query: "" },
+        { cookie: withCookies(cookie, verified) },
+      );
+      const body = await response.text();
+
+      expect(response.status).toBe(400);
+      expect(response.headers.get("location")).toBeNull();
+      expect(body).toContain(SIGNUP_ERRORS.expired);
+      expect(body).toContain("Join Twitch today");
+    });
+  });
+
   it("ouverte sans requête OAuth, la page ne porte aucune requête", async () => {
     await withApi(async (base) => {
       const body = await (await fetch(`${base}/signup`)).text();
 
       expect(fieldIn(body, "oauth_query")).toBe("");
+    });
+  });
+
+  it("après trop d'essais, même le bon code invite à demander un nouveau code", async () => {
+    await withApi(async (base) => {
+      const clientId = await seedClient();
+      const { account, cookie, csrf, oauthQuery, code } = await signedUp(
+        base,
+        clientId,
+        pkce().challenge,
+      );
+      const wrong = code === "000000" ? "111111" : "000000";
+      const attempt = async (session: { cookie: string; csrf: string }, otp: string) => {
+        const response = await post(
+          base,
+          "/signup/code",
+          { email: account.email, code: otp, csrf: session.csrf, oauth_query: oauthQuery },
+          { cookie: session.cookie },
+        );
+        const body = await response.text();
+        return {
+          response,
+          body,
+          cookie: withCookies(session.cookie, response),
+          csrf: fieldIn(body, "csrf"),
+        };
+      };
+
+      const first = await attempt({ cookie, csrf }, wrong);
+      const second = await attempt(first, wrong);
+      const third = await attempt(second, wrong);
+      const last = await attempt(third, code);
+
+      expect(last.response.status).toBe(401);
+      expect(last.body).toContain(SIGNUP_CODE_MESSAGES.expired);
+      expect((await userRow(account.email))?.emailVerified).toBe(false);
+    });
+  });
+
+  it("un code expiré invite à demander un nouveau code", async () => {
+    await withApi(async (base) => {
+      const clientId = await seedClient();
+      const { account, cookie, csrf, oauthQuery, code } = await signedUp(
+        base,
+        clientId,
+        pkce().challenge,
+      );
+      await asMigrator((client) =>
+        client.query(
+          `UPDATE "identity"."IdentityVerification" SET "expiresAt" = now() - interval '1 minute'
+            WHERE "identifier" LIKE $1`,
+          [`%${account.email}%`],
+        ),
+      );
+
+      const response = await post(
+        base,
+        "/signup/code",
+        { email: account.email, code, csrf, oauth_query: oauthQuery },
+        { cookie },
+      );
+
+      expect(response.status).toBe(401);
+      expect(await response.text()).toContain(SIGNUP_CODE_MESSAGES.expired);
+    });
+  });
+
+  it("renvoie le code à l'adresse de la session, pas à une adresse glissée dans le formulaire", async () => {
+    await withApi(async (base) => {
+      const clientId = await seedClient();
+      const { account, cookie, csrf, oauthQuery } = await signedUp(
+        base,
+        clientId,
+        pkce().challenge,
+      );
+      const other = newAccount();
+      const opened = await openSignupPage(base, clientId, pkce().challenge);
+      await post(
+        base,
+        "/signup",
+        { ...other, csrf: opened.csrf, oauth_query: opened.oauthQuery },
+        { cookie: opened.cookie },
+      );
+      await mailsTo(other.email, 1);
+
+      const response = await post(
+        base,
+        "/signup/resend",
+        { email: other.email, csrf, oauth_query: oauthQuery },
+        { cookie },
+      );
+      const body = await response.text();
+
+      expect(fieldIn(body, "email")).toBe(account.email);
+      expect(await mailsTo(account.email, 2)).toHaveLength(2);
+      await sleep(500);
+      expect(await mailsTo(other.email, 1)).toHaveLength(1);
+    });
+  });
+
+  it("sans session, ne renvoie aucun code et invite à recommencer", async () => {
+    await withApi(async (base) => {
+      const clientId = await seedClient();
+      const { cookie, csrf, oauthQuery } = await openSignupPage(base, clientId, pkce().challenge);
+
+      const response = await post(
+        base,
+        "/signup/resend",
+        { email: newAccount().email, csrf, oauth_query: oauthQuery },
+        { cookie },
+      );
+
+      expect(response.status).toBe(400);
+      expect(await response.text()).toContain(SIGNUP_ERRORS.expired);
     });
   });
 });

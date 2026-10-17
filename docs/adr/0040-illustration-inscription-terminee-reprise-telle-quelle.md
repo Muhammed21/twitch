@@ -49,7 +49,7 @@ Le fichier est `docs/brand/you-are-all-set.png` (PNG 270 × 268, opaque, sur le 
 
 ### 3. Rendu dans la page
 
-L'API sert ce fichier sans le transformer, et la page l'affiche à sa taille d'origine ou à une échelle qui garde ses proportions. Le violet de l'image n'entre pas dans un token : c'est une couleur de l'illustration, pas de l'interface (ADR 0019).
+L'API sert ce fichier sans le transformer, depuis une copie identique dans `apps/api/assets/` : l'image Docker de l'API n'embarque pas `docs/` (ADR 0028). Un test vérifie que la copie et le fichier de `docs/brand/` sont identiques. La page l'affiche à sa taille d'origine ou à une échelle qui garde ses proportions. Le violet de l'image n'entre pas dans un token : c'est une couleur de l'illustration, pas de l'interface (ADR 0019).
 
 ## Conséquences
 
