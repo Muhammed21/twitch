@@ -1,6 +1,6 @@
 # 0036 — Les valeurs visuelles reprennent l'app iOS Twitch, relevées sur captures
 
-- Statut : Accepté — §6 remplacé pour le Glitch par [0037](0037-logo-twitch-repris-depuis-le-svg-officiel.md)
+- Statut : Accepté — §6 remplacé pour le Glitch par [0037](0037-logo-twitch-repris-depuis-le-svg-officiel.md), amendé pour l'illustration de « You're All Set! » par [0040](0040-illustration-inscription-terminee-reprise-telle-quelle.md)
 - Date : 2026-10-15
 - Décideurs : Muhammed Cavus
 - Amende : ADR 0019 (§9 provenance des valeurs, §10 contrepartie 2)
