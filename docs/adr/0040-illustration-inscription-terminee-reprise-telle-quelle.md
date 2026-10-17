@@ -55,7 +55,7 @@ L'app iOS embarque une copie identique du fichier dans ses ressources : un paque
 
 ### Positives
 
-- L'écran « You're All Set! » ressemble à celle de Twitch.
+- L'écran « You're All Set! » ressemble à celui de Twitch.
 - L'image est traçable jusqu'au fichier versionné.
 
 ### Négatives

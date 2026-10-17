@@ -46,7 +46,6 @@ export const renderSignupCodePage = ({
             autofocus
             required
           />
-          <input type="hidden" name="email" value="${email}" />
           ${hiddenFields({ csrf, oauthQuery })}
           <button class="action" type="submit">Submit</button>
         </form>

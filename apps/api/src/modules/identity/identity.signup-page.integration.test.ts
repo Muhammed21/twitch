@@ -418,7 +418,7 @@ describe("inscription servie par l'API (ADR 0039, §3)", () => {
       expect(response.status).toBe(401);
       expect(body).toContain(SIGNUP_CODE_MESSAGES.code);
       expect(body).toContain("Verify your email");
-      expect(fieldIn(body, "email")).toBe(account.email);
+      expect(body).toContain(`<strong>${account.email}</strong>`);
       expect((await userRow(account.email))?.emailVerified).toBe(false);
     });
   });
@@ -450,6 +450,33 @@ describe("inscription servie par l'API (ADR 0039, §3)", () => {
     });
   });
 
+  it("vérifie l'adresse de la session, pas une adresse glissée dans le formulaire avec son propre code", async () => {
+    await withApi(async (base) => {
+      const clientId = await seedClient();
+      const victim = await signedUp(base, clientId, pkce().challenge);
+      const attacker = await signedUp(base, clientId, pkce().challenge);
+
+      const response = await post(
+        base,
+        "/signup/code",
+        {
+          email: attacker.account.email,
+          code: attacker.code,
+          csrf: victim.csrf,
+          oauth_query: victim.oauthQuery,
+        },
+        { cookie: victim.cookie },
+      );
+      const body = await response.text();
+
+      expect(response.status).toBe(401);
+      expect(response.headers.get("location")).toBeNull();
+      expect(body).toContain(victim.account.email);
+      expect((await userRow(victim.account.email))?.emailVerified).toBe(false);
+      expect((await userRow(attacker.account.email))?.emailVerified).toBe(false);
+    });
+  });
+
   it("renvoie un nouveau code et le redemande", async () => {
     await withApi(async (base) => {
       const clientId = await seedClient();
@@ -471,7 +498,7 @@ describe("inscription servie par l'API (ADR 0039, §3)", () => {
       expect(response.status).toBe(200);
       expect(body).toContain("Verify your email");
       expect(body).toContain(SIGNUP_CODE_MESSAGES.resent);
-      expect(fieldIn(body, "email")).toBe(account.email);
+      expect(body).toContain(`<strong>${account.email}</strong>`);
       expect(fieldIn(body, "oauth_query")).toBe(oauthQuery);
       expect(body.match(new RegExp(`value="${fieldIn(body, "csrf")}"`, "g"))).toHaveLength(2);
       expect(mails).toHaveLength(2);
@@ -667,7 +694,7 @@ describe("inscription servie par l'API (ADR 0039, §3)", () => {
       );
       const body = await response.text();
 
-      expect(fieldIn(body, "email")).toBe(account.email);
+      expect(body).toContain(`<strong>${account.email}</strong>`);
       expect(await mailsTo(account.email, 2)).toHaveLength(2);
       await sleep(500);
       expect(await mailsTo(other.email, 1)).toHaveLength(1);

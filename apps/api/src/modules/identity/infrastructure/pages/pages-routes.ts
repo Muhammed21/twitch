@@ -224,7 +224,12 @@ export const mountAuthPages = (server: Express, auth: IdentityAuth, baseURL: str
       return;
     }
     const oauthQuery = field(request, "oauth_query");
-    const email = field(request, "email");
+    const session = await auth.api.getSession({ headers: fromNodeHeaders(request.headers) });
+    if (session === null) {
+      sendExpiredSignup(response, oauthQuery);
+      return;
+    }
+    const { email } = session.user;
     const result = await callAuth(auth, request, {
       baseURL,
       path: "email-otp/verify-email",
