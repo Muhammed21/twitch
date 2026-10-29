@@ -1,13 +1,27 @@
+import { randomBytes, randomUUID } from "node:crypto";
 import { connect } from "node:net";
 
 import { describe, expect, it, onTestFinished } from "vitest";
 
 import { Problem } from "@repo/video-contract";
 
+import { createControlPlane } from "../control-plane/control-plane.ts";
+import { inMemoryVideoStore } from "../control-plane/in-memory-video-store.ts";
 import { startHttpServer } from "./http-server.ts";
 
+const serverOptions = (port: number) => ({
+  port,
+  serviceSecret: "s".repeat(32),
+  controlPlane: createControlPlane({
+    store: inMemoryVideoStore(),
+    ingestUrl: "rtmp://127.0.0.1:1935/live",
+    newId: randomUUID,
+    randomBytes,
+  }),
+});
+
 const startServer = async () => {
-  const server = await startHttpServer({ port: 0 });
+  const server = await startHttpServer(serverOptions(0));
   onTestFinished(() => server.close());
   return { ...server, url: (path: string) => `http://127.0.0.1:${server.port}${path}` };
 };
@@ -131,13 +145,13 @@ describe("démarrage", () => {
   it("échoue si le port est déjà pris", async () => {
     const server = await startServer();
 
-    await expect(startHttpServer({ port: server.port })).rejects.toThrow("EADDRINUSE");
+    await expect(startHttpServer(serverOptions(server.port))).rejects.toThrow("EADDRINUSE");
   });
 });
 
 describe("arrêt", () => {
   it("ferme le port, même après une requête en keep-alive", async () => {
-    const server = await startHttpServer({ port: 0 });
+    const server = await startHttpServer(serverOptions(0));
     const url = `http://127.0.0.1:${server.port}/health/live`;
     await fetch(url);
 
