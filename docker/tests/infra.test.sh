@@ -32,7 +32,7 @@ psql_as() {
 }
 psql_admin() { psql_as postgres "$POSTGRES_PASSWORD" app "$1"; }
 
-cleanup() { compose down -v --remove-orphans >/dev/null 2>&1; }
+cleanup() { compose --profile full down -v --remove-orphans >/dev/null 2>&1; }
 trap cleanup EXIT
 cleanup
 
@@ -86,8 +86,8 @@ check "message visible dans l'API de Mailpit" sh -c "curl -sf 'http://127.0.0.1:
 rm -f "$MAIL"
 
 echo "Job de migration (profil full)"
-migrate() { compose --profile full run --rm migrate; }
-migrate_alone() { compose --profile full run --rm --no-deps migrate; }
+migrate() { compose --profile full run --rm --build migrate; }
+migrate_alone() { compose --profile full run --rm --build --no-deps migrate; }
 applied_migrations() { psql_admin "SELECT count(*) FROM _prisma_migrations WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL"; }
 psql_admin "REVOKE CONNECT ON DATABASE app FROM app_video; DROP ROLE app_video" >/dev/null 2>&1
 check_not "migrate échoue si un rôle attendu manque" migrate_alone
@@ -99,6 +99,37 @@ applied="$(applied_migrations)"
 check "au moins une migration appliquée" test "$applied" -ge 1
 check "migrate rejoué réussit" migrate
 check "migrate rejoué n'applique rien de plus" test "$(applied_migrations)" = "$applied"
+
+echo "API et relais de l'outbox (profil full)"
+full() { compose --profile full "$@"; }
+container_of() { full ps -a -q "$1"; }
+state_of() { docker inspect -f "{{.State.$2}}" "$(container_of "$1")"; }
+started_after_migrate() { test "$(state_of "$1" StartedAt)" \> "$(state_of migrate FinishedAt)"; }
+in_api() { full exec -T api "$@"; }
+stopped_by_itself() {
+  case "$(state_of "$1" ExitCode)" in
+    0 | 143) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+up_with_failing_migrate() {
+  compose -f "$ROOT/compose.yaml" -f "$ROOT/docker/tests/compose.failing-migrate.yaml" \
+    --profile full up -d --wait --wait-timeout 120 api
+}
+check "api et outbox-relay démarrent, l'API devient saine" full up -d --build --wait --wait-timeout 600 api outbox-relay
+check "/health/ready de l'API répond 200 depuis l'hôte" curl -sf "http://127.0.0.1:${API_PORT:-3000}/health/ready"
+check "l'API démarre après la fin de migrate" started_after_migrate api
+check "le relais démarre après la fin de migrate" started_after_migrate outbox-relay
+check "le relais tourne" test "$(state_of outbox-relay Running)" = "true"
+check "l'API tourne sous l'utilisateur node" test "$(in_api id -un)" = "node"
+check "l'image de l'API ne contient pas les migrations" in_api sh -c '! test -e /repo/packages/db/prisma/migrations'
+check "l'image de l'API ne contient pas le CLI Prisma" in_api sh -c '! ls -d /repo/node_modules/.pnpm/prisma@* 2>/dev/null'
+check "SIGTERM arrête l'API et le relais dans le délai de grâce" full stop api outbox-relay
+check "l'API s'est arrêtée d'elle-même, sans SIGKILL" stopped_by_itself api
+check "le relais s'est arrêté de lui-même, sans SIGKILL" stopped_by_itself outbox-relay
+full rm -sf api outbox-relay >/dev/null 2>&1
+check_not "l'API ne démarre pas si migrate échoue" up_with_failing_migrate
+check "l'API a été créée mais jamais démarrée" test "$(state_of api Status)" = "created"
 
 echo "Ports publiés sur 127.0.0.1 uniquement"
 published="$(docker ps --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME" --format '{{.Ports}}' | tr ',' '\n' | grep -- '->' || true)"

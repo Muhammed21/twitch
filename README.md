@@ -27,6 +27,7 @@ Node est épinglé dans `.node-version`.
 ```sh
 pnpm install
 pnpm infra:up       # services locaux
+docker compose --profile full up -d --build --wait api outbox-relay   # API et relais en conteneurs, après migrate
 pnpm lint           # oxlint typé (ADR 0029), puis lint des import Swift
 pnpm check-types
 pnpm test
