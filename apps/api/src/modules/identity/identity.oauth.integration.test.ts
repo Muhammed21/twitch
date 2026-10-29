@@ -250,6 +250,19 @@ const refresh = (
     resource: API_RESOURCE,
   });
 
+const revoke = async (base: string, body: Record<string, string>) => {
+  const response = await fetch(`${base}/auth/oauth2/revoke`, {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded", "user-agent": USER_AGENT },
+    body: new URLSearchParams({ token_type_hint: "refresh_token", ...body }),
+  });
+  const text = await response.text();
+  const { error } = (text === "" ? {} : JSON.parse(text)) as { error?: string };
+  return { status: response.status, error };
+};
+
+const unknownToken = () => randomBytes(32).toString("base64url");
+
 const REVOCATION_CHANNEL = "identity.session.revoked";
 
 const revokedSidKey = (sid: string) => `identity:revoked-sid:${sid}`;
@@ -582,6 +595,61 @@ describe("identity : caractérisation OAuth de l'ADR 0026, contre le vrai better
       expect(refused.status).toBe(400);
       expect(refused.body.error).toBe("invalid_grant");
       expect(stored).toMatchObject({ revoked: null, rotatedAt: null });
+    });
+  });
+
+  it("refuse le rafraîchissement d'un jeton révoqué à la déconnexion", async () => {
+    await withApi(async (base) => {
+      const { clientId, tokens } = await signIn(base);
+      const revoked = await revoke(base, { token: tokens.refresh_token, client_id: clientId });
+      const refused = await refresh(base, { clientId, refreshToken: tokens.refresh_token });
+
+      expect(revoked.status).toBe(200);
+      expect(refused.status).toBe(400);
+      expect(refused.body.error).toBe("invalid_grant");
+    });
+  });
+
+  it("répond 200 à la révocation d'un jeton inconnu (RFC 7009)", async () => {
+    await withApi(async (base) => {
+      const { clientId } = await signIn(base);
+      const revoked = await revoke(base, { token: unknownToken(), client_id: clientId });
+
+      expect(revoked).toEqual({ status: 200, error: undefined });
+    });
+  });
+
+  it("refuse une révocation sans jeton", async () => {
+    await withApi(async (base) => {
+      const { clientId } = await signIn(base);
+      const revoked = await revoke(base, { client_id: clientId });
+
+      expect(revoked).toEqual({ status: 400, error: "invalid_request" });
+    });
+  });
+
+  it("refuse la révocation d'un client inconnu, même pour un jeton inconnu", async () => {
+    await withApi(async (base) => {
+      const revoked = await revoke(base, {
+        token: unknownToken(),
+        client_id: `ios-${randomUUID()}`,
+      });
+
+      expect(revoked).toEqual({ status: 400, error: "invalid_client" });
+    });
+  });
+
+  it("ne répond 200 à un jeton inconnu que sur la révocation", async () => {
+    await withApi(async (base) => {
+      const { clientId } = await signIn(base);
+      const refused = await token(base, {
+        grant_type: "refresh_token",
+        token: unknownToken(),
+        client_id: clientId,
+      });
+
+      expect(refused.status).toBe(400);
+      expect(refused.body.error).toBe("invalid_request");
     });
   });
 
