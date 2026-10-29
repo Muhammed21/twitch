@@ -18,7 +18,7 @@ const freePort = async (): Promise<number> => {
 
 const startProcess = (env: Record<string, string>) => {
   const child = spawn(process.execPath, [MAIN], {
-    env: { PATH: process.env.PATH ?? "", ...env },
+    env: { PATH: process.env.PATH ?? "", VIDEO_SERVICE_SECRET: "s".repeat(32), ...env },
     stdio: ["ignore", "pipe", "pipe"],
   });
   onTestFinished(() => {
