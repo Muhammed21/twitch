@@ -138,7 +138,7 @@ jobs:
   infra:
     name: Infra (Compose)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
         with:
@@ -146,7 +146,7 @@ jobs:
       - name: Detect changes that reach this job
         id: changes
         run: |
-          if [ "${{ github.event_name }}" != pull_request ] || ! git diff --quiet HEAD^1 -- docker compose.yaml .env.example .github/workflows/ci.yml packages/db pnpm-lock.yaml; then
+          if [ "${{ github.event_name }}" != pull_request ] || ! git diff --quiet HEAD^1 -- docker compose.yaml .env.example .github/workflows/ci.yml packages/db pnpm-lock.yaml apps/api/Dockerfile apps/api/package.json; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           fi
       - if: steps.changes.outputs.run == 'true'

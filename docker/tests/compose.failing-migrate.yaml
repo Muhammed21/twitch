@@ -1,0 +1,4 @@
+# Override du test d'infra : un job de migration qui échoue, pour vérifier que l'API ne démarre pas.
+services:
+  migrate:
+    command: ["node", "-e", "process.exit(1)"]
