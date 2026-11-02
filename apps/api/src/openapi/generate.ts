@@ -49,6 +49,14 @@ const app = configureApp(
           env: { DATABASE_URL_MODERATION: "postgresql://openapi@localhost/aucune-connexion" },
         }),
       },
+      discovery: {
+        prisma: createContextClient({
+          context: "discovery",
+          env: { DATABASE_URL_DISCOVERY: "postgresql://openapi@localhost/aucune-connexion" },
+        }),
+        channelConsumerRedis: createStreamConsumerRedis(),
+        streamConsumerRedis: createStreamConsumerRedis(),
+      },
     }),
     { logger: false },
   ),

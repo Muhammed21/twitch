@@ -87,6 +87,7 @@ services:
       DATABASE_URL_CHANNEL: postgresql://app_channel:${PG_PASSWORD_APP_CHANNEL}@postgres:5432/app
       DATABASE_URL_STREAM: postgresql://app_stream:${PG_PASSWORD_APP_STREAM}@postgres:5432/app
       DATABASE_URL_MODERATION: postgresql://app_moderation:${PG_PASSWORD_APP_MODERATION}@postgres:5432/app
+      DATABASE_URL_DISCOVERY: postgresql://app_discovery:${PG_PASSWORD_APP_DISCOVERY}@postgres:5432/app
       DATABASE_URL_HEALTH: postgresql://app_health:${PG_PASSWORD_APP_HEALTH}@postgres:5432/app
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       BETTER_AUTH_URL: http://127.0.0.1:${API_PORT:-3000}

@@ -172,8 +172,11 @@ _Tests d'abord_ : une rotation change la clé de la chaîne et pas celle des aut
 **PR 11a — Adapter `apps/video` du port vidéo.** Adapter HTTP de `LiveVideoProviderPort` sur le plan de contrôle de `apps/video` (`packages/video-contract`) : `Authorization: Bearer` avec `VIDEO_SERVICE_SECRET`, réponses décodées par les schémas du contrat, `404` lu comme « inconnu ». Webhooks décodés par `VideoEvent`, signature HMAC horodatée vérifiée avant tout parsing (ADR 0031) ; un type d'event inconnu mais bien signé est acquitté sans effet, pour que le service vidéo ne le réessaie pas sans fin. Choix de l'adapter par `VIDEO_PROVIDER` (`fake` ou `video`), obligatoire et sans valeur par défaut (`fake` dans `.env.example` tant que l'ingest RTMP n'existe pas), avec `VIDEO_SERVICE_URL`, validés au démarrage. La suite de contrat du port est extraite des tests du provider factice et rejouée contre les deux adapters ; côté `apps/video`, le test démarre le service comme un process à part, sans importer son code.
 _Tests d'abord_ : même suite de contrat pour les deux adapters (provisionnement idempotent par chaîne, clé lisible, rotation limitée à son canal, canal inconnu → pas de clé, webhook mal signé ou trop ancien → refus sans parsing, aucune session live au départ) ; type d'event inconnu bien signé → acquitté, aucune session ; mauvais secret de service → erreur explicite, jamais une clé vide ; `VIDEO_PROVIDER=video` sans `VIDEO_SERVICE_URL` → arrêt au démarrage en nommant la variable.
 
-**PR 11b — Projection `LiveChannelView` de `discovery`.** Module `discovery` (lecture seule, ADR 0003 §6) ; tables `DiscoveryLiveChannelView` et `DiscoveryProcessedEvent` ; groupe de consommateurs `discovery` sur `events.channel` (`channel.created` pour le slug, `channel.metadata.updated` pour le titre) et `events.stream` (`stream.started`, `stream.ended`). Commande de reconstruction qui vide la projection et rejoue les streams depuis le début (exigée dès la tranche 1 par l'ADR 0003).
-_Tests d'abord_ : un live démarré apparaît avec son slug et son titre ; un live terminé disparaît ; la fin d'une ancienne session ne retire pas la session suivante ; un event rejoué ne change rien ; la reconstruction redonne la même projection.
+**PR 11b-1 — Projection `LiveChannelView` de `discovery`.** Module `discovery` (lecture seule, ADR 0003 §6) ; tables `DiscoveryLiveChannelView` et `DiscoveryProcessedEvent` ; groupe de consommateurs `discovery` sur `events.channel` (`channel.created` pour le slug, `channel.metadata.updated` pour le titre) et `events.stream` (`stream.started`, `stream.ended`). Le TTL défensif de l'ADR 0003 est reporté : la réconciliation (PR 10d) clôt déjà les sessions que le provider ne connaît plus.
+_Tests d'abord_ : un live démarré apparaît avec son slug et son titre ; un live terminé disparaît ; la fin d'une ancienne session ne retire pas la session suivante ; un démarrage plus ancien que la session en cours ne la remplace pas ; des events reçus dans le désordre entre `events.channel` et `events.stream` donnent la même projection ; un event rejoué ne change rien ; un payload hors contrat est écarté, journalisé et acquitté.
+
+**PR 11b-2 — Reconstruction de la projection `discovery`.** Commande `discovery:rebuild` (exigée dès la tranche 1 par l'ADR 0003) qui vide la projection et la reconstruit depuis la source de vérité : `ChannelOutbox` et `StreamOutbox`, lues avec le rôle `app_outbox_relay` dans l'ordre d'`occurredAt`, sous verrou exclusif ; les events repris sont marqués traités. Les streams Redis, plafonnés à environ 100 000 entrées (ADR 0034), ne suffisent pas : le `channel.created` d'une chaîne ancienne n'y est plus.
+_Tests d'abord_ : la reconstruction redonne la projection des consommateurs ; une chaîne qu'aucun event ne décrit disparaît ; un consommateur ne rejoue pas un event repris par la reconstruction ; un event consommé pendant la reconstruction attend sa fin ; plus de chaînes qu'un lot d'insertion.
 
 **PR 11c — `GET /v1/lives` (jalon A3).** Liste paginée par curseur opaque, tri total (`startedAt` décroissant puis `channelId`, ADR 0008 §a), taille de page bornée, index composite déclaré ; contrat OpenAPI dans `packages/contracts`.
 _Tests d'abord_ : pagination stable quand un live démarre entre deux pages ; un live terminé disparaît de la liste ; curseur illisible → `400` RFC 9457 ; liste vide → page vide sans curseur suivant.
@@ -191,13 +194,14 @@ _Tests d'abord_ : `docker/tests/infra.test.sh` vérifie l'ordre `migrate` → `a
 
 ## Après la tranche 1
 
-| Sujet                                                                          | Horizon (ADR 0021) |
-| ------------------------------------------------------------------------------ | ------------------ |
-| Follow, projections, page « Suivis » (ADR 0020)                                | T2                 |
-| Modération complète : bans, mots interdits, signalements, blocages             | T2                 |
-| `notification` : APNs, préférences par chaîne                                  | T2                 |
-| Catégories et tags, home curatée avec Payload (ADR 0007)                       | T2                 |
-| `monetization` : RevenueCat, entitlements, bits, reversement (ADR 0013 à 0017) | T3                 |
+| Sujet                                                                                | Horizon (ADR 0021) |
+| ------------------------------------------------------------------------------------ | ------------------ |
+| Follow, projections, page « Suivis » (ADR 0020)                                      | T2                 |
+| Modération complète : bans, mots interdits, signalements, blocages                   | T2                 |
+| `notification` : APNs, préférences par chaîne                                        | T2                 |
+| Catégories et tags, home curatée avec Payload (ADR 0007)                             | T2                 |
+| `monetization` : RevenueCat, entitlements, bits, reversement (ADR 0013 à 0017)       | T3                 |
+| TTL défensif des lives de `discovery` (ADR 0003), si la réconciliation ne suffit pas | T2                 |
 
 ## Risques suivis pendant l'exécution
 
