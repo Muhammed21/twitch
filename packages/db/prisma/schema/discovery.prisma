@@ -2,14 +2,16 @@
 
 /// Vue d'une chaîne pour les listes de lives, alimentée par channel.* et stream.*. En live si liveSessionId est renseigné.
 model DiscoveryLiveChannelView {
-  channelId     String    @id @db.Uuid
+  channelId      String    @id @db.Uuid
   /// Copie du slug de la chaîne, nul tant que channel.created n'est pas arrivé.
   /// @personal
-  slug          String?
-  title         String    @default("")
-  liveSessionId String?   @db.Uuid
-  liveStartedAt DateTime?
-  lastEndedAt   DateTime?
+  slug           String?
+  title          String    @default("")
+  /// occurredAt du dernier channel.metadata.updated appliqué : un titre plus ancien est ignoré.
+  titleChangedAt DateTime?
+  liveSessionId  String?   @db.Uuid
+  liveStartedAt  DateTime?
+  lastEndedAt    DateTime?
 
   @@schema("discovery")
 }

@@ -9,6 +9,7 @@ export type PublishedEvent = {
   readonly name: string;
   readonly version: number;
   readonly payload: unknown;
+  readonly occurredAt: Date;
 };
 
 type Contract<T extends z.ZodType> = {
@@ -18,13 +19,16 @@ type Contract<T extends z.ZodType> = {
 };
 
 const reader =
-  <T extends z.ZodType>(contract: Contract<T>, toEvent: (payload: z.infer<T>) => DiscoveryEvent) =>
+  <T extends z.ZodType>(
+    contract: Contract<T>,
+    toEvent: (payload: z.infer<T>, event: PublishedEvent) => DiscoveryEvent,
+  ) =>
   (event: PublishedEvent): DiscoveryEvent | null => {
     if (event.version !== contract.version) {
       throw new Error(`${event.name} version ${event.version} non gérée`);
     }
     const payload = contract.payload.safeParse(event.payload);
-    return payload.success ? toEvent(payload.data) : null;
+    return payload.success ? toEvent(payload.data, event) : null;
   };
 
 const { channelCreated, channelMetadataUpdated } = events.channel;
@@ -38,11 +42,15 @@ export const DISCOVERY_EVENT_READERS: Readonly<
     channelId,
     slug,
   })),
-  [channelMetadataUpdated.name]: reader(channelMetadataUpdated, ({ channelId, title }) => ({
-    kind: "title-changed",
-    channelId,
-    title,
-  })),
+  [channelMetadataUpdated.name]: reader(
+    channelMetadataUpdated,
+    ({ channelId, title }, { occurredAt }) => ({
+      kind: "title-changed",
+      channelId,
+      title,
+      changedAt: occurredAt,
+    }),
+  ),
   [streamStarted.name]: reader(streamStarted, ({ channelId, sessionId, startedAt }) => ({
     kind: "stream-started",
     channelId,

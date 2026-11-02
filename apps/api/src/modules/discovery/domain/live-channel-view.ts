@@ -7,13 +7,19 @@ export type LiveChannelView = {
   readonly channelId: string;
   readonly slug: string | null;
   readonly title: string;
+  readonly titleChangedAt: Date | null;
   readonly live: LiveSession | null;
   readonly lastEndedAt: Date | null;
 };
 
 export type DiscoveryEvent =
   | { readonly kind: "channel-created"; readonly channelId: string; readonly slug: string }
-  | { readonly kind: "title-changed"; readonly channelId: string; readonly title: string }
+  | {
+      readonly kind: "title-changed";
+      readonly channelId: string;
+      readonly title: string;
+      readonly changedAt: Date;
+    }
   | {
       readonly kind: "stream-started";
       readonly channelId: string;
@@ -31,6 +37,7 @@ const unknownChannel = (channelId: string): LiveChannelView => ({
   channelId,
   slug: null,
   title: "",
+  titleChangedAt: null,
   live: null,
   lastEndedAt: null,
 });
@@ -53,7 +60,9 @@ export const applyDiscoveryEvent = (
     case "channel-created":
       return { ...view, slug: event.slug };
     case "title-changed":
-      return { ...view, title: event.title };
+      return isAfter(event.changedAt, view.titleChangedAt)
+        ? { ...view, title: event.title, titleChangedAt: event.changedAt }
+        : view;
     case "stream-started":
       return startsAfter(view, event.startedAt)
         ? { ...view, live: { sessionId: event.sessionId, startedAt: event.startedAt } }

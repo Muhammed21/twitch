@@ -31,7 +31,7 @@ const makeEvent = (
   id: EVENT_ID,
   name,
   version: 1,
-  occurredAt: new Date("2026-11-02T20:00:00.000Z"),
+  occurredAt: new Date("2026-11-02T19:58:00.000Z"),
   payload: PAYLOADS[name],
   ...overrides,
 });
@@ -69,7 +69,12 @@ describe("handlers de discovery pour events.channel et events.stream", () => {
     ["channel.created", { kind: "channel-created", channelId: CHANNEL_ID, slug: "streamer" }],
     [
       "channel.metadata.updated",
-      { kind: "title-changed", channelId: CHANNEL_ID, title: "Speedrun" },
+      {
+        kind: "title-changed",
+        channelId: CHANNEL_ID,
+        title: "Speedrun",
+        changedAt: new Date("2026-11-02T19:58:00.000Z"),
+      },
     ],
     [
       "stream.started",

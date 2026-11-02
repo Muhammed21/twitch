@@ -32,13 +32,14 @@ const publish = (
     id = randomUUID(),
     name,
     payload,
-  }: { id?: string; name: string; payload: Readonly<Record<string, string>> },
-) =>
-  publisher.xAdd(
-    stream,
-    "*",
-    toStreamEntry({ id, name, version: 1, payload, occurredAt: new Date() }),
-  );
+    occurredAt = new Date(),
+  }: {
+    id?: string;
+    name: string;
+    payload: Readonly<Record<string, string>>;
+    occurredAt?: Date;
+  },
+) => publisher.xAdd(stream, "*", toStreamEntry({ id, name, version: 1, payload, occurredAt }));
 
 const channelCreated = (channelId: string, slug: string) =>
   publish("events.channel", {
@@ -46,9 +47,14 @@ const channelCreated = (channelId: string, slug: string) =>
     payload: { channelId, ownerId: randomUUID(), slug },
   });
 
-const titleChanged = (channelId: string, title: string, id?: string) =>
+const titleChanged = (
+  channelId: string,
+  title: string,
+  { id, occurredAt }: { id?: string; occurredAt?: Date } = {},
+) =>
   publish("events.channel", {
     id,
+    occurredAt,
     name: "channel.metadata.updated",
     payload: { channelId, title },
   });
@@ -145,6 +151,7 @@ describe("projection LiveChannelView de discovery (ADR 0003, §6)", () => {
           channelId,
           slug,
           title: "Speedrun",
+          titleChangedAt: expect.any(Date),
           liveSessionId: sessionId,
           liveStartedAt: startedAt,
           lastEndedAt: null,
@@ -197,15 +204,37 @@ describe("projection LiveChannelView de discovery (ADR 0003, §6)", () => {
     const firstTitleEvent = randomUUID();
 
     await withDiscoveryModule(async () => {
-      await titleChanged(channelId, "Ancien titre", firstTitleEvent);
+      await titleChanged(channelId, "Ancien titre", { id: firstTitleEvent });
       await titleChanged(channelId, "Nouveau titre");
-      await titleChanged(channelId, "Ancien titre", firstTitleEvent);
+      await titleChanged(channelId, "Ancien titre", { id: firstTitleEvent });
       await channelCreated(channelId, slugFor());
 
       await eventually(async () =>
         expect(await viewOf(channelId)).toMatchObject({ slug: expect.any(String) }),
       );
       expect(await viewOf(channelId)).toMatchObject({ title: "Nouveau titre" });
+    });
+  });
+
+  it("garde le titre le plus récent quand un changement plus ancien arrive après", async () => {
+    const channelId = randomUUID();
+
+    await withDiscoveryModule(async () => {
+      await titleChanged(channelId, "Nouveau titre", {
+        occurredAt: new Date("2026-11-02T20:05:00.000Z"),
+      });
+      await titleChanged(channelId, "Ancien titre", {
+        occurredAt: new Date("2026-11-02T20:00:00.000Z"),
+      });
+      await channelCreated(channelId, slugFor());
+
+      await eventually(async () =>
+        expect(await viewOf(channelId)).toMatchObject({ slug: expect.any(String) }),
+      );
+      expect(await viewOf(channelId)).toMatchObject({
+        title: "Nouveau titre",
+        titleChangedAt: new Date("2026-11-02T20:05:00.000Z"),
+      });
     });
   });
 

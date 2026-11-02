@@ -12,6 +12,7 @@ type ViewRow = {
   readonly channelId: string;
   readonly slug: string | null;
   readonly title: string;
+  readonly titleChangedAt: Date | null;
   readonly liveSessionId: string | null;
   readonly liveStartedAt: Date | null;
   readonly lastEndedAt: Date | null;
@@ -21,6 +22,7 @@ const toView = (row: ViewRow): LiveChannelView => ({
   channelId: row.channelId,
   slug: row.slug,
   title: row.title,
+  titleChangedAt: row.titleChangedAt,
   live:
     row.liveSessionId === null || row.liveStartedAt === null
       ? null
@@ -32,6 +34,7 @@ const toRow = (view: LiveChannelView): ViewRow => ({
   channelId: view.channelId,
   slug: view.slug,
   title: view.title,
+  titleChangedAt: view.titleChangedAt,
   liveSessionId: view.live?.sessionId ?? null,
   liveStartedAt: view.live?.startedAt ?? null,
   lastEndedAt: view.lastEndedAt,
@@ -51,7 +54,7 @@ export const prismaLiveChannelProjection = (prisma: DiscoveryPrisma): LiveChanne
         ON CONFLICT DO NOTHING
       `;
       const rows = await tx.$queryRaw<ViewRow[]>`
-        SELECT "channelId"::text AS "channelId", "slug", "title",
+        SELECT "channelId"::text AS "channelId", "slug", "title", "titleChangedAt",
                "liveSessionId"::text AS "liveSessionId", "liveStartedAt", "lastEndedAt"
         FROM "discovery"."DiscoveryLiveChannelView"
         WHERE "channelId" = ${channelId}::uuid

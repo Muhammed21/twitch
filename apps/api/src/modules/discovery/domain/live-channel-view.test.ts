@@ -14,6 +14,7 @@ const makeView = (overrides: Partial<LiveChannelView> = {}): LiveChannelView => 
   channelId: CHANNEL_ID,
   slug: "chaine",
   title: "",
+  titleChangedAt: null,
   live: null,
   lastEndedAt: null,
   ...overrides,
@@ -25,10 +26,11 @@ const channelCreated = (slug = "chaine"): DiscoveryEvent => ({
   slug,
 });
 
-const titleChanged = (title: string): DiscoveryEvent => ({
+const titleChanged = (title: string, minute: number): DiscoveryEvent => ({
   kind: "title-changed",
   channelId: CHANNEL_ID,
   title,
+  changedAt: at(minute),
 });
 
 const streamStarted = (sessionId: string, minute: number): DiscoveryEvent => ({
@@ -79,16 +81,34 @@ describe("vue d'une chaîne dans discovery", () => {
   it("change le titre d'une chaîne", () => {
     const view = makeView(LIVE_ON_SESSION_1);
 
-    expect(applyDiscoveryEvent(view, titleChanged("Speedrun"))).toEqual({
+    expect(applyDiscoveryEvent(view, titleChanged("Speedrun", 5))).toEqual({
       ...view,
       title: "Speedrun",
+      titleChangedAt: at(5),
     });
   });
 
   it("retient le titre d'une chaîne dont la création n'est pas encore arrivée", () => {
-    expect(applyDiscoveryEvent(null, titleChanged("Speedrun"))).toEqual(
-      makeView({ slug: null, title: "Speedrun" }),
+    expect(applyDiscoveryEvent(null, titleChanged("Speedrun", 5))).toEqual(
+      makeView({ slug: null, title: "Speedrun", titleChangedAt: at(5) }),
     );
+  });
+
+  it("remplace le titre par un titre changé plus tard", () => {
+    const view = makeView({ title: "Ancien", titleChangedAt: at(5) });
+
+    expect(applyDiscoveryEvent(view, titleChanged("Nouveau", 6))).toEqual(
+      makeView({ title: "Nouveau", titleChangedAt: at(6) }),
+    );
+  });
+
+  it.each([
+    ["plus tôt", 4],
+    ["au même instant", 5],
+  ])("garde le titre en place face à un titre changé %s", (_, minute) => {
+    const view = makeView({ title: "Actuel", titleChangedAt: at(5) });
+
+    expect(applyDiscoveryEvent(view, titleChanged("Périmé", minute))).toEqual(view);
   });
 
   it("met en live une chaîne dont la session démarre", () => {
@@ -165,6 +185,8 @@ describe("vue d'une chaîne dans discovery", () => {
   it("arrive à la même vue quel que soit l'ordre de réception des events", () => {
     const events = [
       channelCreated("ma_chaine"),
+      titleChanged("Premier titre", 1),
+      titleChanged("Second titre", 2),
       streamStarted("session-1", 10),
       streamEnded("session-1", 20),
       streamStarted("session-2", 30),
@@ -176,6 +198,8 @@ describe("vue d'une chaîne dans discovery", () => {
     expect(views[0]).toEqual(
       makeView({
         slug: "ma_chaine",
+        title: "Second titre",
+        titleChangedAt: at(2),
         live: { sessionId: "session-2", startedAt: at(30) },
         lastEndedAt: at(20),
       }),

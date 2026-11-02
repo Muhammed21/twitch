@@ -10,6 +10,7 @@ const UNKNOWN_CHANNEL: LiveChannelView = {
   channelId: CHANNEL_ID,
   slug: null,
   title: "",
+  titleChangedAt: null,
   live: null,
   lastEndedAt: null,
 };
