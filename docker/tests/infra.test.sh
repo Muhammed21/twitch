@@ -104,7 +104,12 @@ echo "API et relais de l'outbox (profil full)"
 full() { compose --profile full "$@"; }
 container_of() { full ps -a -q "$1"; }
 state_of() { docker inspect -f "{{.State.$2}}" "$(container_of "$1")"; }
-started_after_migrate() { test "$(state_of "$1" StartedAt)" \> "$(state_of migrate FinishedAt)"; }
+comparable_time() {
+  local time="${1%Z}" fraction=""
+  case "$time" in *.*) fraction="${time#*.}" time="${time%%.*}" ;; esac
+  printf '%s.%s' "$time" "$(printf '%-9s' "$fraction" | tr ' ' 0)"
+}
+started_after_migrate() { test "$(comparable_time "$(state_of "$1" StartedAt)")" \> "$(comparable_time "$(state_of migrate FinishedAt)")"; }
 in_api() { full exec -T api "$@"; }
 stopped_by_itself() {
   case "$(state_of "$1" ExitCode)" in
