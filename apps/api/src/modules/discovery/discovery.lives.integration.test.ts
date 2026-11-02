@@ -182,6 +182,15 @@ describe("GET /v1/lives (jalon A3)", () => {
     expect(await page(`?cursor=${cursor}`)).toEqual({ items: [] });
   });
 
+  it("accepte un curseur daté du premier jour de l'an 1", async () => {
+    const cursor = encodeLiveCursor({
+      startedAt: new Date("0001-01-01T00:00:00Z"),
+      channelId: "ffffffff-ffff-4fff-bfff-ffffffffffff",
+    });
+
+    expect(await page(`?cursor=${cursor}`)).toEqual({ items: [] });
+  });
+
   it("ne décale pas la page suivante quand un live démarre entre deux pages", async () => {
     const lives = await seedDescending([4, 3, 2, 1]);
     try {
@@ -216,6 +225,10 @@ describe("GET /v1/lives (jalon A3)", () => {
       "dont la position est illisible",
       `?cursor=${Buffer.from('["hier","42"]').toString("base64url")}`,
     ],
+    [
+      "daté d'une année qui n'existe pas",
+      `?cursor=${Buffer.from('["0000-01-01T00:00:00Z","00000000-0000-4000-8000-000000000001"]').toString("base64url")}`,
+    ],
   ])("refuse un curseur %s en nommant le curseur illisible", async (_, query) => {
     const { body } = await get(query);
 
@@ -227,6 +240,10 @@ describe("GET /v1/lives (jalon A3)", () => {
   it.each([
     ["cursor", "?cursor=pas-un-curseur"],
     ["cursor", `?cursor=${Buffer.from('["hier","42"]').toString("base64url")}`],
+    [
+      "cursor",
+      `?cursor=${Buffer.from('["0000-01-01T00:00:00Z","00000000-0000-4000-8000-000000000001"]').toString("base64url")}`,
+    ],
     ["limit", "?limit=0"],
     ["limit", "?limit=51"],
     ["limit", "?limit=2.5"],

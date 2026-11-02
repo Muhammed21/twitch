@@ -4,7 +4,12 @@ import { Uuid } from "@repo/contracts";
 
 import type { LivePosition } from "../application/list-lives.ts";
 
-const Position = z.tuple([z.iso.datetime(), Uuid]);
+const FIRST_YEAR = 1;
+
+const Position = z.tuple([
+  z.iso.datetime().refine((startedAt) => new Date(startedAt).getUTCFullYear() >= FIRST_YEAR),
+  Uuid,
+]);
 
 export const encodeLiveCursor = ({ startedAt, channelId }: LivePosition): string =>
   Buffer.from(JSON.stringify([startedAt.toISOString(), channelId])).toString("base64url");
