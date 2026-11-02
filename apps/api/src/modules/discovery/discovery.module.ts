@@ -7,17 +7,39 @@ import {
   type OnModuleDestroy,
   type OnModuleInit,
 } from "@nestjs/common";
+import type { Pool } from "pg";
 
 import { errorDetails, type LogSink, writeLog } from "../../platform/logging.ts";
 import { startStreamConsumer, type StreamConsumerRedis } from "../../platform/stream-consumer.ts";
 import { projectDiscoveryEvent } from "./application/project-discovery-event.ts";
 import {
+  type RebuildReport,
+  rebuildLiveChannelViews,
+} from "./application/rebuild-live-channel-views.ts";
+import { pgOutboxHistory } from "./infrastructure/pg-outbox-history.ts";
+import {
   type DiscoveryPrisma,
   prismaLiveChannelProjection,
+  prismaLiveChannelStore,
 } from "./infrastructure/prisma-live-channel-projection.ts";
 import { discoveryEventHandlers } from "./presentation/discovery-event-handlers.ts";
 
 export type { DiscoveryPrisma };
+
+const REBUILD_PAGE_SIZE = 500;
+
+export const rebuildDiscoveryProjection = ({
+  pool,
+  prisma,
+}: {
+  pool: Pool;
+  prisma: DiscoveryPrisma;
+}): Promise<RebuildReport> =>
+  rebuildLiveChannelViews({
+    history: pgOutboxHistory(pool),
+    store: prismaLiveChannelStore(prisma),
+    pageSize: REBUILD_PAGE_SIZE,
+  });
 
 const DISCOVERY_DEPENDENCIES = Symbol("DISCOVERY_DEPENDENCIES");
 const GROUP = "discovery";

@@ -3,7 +3,7 @@ import { hostname } from "node:os";
 import { setTimeout as sleep } from "node:timers/promises";
 
 import { Test } from "@nestjs/testing";
-import { Client } from "pg";
+import { Client, Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { createContextClient } from "@repo/db";
@@ -12,7 +12,11 @@ import { createAuthzRedis } from "../../authz/authz-context.ts";
 import { createApp } from "../../create-app.ts";
 import { createStreamConsumerRedis } from "../../platform/stream-consumer.ts";
 import { toStreamEntry } from "../../platform/stream-entry.ts";
-import { DiscoveryModule } from "./discovery.module.ts";
+import { DiscoveryModule, rebuildDiscoveryProjection } from "./discovery.module.ts";
+import {
+  prismaLiveChannelProjection,
+  prismaLiveChannelStore,
+} from "./infrastructure/prisma-live-channel-projection.ts";
 
 const urlOf = (variable: string): string => {
   const url = process.env[variable];
@@ -23,7 +27,27 @@ const urlOf = (variable: string): string => {
 };
 
 const discovery = createContextClient({ context: "discovery", env: process.env });
+const channelDb = createContextClient({ context: "channel", env: process.env });
+const streamDb = createContextClient({ context: "stream", env: process.env });
+const outboxPool = new Pool({ connectionString: urlOf("DATABASE_URL_OUTBOX_RELAY") });
 
+type OutboxEvent = { id: string; name: string; payload: Readonly<Record<string, string>> };
+
+const appendToHistory = async (
+  outbox: "channel" | "stream",
+  { id, name, payload }: OutboxEvent,
+) => {
+  const row = { id, name, version: 1, payload, occurredAt: new Date(), publishedAt: new Date() };
+  return outbox === "channel"
+    ? channelDb.channelOutbox.create({ data: row })
+    : streamDb.streamOutbox.create({ data: row });
+};
+
+const rebuild = () =>
+  rebuildDiscoveryProjection({
+    pool: outboxPool,
+    prisma: createContextClient({ context: "discovery", env: process.env }),
+  });
 const publisher = createAuthzRedis(urlOf("REDIS_URL"));
 
 const publish = (
@@ -105,6 +129,14 @@ const withDiscoveryModule = async (
   }
 };
 
+const makeSignal = () => {
+  const resolvers: (() => void)[] = [];
+  const promise = new Promise<void>((resolve) => {
+    resolvers.push(resolve);
+  });
+  return { promise, resolve: () => resolvers.forEach((resolve) => resolve()) };
+};
+
 const withMigrator = async <T>(query: (client: Client) => Promise<T>): Promise<T> => {
   const client = new Client({ connectionString: urlOf("DATABASE_URL_MIGRATOR") });
   await client.connect();
@@ -123,6 +155,18 @@ const openDiscoveryConnections = () =>
     return Number(rows[0]?.open);
   });
 
+const blockedOnProjection = () =>
+  withMigrator(async (client) => {
+    const { rows } = await client.query<{ waiting: string }>(
+      `SELECT count(*) AS waiting FROM pg_locks
+       WHERE relation IN (
+         '"discovery"."DiscoveryLiveChannelView"'::regclass,
+         '"discovery"."DiscoveryProcessedEvent"'::regclass
+       ) AND NOT granted`,
+    );
+    return Number(rows[0]?.waiting);
+  });
+
 const slugFor = () => `live_${randomUUID().replaceAll("-", "").slice(0, 12)}`;
 
 beforeAll(async () => {
@@ -131,7 +175,8 @@ beforeAll(async () => {
 
 afterAll(async () => {
   publisher.destroy();
-  await discovery.$disconnect();
+  await outboxPool.end();
+  await Promise.all([discovery.$disconnect(), channelDb.$disconnect(), streamDb.$disconnect()]);
 });
 
 describe("projection LiveChannelView de discovery (ADR 0003, §6)", () => {
@@ -368,5 +413,145 @@ describe("projection LiveChannelView de discovery (ADR 0003, §6)", () => {
 
     expect(await openDiscoveryConnections()).toBe(before);
     expect(closed.map((redis) => redis.isOpen)).toEqual([false, false]);
+  });
+});
+
+describe("reconstruction de la projection depuis les outbox (ADR 0003, ADR 0034)", () => {
+  it("redonne la vue que les consommateurs ont construite", async () => {
+    const channelId = randomUUID();
+    const sessionId = randomUUID();
+    const history: readonly ["channel" | "stream", OutboxEvent][] = [
+      [
+        "channel",
+        {
+          id: randomUUID(),
+          name: "channel.created",
+          payload: { channelId, ownerId: randomUUID(), slug: slugFor() },
+        },
+      ],
+      [
+        "channel",
+        {
+          id: randomUUID(),
+          name: "channel.metadata.updated",
+          payload: { channelId, title: "Speedrun" },
+        },
+      ],
+      [
+        "stream",
+        {
+          id: randomUUID(),
+          name: "stream.started",
+          payload: { sessionId, channelId, startedAt: "2026-11-02T20:00:00.000Z" },
+        },
+      ],
+    ];
+    for (const [outbox, event] of history) {
+      await appendToHistory(outbox, event);
+    }
+    await withDiscoveryModule(async () => {
+      for (const [outbox, event] of history) {
+        await publish(`events.${outbox}`, event);
+      }
+      await eventually(async () =>
+        expect(await viewOf(channelId)).toMatchObject({
+          liveSessionId: sessionId,
+          title: "Speedrun",
+        }),
+      );
+    });
+    const built = await viewOf(channelId);
+
+    const report = await rebuild();
+
+    expect(await viewOf(channelId)).toEqual(built);
+    expect(report.events).toBeGreaterThanOrEqual(history.length);
+  });
+
+  it("retire une chaîne qu'aucun event des outbox ne décrit", async () => {
+    const channelId = randomUUID();
+    await discovery.discoveryLiveChannelView.create({ data: { channelId, slug: slugFor() } });
+
+    await rebuild();
+
+    expect(await viewOf(channelId)).toBeNull();
+  });
+
+  it("ne laisse pas un consommateur rejouer un event déjà repris par la reconstruction", async () => {
+    const channelId = randomUUID();
+    const oldTitle: OutboxEvent = {
+      id: randomUUID(),
+      name: "channel.metadata.updated",
+      payload: { channelId, title: "Ancien titre" },
+    };
+    await appendToHistory("channel", oldTitle);
+    await rebuild();
+
+    await withDiscoveryModule(async () => {
+      await titleChanged(channelId, "Nouveau titre");
+      await publish("events.channel", oldTitle);
+      await channelCreated(channelId, slugFor());
+
+      await eventually(async () =>
+        expect(await viewOf(channelId)).toMatchObject({ slug: expect.any(String) }),
+      );
+      expect(await viewOf(channelId)).toMatchObject({ title: "Nouveau titre" });
+    });
+  });
+
+  it("reconstruit plus de chaînes qu'un seul lot d'insertion n'en contient", async () => {
+    const channelIds = Array.from({ length: 1001 }, () => randomUUID());
+    await channelDb.channelOutbox.createMany({
+      data: channelIds.map((channelId) => ({
+        id: randomUUID(),
+        name: "channel.created",
+        version: 1,
+        payload: { channelId, ownerId: randomUUID(), slug: slugFor() },
+        occurredAt: new Date(),
+        publishedAt: new Date(),
+      })),
+    });
+
+    await rebuild();
+
+    expect(
+      await discovery.discoveryLiveChannelView.count({ where: { channelId: { in: channelIds } } }),
+    ).toBe(channelIds.length);
+  });
+
+  it("fait attendre la fin de la reconstruction à un event consommé pendant celle-ci", async () => {
+    const channelId = randomUUID();
+    const prisma = createContextClient({ context: "discovery", env: process.env });
+    const computing = makeSignal();
+    const release = makeSignal();
+    const rebuilding = prismaLiveChannelStore(prisma).replaceAll(async () => {
+      computing.resolve();
+      await release.promise;
+      return {
+        views: [{ channelId, slug: null, title: "Reconstruit", live: null, lastEndedAt: null }],
+        eventIds: [],
+        skipped: 0,
+      };
+    });
+    await computing.promise;
+    const settled: string[] = [];
+    const consuming = prismaLiveChannelProjection(discovery)
+      .update({
+        eventId: randomUUID(),
+        channelId,
+        change: (view) => ({ ...view, title: "Consommé" }),
+      })
+      .then(() => settled.push("update"));
+
+    try {
+      await eventually(async () => expect(await blockedOnProjection()).toBeGreaterThan(0));
+      expect(settled).toEqual([]);
+    } finally {
+      release.resolve();
+      await Promise.all([rebuilding, consuming]);
+      await prisma.$disconnect();
+    }
+
+    expect(await viewOf(channelId)).toMatchObject({ title: "Consommé" });
   });
 });
