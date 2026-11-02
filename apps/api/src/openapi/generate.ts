@@ -57,6 +57,7 @@ const app = configureApp(
         channelConsumerRedis: createStreamConsumerRedis(),
         streamConsumerRedis: createStreamConsumerRedis(),
       },
+      mobile: { featureFlags: { provider: "defaults" }, minSupportedVersion: "0.0.0" },
     }),
     { logger: false },
   ),

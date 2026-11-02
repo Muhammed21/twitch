@@ -4,14 +4,16 @@ import type { AuthzRedis } from "./authz/authz-context.ts";
 import { type ChannelPrisma, ChannelModule } from "./modules/channel/channel.module.ts";
 import { DiscoveryModule, type DiscoveryPrisma } from "./modules/discovery/discovery.module.ts";
 import {
+  createCurrentAccountReader,
   IdentityModule,
   type IdentityPrisma,
   type IdentityRedis,
 } from "./modules/identity/identity.module.ts";
+import { createFeatureFlags, MobileModule } from "./modules/mobile/mobile.module.ts";
 import { ModerationModule, type ModerationPrisma } from "./modules/moderation/moderation.module.ts";
 import { StreamModule, type StreamPrisma } from "./modules/stream/stream.module.ts";
 import type { AccessTokenVerifier } from "./platform/authentication.ts";
-import type { VideoProviderConfig } from "./platform/config/env.ts";
+import type { FeatureFlagsConfig, VideoProviderConfig } from "./platform/config/env.ts";
 import type { LogSink } from "./platform/logging.ts";
 import { PlatformModule, type SchemaVersionCheck } from "./platform/platform.module.ts";
 import type { StreamConsumerRedis } from "./platform/stream-consumer.ts";
@@ -24,6 +26,7 @@ export class AppModule {
     stream,
     moderation,
     discovery,
+    mobile,
     ...platform
   }: {
     schemaVersionCheck: SchemaVersionCheck;
@@ -47,6 +50,7 @@ export class AppModule {
       channelConsumerRedis: StreamConsumerRedis;
       streamConsumerRedis: StreamConsumerRedis;
     };
+    mobile: { featureFlags: FeatureFlagsConfig; minSupportedVersion: string };
   }): DynamicModule {
     return {
       module: AppModule,
@@ -61,6 +65,12 @@ export class AppModule {
         }),
         ModerationModule.register({ ...moderation, authzRedis: channel.authzRedis }),
         DiscoveryModule.register({ ...discovery, logSink: platform.logSink }),
+        MobileModule.register({
+          featureFlags: createFeatureFlags(mobile.featureFlags),
+          readProfile: createCurrentAccountReader(identity.prisma),
+          minSupportedVersion: mobile.minSupportedVersion,
+          logSink: platform.logSink,
+        }),
       ],
     };
   }

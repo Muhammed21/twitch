@@ -19,6 +19,9 @@ export {
   type IdentityPrisma,
 } from "./infrastructure/better-auth.ts";
 
+export const createCurrentAccountReader = (prisma: IdentityPrisma) =>
+  getCurrentAccount(prismaAccountDirectory(prisma));
+
 const IDENTITY_PRISMA = Symbol("IDENTITY_PRISMA");
 const IDENTITY_REDIS = Symbol("IDENTITY_REDIS");
 
@@ -42,7 +45,7 @@ export class IdentityModule implements OnModuleDestroy {
       providers: [
         {
           provide: GET_CURRENT_ACCOUNT,
-          useValue: getCurrentAccount(prismaAccountDirectory(prisma)),
+          useValue: createCurrentAccountReader(prisma),
         },
         { provide: IDENTITY_PRISMA, useValue: prisma },
         { provide: IDENTITY_REDIS, useValue: redis },
