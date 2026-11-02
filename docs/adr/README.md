@@ -34,7 +34,7 @@ Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes
 | [0022](0022-socket-io-transport-du-chat.md)                                        | socket.io comme transport du chat, à la place de uWebSockets.js                                                | Accepté                                                            | Chat         |
 | [0023](0023-client-ios-socketio-minimal-et-refus-http-au-handshake.md)             | Client iOS socket.io minimal et refus HTTP 401 / 403 au handshake                                              | Accepté                                                            | Chat         |
 | [0024](0024-conventions-de-contrat-pour-la-compatibilite.md)                       | Conventions de contrat pour la compatibilité ascendante (réponses ouvertes, enums ouverts, unions extensibles) | Accepté                                                            | Contrat      |
-| [0025](0025-un-client-prisma-par-contexte.md)                                      | Un client Prisma par contexte, et ce que la base ne protège pas                                                | Accepté                                                            | Données      |
+| [0025](0025-un-client-prisma-par-contexte.md)                                      | Un client Prisma par contexte, et ce que la base ne protège pas                                                | Accepté — §3 amendé par 0041                                       | Données      |
 | [0026](0026-better-auth-oauth-provider-et-revocation-sur-reutilisation.md)         | better-auth en serveur OAuth, révocation de tous les appareils sur réutilisation                               | Accepté — claims `amr` et `auth_time` remplacés par 0033           | Auth         |
 | [0027](0027-backpressure-et-dimensionnement-du-chat.md)                            | Clients lents, dimensionnement et filtrage des blocages dans le chat                                           | Accepté                                                            | Chat         |
 | [0028](0028-conteneurisation-et-environnement-local-docker-compose.md)             | Conteneurisation et environnement local Docker Compose (hébergement reporté)                                   | Accepté                                                            | Infra        |
@@ -50,6 +50,7 @@ Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes
 | [0038](0038-app-ios-sous-apps-ios.md)                                              | L'app iOS vit sous `apps/ios/`, à côté des autres applications                                                 | Proposé                                                            | iOS          |
 | [0039](0039-pages-d-authentification-servies-par-l-api-en-html-sans-javascript.md) | Les pages d'authentification sont servies par l'API, en HTML sans JavaScript                                   | Proposé                                                            | Auth         |
 | [0040](0040-illustration-inscription-terminee-reprise-telle-quelle.md)             | L'illustration de « You're All Set! » est reprise telle quelle                                                 | Proposé                                                            | Design       |
+| [0041](0041-les-outbox-historique-lisible-pour-reconstruire-une-projection.md)     | Les outbox de `channel` et `stream` sont un historique lisible pour reconstruire une projection                | Accepté                                                            | Données      |
 
 ## Dépendances principales
 
@@ -82,6 +83,7 @@ Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes
 0010, 0018, 0019 ── 0038 (app iOS sous apps/ios/)
 0005, 0026, 0030, 0035 ── 0039 (pages d'authentification servies par l'API, amende 0035)
 0036, 0039 ── 0040 (illustration de « You're All Set! » reprise, amende 0036 §6)
+0003, 0025, 0034 ── 0041 (outbox de channel et stream lues pour reconstruire une projection, amende 0025 §3)
 ```
 
 ## Points ouverts

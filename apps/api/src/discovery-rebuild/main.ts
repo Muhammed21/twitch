@@ -8,7 +8,7 @@ import { loadRebuildEnv } from "./rebuild-env.ts";
 
 try {
   const config = loadRebuildEnv(process.env);
-  const pool = new Pool({ connectionString: config.outboxDatabaseUrl });
+  const pool = new Pool({ connectionString: config.historyDatabaseUrl });
   const prisma = createContextClient({ context: "discovery", env: process.env });
   try {
     const report = await rebuildDiscoveryProjection({ pool, prisma });

@@ -42,13 +42,14 @@ for context in identity channel stream chat moderation discovery monetization no
   ensure_role "app_$context" "$password" NOCREATEDB
 done
 ensure_role app_outbox_relay "$PG_PASSWORD_APP_OUTBOX_RELAY" NOCREATEDB
+ensure_role app_projection_rebuild "$PG_PASSWORD_APP_PROJECTION_REBUILD" NOCREATEDB
 ensure_role app_health "$PG_PASSWORD_APP_HEALTH" NOCREATEDB
 ensure_role payload "$PG_PASSWORD_PAYLOAD" NOCREATEDB
 
 ensure_database app migrator
 ensure_database payload payload
 
-for role in migrator app_identity app_channel app_stream app_chat app_moderation app_discovery app_monetization app_notification app_video app_outbox_relay app_health; do
+for role in migrator app_identity app_channel app_stream app_chat app_moderation app_discovery app_monetization app_notification app_video app_outbox_relay app_projection_rebuild app_health; do
   grant_connect app "$role"
 done
 grant_connect payload payload

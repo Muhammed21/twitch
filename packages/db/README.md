@@ -47,7 +47,7 @@ Chaque contexte qui publie des events déclare ses propres tables, de forme impo
 - `<Contexte>Outbox` : `id`, `name`, `version`, `payload` (Json), `occurredAt`, `publishedAt`, `attempts`, `nextAttemptAt`, `lastError`, avec un index sur `(publishedAt, nextAttemptAt)` ;
 - `<Contexte>ProcessedEvent` : `eventId`, `handlerName`, `processedAt`, unique sur `(eventId, handlerName)`.
 
-La migration qui crée une outbox accorde à `app_outbox_relay` `USAGE` sur son schéma et `SELECT, UPDATE` sur la table : aucun privilège par défaut ne cible les seules outbox.
+La migration qui crée une outbox accorde à `app_outbox_relay` `USAGE` sur son schéma et `SELECT, UPDATE` sur la table : aucun privilège par défaut ne cible les seules outbox. Une outbox lue pour reconstruire une projection (`ChannelOutbox`, `StreamOutbox`) n'est pas purgée, et sa migration accorde à `app_projection_rebuild` `USAGE` sur son schéma et `SELECT` sur la table (ADR 0041).
 
 ```ts
 await db.$transaction(async (tx) => {
@@ -58,6 +58,7 @@ await db.$transaction(async (tx) => {
 
 - `appendToOutbox(tx, …)` s'appelle dans la transaction qui écrit l'état métier : un événement d'une transaction annulée n'est jamais publié.
 - `relayOutboxBatch({ pool, outbox, publish })` publie un lot avec le rôle `app_outbox_relay` : lignes verrouillées en `FOR UPDATE SKIP LOCKED`, dans l'ordre d'occurrence, puis `publishedAt` posé. Un échec garde l'événement, compte la tentative et le reprogramme après 1 s, 2 s, 4 s… jusqu'à 5 minutes. La garantie est _at-least-once_.
+- `readOutboxHistory({ pool, outboxes, after, take })` rend une page d'events publiés ou non de plusieurs outbox, triés par `occurredAt` puis `id`, après l'event `after`, avec le rôle `app_projection_rebuild`.
 - `alreadyProcessed(tx, { processedEvents, eventId, handler })` s'appelle dans la transaction du consommateur : `true` si ce handler a déjà traité l'événement.
 
 `pnpm mutation:integration` mute `src/outbox.ts` contre les tests unitaires et d'intégration, sur la base locale migrée.

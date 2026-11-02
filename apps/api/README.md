@@ -93,6 +93,10 @@ Sans paramètre `resource`, le jeton d'accès est opaque : l'app iOS l'envoie to
 
 Une nouvelle outbox s'ajoute à `OUTBOXES` (`src/outbox-relay/outbox-relay.ts`), et sa migration accorde les droits du relais (voir [`packages/db`](../../packages/db/README.md)).
 
+## Reconstruction de la projection `discovery` (ADR 0041)
+
+`pnpm --filter @repo/api discovery:rebuild` reconstruit `DiscoveryLiveChannelView` depuis `ChannelOutbox` et `StreamOutbox`. La commande lit l'historique avec `readOutboxHistory` (`@repo/db`) par `DATABASE_URL_PROJECTION_REBUILD` (rôle `app_projection_rebuild`), et écrit la projection par `DATABASE_URL_DISCOVERY`. Elle remplace la vue sous verrou exclusif et marque traités les events repris. Un event consommé pendant la reconstruction attend la fin du verrou ; au-delà de 5 s, l'entrée est reprise 30 s plus tard.
+
 ## Chaînes (ADR 0003, ADR 0035)
 
 `modules/channel` crée la chaîne d'un compte à la réception de `identity.account.registered` :

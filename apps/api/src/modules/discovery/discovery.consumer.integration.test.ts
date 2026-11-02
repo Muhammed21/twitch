@@ -29,15 +29,20 @@ const urlOf = (variable: string): string => {
 const discovery = createContextClient({ context: "discovery", env: process.env });
 const channelDb = createContextClient({ context: "channel", env: process.env });
 const streamDb = createContextClient({ context: "stream", env: process.env });
-const outboxPool = new Pool({ connectionString: urlOf("DATABASE_URL_OUTBOX_RELAY") });
+const outboxPool = new Pool({ connectionString: urlOf("DATABASE_URL_PROJECTION_REBUILD") });
 
-type OutboxEvent = { id: string; name: string; payload: Readonly<Record<string, string>> };
+type OutboxEvent = {
+  id: string;
+  name: string;
+  payload: Readonly<Record<string, string>>;
+  occurredAt: Date;
+};
 
 const appendToHistory = async (
   outbox: "channel" | "stream",
-  { id, name, payload }: OutboxEvent,
+  { id, name, payload, occurredAt }: OutboxEvent,
 ) => {
-  const row = { id, name, version: 1, payload, occurredAt: new Date(), publishedAt: new Date() };
+  const row = { id, name, version: 1, payload, occurredAt, publishedAt: new Date() };
   return outbox === "channel"
     ? channelDb.channelOutbox.create({ data: row })
     : streamDb.streamOutbox.create({ data: row });
@@ -425,6 +430,7 @@ describe("reconstruction de la projection depuis les outbox (ADR 0003, ADR 0034)
         "channel",
         {
           id: randomUUID(),
+          occurredAt: new Date(),
           name: "channel.created",
           payload: { channelId, ownerId: randomUUID(), slug: slugFor() },
         },
@@ -433,6 +439,7 @@ describe("reconstruction de la projection depuis les outbox (ADR 0003, ADR 0034)
         "channel",
         {
           id: randomUUID(),
+          occurredAt: new Date(),
           name: "channel.metadata.updated",
           payload: { channelId, title: "Speedrun" },
         },
@@ -441,6 +448,7 @@ describe("reconstruction de la projection depuis les outbox (ADR 0003, ADR 0034)
         "stream",
         {
           id: randomUUID(),
+          occurredAt: new Date(),
           name: "stream.started",
           payload: { sessionId, channelId, startedAt: "2026-11-02T20:00:00.000Z" },
         },
@@ -481,6 +489,7 @@ describe("reconstruction de la projection depuis les outbox (ADR 0003, ADR 0034)
     const channelId = randomUUID();
     const oldTitle: OutboxEvent = {
       id: randomUUID(),
+      occurredAt: new Date(),
       name: "channel.metadata.updated",
       payload: { channelId, title: "Ancien titre" },
     };
@@ -528,7 +537,16 @@ describe("reconstruction de la projection depuis les outbox (ADR 0003, ADR 0034)
       computing.resolve();
       await release.promise;
       return {
-        views: [{ channelId, slug: null, title: "Reconstruit", live: null, lastEndedAt: null }],
+        views: [
+          {
+            channelId,
+            slug: null,
+            title: "Reconstruit",
+            titleChangedAt: null,
+            live: null,
+            lastEndedAt: null,
+          },
+        ],
         eventIds: [],
         skipped: 0,
       };

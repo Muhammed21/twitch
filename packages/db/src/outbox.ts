@@ -167,3 +167,32 @@ export const relayOutboxBatch = async ({
     client.release();
   }
 };
+
+export const readOutboxHistory = async ({
+  pool,
+  outboxes,
+  after,
+  take,
+}: {
+  pool: Pool;
+  outboxes: readonly TableRef[];
+  after: Pick<OutboxEvent, "id" | "occurredAt"> | undefined;
+  take: number;
+}): Promise<readonly OutboxEvent[]> => {
+  const history = outboxes
+    .map(
+      (outbox) =>
+        `SELECT "id"::text AS "id", "name", "version", "payload",
+                "occurredAt" AT TIME ZONE 'UTC' AS "occurredAt"
+           FROM ${qualifiedTable(outbox)}`,
+    )
+    .join(" UNION ALL ");
+  const { rows } = await pool.query<OutboxEvent>(
+    `SELECT * FROM (${history}) AS history
+      WHERE $1::timestamptz IS NULL OR ("occurredAt", "id") > ($1::timestamptz, $2::text)
+      ORDER BY "occurredAt", "id"
+      LIMIT $3`,
+    [after?.occurredAt.toISOString() ?? null, after?.id ?? null, take],
+  );
+  return rows;
+};

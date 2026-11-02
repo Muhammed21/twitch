@@ -52,6 +52,7 @@ Chaque page de `docs/`, une ligne chacune : titre, [mode](README.md#carte), stat
 - [0038 — L'app iOS vit sous `apps/ios/`, à côté des autres applications](adr/0038-app-ios-sous-apps-ios.md) — _explanation · Proposé_ — Où vit l'app iOS dans le monorepo ?
 - [0039 — Les pages d'authentification sont servies par l'API, en HTML sans JavaScript](adr/0039-pages-d-authentification-servies-par-l-api-en-html-sans-javascript.md) — _explanation · Proposé_ — Comment les écrans d'authentification des captures s'affichent-ils, et que demandent-ils à l'API ?
 - [0040 — L'illustration de « You're All Set! » est reprise telle quelle](adr/0040-illustration-inscription-terminee-reprise-telle-quelle.md) — _explanation · Proposé_ — L'écran « You're All Set! » montre-t-il l'illustration de Twitch, et d'où vient-elle ?
+- [0041 — Les outbox de `channel` et `stream` sont un historique lisible pour reconstruire une projection](adr/0041-les-outbox-historique-lisible-pour-reconstruire-une-projection.md) — _explanation · Accepté_ — Une projection peut-elle se reconstruire depuis les outbox d'autres contextes, avec quel rôle, et où vit le code qui les lit ?
 - [Décisions d'architecture (ADR)](adr/README.md) — _reference_ — Registre des décisions structurantes du projet. Format MADR.
 
 ## Spikes — recherche bornée

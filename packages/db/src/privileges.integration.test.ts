@@ -163,6 +163,37 @@ describe("rôles techniques", () => {
     ).toBe(PERMISSION_DENIED);
     expect(await outcome(relay, `DELETE FROM ${outbox} WHERE false`)).toBe(PERMISSION_DENIED);
   });
+
+  it.each([`"channel"."ChannelOutbox"`, `"stream"."StreamOutbox"`])(
+    "app_projection_rebuild lit %s sans pouvoir y écrire",
+    async (outbox) => {
+      const rebuild = urlOf("DATABASE_URL_PROJECTION_REBUILD");
+
+      expect(await outcome(rebuild, `SELECT "id" FROM ${outbox}`)).toBe("ok");
+      expect(
+        await outcome(rebuild, `UPDATE ${outbox} SET "attempts" = "attempts" WHERE false`),
+      ).toBe(PERMISSION_DENIED);
+      expect(
+        await outcome(
+          rebuild,
+          `INSERT INTO ${outbox} ("id", "name", "version", "payload", "occurredAt")
+           VALUES (gen_random_uuid(), 'x', 1, '{}', now())`,
+        ),
+      ).toBe(PERMISSION_DENIED);
+      expect(await outcome(rebuild, `DELETE FROM ${outbox} WHERE false`)).toBe(PERMISSION_DENIED);
+    },
+  );
+
+  it.each([
+    `"identity"."IdentityOutbox"`,
+    `"moderation"."ModerationOutbox"`,
+    `"channel"."Channel"`,
+    `"stream"."StreamSession"`,
+  ])("app_projection_rebuild ne lit pas %s", async (table) => {
+    expect(
+      await outcome(urlOf("DATABASE_URL_PROJECTION_REBUILD"), `SELECT 1 FROM ${table} LIMIT 1`),
+    ).toBe(PERMISSION_DENIED);
+  });
 });
 
 describe("migrate deploy", () => {

@@ -7,11 +7,12 @@ const listing = (roles: readonly string[]) => () => Promise.resolve(roles);
 const withoutRole = (role: string) => expectedRoles.filter((expected) => expected !== role);
 
 describe("expectedRoles", () => {
-  it("attend migrator, un rôle par contexte, le relais de l'outbox et la sonde de santé", () => {
+  it("attend migrator, un rôle par contexte, le relais de l'outbox, la reconstruction des projections et la sonde de santé", () => {
     expect(expectedRoles).toEqual([
       "migrator",
       ...contexts.map((context) => `app_${context}`),
       "app_outbox_relay",
+      "app_projection_rebuild",
       "app_health",
     ]);
   });
