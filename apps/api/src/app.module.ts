@@ -69,6 +69,7 @@ export class AppModule {
           featureFlags: createFeatureFlags(mobile.featureFlags),
           readProfile: createCurrentAccountReader(identity.prisma),
           minSupportedVersion: mobile.minSupportedVersion,
+          logSink: platform.logSink,
         }),
       ],
     };

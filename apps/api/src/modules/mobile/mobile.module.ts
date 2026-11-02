@@ -1,6 +1,7 @@
 import { type DynamicModule, Module } from "@nestjs/common";
 
 import type { FeatureFlagsConfig } from "../../platform/config/env.ts";
+import { errorDetails, type LogSink, writeLog } from "../../platform/logging.ts";
 import {
   type FeatureFlags,
   type ReadProfile,
@@ -21,15 +22,33 @@ export const createFeatureFlags = (config: FeatureFlagsConfig): FeatureFlags =>
 
 @Module({})
 export class MobileModule {
-  static register(dependencies: {
+  static register({
+    logSink,
+    ...dependencies
+  }: {
     featureFlags: FeatureFlags;
     readProfile: ReadProfile;
     minSupportedVersion: string;
+    logSink: LogSink;
   }): DynamicModule {
     return {
       module: MobileModule,
       controllers: [MobileBootstrapController],
-      providers: [{ provide: READ_BOOTSTRAP, useValue: readBootstrap(dependencies) }],
+      providers: [
+        {
+          provide: READ_BOOTSTRAP,
+          useValue: readBootstrap({
+            ...dependencies,
+            onEvaluationFailure: (error) => {
+              writeLog(logSink, {
+                level: "error",
+                msg: "flags non évalués : valeurs par défaut servies",
+                ...errorDetails(error),
+              });
+            },
+          }),
+        },
+      ],
     };
   }
 }

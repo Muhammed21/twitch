@@ -38,10 +38,12 @@ export const readBootstrap =
     featureFlags,
     readProfile,
     minSupportedVersion,
+    onEvaluationFailure,
   }: {
     featureFlags: FeatureFlags;
     readProfile: ReadProfile;
     minSupportedVersion: string;
+    onEvaluationFailure: (error: unknown) => void;
   }) =>
   async (userId: string | undefined): Promise<Result<Bootstrap, "account_not_found">> => {
     if (userId === undefined) {
@@ -49,7 +51,10 @@ export const readBootstrap =
     }
     const [profile, evaluated] = await Promise.all([
       readProfile(userId),
-      featureFlags.evaluate(userId).catch(() => NO_EVALUATION),
+      featureFlags.evaluate(userId).catch((error: unknown) => {
+        onEvaluationFailure(error);
+        return NO_EVALUATION;
+      }),
     ]);
     if (!profile.ok) {
       return err(profile.error);

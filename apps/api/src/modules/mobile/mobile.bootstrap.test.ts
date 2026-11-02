@@ -1,5 +1,6 @@
 import { Test } from "@nestjs/testing";
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 
 import type { AccessTokenIdentity } from "@repo/auth-verifier";
 import { responses } from "@repo/contracts";
@@ -57,8 +58,15 @@ const withBootstrap = async (
     featureFlags = flagsEvaluatedAs({}),
     readProfile = existingProfile,
   }: { featureFlags?: FeatureFlags; readProfile?: ReadProfile },
-  run: (get: (headers?: Record<string, string>) => Promise<Response>, url: string) => Promise<void>,
+  run: (
+    get: (headers?: Record<string, string>) => Promise<Response>,
+    logs: readonly Readonly<Record<string, unknown>>[],
+  ) => Promise<void>,
 ) => {
+  const logs: Readonly<Record<string, unknown>>[] = [];
+  const logSink = (line: string) => {
+    logs.push(z.record(z.string(), z.unknown()).parse(JSON.parse(line)));
+  };
   const moduleRef = await Test.createTestingModule({
     imports: [
       PlatformModule.register({
@@ -66,14 +74,19 @@ const withBootstrap = async (
         logSink: () => {},
         accessTokenVerifier: verifier,
       }),
-      MobileModule.register({ featureFlags, readProfile, minSupportedVersion: "1.4.0" }),
+      MobileModule.register({
+        featureFlags,
+        readProfile,
+        minSupportedVersion: "1.4.0",
+        logSink,
+      }),
     ],
   }).compile();
   const app = configureApp(moduleRef.createNestApplication({ logger: false }));
   await app.listen(0, "127.0.0.1");
   const url = await app.getUrl();
   try {
-    await run((headers = {}) => fetch(`${url}/v1/mobile/bootstrap`, { headers }), url);
+    await run((headers = {}) => fetch(`${url}/v1/mobile/bootstrap`, { headers }), logs);
   } finally {
     await app.close();
   }
@@ -100,7 +113,7 @@ describe("GET /v1/mobile/bootstrap (ADR 0009, ADR 0012)", () => {
   it("rend le profil et les flags évalués pour l'utilisateur du jeton", async () => {
     const featureFlags = flagsEvaluatedAs({ session_replay: true });
 
-    await withBootstrap({ featureFlags }, async (get) => {
+    await withBootstrap({ featureFlags }, async (get, logs) => {
       const response = await get(authenticated);
 
       expect(response.status).toBe(200);
@@ -110,6 +123,7 @@ describe("GET /v1/mobile/bootstrap (ADR 0009, ADR 0012)", () => {
         profile: PROFILE,
       });
       expect(featureFlags.evaluatedFor).toEqual([USER_ID]);
+      expect(logs).toEqual([]);
     });
   });
 
@@ -153,6 +167,24 @@ describe("GET /v1/mobile/bootstrap (ADR 0009, ADR 0012)", () => {
     });
   });
 
+  it("journalise l'échec de l'évaluation des flags, pour qu'une panne de PostHog se voie", async () => {
+    const featureFlags = makeFeatureFlags(async () => {
+      throw new Error("PostHog : POST /flags a répondu 401");
+    });
+
+    await withBootstrap({ featureFlags }, async (get, logs) => {
+      await get(authenticated);
+
+      expect(logs).toEqual([
+        expect.objectContaining({
+          level: "error",
+          msg: "flags non évalués : valeurs par défaut servies",
+          error: "PostHog : POST /flags a répondu 401",
+        }),
+      ]);
+    });
+  });
+
   it.each([
     ["absent de l'évaluation", {}],
     ["d'un type inattendu", { session_replay: "oui" }],
@@ -188,6 +220,7 @@ describe("GET /v1/mobile/bootstrap (ADR 0009, ADR 0012)", () => {
           featureFlags: flagsEvaluatedAs({}),
           readProfile: existingProfile,
           minSupportedVersion: "1.4.0",
+          logSink: () => {},
         }),
       ],
     }).compile();
