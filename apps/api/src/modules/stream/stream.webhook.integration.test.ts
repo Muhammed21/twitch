@@ -168,4 +168,24 @@ describe("POST /v1/webhooks/video, contre le provider factice (ADR 0001, ADR 003
       await prisma.streamSession.findMany({ where: { providerSessionId: event.sessionId } }),
     ).toEqual([]);
   });
+
+  it("acquitte en 204 un event d'un type inconnu, sans ouvrir de session", async () => {
+    const channel = await seedChannel();
+    const body = JSON.stringify({
+      ...lifecycle(channel.providerChannelId),
+      type: "stream.thumbnail_ready",
+      occurredAt: new Date().toISOString(),
+    });
+
+    await withApi(async (url) => {
+      const response = await deliver(url, {
+        body,
+        signature: signWebhook({ secret: SECRET, body: Buffer.from(body), at: new Date() }),
+      });
+
+      expect(response.status).toBe(204);
+    });
+
+    expect(await sessionsOf(channel.channelId)).toEqual([]);
+  });
 });

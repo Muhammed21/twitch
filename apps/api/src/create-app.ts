@@ -78,6 +78,7 @@ export const createApp = async ({
       stream: {
         prisma: createContextClient({ context: "stream", env }),
         webhookSecret: config.videoWebhookSecret,
+        video: config.video,
         consumerRedis: streamConsumerRedis,
       },
       moderation: { prisma: createContextClient({ context: "moderation", env }) },

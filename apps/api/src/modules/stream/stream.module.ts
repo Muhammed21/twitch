@@ -10,6 +10,7 @@ import {
 } from "@nestjs/common";
 
 import { type AuthzRedis, createAuthzContext } from "../../authz/authz-context.ts";
+import type { VideoProviderConfig } from "../../platform/config/env.ts";
 import { errorDetails, type LogSink, writeLog } from "../../platform/logging.ts";
 import { startPeriodicJob } from "../../platform/periodic-job.ts";
 import { startStreamConsumer, type StreamConsumerRedis } from "../../platform/stream-consumer.ts";
@@ -30,6 +31,7 @@ import {
   type StreamPrisma,
 } from "./infrastructure/prisma-stream-sessions.ts";
 import { reconciliationEndEventId } from "./infrastructure/reconciliation-end-event-id.ts";
+import { videoServiceProvider } from "./infrastructure/video-service-provider.ts";
 import { channelEventHandlers } from "./presentation/channel-event-handlers.ts";
 import {
   GET_STREAM_KEY,
@@ -55,6 +57,7 @@ const BLOCK_MS = 1000;
 type StreamDependencies = {
   prisma: StreamPrisma;
   webhookSecret: string;
+  video: VideoProviderConfig;
   authzRedis: AuthzRedis;
   consumerRedis: StreamConsumerRedis;
   logSink: LogSink;
@@ -74,8 +77,15 @@ export class StreamModule implements OnModuleInit, OnModuleDestroy {
   constructor(@Inject(STREAM_DEPENDENCIES) private readonly dependencies: ModuleState) {}
 
   static register(dependencies: StreamDependencies): DynamicModule {
-    const { prisma, webhookSecret, authzRedis } = dependencies;
-    const provider = fakeLiveVideoProvider({ webhookSecret });
+    const { prisma, webhookSecret, video, authzRedis } = dependencies;
+    const provider =
+      video.provider === "fake"
+        ? fakeLiveVideoProvider({ webhookSecret })
+        : videoServiceProvider({
+            baseUrl: video.serviceUrl,
+            serviceSecret: video.serviceSecret,
+            webhookSecret,
+          });
     const record = recordStreamLifecycle({
       sessions: prismaStreamSessions(prisma),
       newId: randomUUID,

@@ -1,70 +1,19 @@
 import { createHmac } from "node:crypto";
 
-import { z } from "zod";
+import { signWebhook } from "../../../platform/webhook-signature.ts";
+import type { LiveVideoProviderPort, ProviderWebhook } from "../application/live-video-provider.ts";
+import { parseVideoWebhook } from "./video-webhook.ts";
 
-import { err, ok, type Result } from "@repo/result";
-
-import { signWebhook, verifyWebhookSignature } from "../../../platform/webhook-signature.ts";
-import type {
-  LiveVideoProviderPort,
-  RawWebhook,
-  WebhookError,
-} from "../application/live-video-provider.ts";
-import type { ProviderLifecycleEvent } from "../application/record-stream-lifecycle.ts";
-
-const LifecycleWebhook = z.object({
-  id: z.uuid(),
-  type: z.enum(["stream.started", "stream.ended"]),
-  channelId: z.string().min(1),
-  sessionId: z.string().min(1),
-  occurredAt: z.iso.datetime(),
-});
-
-type LifecycleWebhookEvent = Omit<z.input<typeof LifecycleWebhook>, "occurredAt"> & {
+type LifecycleWebhookEvent = {
+  readonly id: string;
+  readonly type: "stream.started" | "stream.ended";
+  readonly channelId: string;
+  readonly sessionId: string;
   readonly occurredAt: Date;
-};
-
-const readJson = (body: Buffer): { readonly value: unknown } | null => {
-  try {
-    const value: unknown = JSON.parse(body.toString("utf8"));
-    return { value };
-  } catch {
-    return null;
-  }
 };
 
 const PROVIDER_CHANNEL_PREFIX = "fake-";
 const INGEST_URL = "rtmp://127.0.0.1:1935/live";
-
-const parseLifecycleWebhook = ({
-  webhookSecret,
-  raw: { body, signature, receivedAt },
-}: {
-  webhookSecret: string;
-  raw: RawWebhook;
-}): Result<ProviderLifecycleEvent, WebhookError> => {
-  const verified = verifyWebhookSignature({
-    secret: webhookSecret,
-    body,
-    header: signature,
-    now: receivedAt,
-  });
-  if (!verified.ok) {
-    return verified;
-  }
-  const parsed = LifecycleWebhook.safeParse(readJson(body)?.value);
-  if (!parsed.success) {
-    return err("malformed_payload");
-  }
-  const { id, type, channelId, sessionId, occurredAt } = parsed.data;
-  return ok({
-    eventId: id,
-    kind: type === "stream.started" ? "started" : "ended",
-    providerChannelId: channelId,
-    providerSessionId: sessionId,
-    occurredAt: new Date(occurredAt),
-  });
-};
 
 export const fakeLiveVideoProvider = ({
   webhookSecret,
@@ -77,9 +26,12 @@ export const fakeLiveVideoProvider = ({
   };
   const generationOf = (providerChannelId: string): number =>
     state.generations[providerChannelId] ?? 0;
-  const track = ({ kind, providerSessionId }: ProviderLifecycleEvent): void => {
-    const others = state.live.filter((id) => id !== providerSessionId);
-    state.live = kind === "started" ? [...others, providerSessionId] : others;
+  const track = (webhook: ProviderWebhook): void => {
+    if (webhook.kind === "ignored") {
+      return;
+    }
+    const others = state.live.filter((id) => id !== webhook.providerSessionId);
+    state.live = webhook.kind === "started" ? [...others, webhook.providerSessionId] : others;
   };
   return {
     provisionChannel: async ({ channelId }) => ({
@@ -102,7 +54,7 @@ export const fakeLiveVideoProvider = ({
       };
     },
     parseLifecycleWebhook: (raw) => {
-      const parsed = parseLifecycleWebhook({ webhookSecret, raw });
+      const parsed = parseVideoWebhook({ webhookSecret, raw });
       if (parsed.ok) {
         track(parsed.value);
       }

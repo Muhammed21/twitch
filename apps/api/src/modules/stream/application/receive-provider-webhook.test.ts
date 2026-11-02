@@ -48,6 +48,16 @@ describe("réception d'un webhook du provider vidéo", () => {
     expect(outcome).toEqual({ ok: true, value: { status: "recorded" } });
   });
 
+  it("acquitte sans rien enregistrer un webhook que le provider ignore", async () => {
+    const { recorded, receive } = setup(ok({ kind: "ignored", eventId: EVENT.eventId }));
+
+    expect(await receive({ body: BODY, signature: "t=1,v1=abc" })).toEqual({
+      ok: true,
+      value: { status: "ignored" },
+    });
+    expect(recorded).toEqual([]);
+  });
+
   it.each(["invalid_signature", "malformed_payload"] as const)(
     "n'enregistre rien quand le provider refuse le webhook (%s)",
     async (error) => {

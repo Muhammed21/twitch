@@ -92,6 +92,7 @@ services:
       BETTER_AUTH_URL: http://127.0.0.1:${API_PORT:-3000}
       REDIS_URL: redis://redis:6379
       VIDEO_WEBHOOK_SECRET: ${VIDEO_WEBHOOK_SECRET}
+      VIDEO_PROVIDER: fake
       SMTP_HOST: mailpit
       SMTP_PORT: "1025"
     ports:

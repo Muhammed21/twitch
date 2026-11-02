@@ -6,13 +6,13 @@ import type { Result } from "@repo/result";
 
 import { ProblemException } from "../../../platform/problem.ts";
 import type { RawWebhook, WebhookError } from "../application/live-video-provider.ts";
-import type { LifecycleOutcome } from "../application/record-stream-lifecycle.ts";
+import type { WebhookOutcome } from "../application/receive-provider-webhook.ts";
 
 export const RECEIVE_PROVIDER_WEBHOOK = Symbol("RECEIVE_PROVIDER_WEBHOOK");
 
 export type ReceiveProviderWebhook = (
   webhook: Omit<RawWebhook, "receivedAt">,
-) => Promise<Result<LifecycleOutcome, WebhookError>>;
+) => Promise<Result<WebhookOutcome, WebhookError>>;
 
 const PROBLEMS: Readonly<Record<WebhookError, () => ProblemException>> = {
   invalid_signature: () => new ProblemException({ status: 401, title: "Signature invalide" }),

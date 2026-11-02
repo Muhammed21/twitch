@@ -30,6 +30,7 @@
     "@repo/design-tokens": "workspace:*",
     "@repo/reserved-names": "workspace:*",
     "@repo/result": "workspace:*",
+    "@repo/video-contract": "workspace:*",
     "better-auth": "1.7.7",
     "express": "5.3.0",
     "nestjs-zod": "5.5.0",
