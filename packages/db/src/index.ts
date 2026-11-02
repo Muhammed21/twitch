@@ -10,6 +10,7 @@ export {
   type OutboxEvent,
   type OutboxPublisher,
   qualifiedTable,
+  readOutboxHistory,
   relayOutboxBatch,
   type SqlExecutor,
   type TableRef,

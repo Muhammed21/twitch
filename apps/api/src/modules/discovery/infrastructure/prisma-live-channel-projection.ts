@@ -1,6 +1,7 @@
 import { alreadyProcessed, type createContextClient } from "@repo/db";
 
 import type { LiveChannelProjection } from "../application/project-discovery-event.ts";
+import type { LiveChannelStore } from "../application/rebuild-live-channel-views.ts";
 import type { LiveChannelView } from "../domain/live-channel-view.ts";
 
 export type DiscoveryPrisma = ReturnType<typeof createContextClient>;
@@ -69,4 +70,43 @@ export const prismaLiveChannelProjection = (prisma: DiscoveryPrisma): LiveChanne
         data: toRow(change(toView(row))),
       });
     }),
+});
+
+const REBUILD_TIMEOUT_MS = 10 * 60 * 1000;
+const INSERT_BATCH_SIZE = 1000;
+
+const inBatches = <T>(items: readonly T[]): readonly (readonly T[])[] =>
+  Array.from({ length: Math.ceil(items.length / INSERT_BATCH_SIZE) }, (_, index) =>
+    items.slice(index * INSERT_BATCH_SIZE, (index + 1) * INSERT_BATCH_SIZE),
+  );
+
+const sequentially = <T>(batches: readonly T[], insert: (batch: T) => Promise<unknown>) =>
+  batches.reduce<Promise<unknown>>(
+    (previous, batch) => previous.then(() => insert(batch)),
+    Promise.resolve(),
+  );
+
+export const prismaLiveChannelStore = (prisma: DiscoveryPrisma): LiveChannelStore => ({
+  replaceAll: (compute) =>
+    prisma.$transaction(
+      async (tx) => {
+        await tx.$executeRaw`
+          LOCK TABLE "discovery"."DiscoveryLiveChannelView", "discovery"."DiscoveryProcessedEvent"
+          IN EXCLUSIVE MODE
+        `;
+        const projection = await compute();
+        await tx.discoveryLiveChannelView.deleteMany();
+        await sequentially(inBatches(projection.views), (views) =>
+          tx.discoveryLiveChannelView.createMany({ data: views.map(toRow) }),
+        );
+        await sequentially(inBatches(projection.eventIds), (eventIds) =>
+          tx.discoveryProcessedEvent.createMany({
+            data: eventIds.map((eventId) => ({ eventId, handlerName: HANDLER })),
+            skipDuplicates: true,
+          }),
+        );
+        return projection;
+      },
+      { timeout: REBUILD_TIMEOUT_MS, maxWait: REBUILD_TIMEOUT_MS },
+    ),
 });

@@ -32,6 +32,7 @@ model StreamOutbox {
   lastError     String?
 
   @@index([publishedAt, nextAttemptAt])
+  @@index([occurredAt, id])
   @@schema("stream")
 }
 

@@ -26,6 +26,7 @@ model ChannelOutbox {
   lastError     String?
 
   @@index([publishedAt, nextAttemptAt])
+  @@index([occurredAt, id])
   @@schema("channel")
 }
 

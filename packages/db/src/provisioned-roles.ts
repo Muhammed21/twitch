@@ -4,6 +4,7 @@ export const expectedRoles: readonly string[] = [
   "migrator",
   ...contexts.map((context) => `app_${context}`),
   "app_outbox_relay",
+  "app_projection_rebuild",
   "app_health",
 ];
 

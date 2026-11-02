@@ -17,6 +17,7 @@ export default {
     "!src/authz/authz-context.ts",
     "!src/outbox-relay/outbox-relay.ts",
     "!src/outbox-relay/main.ts",
+    "!src/discovery-rebuild/main.ts",
     "!src/platform/testing/**",
     "!src/platform/stream-consumer.ts",
   ],

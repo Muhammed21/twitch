@@ -10,8 +10,10 @@ import {
   createContextClient,
   type OutboxEvent,
   type OutboxPublisher,
+  readOutboxHistory,
   relayOutboxBatch,
 } from "./index.ts";
+import { outboxHistoryQuery } from "./outbox.ts";
 
 const SCHEMA = `outbox_test_${randomUUID().replaceAll("-", "").slice(0, 12)}`;
 
@@ -35,6 +37,7 @@ const asMigrator = async (sql: string) => {
 
 const db = createContextClient({ context: "video" });
 const relayPool = new Pool({ connectionString: urlOf("DATABASE_URL_OUTBOX_RELAY") });
+const rebuildPool = new Pool({ connectionString: urlOf("DATABASE_URL_PROJECTION_REBUILD") });
 
 const makeEvent = (overrides: Partial<OutboxEvent> = {}): OutboxEvent => ({
   id: randomUUID(),
@@ -61,6 +64,7 @@ const freshOutbox = async () => {
     );
     GRANT SELECT, INSERT ON "${SCHEMA}"."${table}" TO app_video;
     GRANT SELECT, UPDATE ON "${SCHEMA}"."${table}" TO app_outbox_relay;
+    GRANT SELECT ON "${SCHEMA}"."${table}" TO app_projection_rebuild;
   `);
   return { schema: SCHEMA, table };
 };
@@ -122,13 +126,13 @@ const appendAll = (outbox: { schema: string; table: string }, events: readonly O
 beforeAll(async () => {
   await asMigrator(`
     CREATE SCHEMA "${SCHEMA}";
-    GRANT USAGE ON SCHEMA "${SCHEMA}" TO app_video, app_outbox_relay;
+    GRANT USAGE ON SCHEMA "${SCHEMA}" TO app_video, app_outbox_relay, app_projection_rebuild;
   `);
 });
 
 afterAll(async () => {
   await db.$disconnect();
-  await relayPool.end();
+  await Promise.all([relayPool.end(), rebuildPool.end()]);
   await asMigrator(`DROP SCHEMA "${SCHEMA}" CASCADE`);
 });
 
@@ -309,5 +313,102 @@ describe("alreadyProcessed", () => {
     expect(
       await db.$transaction((tx) => alreadyProcessed(tx, { processedEvents, eventId, handler })),
     ).toBe(false);
+  });
+});
+
+const at = (minute: number) => new Date(Date.UTC(2026, 10, 2, 20, minute));
+
+describe("readOutboxHistory", () => {
+  it("rend les events de plusieurs outbox, triés par occurredAt puis id", async () => {
+    const [first, second] = [await freshOutbox(), await freshOutbox()];
+    const tieA = makeEvent({ id: "00000000-0000-4000-8000-00000000000a", occurredAt: at(2) });
+    const tieB = makeEvent({ id: "00000000-0000-4000-8000-00000000000b", occurredAt: at(2) });
+    const earliest = makeEvent({ occurredAt: at(1) });
+    const latest = makeEvent({ occurredAt: at(3) });
+    await appendAll(first, [latest, tieB]);
+    await appendAll(second, [tieA, earliest]);
+
+    const history = await readOutboxHistory({
+      pool: rebuildPool,
+      outboxes: [first, second],
+      after: undefined,
+      take: 10,
+    });
+
+    expect(history).toEqual([earliest, tieA, tieB, latest]);
+  });
+
+  it("reprend après l'event donné et rend au plus take events", async () => {
+    const outbox = await freshOutbox();
+    const events = [1, 2, 3, 4].map((minute) => makeEvent({ occurredAt: at(minute) }));
+    await appendAll(outbox, events);
+
+    const page = await readOutboxHistory({
+      pool: rebuildPool,
+      outboxes: [outbox],
+      after: events[0],
+      take: 2,
+    });
+
+    expect(page).toEqual([events[1], events[2]]);
+  });
+
+  it("rend les events déjà publiés comme ceux qui attendent le relais", async () => {
+    const outbox = await freshOutbox();
+    const [published, pending] = [
+      makeEvent({ occurredAt: at(1) }),
+      makeEvent({ occurredAt: at(2) }),
+    ];
+    await appendAll(outbox, [published]);
+    await relayOutboxBatch({ pool: relayPool, outbox, publish: recordingPublisher().publish });
+    await appendAll(outbox, [pending]);
+
+    expect(
+      await readOutboxHistory({
+        pool: rebuildPool,
+        outboxes: [outbox],
+        after: undefined,
+        take: 10,
+      }),
+    ).toEqual([published, pending]);
+  });
+});
+
+const HISTORY_OUTBOXES = [
+  { schema: "channel", table: "ChannelOutbox" },
+  { schema: "stream", table: "StreamOutbox" },
+];
+
+const planOfHistoryPage = async (after: { id: string; occurredAt: Date } | undefined) => {
+  const client = new Client({ connectionString: urlOf("DATABASE_URL_MIGRATOR") });
+  await client.connect();
+  try {
+    await client.query("BEGIN");
+    for (const outbox of HISTORY_OUTBOXES) {
+      await client.query(`
+        INSERT INTO "${outbox.schema}"."${outbox.table}" ("id", "name", "version", "payload", "occurredAt")
+        SELECT gen_random_uuid(), 'test.volume', 1, '{}', timestamp '2026-01-01' + n * interval '1 second'
+          FROM generate_series(1, 50000) AS n
+      `);
+      await client.query(`ANALYZE "${outbox.schema}"."${outbox.table}"`);
+    }
+    const { text, values } = outboxHistoryQuery({ outboxes: HISTORY_OUTBOXES, after, take: 500 });
+    const { rows } = await client.query(`EXPLAIN (FORMAT JSON) ${text}`, [...values]);
+    return JSON.stringify(rows);
+  } finally {
+    await client.query("ROLLBACK");
+    await client.end();
+  }
+};
+
+describe("readOutboxHistory sur des outbox volumineuses (ADR 0008 §b)", () => {
+  it.each([
+    ["la première page", undefined],
+    [
+      "une page au milieu de l'historique",
+      { id: "00000000-0000-4000-8000-000000000000", occurredAt: new Date("2026-01-01T06:00:00Z") },
+    ],
+  ])("lit %s par index, sans parcourir toute une outbox", async (_, after) => {
+    expect(await planOfHistoryPage(after)).not.toContain("Seq Scan");
   });
 });
