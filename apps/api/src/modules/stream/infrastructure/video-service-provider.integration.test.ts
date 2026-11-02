@@ -136,3 +136,41 @@ describe("lives en cours sur apps/video", () => {
     );
   });
 });
+
+describe("service vidéo qui ne répond plus", () => {
+  it("abandonne l'appel après 5 secondes, au lieu d'attendre le délai de Node", async () => {
+    const server = createServer(() => {}).listen(0, "127.0.0.1");
+    await once(server, "listening");
+    const baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+    const startedAt = performance.now();
+    try {
+      await expect(
+        makeProvider({ baseUrl }).getStreamKey({ providerChannelId: "canal" }),
+      ).rejects.toThrow(/délai/);
+
+      const elapsed = performance.now() - startedAt;
+      expect(elapsed).toBeGreaterThanOrEqual(5000);
+      expect(elapsed).toBeLessThan(6000);
+    } finally {
+      server.closeAllConnections();
+      server.close();
+    }
+  });
+
+  it("laisse remonter un refus de connexion tel quel, sans le confondre avec un délai dépassé", async () => {
+    const server = createServer().listen(0, "127.0.0.1");
+    await once(server, "listening");
+    const baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+    server.close();
+    await once(server, "close");
+
+    const failure = await makeProvider({ baseUrl })
+      .getStreamKey({ providerChannelId: "canal" })
+      .then(
+        () => "aucune erreur",
+        (error: unknown) => (error instanceof Error ? error.message : String(error)),
+      );
+
+    expect(failure).toBe("fetch failed");
+  });
+});

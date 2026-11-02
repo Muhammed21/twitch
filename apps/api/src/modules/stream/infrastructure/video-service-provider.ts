@@ -6,6 +6,10 @@ import type { LiveVideoProviderPort } from "../application/live-video-provider.t
 import { parseVideoWebhook } from "./video-webhook.ts";
 
 const NOT_FOUND = 404;
+const REQUEST_TIMEOUT_MS = 5000;
+
+const isTimeout = (error: unknown): boolean =>
+  error instanceof Error && error.name === "TimeoutError";
 
 export const videoServiceProvider = ({
   baseUrl,
@@ -29,6 +33,12 @@ export const videoServiceProvider = ({
       method,
       headers: { authorization: `Bearer ${serviceSecret}` },
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    }).catch((error: unknown) => {
+      if (isTimeout(error)) {
+        throw new Error(`Service vidéo : ${method} ${path} sans réponse dans le délai de 5 s`);
+      }
+      throw error;
     });
     if (response.status === NOT_FOUND) {
       return null;
