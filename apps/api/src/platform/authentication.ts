@@ -35,6 +35,23 @@ const unauthenticated = (challenge: string) =>
 
 export const invalidToken = () => unauthenticated('Bearer error="invalid_token"');
 
+const identify = async ({
+  verifier,
+  request,
+  token,
+}: {
+  verifier: AccessTokenVerifier;
+  request: Request;
+  token: string;
+}): Promise<boolean> => {
+  const verified = await verifier.verify(token);
+  if (!verified.ok) {
+    throw invalidToken();
+  }
+  identities.set(request, verified.value);
+  return true;
+};
+
 @Injectable()
 export class AccessTokenGuard implements CanActivate {
   constructor(@Inject(ACCESS_TOKEN_VERIFIER) private readonly verifier: AccessTokenVerifier) {}
@@ -45,12 +62,25 @@ export class AccessTokenGuard implements CanActivate {
     if (token === undefined) {
       throw unauthenticated("Bearer");
     }
-    const verified = await this.verifier.verify(token);
-    if (!verified.ok) {
+    return identify({ verifier: this.verifier, request, token });
+  }
+}
+
+@Injectable()
+export class OptionalAccessTokenGuard implements CanActivate {
+  constructor(@Inject(ACCESS_TOKEN_VERIFIER) private readonly verifier: AccessTokenVerifier) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest<Request>();
+    const header = request.header("authorization");
+    if (header === undefined) {
+      return true;
+    }
+    const token = BEARER.exec(header)?.[1];
+    if (token === undefined) {
       throw invalidToken();
     }
-    identities.set(request, verified.value);
-    return true;
+    return identify({ verifier: this.verifier, request, token });
   }
 }
 

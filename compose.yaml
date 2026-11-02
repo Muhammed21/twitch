@@ -95,6 +95,8 @@ services:
       REDIS_URL: redis://redis:6379
       VIDEO_WEBHOOK_SECRET: ${VIDEO_WEBHOOK_SECRET}
       VIDEO_PROVIDER: fake
+      FEATURE_FLAGS_PROVIDER: defaults
+      MOBILE_MIN_SUPPORTED_VERSION: ${MOBILE_MIN_SUPPORTED_VERSION}
       SMTP_HOST: mailpit
       SMTP_PORT: "1025"
     ports:

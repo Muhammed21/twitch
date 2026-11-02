@@ -191,8 +191,20 @@ _Critères d'acceptation_ :
 - un `EXPLAIN` sur des milliers de vues ne montre aucun `Seq Scan` sur `DiscoveryLiveChannelView` (ADR 0008 §b) ;
 - `/v1/lives` figure dans l'OpenAPI généré, avec `LivePage`.
 
-**PR 12 — Canal 2 et BFF mobile.** SSE public du statut des lives et du compteur de viewers, agrégé à un tick par seconde (ADR 0004, §2) ; `GET /v1/mobile/bootstrap` : version minimale supportée, flags résolus avec leurs valeurs par défaut sûres, profil (ADR 0009, 0012).
-_Tests d'abord_ : un client SSE reçoit un seul tick par seconde quel que soit le nombre d'entrées ; `bootstrap` répond même si PostHog est injoignable ; `bootstrap` ne contient aucune règle métier.
+**PR 12a — `GET /v1/mobile/bootstrap`.** Endpoint BFF de présentation (ADR 0009, garde-fou n°5), public avec jeton optionnel : version minimale supportée, flags résolus, profil quand un jeton valide est présenté. Registre des flags côté serveur, chacun avec sa valeur par défaut sûre (premier flag : `session_replay`, `false`, ADR 0012 §7) ; port `FeatureFlags` avec un adapter PostHog HTTP (délai de 500 ms) et un adapter `defaults`, choisis par `FEATURE_FLAGS_PROVIDER` (`posthog` ou `defaults`), obligatoire et sans valeur par défaut ; `MOBILE_MIN_SUPPORTED_VERSION` (semver) obligatoire. Contrat `MobileBootstrap` dans `packages/contracts`.
+_Critères d'acceptation_ :
+
+- sans jeton : `200` avec `minSupportedVersion` et tous les flags du registre à leur valeur par défaut, sans `profile` (ADR 0024 §5) ; PostHog n'est pas appelé ;
+- avec un jeton valide : `profile` (`id`, `name`, `email`, comme `GET /v1/me`) et les flags évalués par PostHog pour cet utilisateur ;
+- jeton invalide ou expiré → `401` RFC 9457, comme les autres routes ;
+- PostHog injoignable, en erreur, ou plus lent que 500 ms → `200` avec les valeurs par défaut, dans le délai ;
+- un flag absent de la réponse de PostHog, ou d'un type inattendu, prend sa valeur par défaut ; un flag que PostHog connaît mais pas le registre n'est pas renvoyé ;
+- `FEATURE_FLAGS_PROVIDER` ou `MOBILE_MIN_SUPPORTED_VERSION` absente ou invalide, ou `FEATURE_FLAGS_PROVIDER=posthog` sans clé ni hôte PostHog → arrêt au démarrage en nommant la variable ;
+- le BFF ne contient aucune règle métier : il ne dépend que des lectures exposées par `identity` et du port `FeatureFlags`, ce que vérifient les règles d'architecture ;
+- `/v1/mobile/bootstrap` figure dans l'OpenAPI généré, avec `MobileBootstrap`.
+
+**PR 12b — Canal 2 : statut des lives en SSE.** SSE public du statut live ou terminé d'une chaîne, agrégé à un tick par seconde au plus (ADR 0004, §2). Le compteur de viewers arrive avec la présence (heartbeat du lecteur, HyperLogLog Redis, ADR 0004 §3), dans une PR suivante.
+_Tests d'abord_ : un client SSE reçoit un seul tick par seconde quel que soit le nombre de changements ; un live qui démarre ou se termine est vu au tick suivant.
 
 **PR 13 — `moderation` minimal (jalon A4).** Un use-case : le propriétaire met un utilisateur en timeout sur sa chaîne. Attribution `banned` avec `expiresAt` dans `authz`, entrée d'audit et `moderation.user.timed_out` dans la **même transaction**, publiée sur Redis Streams pour le chat.
 _Tests d'abord_ : un non-propriétaire ne peut pas mettre en timeout ; le timeout expire seul ; l'event est publié même si le relais redémarre entre le commit et l'envoi ; audit écrit avec l'acteur humain.

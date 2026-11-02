@@ -193,3 +193,50 @@ describe("LivePage", () => {
     expect(responses.LivePage.safeParse({ items: [makeLive(overrides)] }).success).toBe(false);
   });
 });
+
+describe("MobileBootstrap", () => {
+  const makeBootstrap = (overrides: Record<string, unknown> = {}) => ({
+    minSupportedVersion: "1.4.0",
+    flags: { session_replay: false },
+    ...overrides,
+  });
+
+  it("décode le bootstrap d'un client anonyme, sans profil", () => {
+    expect(responses.MobileBootstrap.parse(makeBootstrap())).toEqual(makeBootstrap());
+  });
+
+  it("décode le bootstrap d'un utilisateur connecté, avec son profil", () => {
+    const bootstrap = makeBootstrap({
+      profile: {
+        id: "4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b",
+        name: "Viewer",
+        email: "viewer@twitch.local",
+      },
+    });
+
+    expect(responses.MobileBootstrap.parse(bootstrap)).toEqual(bootstrap);
+  });
+
+  it("décode une version minimale à plusieurs chiffres par composant", () => {
+    expect(
+      responses.MobileBootstrap.parse(makeBootstrap({ minSupportedVersion: "10.12.103" }))
+        .minSupportedVersion,
+    ).toBe("10.12.103");
+  });
+
+  it("garde un flag ajouté plus tard par le serveur", () => {
+    const flags = { session_replay: true, chat_coalescence: true };
+
+    expect(responses.MobileBootstrap.parse(makeBootstrap({ flags })).flags).toEqual(flags);
+  });
+
+  it.each([
+    ["une version minimale qui n'est pas semver", { minSupportedVersion: "1.4" }],
+    ["une version minimale avec un suffixe", { minSupportedVersion: "1.4.0-beta" }],
+    ["une version minimale avec un préfixe", { minSupportedVersion: "v1.4.0" }],
+    ["un flag session_replay qui n'est pas booléen", { flags: { session_replay: "oui" } }],
+    ["sans flags", { flags: undefined }],
+  ])("refuse %s", (_name, overrides) => {
+    expect(responses.MobileBootstrap.safeParse(makeBootstrap(overrides)).success).toBe(false);
+  });
+});

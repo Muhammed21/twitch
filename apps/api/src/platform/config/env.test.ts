@@ -16,6 +16,12 @@ const VIDEO_SERVICE = {
   VIDEO_SERVICE_SECRET: SERVICE_SECRET,
 };
 
+const POSTHOG = {
+  FEATURE_FLAGS_PROVIDER: "posthog",
+  POSTHOG_HOST: "https://eu.i.posthog.com",
+  POSTHOG_PROJECT_API_KEY: "phc_cle_de_projet",
+};
+
 const makeEnv = (overrides: Record<string, string | undefined> = {}) => ({
   DATABASE_URL_HEALTH: HEALTH_URL,
   BETTER_AUTH_SECRET: AUTH_SECRET,
@@ -25,6 +31,8 @@ const makeEnv = (overrides: Record<string, string | undefined> = {}) => ({
   SMTP_HOST: "127.0.0.1",
   SMTP_PORT: "1025",
   VIDEO_PROVIDER: "fake",
+  FEATURE_FLAGS_PROVIDER: "defaults",
+  MOBILE_MIN_SUPPORTED_VERSION: "1.4.0",
   ...overrides,
 });
 
@@ -39,7 +47,63 @@ describe("loadEnv", () => {
       videoWebhookSecret: WEBHOOK_SECRET,
       smtp: { host: "127.0.0.1", port: 1025, from: "Twitch <no-reply@twitch.local>" },
       video: { provider: "fake" },
+      featureFlags: { provider: "defaults" },
+      mobileMinSupportedVersion: "1.4.0",
     });
+  });
+
+  it("lit l'hôte et la clé de projet PostHog quand PostHog évalue les flags", () => {
+    expect(loadEnv(makeEnv(POSTHOG)).featureFlags).toEqual({
+      provider: "posthog",
+      host: "https://eu.i.posthog.com",
+      apiKey: "phc_cle_de_projet",
+    });
+  });
+
+  it.each([undefined, "", "PostHog", "launchdarkly"])(
+    "refuse FEATURE_FLAGS_PROVIDER %j en la nommant",
+    (provider) => {
+      expect(() => loadEnv(makeEnv({ FEATURE_FLAGS_PROVIDER: provider }))).toThrow(
+        "FEATURE_FLAGS_PROVIDER",
+      );
+    },
+  );
+
+  it("accepte un hôte PostHog en http, pour une instance locale", () => {
+    expect(
+      loadEnv(makeEnv({ ...POSTHOG, POSTHOG_HOST: "http://127.0.0.1:8000" })).featureFlags,
+    ).toMatchObject({ host: "http://127.0.0.1:8000" });
+  });
+
+  it.each([undefined, "", "pas une url", "ftp://h", "xhttps://h", "https2://h"])(
+    "refuse POSTHOG_HOST %j en la nommant, quand PostHog évalue les flags",
+    (host) => {
+      expect(() => loadEnv(makeEnv({ ...POSTHOG, POSTHOG_HOST: host }))).toThrow("POSTHOG_HOST");
+    },
+  );
+
+  it.each([undefined, ""])(
+    "refuse POSTHOG_PROJECT_API_KEY %j en la nommant, quand PostHog évalue les flags",
+    (key) => {
+      expect(() => loadEnv(makeEnv({ ...POSTHOG, POSTHOG_PROJECT_API_KEY: key }))).toThrow(
+        "POSTHOG_PROJECT_API_KEY",
+      );
+    },
+  );
+
+  it.each([undefined, "", "1.4", "v1.4.0", "1.4.0-beta", "1.4.x"])(
+    "refuse MOBILE_MIN_SUPPORTED_VERSION %j en la nommant",
+    (version) => {
+      expect(() => loadEnv(makeEnv({ MOBILE_MIN_SUPPORTED_VERSION: version }))).toThrow(
+        "MOBILE_MIN_SUPPORTED_VERSION",
+      );
+    },
+  );
+
+  it("accepte une version minimale à plusieurs chiffres par composant", () => {
+    expect(
+      loadEnv(makeEnv({ MOBILE_MIN_SUPPORTED_VERSION: "10.12.103" })).mobileMinSupportedVersion,
+    ).toBe("10.12.103");
   });
 
   it("lit l'adresse et le secret du service vidéo quand il est choisi", () => {
@@ -109,7 +173,7 @@ describe("loadEnv", () => {
 
   it("nomme toutes les variables invalides à la fois", () => {
     expect(() => loadEnv({ API_PORT: "abc" })).toThrow(
-      "Configuration invalide, variables à corriger : API_PORT, DATABASE_URL_HEALTH, BETTER_AUTH_SECRET, BETTER_AUTH_URL, REDIS_URL, VIDEO_WEBHOOK_SECRET, SMTP_HOST, SMTP_PORT, VIDEO_PROVIDER",
+      "Configuration invalide, variables à corriger : API_PORT, DATABASE_URL_HEALTH, BETTER_AUTH_SECRET, BETTER_AUTH_URL, REDIS_URL, VIDEO_WEBHOOK_SECRET, SMTP_HOST, SMTP_PORT, MOBILE_MIN_SUPPORTED_VERSION, VIDEO_PROVIDER, FEATURE_FLAGS_PROVIDER",
     );
   });
 

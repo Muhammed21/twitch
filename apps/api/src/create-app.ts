@@ -94,6 +94,10 @@ export const createApp = async ({
         channelConsumerRedis: connectedConsumerRedis(),
         streamConsumerRedis: connectedConsumerRedis(),
       },
+      mobile: {
+        featureFlags: config.featureFlags,
+        minSupportedVersion: config.mobileMinSupportedVersion,
+      },
     }),
     { logger: new ConsoleLogger({ json: true }), bodyParser: false },
   );

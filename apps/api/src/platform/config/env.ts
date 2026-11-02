@@ -11,6 +11,15 @@ const videoSchema = z.discriminatedUnion("VIDEO_PROVIDER", [
   }),
 ]);
 
+const featureFlagsSchema = z.discriminatedUnion("FEATURE_FLAGS_PROVIDER", [
+  z.object({ FEATURE_FLAGS_PROVIDER: z.literal("defaults") }),
+  z.object({
+    FEATURE_FLAGS_PROVIDER: z.literal("posthog"),
+    POSTHOG_HOST: z.url({ protocol: /^https?$/ }),
+    POSTHOG_PROJECT_API_KEY: z.string().min(1),
+  }),
+]);
+
 const baseSchema = z.object({
   API_PORT: z.coerce.number().int().min(1).max(65_535).default(3000),
   DATABASE_URL_HEALTH: z.string().regex(/^postgres(ql)?:\/\/\S+$/),
@@ -21,13 +30,18 @@ const baseSchema = z.object({
   SMTP_HOST: z.string().min(1),
   SMTP_PORT: z.coerce.number().int().min(1).max(65_535),
   SMTP_FROM: z.string().min(1).default("Twitch <no-reply@twitch.local>"),
+  MOBILE_MIN_SUPPORTED_VERSION: z.string().regex(/^\d+\.\d+\.\d+$/),
 });
 
-const envSchema = baseSchema.and(videoSchema);
+const envSchema = baseSchema.and(videoSchema).and(featureFlagsSchema);
 
 export type VideoProviderConfig =
   | { readonly provider: "fake" }
   | { readonly provider: "video"; readonly serviceUrl: string; readonly serviceSecret: string };
+
+export type FeatureFlagsConfig =
+  | { readonly provider: "defaults" }
+  | { readonly provider: "posthog"; readonly host: string; readonly apiKey: string };
 
 export const parseVariables = <T>(
   schema: z.ZodType<T>,
@@ -50,6 +64,8 @@ export type AppConfig = {
   readonly videoWebhookSecret: string;
   readonly smtp: { readonly host: string; readonly port: number; readonly from: string };
   readonly video: VideoProviderConfig;
+  readonly featureFlags: FeatureFlagsConfig;
+  readonly mobileMinSupportedVersion: string;
 };
 
 export const loadEnv = (env: Readonly<Record<string, string | undefined>>): AppConfig => {
@@ -70,5 +86,14 @@ export const loadEnv = (env: Readonly<Record<string, string | undefined>>): AppC
             serviceUrl: variables.VIDEO_SERVICE_URL,
             serviceSecret: variables.VIDEO_SERVICE_SECRET,
           },
+    featureFlags:
+      variables.FEATURE_FLAGS_PROVIDER === "defaults"
+        ? { provider: "defaults" }
+        : {
+            provider: "posthog",
+            host: variables.POSTHOG_HOST,
+            apiKey: variables.POSTHOG_PROJECT_API_KEY,
+          },
+    mobileMinSupportedVersion: variables.MOBILE_MIN_SUPPORTED_VERSION,
   };
 };
