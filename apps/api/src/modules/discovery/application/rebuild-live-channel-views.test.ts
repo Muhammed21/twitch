@@ -155,6 +155,22 @@ describe("reconstruction de la projection LiveChannelView", () => {
     );
   });
 
+  it("reconstruit 20 000 chaînes en moins d'une seconde", async () => {
+    const events = Array.from({ length: 20_000 }, (_, index) =>
+      makeHistoryEvent(index, "channel.created", {
+        channelId: `00000000-0000-4000-9000-${String(index).padStart(12, "0")}`,
+        ownerId: OWNER_ID,
+        slug: `chaine_${index}`,
+      }),
+    );
+    const startedAt = performance.now();
+
+    const { report } = await rebuildWith(events, 500);
+
+    expect(performance.now() - startedAt).toBeLessThan(1000);
+    expect(report).toEqual({ channels: 20_000, events: 20_000, skipped: 0 });
+  });
+
   it("vide la projection quand l'historique est vide", async () => {
     const { written, report, pages } = await rebuildWith([]);
 

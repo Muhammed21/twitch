@@ -1,7 +1,7 @@
 import { applyDiscoveryEvent, type LiveChannelView } from "../domain/live-channel-view.ts";
 import { DISCOVERY_EVENT_READERS, type PublishedEvent } from "./read-discovery-event.ts";
 
-export type HistoryEvent = PublishedEvent & { readonly occurredAt: Date };
+export type HistoryEvent = PublishedEvent;
 
 export interface OutboxHistory {
   page(input: { after: HistoryEvent | undefined; take: number }): Promise<readonly HistoryEvent[]>;
@@ -23,49 +23,60 @@ export type RebuildReport = {
   readonly skipped: number;
 };
 
-type Fold = {
-  readonly views: ReadonlyMap<string, LiveChannelView>;
-  readonly eventIds: readonly string[];
-  readonly skipped: number;
+type Accumulator = {
+  readonly views: Map<string, LiveChannelView>;
+  readonly eventIds: string[];
+  readonly skippedIds: string[];
 };
 
-const fold = (state: Fold, event: HistoryEvent): Fold => {
-  const read = DISCOVERY_EVENT_READERS[event.name];
-  if (read === undefined) {
-    return state;
-  }
-  const decoded = read(event);
-  if (decoded === null) {
-    return { ...state, skipped: state.skipped + 1 };
-  }
-  const { channelId } = decoded;
-  return {
-    views: new Map([
-      ...state.views,
-      [channelId, applyDiscoveryEvent(state.views.get(channelId) ?? null, decoded)],
-    ]),
-    eventIds: [...state.eventIds, event.id],
-    skipped: state.skipped,
+const foldInto =
+  (accumulator: Accumulator) =>
+  (event: HistoryEvent): void => {
+    const read = DISCOVERY_EVENT_READERS[event.name];
+    if (read === undefined) {
+      return;
+    }
+    const decoded = read(event);
+    if (decoded === null) {
+      accumulator.skippedIds.push(event.id);
+      return;
+    }
+    const { channelId } = decoded;
+    accumulator.views.set(
+      channelId,
+      applyDiscoveryEvent(accumulator.views.get(channelId) ?? null, decoded),
+    );
+    accumulator.eventIds.push(event.id);
   };
-};
 
 const readAll = async ({
   history,
   pageSize,
-  state,
+  accumulator,
   after,
 }: {
   history: OutboxHistory;
   pageSize: number;
-  state: Fold;
+  accumulator: Accumulator;
   after: HistoryEvent | undefined;
-}): Promise<Fold> => {
+}): Promise<void> => {
   const page = await history.page({ after, take: pageSize });
-  const next = page.reduce(fold, state);
+  page.forEach(foldInto(accumulator));
   const last = page.at(-1);
-  return page.length < pageSize || last === undefined
-    ? next
-    : readAll({ history, pageSize, state: next, after: last });
+  if (page.length < pageSize || last === undefined) {
+    return;
+  }
+  await readAll({ history, pageSize, accumulator, after: last });
+};
+
+const project = async (history: OutboxHistory, pageSize: number): Promise<RebuiltProjection> => {
+  const accumulator: Accumulator = { views: new Map(), eventIds: [], skippedIds: [] };
+  await readAll({ history, pageSize, accumulator, after: undefined });
+  return {
+    views: [...accumulator.views.values()],
+    eventIds: accumulator.eventIds,
+    skipped: accumulator.skippedIds.length,
+  };
 };
 
 export const rebuildLiveChannelViews = async ({
@@ -77,14 +88,6 @@ export const rebuildLiveChannelViews = async ({
   store: LiveChannelStore;
   pageSize: number;
 }): Promise<RebuildReport> => {
-  const { views, eventIds, skipped } = await store.replaceAll(async () => {
-    const folded = await readAll({
-      history,
-      pageSize,
-      state: { views: new Map(), eventIds: [], skipped: 0 },
-      after: undefined,
-    });
-    return { ...folded, views: [...folded.views.values()] };
-  });
+  const { views, eventIds, skipped } = await store.replaceAll(() => project(history, pageSize));
   return { channels: views.length, events: eventIds.length, skipped };
 };
