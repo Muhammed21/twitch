@@ -5,6 +5,9 @@ import { z } from "zod";
 
 import type { Problem } from "@repo/video-contract";
 
+import type { ControlPlane } from "../control-plane/control-plane.ts";
+import { type Reply, routeControlPlane } from "./control-plane-routes.ts";
+
 export type HttpServer = {
   readonly port: number;
   readonly startDraining: () => void;
@@ -13,20 +16,42 @@ export type HttpServer = {
 
 const BoundAddress = z.object({ port: z.int() });
 
-const sendJson = (response: ServerResponse, body: { readonly status: string }): void => {
-  response.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify(body));
+const sendJson = (response: ServerResponse, body: object, status = 200): void => {
+  response.writeHead(status, { "content-type": "application/json" }).end(JSON.stringify(body));
 };
 
 const sendProblem = (
   response: ServerResponse,
-  problem: Pick<Problem, "title" | "status">,
+  problem: Pick<Problem, "title" | "status" | "errors">,
+  headers: Readonly<Record<string, string>> = {},
 ): void => {
   response
-    .writeHead(problem.status, { "content-type": "application/problem+json" })
+    .writeHead(problem.status, { ...headers, "content-type": "application/problem+json" })
     .end(JSON.stringify({ type: "about:blank", ...problem }));
 };
 
-export const startHttpServer = async ({ port }: { port: number }): Promise<HttpServer> => {
+const send = (response: ServerResponse, reply: Reply): void => {
+  switch (reply.kind) {
+    case "json":
+      sendJson(response, reply.body, reply.status);
+      return;
+    case "empty":
+      response.writeHead(reply.status).end();
+      return;
+    case "problem":
+      sendProblem(response, reply.problem, reply.headers);
+  }
+};
+
+export const startHttpServer = async ({
+  port,
+  serviceSecret,
+  controlPlane,
+}: {
+  port: number;
+  serviceSecret: string;
+  controlPlane: ControlPlane;
+}): Promise<HttpServer> => {
   const state: { draining: boolean } = { draining: false };
 
   const server = createServer((request, response) => {
@@ -48,7 +73,12 @@ export const startHttpServer = async ({ port }: { port: number }): Promise<HttpS
       sendJson(response, { status: "ready" });
       return;
     }
-    sendProblem(response, { title: "Ressource introuvable", status: 404 });
+    void routeControlPlane({
+      controlPlane,
+      serviceSecret,
+      request,
+      pathname: target.pathname,
+    }).then((reply) => send(response, reply));
   });
 
   server.listen(port);
