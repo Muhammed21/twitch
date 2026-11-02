@@ -13,6 +13,7 @@ import {
   readOutboxHistory,
   relayOutboxBatch,
 } from "./index.ts";
+import { outboxHistoryQuery } from "./outbox.ts";
 
 const SCHEMA = `outbox_test_${randomUUID().replaceAll("-", "").slice(0, 12)}`;
 
@@ -370,5 +371,44 @@ describe("readOutboxHistory", () => {
         take: 10,
       }),
     ).toEqual([published, pending]);
+  });
+});
+
+const HISTORY_OUTBOXES = [
+  { schema: "channel", table: "ChannelOutbox" },
+  { schema: "stream", table: "StreamOutbox" },
+];
+
+const planOfHistoryPage = async (after: { id: string; occurredAt: Date } | undefined) => {
+  const client = new Client({ connectionString: urlOf("DATABASE_URL_MIGRATOR") });
+  await client.connect();
+  try {
+    await client.query("BEGIN");
+    for (const outbox of HISTORY_OUTBOXES) {
+      await client.query(`
+        INSERT INTO "${outbox.schema}"."${outbox.table}" ("id", "name", "version", "payload", "occurredAt")
+        SELECT gen_random_uuid(), 'test.volume', 1, '{}', timestamp '2026-01-01' + n * interval '1 second'
+          FROM generate_series(1, 50000) AS n
+      `);
+      await client.query(`ANALYZE "${outbox.schema}"."${outbox.table}"`);
+    }
+    const { text, values } = outboxHistoryQuery({ outboxes: HISTORY_OUTBOXES, after, take: 500 });
+    const { rows } = await client.query(`EXPLAIN (FORMAT JSON) ${text}`, [...values]);
+    return JSON.stringify(rows);
+  } finally {
+    await client.query("ROLLBACK");
+    await client.end();
+  }
+};
+
+describe("readOutboxHistory sur des outbox volumineuses (ADR 0008 §b)", () => {
+  it.each([
+    ["la première page", undefined],
+    [
+      "une page au milieu de l'historique",
+      { id: "00000000-0000-4000-8000-000000000000", occurredAt: new Date("2026-01-01T06:00:00Z") },
+    ],
+  ])("lit %s par index, sans parcourir toute une outbox", async (_, after) => {
+    expect(await planOfHistoryPage(after)).not.toContain("Seq Scan");
   });
 });

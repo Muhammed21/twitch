@@ -168,6 +168,39 @@ export const relayOutboxBatch = async ({
   }
 };
 
+export const outboxHistoryQuery = ({
+  outboxes,
+  after,
+  take,
+}: {
+  outboxes: readonly TableRef[];
+  after: Pick<OutboxEvent, "id" | "occurredAt"> | undefined;
+  take: number;
+}): { text: string; values: readonly unknown[] } => {
+  const seek =
+    after === undefined
+      ? ""
+      : `WHERE ("occurredAt", "id") > (($2::timestamptz AT TIME ZONE 'UTC'), $3::uuid)`;
+  const branches = outboxes
+    .map(
+      (outbox) =>
+        `(SELECT "id", "name", "version", "payload", "occurredAt"
+            FROM ${qualifiedTable(outbox)}
+            ${seek}
+           ORDER BY "occurredAt", "id"
+           LIMIT $1)`,
+    )
+    .join(" UNION ALL ");
+  return {
+    text: `SELECT "id"::text AS "id", "name", "version", "payload",
+                  "occurredAt" AT TIME ZONE 'UTC' AS "occurredAt"
+             FROM (${branches}) AS history
+            ORDER BY history."occurredAt", history."id"
+            LIMIT $1`,
+    values: after === undefined ? [take] : [take, after.occurredAt.toISOString(), after.id],
+  };
+};
+
 export const readOutboxHistory = async ({
   pool,
   outboxes,
@@ -179,20 +212,7 @@ export const readOutboxHistory = async ({
   after: Pick<OutboxEvent, "id" | "occurredAt"> | undefined;
   take: number;
 }): Promise<readonly OutboxEvent[]> => {
-  const history = outboxes
-    .map(
-      (outbox) =>
-        `SELECT "id"::text AS "id", "name", "version", "payload",
-                "occurredAt" AT TIME ZONE 'UTC' AS "occurredAt"
-           FROM ${qualifiedTable(outbox)}`,
-    )
-    .join(" UNION ALL ");
-  const { rows } = await pool.query<OutboxEvent>(
-    `SELECT * FROM (${history}) AS history
-      WHERE $1::timestamptz IS NULL OR ("occurredAt", "id") > ($1::timestamptz, $2::text)
-      ORDER BY "occurredAt", "id"
-      LIMIT $3`,
-    [after?.occurredAt.toISOString() ?? null, after?.id ?? null, take],
-  );
+  const { text, values } = outboxHistoryQuery({ outboxes, after, take });
+  const { rows } = await pool.query<OutboxEvent>(text, [...values]);
   return rows;
 };
