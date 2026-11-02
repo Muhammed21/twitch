@@ -1,5 +1,16 @@
-import type { LiveListItem, LivePosition, LiveReader } from "../application/list-lives.ts";
+import { z } from "zod";
+
+import type { LivePosition, LiveReader } from "../application/list-lives.ts";
 import type { DiscoveryPrisma } from "./prisma-live-channel-projection.ts";
+
+const LiveRows = z.array(
+  z.object({
+    channelId: z.string(),
+    slug: z.string(),
+    title: z.string(),
+    startedAt: z.date(),
+  }),
+);
 
 const LIVE = `"liveSessionId" IS NOT NULL AND "liveStartedAt" IS NOT NULL AND "slug" IS NOT NULL`;
 
@@ -23,8 +34,8 @@ export const livePageQuery = ({
 });
 
 export const prismaLiveReader = (prisma: DiscoveryPrisma): LiveReader => ({
-  page: ({ after, take }) => {
+  page: async ({ after, take }) => {
     const { text, values } = livePageQuery({ after, take });
-    return prisma.$queryRawUnsafe<LiveListItem[]>(text, ...values);
+    return LiveRows.parse(await prisma.$queryRawUnsafe(text, ...values));
   },
 });
