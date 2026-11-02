@@ -254,9 +254,12 @@ describe("projection LiveChannelView de discovery (ADR 0003, §6)", () => {
     const firstTitleEvent = randomUUID();
 
     await withDiscoveryModule(async () => {
-      await titleChanged(channelId, "Ancien titre", { id: firstTitleEvent });
-      await titleChanged(channelId, "Nouveau titre");
-      await titleChanged(channelId, "Ancien titre", { id: firstTitleEvent });
+      const ancien = { id: firstTitleEvent, occurredAt: new Date("2026-11-02T20:00:00.000Z") };
+      await titleChanged(channelId, "Ancien titre", ancien);
+      await titleChanged(channelId, "Nouveau titre", {
+        occurredAt: new Date("2026-11-02T20:05:00.000Z"),
+      });
+      await titleChanged(channelId, "Ancien titre", ancien);
       await channelCreated(channelId, slugFor());
 
       await eventually(async () =>
@@ -485,27 +488,23 @@ describe("reconstruction de la projection depuis les outbox (ADR 0003, ADR 0034)
     expect(await viewOf(channelId)).toBeNull();
   });
 
-  it("ne laisse pas un consommateur rejouer un event déjà repris par la reconstruction", async () => {
-    const channelId = randomUUID();
-    const oldTitle: OutboxEvent = {
+  it("marque traités les events repris, pour qu'un consommateur ne les rejoue pas", async () => {
+    const title: OutboxEvent = {
       id: randomUUID(),
-      occurredAt: new Date(),
+      occurredAt: new Date("2026-11-02T20:00:00.000Z"),
       name: "channel.metadata.updated",
-      payload: { channelId, title: "Ancien titre" },
+      payload: { channelId: randomUUID(), title: "Titre repris" },
     };
-    await appendToHistory("channel", oldTitle);
+    await appendToHistory("channel", title);
+
     await rebuild();
 
-    await withDiscoveryModule(async () => {
-      await titleChanged(channelId, "Nouveau titre");
-      await publish("events.channel", oldTitle);
-      await channelCreated(channelId, slugFor());
-
-      await eventually(async () =>
-        expect(await viewOf(channelId)).toMatchObject({ slug: expect.any(String) }),
-      );
-      expect(await viewOf(channelId)).toMatchObject({ title: "Nouveau titre" });
-    });
+    expect(
+      await discovery.discoveryProcessedEvent.findMany({
+        where: { eventId: title.id },
+        select: { handlerName: true },
+      }),
+    ).toEqual([{ handlerName: "discovery.live-channel-view" }]);
   });
 
   it("reconstruit plus de chaînes qu'un seul lot d'insertion n'en contient", async () => {
