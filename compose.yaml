@@ -1,12 +1,20 @@
 name: twitch
 
 # Environnement local (ADR 0028). Profil par défaut : infrastructure seulement,
-# les applications tournent sur l'hôte avec `pnpm dev`. Le profil `full`
-# (images des applications) sera ajouté avec la première tranche de chaque app.
+# les applications tournent sur l'hôte avec `pnpm dev`. Le profil `full` ajoute
+# les images des applications : migrate, puis api et outbox-relay (§5).
 
 x-postgres-client-env: &postgres-client-env
   PGHOST: postgres
   PGPASSWORD: ${POSTGRES_PASSWORD}
+
+x-api-image: &api-image
+  build:
+    context: .
+    dockerfile: apps/api/Dockerfile
+    target: api
+  image: twitch-api:local
+  stop_grace_period: 45s
 
 services:
   postgres:
@@ -62,6 +70,54 @@ services:
     environment:
       DATABASE_URL_MIGRATOR: postgresql://migrator:${PG_PASSWORD_MIGRATOR}@postgres:5432/app
     restart: "no"
+
+  api:
+    <<: *api-image
+    profiles: [full]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      mailpit:
+        condition: service_healthy
+    environment:
+      API_PORT: "3000"
+      DATABASE_URL_IDENTITY: postgresql://app_identity:${PG_PASSWORD_APP_IDENTITY}@postgres:5432/app
+      DATABASE_URL_CHANNEL: postgresql://app_channel:${PG_PASSWORD_APP_CHANNEL}@postgres:5432/app
+      DATABASE_URL_STREAM: postgresql://app_stream:${PG_PASSWORD_APP_STREAM}@postgres:5432/app
+      DATABASE_URL_MODERATION: postgresql://app_moderation:${PG_PASSWORD_APP_MODERATION}@postgres:5432/app
+      DATABASE_URL_HEALTH: postgresql://app_health:${PG_PASSWORD_APP_HEALTH}@postgres:5432/app
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: http://127.0.0.1:${API_PORT:-3000}
+      REDIS_URL: redis://redis:6379
+      VIDEO_WEBHOOK_SECRET: ${VIDEO_WEBHOOK_SECRET}
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+    ports:
+      - "127.0.0.1:${API_PORT:-3000}:3000"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/health/ready').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  outbox-relay:
+    <<: *api-image
+    profiles: [full]
+    command: ["node", "apps/api/dist/outbox-relay/main.js"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL_OUTBOX_RELAY: postgresql://app_outbox_relay:${PG_PASSWORD_APP_OUTBOX_RELAY}@postgres:5432/app
+      REDIS_URL: redis://redis:6379
 
   redis:
     image: redis:8.8.3-alpine
