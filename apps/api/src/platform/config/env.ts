@@ -1,6 +1,17 @@
 import { z } from "zod";
 
-const envSchema = z.object({
+const SERVICE_SECRET_MIN_LENGTH = 32;
+
+const videoSchema = z.discriminatedUnion("VIDEO_PROVIDER", [
+  z.object({ VIDEO_PROVIDER: z.literal("fake") }),
+  z.object({
+    VIDEO_PROVIDER: z.literal("video"),
+    VIDEO_SERVICE_URL: z.url({ protocol: /^https?$/ }),
+    VIDEO_SERVICE_SECRET: z.string().min(SERVICE_SECRET_MIN_LENGTH),
+  }),
+]);
+
+const baseSchema = z.object({
   API_PORT: z.coerce.number().int().min(1).max(65_535).default(3000),
   DATABASE_URL_HEALTH: z.string().regex(/^postgres(ql)?:\/\/\S+$/),
   BETTER_AUTH_SECRET: z.string().min(32),
@@ -11,6 +22,12 @@ const envSchema = z.object({
   SMTP_PORT: z.coerce.number().int().min(1).max(65_535),
   SMTP_FROM: z.string().min(1).default("Twitch <no-reply@twitch.local>"),
 });
+
+const envSchema = baseSchema.and(videoSchema);
+
+export type VideoProviderConfig =
+  | { readonly provider: "fake" }
+  | { readonly provider: "video"; readonly serviceUrl: string; readonly serviceSecret: string };
 
 export const parseVariables = <T>(
   schema: z.ZodType<T>,
@@ -32,6 +49,7 @@ export type AppConfig = {
   readonly redisUrl: string;
   readonly videoWebhookSecret: string;
   readonly smtp: { readonly host: string; readonly port: number; readonly from: string };
+  readonly video: VideoProviderConfig;
 };
 
 export const loadEnv = (env: Readonly<Record<string, string | undefined>>): AppConfig => {
@@ -44,5 +62,13 @@ export const loadEnv = (env: Readonly<Record<string, string | undefined>>): AppC
     redisUrl: variables.REDIS_URL,
     videoWebhookSecret: variables.VIDEO_WEBHOOK_SECRET,
     smtp: { host: variables.SMTP_HOST, port: variables.SMTP_PORT, from: variables.SMTP_FROM },
+    video:
+      variables.VIDEO_PROVIDER === "fake"
+        ? { provider: "fake" }
+        : {
+            provider: "video",
+            serviceUrl: variables.VIDEO_SERVICE_URL,
+            serviceSecret: variables.VIDEO_SERVICE_SECRET,
+          },
   };
 };

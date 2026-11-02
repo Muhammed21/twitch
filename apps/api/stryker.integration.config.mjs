@@ -6,6 +6,7 @@ export default {
   vitest: { configFile: "vitest.mutation.config.ts" },
   mutate: [
     "src/modules/*/infrastructure/**/*.ts",
+    "!src/modules/*/infrastructure/testing/**",
     "src/modules/*/*.module.ts",
     "src/authz/authz-context.ts",
     "src/outbox-relay/outbox-relay.ts",

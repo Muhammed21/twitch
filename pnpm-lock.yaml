@@ -88,6 +88,9 @@ importers:
       '@repo/result':
         specifier: workspace:*
         version: link:../../packages/result
+      '@repo/video-contract':
+        specifier: workspace:*
+        version: link:../../packages/video-contract
       better-auth:
         specifier: 1.7.7
         version: 1.7.7(@prisma/client@7.10.0(prisma@7.10.0(@types/node@26.6.2)(@types/react@19.3.0)(magicast@0.5.5)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(typescript@7.0.2))(mysql2@3.24.5(@types/node@26.6.2))(pg@8.23.1)(prisma@7.10.0(@types/node@26.6.2)(@types/react@19.3.0)(magicast@0.5.5)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vitest@4.1.12)

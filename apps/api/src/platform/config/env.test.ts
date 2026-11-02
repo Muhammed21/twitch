@@ -8,6 +8,14 @@ const AUTH_SECRET = "s".repeat(32);
 
 const WEBHOOK_SECRET = "w".repeat(32);
 
+const SERVICE_SECRET = "v".repeat(32);
+
+const VIDEO_SERVICE = {
+  VIDEO_PROVIDER: "video",
+  VIDEO_SERVICE_URL: "http://127.0.0.1:3002",
+  VIDEO_SERVICE_SECRET: SERVICE_SECRET,
+};
+
 const makeEnv = (overrides: Record<string, string | undefined> = {}) => ({
   DATABASE_URL_HEALTH: HEALTH_URL,
   BETTER_AUTH_SECRET: AUTH_SECRET,
@@ -16,6 +24,7 @@ const makeEnv = (overrides: Record<string, string | undefined> = {}) => ({
   VIDEO_WEBHOOK_SECRET: WEBHOOK_SECRET,
   SMTP_HOST: "127.0.0.1",
   SMTP_PORT: "1025",
+  VIDEO_PROVIDER: "fake",
   ...overrides,
 });
 
@@ -29,7 +38,44 @@ describe("loadEnv", () => {
       redisUrl: "redis://127.0.0.1:6379",
       videoWebhookSecret: WEBHOOK_SECRET,
       smtp: { host: "127.0.0.1", port: 1025, from: "Twitch <no-reply@twitch.local>" },
+      video: { provider: "fake" },
     });
+  });
+
+  it("lit l'adresse et le secret du service vidéo quand il est choisi", () => {
+    expect(loadEnv(makeEnv(VIDEO_SERVICE)).video).toEqual({
+      provider: "video",
+      serviceUrl: "http://127.0.0.1:3002",
+      serviceSecret: SERVICE_SECRET,
+    });
+  });
+
+  it.each([undefined, "", "ivs", "FAKE"])("refuse VIDEO_PROVIDER %j en la nommant", (provider) => {
+    expect(() => loadEnv(makeEnv({ VIDEO_PROVIDER: provider }))).toThrow("VIDEO_PROVIDER");
+  });
+
+  it.each([undefined, "", "pas une url", "ftp://h", "xhttp://h"])(
+    "refuse VIDEO_SERVICE_URL %j en la nommant, quand le service vidéo est choisi",
+    (url) => {
+      expect(() => loadEnv(makeEnv({ ...VIDEO_SERVICE, VIDEO_SERVICE_URL: url }))).toThrow(
+        "VIDEO_SERVICE_URL",
+      );
+    },
+  );
+
+  it.each([undefined, "", "v".repeat(31)])(
+    "refuse VIDEO_SERVICE_SECRET %j en la nommant, quand le service vidéo est choisi",
+    (secret) => {
+      expect(() => loadEnv(makeEnv({ ...VIDEO_SERVICE, VIDEO_SERVICE_SECRET: secret }))).toThrow(
+        "VIDEO_SERVICE_SECRET",
+      );
+    },
+  );
+
+  it("accepte une URL https du service vidéo", () => {
+    expect(
+      loadEnv(makeEnv({ ...VIDEO_SERVICE, VIDEO_SERVICE_URL: "https://video.internal" })).video,
+    ).toMatchObject({ serviceUrl: "https://video.internal" });
   });
 
   it("lit l'expéditeur des e-mails", () => {
@@ -63,7 +109,7 @@ describe("loadEnv", () => {
 
   it("nomme toutes les variables invalides à la fois", () => {
     expect(() => loadEnv({ API_PORT: "abc" })).toThrow(
-      "Configuration invalide, variables à corriger : API_PORT, DATABASE_URL_HEALTH, BETTER_AUTH_SECRET, BETTER_AUTH_URL, REDIS_URL, VIDEO_WEBHOOK_SECRET, SMTP_HOST, SMTP_PORT",
+      "Configuration invalide, variables à corriger : API_PORT, DATABASE_URL_HEALTH, BETTER_AUTH_SECRET, BETTER_AUTH_URL, REDIS_URL, VIDEO_WEBHOOK_SECRET, SMTP_HOST, SMTP_PORT, VIDEO_PROVIDER",
     );
   });
 

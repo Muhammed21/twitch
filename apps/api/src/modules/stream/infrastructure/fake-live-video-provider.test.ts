@@ -3,9 +3,16 @@ import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 
 import { fakeLifecycleWebhook, fakeLiveVideoProvider } from "./fake-live-video-provider.ts";
+import { describeLiveVideoProviderContract } from "./testing/live-video-provider.contract.ts";
 
 const SECRET = "secret-de-test";
 const NOW = new Date("2026-10-15T20:00:00.000Z");
+
+describeLiveVideoProviderContract({
+  name: "provider factice",
+  webhookSecret: SECRET,
+  provider: () => fakeLiveVideoProvider({ webhookSecret: SECRET }),
+});
 
 const makeWebhookEvent = (
   overrides: Partial<Parameters<typeof fakeLifecycleWebhook>[0]["event"]> = {},

@@ -10,6 +10,7 @@ import {
 import { ModerationModule, type ModerationPrisma } from "./modules/moderation/moderation.module.ts";
 import { StreamModule, type StreamPrisma } from "./modules/stream/stream.module.ts";
 import type { AccessTokenVerifier } from "./platform/authentication.ts";
+import type { VideoProviderConfig } from "./platform/config/env.ts";
 import type { LogSink } from "./platform/logging.ts";
 import { PlatformModule, type SchemaVersionCheck } from "./platform/platform.module.ts";
 import type { StreamConsumerRedis } from "./platform/stream-consumer.ts";
@@ -35,6 +36,7 @@ export class AppModule {
     stream: {
       prisma: StreamPrisma;
       webhookSecret: string;
+      video: VideoProviderConfig;
       consumerRedis: StreamConsumerRedis;
     };
     moderation: { prisma: ModerationPrisma };

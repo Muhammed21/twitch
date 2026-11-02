@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { hostname } from "node:os";
 
 import { Test } from "@nestjs/testing";
@@ -10,9 +10,12 @@ import { ok } from "@repo/result";
 
 import { createAuthzRedis } from "../../authz/authz-context.ts";
 import type { AccessTokenVerifier } from "../../platform/authentication.ts";
+import type { VideoProviderConfig } from "../../platform/config/env.ts";
 import { configureApp } from "../../platform/configure-app.ts";
 import { PlatformModule } from "../../platform/platform.module.ts";
 import { createStreamConsumerRedis } from "../../platform/stream-consumer.ts";
+import { startVideoService } from "./infrastructure/testing/video-service.ts";
+import { videoServiceProvider } from "./infrastructure/video-service-provider.ts";
 import { StreamModule } from "./stream.module.ts";
 
 const urlOf = (variable: string): string => {
@@ -42,6 +45,7 @@ const verifierFor = (userId: string): AccessTokenVerifier => ({
 const withStreamModule = async (
   actorId: string,
   run: (base: string, logs: string[]) => Promise<void>,
+  video: VideoProviderConfig = { provider: "fake" },
 ) => {
   const logs: string[] = [];
   const authzRedis = createAuthzRedis(urlOf("REDIS_URL"));
@@ -57,6 +61,7 @@ const withStreamModule = async (
       StreamModule.register({
         prisma: createContextClient({ context: "stream", env: process.env }),
         webhookSecret: urlOf("VIDEO_WEBHOOK_SECRET"),
+        video,
         authzRedis,
         consumerRedis,
         logSink: (line) => logs.push(line),
@@ -128,6 +133,36 @@ describe("StreamModule branché sur la base et Redis", () => {
         ingestUrl: "rtmp://127.0.0.1:1935/live",
       });
     });
+  });
+
+  it("rend la clé fournie par apps/video quand VIDEO_PROVIDER=video", async () => {
+    const serviceSecret = randomBytes(32).toString("hex");
+    const service = await startVideoService({ serviceSecret });
+    try {
+      const adapter = videoServiceProvider({
+        baseUrl: service.baseUrl,
+        serviceSecret,
+        webhookSecret: urlOf("VIDEO_WEBHOOK_SECRET"),
+      });
+      const { ownerId, channelId } = await seedProvisionedChannel();
+      const { providerChannelId } = await adapter.provisionChannel({ channelId });
+      await stream.streamChannel.update({ where: { channelId }, data: { providerChannelId } });
+
+      await withStreamModule(
+        ownerId,
+        async (base) => {
+          const response = await fetch(`${base}/channels/${channelId}/stream-key`, {
+            headers: { authorization: "Bearer jeton" },
+          });
+
+          expect(response.status).toBe(200);
+          expect(await response.json()).toEqual(await adapter.getStreamKey({ providerChannelId }));
+        },
+        { provider: "video", serviceUrl: service.baseUrl, serviceSecret },
+      );
+    } finally {
+      service.process.kill("SIGTERM");
+    }
   });
 
   it("change la clé de stream du propriétaire : la lecture suivante rend la nouvelle", async () => {
