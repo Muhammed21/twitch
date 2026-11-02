@@ -2,6 +2,7 @@ import { type DynamicModule, Module } from "@nestjs/common";
 
 import type { AuthzRedis } from "./authz/authz-context.ts";
 import { type ChannelPrisma, ChannelModule } from "./modules/channel/channel.module.ts";
+import { DiscoveryModule, type DiscoveryPrisma } from "./modules/discovery/discovery.module.ts";
 import {
   IdentityModule,
   type IdentityPrisma,
@@ -22,6 +23,7 @@ export class AppModule {
     channel,
     stream,
     moderation,
+    discovery,
     ...platform
   }: {
     schemaVersionCheck: SchemaVersionCheck;
@@ -40,6 +42,11 @@ export class AppModule {
       consumerRedis: StreamConsumerRedis;
     };
     moderation: { prisma: ModerationPrisma };
+    discovery: {
+      prisma: DiscoveryPrisma;
+      channelConsumerRedis: StreamConsumerRedis;
+      streamConsumerRedis: StreamConsumerRedis;
+    };
   }): DynamicModule {
     return {
       module: AppModule,
@@ -53,6 +60,7 @@ export class AppModule {
           logSink: platform.logSink,
         }),
         ModerationModule.register({ ...moderation, authzRedis: channel.authzRedis }),
+        DiscoveryModule.register({ ...discovery, logSink: platform.logSink }),
       ],
     };
   }

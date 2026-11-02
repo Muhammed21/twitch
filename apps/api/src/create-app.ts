@@ -49,6 +49,13 @@ export const createApp = async ({
     },
   );
   streamConsumerRedis.connect().catch(() => {});
+  const connectedConsumerRedis = () => {
+    const client = createStreamConsumerRedis(config.redisUrl).on("error", (error: unknown) => {
+      writeLog(logSink, { level: "error", msg: "redis stream consumer", ...errorDetails(error) });
+    });
+    client.connect().catch(() => {});
+    return client;
+  };
   const auth = createIdentityAuth({
     prisma,
     redis,
@@ -82,6 +89,11 @@ export const createApp = async ({
         consumerRedis: streamConsumerRedis,
       },
       moderation: { prisma: createContextClient({ context: "moderation", env }) },
+      discovery: {
+        prisma: createContextClient({ context: "discovery", env }),
+        channelConsumerRedis: connectedConsumerRedis(),
+        streamConsumerRedis: connectedConsumerRedis(),
+      },
     }),
     { logger: new ConsoleLogger({ json: true }), bodyParser: false },
   );
