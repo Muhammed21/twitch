@@ -3,3 +3,4 @@ export { Me } from "./me.ts";
 export { Channel } from "./channel.ts";
 export { StreamKey } from "./stream-key.ts";
 export { Timeout } from "./timeout.ts";
+export { Live, LivePage } from "./live-page.ts";

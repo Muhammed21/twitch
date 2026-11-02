@@ -178,8 +178,18 @@ _Tests d'abord_ : un live démarré apparaît avec son slug et son titre ; un li
 **PR 11b-2 — Reconstruction de la projection `discovery`.** Commande `discovery:rebuild` (exigée dès la tranche 1 par l'ADR 0003) qui vide la projection et la reconstruit depuis la source de vérité : `ChannelOutbox` et `StreamOutbox`, lues par `readOutboxHistory` (`@repo/db`) avec le rôle `app_projection_rebuild`, en `SELECT` seul (ADR 0041), dans l'ordre d'`occurredAt`, sous verrou exclusif ; les events repris sont marqués traités. Les streams Redis, plafonnés à environ 100 000 entrées (ADR 0034), ne suffisent pas : le `channel.created` d'une chaîne ancienne n'y est plus.
 _Tests d'abord_ : la reconstruction redonne la projection des consommateurs ; une chaîne qu'aucun event ne décrit disparaît ; un consommateur ne rejoue pas un event repris par la reconstruction ; un event consommé pendant la reconstruction attend sa fin ; plus de chaînes qu'un lot d'insertion.
 
-**PR 11c — `GET /v1/lives` (jalon A3).** Liste paginée par curseur opaque, tri total (`startedAt` décroissant puis `channelId`, ADR 0008 §a), taille de page bornée, index composite déclaré ; contrat OpenAPI dans `packages/contracts`.
-_Tests d'abord_ : pagination stable quand un live démarre entre deux pages ; un live terminé disparaît de la liste ; curseur illisible → `400` RFC 9457 ; liste vide → page vide sans curseur suivant.
+**PR 11c — `GET /v1/lives` (jalon A3).** Route publique servie par `discovery`, lue dans `DiscoveryLiveChannelView`. Réponse `{ items: [{ channelId, slug, title, startedAt }], nextCursor? }`, contrat `LivePage` dans `packages/contracts`. Pagination keyset (ADR 0008 §a) : tri total `liveStartedAt` décroissant puis `channelId` croissant ; curseur opaque en base64url qui porte `(startedAt, channelId)` du dernier élément, donc valide même si ce live se termine entre deux pages ; `limit` optionnel, 20 par défaut, de 1 à 50. Index `(liveStartedAt, channelId)` déclaré sur la vue.
+_Critères d'acceptation_ :
+
+- seuls les lives en cours dont le slug est connu apparaissent, triés du plus récent au plus ancien, puis par `channelId` à démarrage égal ;
+- un live terminé disparaît de la liste ;
+- `nextCursor` mène à la page suivante tant qu'il reste des lives, et il est absent sur la dernière page (ADR 0024 §5 : pas de `null` sur une propriété) ; liste vide → `items: []`, sans `nextCursor` ;
+- un live qui démarre entre deux pages n'en décale aucune : la page suivante ne répète ni ne saute aucun live ;
+- la page suivante reste juste quand le live du curseur s'est terminé entre-temps ;
+- curseur illisible, `limit` hors de 1 à 50 ou non entier → `400` RFC 9457, avec le paramètre en cause dans `errors[].path` ;
+- la route répond sans jeton d'accès ;
+- un `EXPLAIN` sur des milliers de vues ne montre aucun `Seq Scan` sur `DiscoveryLiveChannelView` (ADR 0008 §b) ;
+- `/v1/lives` figure dans l'OpenAPI généré, avec `LivePage`.
 
 **PR 12 — Canal 2 et BFF mobile.** SSE public du statut des lives et du compteur de viewers, agrégé à un tick par seconde (ADR 0004, §2) ; `GET /v1/mobile/bootstrap` : version minimale supportée, flags résolus avec leurs valeurs par défaut sûres, profil (ADR 0009, 0012).
 _Tests d'abord_ : un client SSE reçoit un seul tick par seconde quel que soit le nombre d'entrées ; `bootstrap` répond même si PostHog est injoignable ; `bootstrap` ne contient aucune règle métier.

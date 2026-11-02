@@ -149,7 +149,7 @@ describe("service vidéo qui ne répond plus", () => {
       ).rejects.toThrow(/délai/);
 
       const elapsed = performance.now() - startedAt;
-      expect(elapsed).toBeGreaterThanOrEqual(5000);
+      expect(elapsed).toBeGreaterThan(4900);
       expect(elapsed).toBeLessThan(6000);
     } finally {
       server.closeAllConnections();

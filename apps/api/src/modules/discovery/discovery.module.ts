@@ -11,6 +11,7 @@ import type { Pool } from "pg";
 
 import { errorDetails, type LogSink, writeLog } from "../../platform/logging.ts";
 import { startStreamConsumer, type StreamConsumerRedis } from "../../platform/stream-consumer.ts";
+import { listLives } from "./application/list-lives.ts";
 import { projectDiscoveryEvent } from "./application/project-discovery-event.ts";
 import {
   type RebuildReport,
@@ -22,7 +23,9 @@ import {
   prismaLiveChannelProjection,
   prismaLiveChannelStore,
 } from "./infrastructure/prisma-live-channel-projection.ts";
+import { prismaLiveReader } from "./infrastructure/prisma-live-reader.ts";
 import { discoveryEventHandlers } from "./presentation/discovery-event-handlers.ts";
+import { LIST_LIVES, LivesController } from "./presentation/lives.controller.ts";
 
 export type { DiscoveryPrisma };
 
@@ -64,7 +67,11 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
   static register(dependencies: DiscoveryDependencies): DynamicModule {
     return {
       module: DiscoveryModule,
-      providers: [{ provide: DISCOVERY_DEPENDENCIES, useValue: dependencies }],
+      controllers: [LivesController],
+      providers: [
+        { provide: DISCOVERY_DEPENDENCIES, useValue: dependencies },
+        { provide: LIST_LIVES, useValue: listLives(prismaLiveReader(dependencies.prisma)) },
+      ],
     };
   }
 

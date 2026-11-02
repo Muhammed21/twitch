@@ -13,6 +13,7 @@ model DiscoveryLiveChannelView {
   liveStartedAt  DateTime?
   lastEndedAt    DateTime?
 
+  @@index([liveStartedAt(sort: Desc), channelId])
   @@schema("discovery")
 }
 

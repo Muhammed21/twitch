@@ -165,3 +165,31 @@ describe("Timeout", () => {
     expect(responses.Timeout.safeParse(makeTimeout(overrides)).success).toBe(false);
   });
 });
+
+describe("LivePage", () => {
+  const makeLive = (overrides: Record<string, unknown> = {}) => ({
+    channelId: "4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b",
+    slug: "streamer",
+    title: "Speedrun",
+    startedAt: "2026-11-02T20:00:00.000Z",
+    ...overrides,
+  });
+
+  it("décode une page suivie d'une autre", () => {
+    const page = { items: [makeLive()], nextCursor: "WyIyMDI2Il0" };
+
+    expect(responses.LivePage.parse(page)).toEqual(page);
+  });
+
+  it("décode la dernière page, sans curseur suivant", () => {
+    expect(responses.LivePage.parse({ items: [] })).toEqual({ items: [] });
+  });
+
+  it.each([
+    ["sans slug", { slug: undefined }],
+    ["avec un démarrage qui n'est pas une date ISO", { startedAt: "hier soir" }],
+    ["avec un identifiant de chaîne qui n'est pas un UUID", { channelId: "42" }],
+  ])("refuse un live %s", (_name, overrides) => {
+    expect(responses.LivePage.safeParse({ items: [makeLive(overrides)] }).success).toBe(false);
+  });
+});
