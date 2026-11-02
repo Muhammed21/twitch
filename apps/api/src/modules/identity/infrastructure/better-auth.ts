@@ -86,6 +86,18 @@ const guardRefreshGrant =
     }
   };
 
+const REVOKE_PATH = "/oauth2/revoke";
+
+const RevocationRequest = z.object({ token: z.string().min(1) });
+
+const InvalidRequestError = z.object({ body: z.object({ error: z.literal("invalid_request") }) });
+
+const answerInvalidTokenRevocation = (ctx: HookContext) =>
+  RevocationRequest.safeParse(ctx.body).success &&
+  InvalidRequestError.safeParse(ctx.context.returned).success
+    ? new Response(null)
+    : undefined;
+
 const SIGN_UP_PATH = "/sign-up/email";
 const UPDATE_USER_PATH = "/update-user";
 
@@ -172,6 +184,9 @@ export const createIdentityAuth = ({
         }
         return refreshGuard(ctx);
       }),
+      after: createAuthMiddleware(async (ctx) =>
+        ctx.path === REVOKE_PATH ? answerInvalidTokenRevocation(ctx) : undefined,
+      ),
     },
     emailAndPassword: {
       enabled: true,
