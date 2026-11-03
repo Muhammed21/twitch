@@ -64,6 +64,23 @@ describe("process apps/chat", () => {
     expect(output.stderr).toContain("CHAT_HTTP_PORT");
   });
 
+  it("s'arrête en code 1 quand le port est déjà pris", { timeout: 10_000 }, async () => {
+    const occupant = createServer().listen(0);
+    await once(occupant, "listening");
+    onTestFinished(() => {
+      occupant.close();
+    });
+    const address = occupant.address();
+    const port = typeof address === "object" && address !== null ? address.port : 0;
+    const { child, output } = startProcess({
+      CHAT_HTTP_PORT: String(port),
+      REDIS_URL: UNREACHABLE_REDIS,
+    });
+
+    expect(await exitOf(child)).toBe(1);
+    expect(output.stderr).toContain("EADDRINUSE");
+  });
+
   it(
     "démarre malgré un Redis injoignable, répond sur /health/live puis s'arrête sur SIGTERM",
     { timeout: 10_000 },

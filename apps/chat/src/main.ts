@@ -29,6 +29,9 @@ try {
       revokedSessions: redisRevokedSessions(redis),
     }),
     log,
+  }).catch((error: unknown) => {
+    redis.destroy();
+    throw error;
   });
   log({ level: "info", msg: "chat démarré", port: server.port });
 
