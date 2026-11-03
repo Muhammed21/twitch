@@ -35,6 +35,13 @@ Le gestionnaire d'upgrade lit `Authorization: Bearer <jeton>` avant toute connex
 
 Chaque handshake est journalisé avec son statut seul, jamais l'en-tête `Authorization`. Un client qui coupe sa connexion pendant la vérification est journalisé (`handshake interrompu`) sans arrêter le process. `GET /health/live` et `GET /health/ready` répondent `200`.
 
+### Révocation et revalidation
+
+Une socket acceptée garde le `sid` et le jeton de son handshake, et rejoint le salon interne `sid:<sid>`.
+
+- **Révocation** (ADR 0026 §3) : le chat s'abonne au canal Pub/Sub `identity.session.revoked` par un client Redis dédié. Pour chaque `sid` publié par l'API, toutes ses sockets reçoivent `session:revoked { action: "stop" }`, puis sont fermées. Les sockets des autres `sid` ne sont pas touchées. Un message hors contrat est journalisé (`révocation hors contrat`) et ignoré.
+- **Revalidation** toutes les 5 minutes (ADR 0004 §4) : le jeton de chaque socket est vérifié de nouveau. Expiré ou invalide → `session:revoked { action: "refresh_and_reconnect" }` ; `sid` révoqué → `{ action: "stop" }`. Dans les deux cas, la socket est ensuite fermée. Ce filet rattrape une révocation publiée pendant une coupure du Pub/Sub. Le refus d'un compte suspendu arrive avec la suspension de compte.
+
 ### Salons et diffusion
 
 Après un upgrade accepté, le profil du chatter (`chat:chatter:<userId>`) est lu pendant l'ouverture de la connexion. Un profil inconnu ou illisible refuse la connexion socket.io avec l'erreur `chatter_unavailable` ; une lecture en échec est journalisée (`profil illisible`).

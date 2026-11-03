@@ -10,6 +10,8 @@ Vérification des jetons d'accès émis par l'API (ADR 0005, ADR 0026 §5, ADR 0
 
 `revokedSidKey(sid)` nomme la clé Redis d'une session révoquée (`identity:revoked-sid:<sid>`), écrite par l'API et lue par l'API et le chat.
 
+La révocation de sessions se publie en `{ userId, sids }` sur le canal Pub/Sub `SESSION_REVOKED_CHANNEL` (`identity.session.revoked`), par l'API pour le chat (ADR 0026 §3). `sessionRevocationOf(message)` lit un message publié et rend `err("malformed")` hors de ce format.
+
 Si la liste de révocation est injoignable, le jeton est accepté avec `revocation: "unavailable"` : un use-case sensible refuse sur cette valeur, le reste continue (ADR 0005, « Panne Redis »).
 
 Le JWKS est gardé en cache 10 minutes ; un `kid` inconnu le recharge, au plus une fois par minute (`jose`). `fetchJwks` remplace `fetch`, par exemple pour lire le JWKS en interne.
