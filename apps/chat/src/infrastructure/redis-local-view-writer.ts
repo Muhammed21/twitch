@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import type { LiveSession, LocalViewWriter } from "../application/ports.ts";
-import { chatterKey, roomKey, toRoomState } from "./redis-local-views.ts";
+import { chatterKey, roomKey, sanctionsKey, toRoomState } from "./redis-local-views.ts";
 
 export type HashWriter = {
   eval(script: string, options: { keys: string[]; arguments: string[] }): Promise<unknown>;
@@ -30,6 +30,16 @@ redis.call('EXPIRE', KEYS[2], ARGV[2])
 return redis.call('HGET', KEYS[1], 'sessionId')
 `;
 
+const SANCTION_CHATTER = `
+local current = tonumber(redis.call('HGET', KEYS[1], ARGV[1]) or '0')
+if tonumber(ARGV[2]) > current then
+  redis.call('HSET', KEYS[1], ARGV[1], ARGV[2])
+end
+redis.call('PEXPIREAT', KEYS[1], ARGV[2], 'NX')
+redis.call('PEXPIREAT', KEYS[1], ARGV[2], 'GT')
+return 1
+`;
+
 const SessionReply = z.string();
 
 const runSessionScript = async (
@@ -52,5 +62,11 @@ export const redisLocalViewWriter = (redis: HashWriter): LocalViewWriter => ({
   endSession: (session) => runSessionScript(redis, END_SESSION, session),
   registerChatter: async ({ userId, displayName }) => {
     await redis.hSet(chatterKey(userId), "displayName", displayName);
+  },
+  sanctionChatter: async ({ userId, channelId, expiresAt }) => {
+    await redis.eval(SANCTION_CHATTER, {
+      keys: [sanctionsKey(userId)],
+      arguments: [channelId, String(expiresAt.getTime())],
+    });
   },
 });

@@ -42,9 +42,13 @@ Une socket acceptée garde le `sid` et le jeton de son handshake, et rejoint le 
 - **Révocation** (ADR 0026 §3) : le chat s'abonne au canal Pub/Sub `identity.session.revoked` par un client Redis dédié. Pour chaque `sid` publié par l'API, toutes ses sockets reçoivent `session:revoked { action: "stop" }`, puis sont fermées. Les sockets des autres `sid` ne sont pas touchées. Un message hors contrat est journalisé (`révocation hors contrat`) et ignoré.
 - **Revalidation** toutes les 5 minutes (ADR 0004 §4) : le jeton de chaque socket est vérifié de nouveau. Expiré ou invalide → `session:revoked { action: "refresh_and_reconnect" }` ; `sid` révoqué → `{ action: "stop" }`. Dans les deux cas, la socket est ensuite fermée. Ce filet rattrape une révocation publiée pendant une coupure du Pub/Sub. Le refus d'un compte suspendu arrive avec la suspension de compte.
 
+### Timeouts
+
+Un timeout reçu par `moderation.user.timed_out` s'ajoute aux sanctions des sockets ouvertes du chatter (`sanction`) : son message suivant sur ce salon est refusé `timed_out`, ses autres salons ne changent pas. Un timeout arrivé pendant l'ouverture d'une connexion, entre la lecture des sanctions et l'entrée de la socket, est gardé en mémoire jusqu'à son échéance. Il est ajouté à la session juste avant l'entrée de la socket, après la seconde vérification du jeton, sans attente entre les deux. Le délai entre la sanction et son application sera exposé avec les métriques (PR 8 du plan).
+
 ### Salons et diffusion
 
-Après un upgrade accepté, le profil du chatter (`chat:chatter:<userId>`) est lu pendant l'ouverture de la connexion. Un profil inconnu ou illisible refuse la connexion socket.io avec l'erreur `chatter_unavailable` ; une lecture en échec est journalisée (`profil illisible`).
+Après un upgrade accepté, le profil du chatter (`chat:chatter:<userId>`) et ses timeouts (`chat:chatter:<userId>:sanctions`) sont lus pendant l'ouverture de la connexion. Un profil inconnu ou illisible refuse la connexion socket.io avec l'erreur `chatter_unavailable` ; une lecture en échec est journalisée (`profil illisible`).
 
 Les événements d'une socket sont traités l'un après l'autre, dans leur ordre d'arrivée : un `chat:send` émis juste après `room:join` trouve le salon rejoint.
 
@@ -73,29 +77,31 @@ Un seau remonté à 5 jetons vaut l'absence de seau (`isBucketFull`). Le `Chatte
 
 - `chatEventHandlers({ views, rooms, log })` projette les events dans les vues locales et rafraîchit l'état d'un salon chargé, même pendant sa lecture. Un payload hors contrat est journalisé puis écarté ; une version non gérée fait échouer le handler, et l'event reste à traiter.
 
-Les ports `RoomDirectory`, `ChatterProfiles` et `LocalViewWriter` sont dans `application/ports.ts`.
+Les ports `RoomDirectory`, `ChatterProfiles`, `LocalViewWriter` et `SanctionedSockets` sont dans `application/ports.ts`.
 
 ## Infrastructure
 
 Vues locales dans Redis, lues sans appel à l'API (ADR 0004) :
 
-| Clé                           | Contenu                                                                  |
-| ----------------------------- | ------------------------------------------------------------------------ |
-| `chat:room:<channelId>`       | `sessionId` : session du live en cours, vide hors live                   |
-| `chat:room:<channelId>:ended` | set des sessions terminées, expiré 7 jours après la dernière fin de live |
-| `chat:chatter:<userId>`       | `displayName` : nom affiché de l'auteur                                  |
+| Clé                               | Contenu                                                                             |
+| --------------------------------- | ----------------------------------------------------------------------------------- |
+| `chat:room:<channelId>`           | `sessionId` : session du live en cours, vide hors live                              |
+| `chat:room:<channelId>:ended`     | set des sessions terminées, expiré 7 jours après la dernière fin de live            |
+| `chat:chatter:<userId>`           | `displayName` : nom affiché de l'auteur                                             |
+| `chat:chatter:<userId>:sanctions` | par `channelId`, fin du timeout en millisecondes epoch ; expire à la fin du dernier |
 
-Une chaîne sans hash n'a pas de salon. Le groupe de consommateurs `chat` lit `events.channel`, `events.stream` et `events.identity`, écrits par le relais d'outbox de l'API :
+Une chaîne sans hash n'a pas de salon. Le groupe de consommateurs `chat` lit `events.channel`, `events.stream`, `events.identity` et `events.moderation`, écrits par le relais d'outbox de l'API :
 
-| Event                         | Écriture                                                                                            |
-| ----------------------------- | --------------------------------------------------------------------------------------------------- |
-| `channel.created`             | `HSETNX sessionId ""` : ouvre le salon hors live, sans fermer un live déjà enregistré               |
-| `stream.started`              | pose `sessionId`, sauf pour une session terminée (script Lua)                                       |
-| `stream.ended`                | vide `sessionId` s'il porte cette session, puis ajoute la session au set des terminées (script Lua) |
-| `identity.account.registered` | `HSET displayName`                                                                                  |
+| Event                         | Écriture                                                                                                           |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `channel.created`             | `HSETNX sessionId ""` : ouvre le salon hors live, sans fermer un live déjà enregistré                              |
+| `stream.started`              | pose `sessionId`, sauf pour une session terminée (script Lua)                                                      |
+| `stream.ended`                | vide `sessionId` s'il porte cette session, puis ajoute la session au set des terminées (script Lua)                |
+| `identity.account.registered` | `HSET displayName`                                                                                                 |
+| `moderation.user.timed_out`   | garde la fin la plus tardive du timeout sur ce salon (script Lua), puis l'applique aux sockets ouvertes du chatter |
 
-Chaque écriture est idempotente et supporte le désordre : un event rejoué, un début de live repris après sa fin, ou une fin de live arrivée après le live suivant, laisse la vue juste. Un seul `XREADGROUP` bloquant lit les trois streams, sur une connexion Redis à part ; à chaque tour, `XAUTOCLAIM` reprend les entrées en attente depuis plus de 30 s. Une entrée est acquittée après son traitement, ou si elle est illisible ou sans handler ; un handler en échec la laisse en attente.
+Chaque écriture est idempotente et supporte le désordre : un event rejoué, un début de live repris après sa fin, ou une fin de live arrivée après le live suivant, laisse la vue juste. Un seul `XREADGROUP` bloquant lit les quatre streams, sur une connexion Redis à part ; à chaque tour, `XAUTOCLAIM` reprend les entrées en attente depuis plus de 30 s. Une entrée est acquittée après son traitement, ou si elle est illisible ou sans handler ; un handler en échec la laisse en attente.
 
 La connexion Redis ne journalise que ses transitions : `redis injoignable` à la première erreur d'une panne, `redis rétabli` au retour, et rien pour les tentatives de reconnexion entre les deux. Le consommateur se tait pendant une panne de sa connexion, qui a son propre journal de transitions (`client: "events"`).
 
-`event-consumer.ts` et `redis-local-view-writer.ts` sont couverts par `pnpm test:integration`, hors couverture unitaire et hors Stryker. `chat-milestone.integration.test.ts` démontre le jalon C1 : une chaîne créée et deux comptes enregistrés par events, deux clients authentifiés qui échangent dans le salon, puis un message rattaché au live démarré.
+`event-consumer.ts` et `redis-local-view-writer.ts` sont couverts par `pnpm test:integration`, hors couverture unitaire et hors Stryker. `chat-milestone.integration.test.ts` démontre le jalon C1 : une chaîne créée et deux comptes enregistrés par events, deux clients authentifiés qui échangent dans le salon, puis un message rattaché au live démarré. Il démontre aussi le jalon C2 : un timeout publié refuse `timed_out` le message suivant de l'auteur en moins d'une seconde, sans toucher les autres, et s'applique à une reconnexion ultérieure.

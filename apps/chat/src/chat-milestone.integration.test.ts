@@ -16,6 +16,7 @@ import {
   redisChatterProfiles,
   redisRoomDirectory,
   roomKey,
+  sanctionsKey,
 } from "./infrastructure/redis-local-views.ts";
 import { startChatServer } from "./transport/chat-server.ts";
 import { makeTokenAuthority } from "./transport/testing/tokens.ts";
@@ -39,6 +40,7 @@ const startChat = async () => {
     channel: `${prefix}:events.channel`,
     stream: `${prefix}:events.stream`,
     identity: `${prefix}:events.identity`,
+    moderation: `${prefix}:events.moderation`,
   };
   const keys: string[] = Object.values(streams);
   onTestFinished(async () => {
@@ -60,7 +62,12 @@ const startChat = async () => {
     streams: Object.values(streams),
     group: "chat",
     consumer: "test",
-    handlers: chatEventHandlers({ views: redisLocalViewWriter(redis), rooms, log: () => {} }),
+    handlers: chatEventHandlers({
+      views: redisLocalViewWriter(redis),
+      rooms,
+      sockets: server,
+      log: () => {},
+    }),
     claimIdleMs: 30_000,
     blockMs: 50,
     onError: () => {},
@@ -112,6 +119,15 @@ const startChat = async () => {
     return sessionId;
   };
 
+  const timeOut = async ({ channelId, userId }: { channelId: string; userId: string }) => {
+    keys.push(sanctionsKey(userId));
+    await publish(streams.moderation, events.moderation.userTimedOut, {
+      channelId,
+      userId,
+      expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
+    });
+  };
+
   const connectAs = async (userId: string): Promise<Socket> => {
     const token = await authority.sign({ userId });
     return vi.waitFor(
@@ -133,7 +149,7 @@ const startChat = async () => {
     );
   };
 
-  return { redis, rooms, registerAccount, createChannel, startLive, connectAs };
+  return { redis, rooms, registerAccount, createChannel, startLive, timeOut, connectAs };
 };
 
 const nextMessage = (socket: Socket) =>
@@ -183,5 +199,46 @@ describe("jalon C1, contre le Redis de Compose", () => {
       body: "Bon live",
       sessionId,
     });
+  });
+});
+
+describe("jalon C2, contre le Redis de Compose", () => {
+  it("un timeout publié coupe l'auteur en moins d'une seconde, sans toucher les autres", async () => {
+    const chat = await startChat();
+    const owner = await chat.registerAccount("Alice");
+    const viewer = await chat.registerAccount("Bob");
+    const channelId = await chat.createChannel(owner);
+    const ownerSocket = await chat.connectAs(owner);
+    const viewerSocket = await chat.connectAs(viewer);
+    await joinWhenOpen(ownerSocket, channelId);
+    await joinWhenOpen(viewerSocket, channelId);
+
+    const publishedAt = Date.now();
+    await chat.timeOut({ channelId, userId: viewer });
+    await vi.waitFor(
+      async () =>
+        expect(await send(viewerSocket, channelId, "encore")).toEqual({ reason: "timed_out" }),
+      { timeout: 1000, interval: 20 },
+    );
+
+    expect(Date.now() - publishedAt).toBeLessThan(1000);
+    expect(await send(ownerSocket, channelId, "toujours là")).toBeUndefined();
+  });
+
+  it("applique le timeout publié pendant l'absence du chatter dès sa reconnexion", async () => {
+    const chat = await startChat();
+    const owner = await chat.registerAccount("Alice");
+    const viewer = await chat.registerAccount("Bob");
+    const channelId = await chat.createChannel(owner);
+    const ownerSocket = await chat.connectAs(owner);
+    await joinWhenOpen(ownerSocket, channelId);
+
+    await chat.timeOut({ channelId, userId: viewer });
+    await chat.timeOut({ channelId, userId: viewer });
+    await vi.waitFor(async () => expect(await chat.redis.hLen(sanctionsKey(viewer))).toBe(1));
+    const viewerSocket = await chat.connectAs(viewer);
+    viewerSocket.emit("room:join", { channelId });
+
+    expect(await send(viewerSocket, channelId, "me revoilà")).toEqual({ reason: "timed_out" });
   });
 });

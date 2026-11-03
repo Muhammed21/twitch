@@ -1,8 +1,21 @@
+import type { ChatSanction } from "@repo/authorization";
+
 import type { RoomState } from "../domain/decide.ts";
 
 export type RoomDirectory = { find(channelId: string): Promise<RoomState | undefined> };
 
-export type ChatterProfiles = { displayNameOf(userId: string): Promise<string | null> };
+export type ChatterProfiles = {
+  displayNameOf(userId: string): Promise<string | null>;
+  sanctionsOf(userId: string): Promise<readonly ChatSanction[]>;
+};
+
+export type ChatterSanction = {
+  readonly userId: string;
+  readonly channelId: string;
+  readonly expiresAt: Date;
+};
+
+export type SanctionedSockets = { sanction(sanction: ChatterSanction): void };
 
 export type LiveSession = { readonly channelId: string; readonly sessionId: string };
 
@@ -14,4 +27,5 @@ export type LocalViewWriter = {
     readonly userId: string;
     readonly displayName: string;
   }): Promise<void>;
+  sanctionChatter(sanction: ChatterSanction): Promise<void>;
 };

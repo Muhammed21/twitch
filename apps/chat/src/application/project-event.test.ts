@@ -26,6 +26,9 @@ const makeViews = () => {
     registerChatter: async (chatter) => {
       writes.push({ registerChatter: chatter });
     },
+    sanctionChatter: async (sanction) => {
+      writes.push({ sanctionChatter: sanction });
+    },
   };
   return { views, writes };
 };
@@ -36,9 +39,15 @@ const setup = (rooms: readonly RoomState[] = []) => {
     find: async (channelId) => rooms.find((room) => room.channelId === channelId),
   });
   const logs: Readonly<Record<string, unknown>>[] = [];
+  const applied: unknown[] = [];
   const handlers = chatEventHandlers({
     views,
     rooms: registry,
+    sockets: {
+      sanction: (sanction) => {
+        applied.push(sanction);
+      },
+    },
     log: (entry) => {
       logs.push(entry);
     },
@@ -50,21 +59,41 @@ const setup = (rooms: readonly RoomState[] = []) => {
     }
     return handler(event);
   };
-  return { handlers, handle, writes, registry, logs };
+  return { handlers, handle, writes, applied, registry, logs };
 };
 
 const { channelCreated } = events.channel;
 const { streamStarted, streamEnded } = events.stream;
 const { accountRegistered } = events.identity;
+const { userTimedOut } = events.moderation;
 
 describe("projection des events dans les vues locales du chat", () => {
-  it("traite channel.created, stream.started, stream.ended et identity.account.registered", () => {
+  it("traite les events de chaîne, de live, de compte et de timeout", () => {
     expect(Object.keys(setup().handlers).toSorted()).toEqual([
       "channel.created",
       "identity.account.registered",
+      "moderation.user.timed_out",
       "stream.ended",
       "stream.started",
     ]);
+  });
+
+  it("enregistre le timeout d'un chatter, puis l'applique à ses sockets ouvertes", async () => {
+    const { handle, writes, applied } = setup();
+    const sanction = {
+      userId: randomUUID(),
+      channelId: randomUUID(),
+      expiresAt: new Date("2026-11-03T20:10:00.000Z"),
+    };
+
+    await handle({
+      name: userTimedOut.name,
+      version: 1,
+      payload: { ...sanction, expiresAt: sanction.expiresAt.toISOString() },
+    });
+
+    expect(writes).toEqual([{ sanctionChatter: sanction }]);
+    expect(applied).toEqual([sanction]);
   });
 
   it("ouvre le salon d'une chaîne créée", async () => {

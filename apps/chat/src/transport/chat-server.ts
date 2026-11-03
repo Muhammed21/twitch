@@ -7,11 +7,11 @@ import { Server as SocketServer } from "socket.io";
 import { z } from "zod";
 
 import type { AccessTokenIdentity, VerificationFailure } from "@repo/auth-verifier";
-import { chatterContextFor } from "@repo/authorization";
+import { type ChatSanction, chatterContextFor } from "@repo/authorization";
 import type { Result } from "@repo/result";
 
 import type { MessageSender } from "../application/message-sender.ts";
-import type { ChatterProfiles } from "../application/ports.ts";
+import type { ChatterProfiles, ChatterSanction } from "../application/ports.ts";
 import type { RoomRegistry } from "../application/room-registry.ts";
 import { bindChatEvents, type ChatIo, type ChatSession, type ChatSocket } from "./chat-events.ts";
 
@@ -113,29 +113,37 @@ export const startChatServer = async ({
 
   const sessions = new WeakMap<IncomingMessage, Promise<ChatSession | undefined>>();
   const openSession = async ({ userId, sid }: AccessTokenIdentity, token: string) => {
-    const displayName = await chatters.displayNameOf(userId);
+    const [displayName, sanctions] = await Promise.all([
+      chatters.displayNameOf(userId),
+      chatters.sanctionsOf(userId),
+    ]);
     if (displayName === null) {
       return undefined;
     }
     return {
-      chatter: chatterContextFor({ userId, assignments: [], now: new Date() }),
+      chatter: { ...chatterContextFor({ userId, assignments: [], now: new Date() }), sanctions },
       author: { id: userId, displayName },
       credentials: { sid, token },
     };
   };
+  const recentSanctions = new Map<string, readonly ChatSanction[]>();
+  const withSanctions = (session: ChatSession, added: readonly ChatSanction[]): ChatSession => ({
+    ...session,
+    chatter: { ...session.chatter, sanctions: [...session.chatter.sanctions, ...added] },
+  });
   const attachSession = async (socket: ChatSocket, next: (error?: Error) => void) => {
     const session = await sessions.get(socket.request);
     if (session === undefined) {
       next(new Error("chatter_unavailable"));
       return;
     }
-    socket.data = session;
     await socket.join(sessionRoomOf(session.credentials.sid));
     const stillValid = await verifier.verify(session.credentials.token);
     if (!stillValid.ok) {
       next(new Error("session_revoked"));
       return;
     }
+    socket.data = withSanctions(session, recentSanctions.get(session.author.id) ?? []);
     next();
   };
   io.use((socket, next) => {
@@ -200,6 +208,22 @@ export const startChatServer = async ({
       revoked.emit("session:revoked", { action: "stop" });
       revoked.disconnectSockets(true);
     },
+    sanction: ({ userId, channelId, expiresAt }: ChatterSanction) => {
+      const now = Date.now();
+      const sanction = { channelId, expiresAt };
+      recentSanctions.forEach((recent, user) => {
+        if (recent.every((entry) => Number(entry.expiresAt) <= now)) {
+          recentSanctions.delete(user);
+        }
+      });
+      recentSanctions.set(userId, [...(recentSanctions.get(userId) ?? []), sanction]);
+      io.sockets.sockets.forEach((socket) => {
+        if (socket.data.author.id === userId) {
+          socket.data = withSanctions(socket.data, [sanction]);
+        }
+      });
+    },
+    pendingSanctionCount: () => recentSanctions.size,
     revalidateSessions: async () => {
       await Promise.all([...io.sockets.sockets.values()].map(revalidate));
     },
