@@ -48,6 +48,8 @@ public struct ChannelHeader: View {
       }
     }
     .padding(LayoutRole.screenInset.points)
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("channel.header")
   }
 }
 
