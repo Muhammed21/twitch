@@ -72,6 +72,7 @@ const withStreamModule = async (
         authzRedis,
         consumerRedis,
         presenceRedis: createPresenceRedis(),
+        trustedProxyCount: 0,
         logSink: (line) => logs.push(line),
       }),
     ],
