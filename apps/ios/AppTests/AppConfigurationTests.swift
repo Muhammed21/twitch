@@ -1,6 +1,8 @@
+import Domain
 import Foundation
 import Networking
 import Testing
+@testable import Twitch
 
 private var info: [String: Any] { Bundle.main.infoDictionary ?? [:] }
 
@@ -12,6 +14,14 @@ struct AppConfigurationTests {
 
     #expect(configuration.apiBaseURL.absoluteString == "http://127.0.0.1:3000")
     #expect(configuration.clientID == "twitch-ios-dev")
+  }
+
+  @Test("porte la version envoyée en X-Client-Version, au format majeure.mineure.correctif")
+  func clientVersion() throws {
+    let version = try #require(Composition.clientVersion(info: info))
+
+    #expect(try AppVersion(version).description == version)
+    #expect(version == info["CFBundleShortVersionString"] as? String)
   }
 
   @Test("déclare le schéma d'URL twitch de la redirection OAuth")

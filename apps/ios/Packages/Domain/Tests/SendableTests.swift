@@ -24,5 +24,11 @@ struct SendableTests {
     requireSendable((any ChannelRepository).self)
     requireSendable((any LiveDirectory).self)
     requireSendable((any ChatConnection).self)
+    requireSendable(AppVersion.self)
+    requireSendable(AppVersionError.self)
+    requireSendable(FeatureFlags.self)
+    requireSendable(AppBootstrap.self)
+    requireSendable(ServiceProblem.self)
+    requireSendable((any BootstrapSource).self)
   }
 }
