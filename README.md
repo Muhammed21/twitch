@@ -56,4 +56,4 @@ cd .. && xcodebuild test -project App.xcodeproj -scheme App -destination 'id=<ud
 scripts/chat-integration.sh 'id=<udid>'   # ChatTransport contre le vrai serveur de chat (ADR 0023)
 ```
 
-La CI iOS (`.github/workflows/ios.yml`) se lance à la main (ADR 0018, §4).
+La CI iOS (`.github/workflows/ios.yml`) se lance sur les diffs de `apps/ios/` (ADR 0018, §4 ; ADR 0038). Son job Maestro joue les flows de [`apps/ios/maestro/`](apps/ios/maestro/README.md), non bloquant jusqu'à dix exécutions vertes d'affilée.

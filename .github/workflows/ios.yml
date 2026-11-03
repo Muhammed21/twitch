@@ -1,9 +1,12 @@
 name: iOS
 
-# Runner macOS non activé (ADR 0018 §4) : lancement à la main jusqu'au premier déclencheur,
-# puis déclenchement sur les diffs de apps/ios/ (ADR 0038).
+# Déclenché sur les diffs de apps/ios/ (ADR 0018 §4, ADR 0038), ou à la main.
 
 on:
+  pull_request:
+    paths:
+      - apps/ios/**
+      - .github/workflows/ios.yml
   workflow_dispatch:
 
 concurrency:
@@ -70,3 +73,82 @@ jobs:
           simulator=$(xcrun simctl list devices available --json \
             | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | startswith("iPhone"))][0].udid')
           scripts/chat-integration.sh "id=$simulator"
+
+  maestro:
+    name: Maestro (non bloquant)
+    runs-on: macos-15
+    timeout-minutes: 45
+    # Non bloquant jusqu'à dix exécutions vertes d'affilée (apps/ios/maestro/README.md).
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: ./.github/actions/install
+
+      - name: PostgreSQL, Redis et ffmpeg sur l'hôte (pas de Docker sur les runners macOS)
+        run: |
+          brew install postgresql@17 redis ffmpeg
+          echo "$(brew --prefix postgresql@17)/bin" >> "$GITHUB_PATH"
+
+      - name: Environnement de démonstration
+        run: |
+          cp .env.example .env
+          sed -i '' -e 's/^VIDEO_PROVIDER=.*/VIDEO_PROVIDER=video/' \
+            -e 's/^MOBILE_MIN_SUPPORTED_VERSION=.*/MOBILE_MIN_SUPPORTED_VERSION=0.1.0/' .env
+
+      - name: Base, rôles et migrations
+        run: |
+          initdb -D "$RUNNER_TEMP/pg" -U postgres --auth=trust >/dev/null
+          pg_ctl -D "$RUNNER_TEMP/pg" -l "$RUNNER_TEMP/pg.log" -w start
+          createdb -h 127.0.0.1 -U postgres app
+          redis-server --bind 127.0.0.1 --daemonize yes
+          set -a && . ./.env && set +a
+          PGHOST=127.0.0.1 sh docker/postgres/init-roles.sh
+          pnpm migrate
+
+      - name: Service vidéo, API et relais de l'outbox
+        run: |
+          set -a && . ./.env && set +a
+          pnpm build --filter=@repo/api --filter=@repo/video
+          (cd apps/video && exec nohup node dist/main.js >"$RUNNER_TEMP/video.log" 2>&1) &
+          (cd apps/api && exec nohup node dist/main.js >"$RUNNER_TEMP/api.log" 2>&1) &
+          (cd apps/api && exec nohup node dist/outbox-relay/main.js >"$RUNNER_TEMP/relay.log" 2>&1) &
+          for url in http://127.0.0.1:3002/health/ready http://127.0.0.1:3000/health/ready; do
+            for _ in $(seq 120); do curl -fsS "$url" >/dev/null 2>&1 && break; sleep 1; done
+            curl -fsS "$url"
+          done
+          pnpm --filter @repo/api seed:dev
+
+      - name: Une chaîne en direct
+        run: |
+          set -a && . ./.env && set +a
+          channel=http://127.0.0.1:3000/v1/channels/viewer_dev
+          for _ in $(seq 120); do curl -fsS "$channel" >/dev/null 2>&1 && break; sleep 1; done
+          apps/ios/maestro/go-live.sh viewer_dev
+
+      - name: App sur le simulateur
+        working-directory: apps/ios
+        run: |
+          simulator=$(xcrun simctl list devices available --json \
+            | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | startswith("iPhone"))][0].udid')
+          echo "SIMULATOR=$simulator" >> "$GITHUB_ENV"
+          xcrun simctl boot "$simulator"
+          xcodebuild build -skipPackagePluginValidation -project App.xcodeproj -scheme App \
+            -destination "id=$simulator" -derivedDataPath "$RUNNER_TEMP/dd" -quiet
+          xcrun simctl install "$simulator" "$RUNNER_TEMP/dd/Build/Products/Debug-iphonesimulator/Twitch.app"
+
+      - name: Maestro
+        run: |
+          curl -fsSL https://get.maestro.mobile.dev -o "$RUNNER_TEMP/maestro-install.sh"
+          bash "$RUNNER_TEMP/maestro-install.sh"
+          "$HOME/.maestro/bin/maestro" --device "$SIMULATOR" test apps/ios/maestro/ \
+            --format junit --output "$RUNNER_TEMP/maestro.xml"
+
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro
+          path: |
+            ~/.maestro/tests/
+            ${{ runner.temp }}/*.log
+          retention-days: 7
