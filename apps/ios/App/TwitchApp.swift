@@ -6,6 +6,7 @@ import Home
 import Navigation
 import Networking
 import Onboarding
+import Player
 import SwiftUI
 
 @main
@@ -19,6 +20,7 @@ struct TwitchApp: App {
         .environment(stores.launch)
         .environment(stores.home)
         .environment(stores.router)
+        .environment(stores.player)
     }
   }
 }
@@ -120,9 +122,11 @@ struct SignedInRoot: View {
         .navigationDestination(for: Route.self) { route in
           switch route {
           case let .channel(slug):
-            Text(slug.rawValue)
-              .font(TextRole.display.font)
-              .navigationTitle(slug.rawValue)
+            VStack(alignment: .leading) {
+              PlayerSurface()
+              Spacer(minLength: 0)
+            }
+            .navigationTitle(slug.rawValue)
           }
         }
     }
@@ -135,6 +139,7 @@ struct Stores {
   let launch: LaunchStore
   let home: HomeStore
   let router: Router
+  let player: PlayerController
 }
 
 @MainActor
@@ -173,7 +178,8 @@ enum Composition {
         currentVersion: currentVersion
       ),
       home: HomeStore(directory: LiveDirectoryClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
-      router: Router()
+      router: Router(),
+      player: PlayerController(player: AVMediaPlayer())
     )
   }
 }
