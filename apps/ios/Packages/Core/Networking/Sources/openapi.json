@@ -722,6 +722,210 @@
           "status"
         ],
         "additionalProperties": {}
+      },
+      "RealtimeChatSend": {
+        "type": "object",
+        "properties": {
+          "channelId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "channelId",
+          "body"
+        ],
+        "additionalProperties": false
+      },
+      "RealtimeRoomJoin": {
+        "type": "object",
+        "properties": {
+          "channelId": {
+            "$ref": "#/components/schemas/Uuid"
+          }
+        },
+        "required": [
+          "channelId"
+        ],
+        "additionalProperties": false
+      },
+      "RealtimeRoomLeave": {
+        "type": "object",
+        "properties": {
+          "channelId": {
+            "$ref": "#/components/schemas/Uuid"
+          }
+        },
+        "required": [
+          "channelId"
+        ],
+        "additionalProperties": false
+      },
+      "RealtimeServerMessage": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "event": {
+                "type": "string",
+                "const": "chat:message"
+              },
+              "data": {
+                "$ref": "#/components/schemas/RealtimeChatMessage"
+              }
+            },
+            "required": [
+              "event",
+              "data"
+            ],
+            "additionalProperties": {}
+          },
+          {
+            "type": "object",
+            "properties": {
+              "event": {
+                "type": "string",
+                "const": "chat:rejected"
+              },
+              "data": {
+                "$ref": "#/components/schemas/RealtimeChatRejected"
+              }
+            },
+            "required": [
+              "event",
+              "data"
+            ],
+            "additionalProperties": {}
+          },
+          {
+            "type": "object",
+            "properties": {
+              "event": {
+                "type": "string",
+                "const": "session:revoked"
+              },
+              "data": {
+                "$ref": "#/components/schemas/RealtimeSessionRevoked"
+              }
+            },
+            "required": [
+              "event",
+              "data"
+            ],
+            "additionalProperties": {}
+          },
+          {
+            "type": "object",
+            "properties": {
+              "event": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "event"
+            ],
+            "additionalProperties": {}
+          }
+        ]
+      },
+      "RealtimeChatMessage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "channelId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "sessionId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "author": {
+            "$ref": "#/components/schemas/RealtimeChatAuthor"
+          },
+          "body": {
+            "type": "string"
+          },
+          "sentAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "channelId",
+          "author",
+          "body",
+          "sentAt"
+        ],
+        "additionalProperties": {}
+      },
+      "RealtimeChatAuthor": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "displayName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "displayName"
+        ],
+        "additionalProperties": {}
+      },
+      "RealtimeChatRejected": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "timed_out",
+                  "rate_limited"
+                ]
+              },
+              {
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "additionalProperties": {}
+      },
+      "RealtimeSessionRevoked": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "refresh_and_reconnect",
+                  "stop"
+                ]
+              },
+              {
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": {}
       }
     }
   }

@@ -115,14 +115,11 @@ describe("document OpenAPI", () => {
   it("déclare des réponses ouvertes, qui tolèrent un champ ajouté", async () => {
     const document = await documentOf();
     const schemas = at(document, "components", "schemas") as JsonObject;
-    expect(Object.keys(schemas).toSorted()).toEqual([
-      "LiveChannel",
-      "LiveDto",
-      "Problem",
-      "StartLiveDto",
-      "Uuid",
-      "Viewer",
-    ]);
+    expect(
+      Object.keys(schemas)
+        .filter((name) => !name.startsWith("Realtime"))
+        .toSorted(),
+    ).toEqual(["LiveChannel", "LiveDto", "Problem", "StartLiveDto", "Uuid", "Viewer"]);
     expect(at(schemas, "LiveDto", "additionalProperties")).toEqual({});
     expect(at(schemas, "Viewer", "additionalProperties")).toEqual({});
     expect(at(schemas, "LiveChannel", "additionalProperties")).toEqual({});
@@ -151,6 +148,33 @@ describe("document OpenAPI", () => {
       },
     });
     expect(at(document, "paths", "/v1/lives/current", "get", "responses", "200")).toBeDefined();
+  });
+
+  it("publie les messages temps réel du chat, qu'aucun chemin ne référence", async () => {
+    const schemas = at(await documentOf(), "components", "schemas") as JsonObject;
+
+    expect(
+      Object.keys(schemas)
+        .filter((name) => name.startsWith("Realtime"))
+        .toSorted(),
+    ).toEqual([
+      "RealtimeChatAuthor",
+      "RealtimeChatMessage",
+      "RealtimeChatRejected",
+      "RealtimeChatSend",
+      "RealtimeRoomJoin",
+      "RealtimeRoomLeave",
+      "RealtimeServerMessage",
+      "RealtimeSessionRevoked",
+    ]);
+    expect(at(schemas, "RealtimeChatMessage", "properties", "author")).toEqual({
+      $ref: "#/components/schemas/RealtimeChatAuthor",
+    });
+    expect(at(schemas, "RealtimeChatSend", "properties", "body")).toEqual({
+      type: "string",
+      minLength: 1,
+      maxLength: 500,
+    });
   });
 
   it("est identique d'une génération à l'autre", async () => {
