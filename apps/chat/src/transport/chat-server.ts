@@ -93,9 +93,14 @@ export const startChatServer = async ({
 
   const server = createServer(answerProbe);
   const handleUpgrade = async (request: IncomingMessage, socket: Duplex, head: Buffer) => {
+    const logInterruption = (error: Error) => {
+      log({ msg: "handshake interrompu", error: error.message });
+    };
+    socket.on("error", logInterruption);
     const status = await handshakeStatus(verifier, request);
     log({ msg: "handshake", status });
     if (status === 101) {
+      socket.off("error", logInterruption);
       engine.handleUpgrade(request, socket, head);
       return;
     }

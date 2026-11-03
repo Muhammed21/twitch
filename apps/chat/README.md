@@ -21,7 +21,7 @@ Le gestionnaire d'upgrade lit `Authorization: Bearer <jeton>` avant toute connex
 - `403`, corps vide : session révoquée. La liste de révocation est lue dans Redis en 200 ms au plus ; au-delà, ou Redis injoignable, le handshake est accepté (ADR 0005, « Panne Redis »). Le refus d'un compte suspendu arrive avec la suspension de compte ;
 - `404`, corps vide : upgrade hors de `/socket.io/`.
 
-Chaque handshake est journalisé avec son statut seul, jamais l'en-tête `Authorization`. `GET /health/live` et `GET /health/ready` répondent `200`.
+Chaque handshake est journalisé avec son statut seul, jamais l'en-tête `Authorization`. Un client qui coupe sa connexion pendant la vérification est journalisé (`handshake interrompu`) sans arrêter le process. `GET /health/live` et `GET /health/ready` répondent `200`.
 
 ## Domaine
 

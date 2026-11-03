@@ -1,5 +1,7 @@
 import { once } from "node:events";
 import { request } from "node:http";
+import { connect as connectTcp, type Socket } from "node:net";
+import { setTimeout } from "node:timers/promises";
 
 import { describe, expect, it, onTestFinished } from "vitest";
 import { WebSocket } from "ws";
@@ -85,6 +87,42 @@ const closeOf = async (socket: WebSocket) => {
   return code;
 };
 
+const rawUpgrade = async (port: number, token: string) => {
+  const client = connectTcp({ port, host: "127.0.0.1" });
+  onTestFinished(() => {
+    client.destroy();
+  });
+  await once(client, "connect");
+  client.write(
+    [
+      `GET ${SOCKET_PATH} HTTP/1.1`,
+      "Host: 127.0.0.1",
+      "Connection: Upgrade",
+      "Upgrade: websocket",
+      "Sec-WebSocket-Version: 13",
+      "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==",
+      `Authorization: Bearer ${token}`,
+      "",
+      "",
+    ].join("\r\n"),
+  );
+  return client;
+};
+
+const resetConnection = async (client: Socket) => {
+  client.resetAndDestroy();
+  await once(client, "close");
+  await setTimeout(50);
+};
+
+const deferred = <T>() => {
+  const handlers: { resolve: (value: T) => void } = { resolve: () => {} };
+  const promise = new Promise<T>((resolve) => {
+    handlers.resolve = resolve;
+  });
+  return { promise, resolve: (value: T) => handlers.resolve(value) };
+};
+
 describe("handshake", () => {
   it("refuse en 401, corps vide, un upgrade sans jeton, sans vérifier ni créer de connexion engine.io", async () => {
     const { server, verifiedTokens } = await startServer();
@@ -168,6 +206,34 @@ describe("handshake", () => {
 
     expect((await upgrade(server.port, { headers: bearer(token) })).status).toBe(101);
     expect(Date.now() - startedAt).toBeLessThan(1000);
+  });
+
+  it("survit à un client qui coupe sa connexion pendant la vérification", async () => {
+    const revocation = deferred<boolean>();
+    const checking = deferred<void>();
+    const { server, authority, logs } = await startServer({
+      isRevoked: () => {
+        checking.resolve();
+        return revocation.promise;
+      },
+    });
+    const client = await rawUpgrade(server.port, await authority.sign());
+    await checking.promise;
+    await resetConnection(client);
+    revocation.resolve(true);
+    await setTimeout(50);
+
+    expect((await fetch(`http://127.0.0.1:${server.port}/health/live`)).status).toBe(200);
+    expect(logs).toContainEqual(expect.objectContaining({ msg: "handshake interrompu" }));
+  });
+
+  it("laisse à engine.io les erreurs d'une connexion acceptée", async () => {
+    const { server, authority, logs } = await startServer();
+    const client = await rawUpgrade(server.port, await authority.sign());
+    await once(client, "data");
+    await resetConnection(client);
+
+    expect(logs).toEqual([{ msg: "handshake", status: 101 }]);
   });
 
   it("refuse en 404 un upgrade hors du chemin socket.io", async () => {
