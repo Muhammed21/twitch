@@ -107,8 +107,8 @@ Fonctions pures sur des `Uint8Array`, qui lisent le fMP4 fragmenté écrit par f
   - `EXT-X-SERVER-CONTROL:CAN-BLOCK-RELOAD=YES,PART-HOLD-BACK` à trois fois `PART-TARGET`.
   - En direct : `EXT-X-PART` (`{sequence}.{part}.m4s`, `INDEPENDENT=YES` sur image clé) pour les segments qui finissent à moins de trois durées cibles de la fin de la playlist et pour le segment ouvert, puis `EXT-X-PRELOAD-HINT` vers la part suivante.
   - Rechargement bloquant : `_HLS_msn` (et `_HLS_part`) retient la réponse jusqu'à la fermeture du segment demandé ou l'arrivée de la part, ou jusqu'à la fin du live. 400 pour un paramètre qui n'est pas un entier, `_HLS_part` seul, ou un segment au-delà du segment ouvert plus deux ; 503 au bout de trois durées cibles (18 s).
-- `GET /hls/{sessionId}/{sequence}.{part}.m4s` : une part d'un segment du tampon ou du segment ouvert. La part annoncée par `EXT-X-PRELOAD-HINT` est retenue jusqu'à son arrivée ; 404 si son segment se ferme sans elle, ou au bout de trois durées cibles.
-- Playlists en `application/vnd.apple.mpegurl` et `cache-control: max-age=1` ; `init.mp4`, `{sequence}.m4s` et `{sequence}.{part}.m4s` en `video/mp4`, `public, max-age=31536000, immutable`.
+- `GET /hls/{sessionId}/{sequence}.{part}.m4s` : une part d'un segment du tampon ou du segment ouvert. La part annoncée par `EXT-X-PRELOAD-HINT` est retenue jusqu'à son arrivée ; 404 si son segment se ferme sans elle, ou au bout de trois durées cibles. Une session retirée pendant un rechargement bloquant répond 404.
+- Playlists en `application/vnd.apple.mpegurl` et `cache-control: max-age=1` ; `init.mp4`, `{sequence}.m4s` et les parts des segments fermés en `video/mp4`, `public, max-age=31536000, immutable`. Les parts du segment ouvert sont en `no-cache` : un segment abandonné au-delà de `maxSegmentBytes` rend son numéro au segment suivant.
 - Session inconnue, identifiant qui n'est pas un UUID, segment évincé ou pas encore fermé, nom de fichier inconnu → 404 en RFC 9457. Seul `GET` sert ces fichiers.
 - Le jeton de lecture de l'ADR 0031 (§6) sur la playlist maître arrive avec le module `stream` de l'API.
 

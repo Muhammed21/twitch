@@ -66,6 +66,8 @@ const MEDIA_HEADERS = {
   "cache-control": "public, max-age=31536000, immutable",
 };
 
+const OPEN_PART_HEADERS = { "content-type": "video/mp4", "cache-control": "no-cache" };
+
 const headersOf = (response: Response, names: readonly string[]) =>
   Object.fromEntries(names.map((name) => [name, response.headers.get(name)]));
 
@@ -333,17 +335,17 @@ const openWithOnePart = async ({
 };
 
 describe("parts du LL-HLS", () => {
-  it("sert une part du segment ouvert, immuable", async () => {
+  it("sert une part du segment ouvert sans la laisser en cache : un segment abandonné rend son numéro", async () => {
     const { get, first } = await openWithOnePart();
 
     const response = await get(`${SESSION_ID}/0.0.m4s`);
 
     expect(response.status).toBe(200);
-    expect(headersOf(response, Object.keys(MEDIA_HEADERS))).toEqual(MEDIA_HEADERS);
+    expect(headersOf(response, Object.keys(OPEN_PART_HEADERS))).toEqual(OPEN_PART_HEADERS);
     expect(new Uint8Array(await response.arrayBuffer())).toEqual(first);
   });
 
-  it("sert une part d'un segment fermé", async () => {
+  it("sert une part d'un segment fermé, immuable", async () => {
     const { registry, get } = await startPlayback();
     registry.open(SESSION_ID);
     registry.feed(SESSION_ID, FFMPEG_FRAGMENTED_MP4);
@@ -351,6 +353,7 @@ describe("parts du LL-HLS", () => {
     const response = await get(`${SESSION_ID}/1.1.m4s`);
 
     expect(response.status).toBe(200);
+    expect(headersOf(response, Object.keys(MEDIA_HEADERS))).toEqual(MEDIA_HEADERS);
     expect(new Uint8Array(await response.arrayBuffer())).toEqual(
       registry.find(SESSION_ID)?.segments[1]?.parts[1]?.bytes,
     );
@@ -477,5 +480,15 @@ describe("rechargement bloquant de la playlist de média", () => {
     const { get } = await startPlayback();
 
     expect((await get(`${SESSION_ID}/media.m3u8?_HLS_msn=0`)).status).toBe(404);
+  });
+
+  it("répond 404 pour une session retirée pendant l'attente", async () => {
+    const { registry, get } = await openWithOnePart({ blockingTimeoutMs: LONG_BLOCKING_MS });
+    const pending = get(`${SESSION_ID}/media.m3u8?_HLS_msn=0&_HLS_part=1`);
+
+    await untilWaiting(registry);
+    registry.remove(SESSION_ID);
+
+    expect((await pending).status).toBe(404);
   });
 });

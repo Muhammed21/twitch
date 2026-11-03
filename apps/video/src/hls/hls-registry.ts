@@ -27,9 +27,9 @@ export type HlsRegistry = {
 
 export const createHlsRegistry = (options: HlsStreamOptions): HlsRegistry => {
   const streams = new Map<string, HlsStream>();
-  const watchers = new Set<() => void>();
-  const changed = () => {
-    for (const watcher of watchers) {
+  const watchers = new Map<string, Set<() => void>>();
+  const changed = (sessionId: string) => {
+    for (const watcher of watchers.get(sessionId) ?? []) {
       watcher();
     }
   };
@@ -54,19 +54,19 @@ export const createHlsRegistry = (options: HlsStreamOptions): HlsRegistry => {
         return fed;
       }
       streams.set(sessionId, fed.value);
-      changed();
+      changed(sessionId);
       return ok(undefined);
     },
     end: (sessionId) => {
       const stream = streams.get(sessionId);
       if (stream !== undefined) {
         streams.set(sessionId, endHlsStream(stream));
-        changed();
+        changed(sessionId);
       }
     },
     remove: (sessionId) => {
       streams.delete(sessionId);
-      changed();
+      changed(sessionId);
     },
     find: (sessionId) => streams.get(sessionId),
     waitFor: (sessionId, ready, timeoutMs) => {
@@ -76,7 +76,10 @@ export const createHlsRegistry = (options: HlsStreamOptions): HlsRegistry => {
       }
       return new Promise((resolve) => {
         const finish = (stream: HlsStream | undefined) => {
-          watchers.delete(watcher);
+          watchers.get(sessionId)?.delete(watcher);
+          if (watchers.get(sessionId)?.size === 0) {
+            watchers.delete(sessionId);
+          }
           clearTimeout(timer);
           resolve(stream);
         };
@@ -87,9 +90,9 @@ export const createHlsRegistry = (options: HlsStreamOptions): HlsRegistry => {
           }
         };
         const timer = setTimeout(() => finish(undefined), timeoutMs);
-        watchers.add(watcher);
+        watchers.set(sessionId, (watchers.get(sessionId) ?? new Set()).add(watcher));
       });
     },
-    waiting: () => watchers.size,
+    waiting: () => [...watchers.values()].reduce((total, set) => total + set.size, 0),
   };
 };

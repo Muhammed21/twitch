@@ -59,8 +59,20 @@ const NOT_FOUND = problem(404, "Ressource introuvable");
 const BAD_BLOCKING_REQUEST = problem(400, "Rechargement bloquant invalide");
 const NOT_YET_AVAILABLE = problem(503, "Segment pas encore disponible");
 
+const OPEN_PART_HEADERS = { "content-type": "video/mp4", "cache-control": "no-cache" };
+
 const media = (bytes: Uint8Array | undefined): HlsReply =>
   bytes === undefined ? NOT_FOUND : { status: 200, headers: MEDIA_HEADERS, body: bytes };
+
+const partReply = (view: PartsView, sequence: number, index: number): HlsReply => {
+  const found = partOf(view, sequence, index);
+  if (found === undefined) {
+    return NOT_FOUND;
+  }
+  return sequence === view.open.sequence
+    ? { status: 200, headers: OPEN_PART_HEADERS, body: found.bytes }
+    : media(found.bytes);
+};
 
 const viewOf = (stream: HlsStream): PartsView => ({
   segments: stream.segments,
@@ -96,7 +108,10 @@ const blockingPlaylist = async (
     (next) => satisfies(viewOf(next), request),
     playback.blockingTimeoutMs,
   );
-  return ready === undefined ? NOT_YET_AVAILABLE : mediaPlaylistOf(ready);
+  if (ready !== undefined) {
+    return mediaPlaylistOf(ready);
+  }
+  return playback.find(sessionId) === undefined ? NOT_FOUND : NOT_YET_AVAILABLE;
 };
 
 const mediaPlaylist = async (
@@ -123,7 +138,7 @@ const part = async (
   const view = viewOf(stream);
   const hinted = sequence === view.open.sequence && index === view.open.parts.length;
   if (!hinted) {
-    return media(partOf(view, sequence, index)?.bytes);
+    return partReply(view, sequence, index);
   }
   const ready = await playback.waitFor(
     sessionId,
@@ -131,7 +146,7 @@ const part = async (
       partOf(viewOf(next), sequence, index) !== undefined || next.segmenter.nextSequence > sequence,
     playback.blockingTimeoutMs,
   );
-  return media(ready === undefined ? undefined : partOf(viewOf(ready), sequence, index)?.bytes);
+  return ready === undefined ? NOT_FOUND : partReply(viewOf(ready), sequence, index);
 };
 
 const fileOf = async (

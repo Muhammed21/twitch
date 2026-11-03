@@ -126,6 +126,28 @@ describe("attente d'un flux", () => {
     expect((await waiting)?.segments).toHaveLength(2);
   });
 
+  it("ne réévalue pas l'attente d'une session quand une autre change", () => {
+    const registry = createHlsRegistry(OPTIONS);
+    registry.open("session-a");
+    registry.open("session-b");
+    const checked: string[] = [];
+    void registry.waitFor(
+      "session-a",
+      (stream) => {
+        checked.push(String(stream.segments.length));
+        return false;
+      },
+      LONG_WAIT_MS,
+    );
+
+    registry.feed("session-b", FFMPEG_FRAGMENTED_MP4);
+    registry.end("session-b");
+    registry.remove("session-b");
+
+    expect(checked).toEqual(["0"]);
+    registry.remove("session-a");
+  });
+
   it("ne rend rien pour une session inconnue ou retirée pendant l'attente", async () => {
     const registry = createHlsRegistry(OPTIONS);
     registry.open("session-a");
