@@ -16,6 +16,7 @@ import { startRtmpServer } from "./rtmp/rtmp-server.ts";
 
 const RTMP_HANDSHAKE_TIMEOUT_MS = 5000;
 const RTMP_IDLE_TIMEOUT_MS = 30_000;
+const RTMP_LIMITS = { maxChunkSize: 65_536, maxMessageSize: 2 * 1024 * 1024, maxChunkStreams: 16 };
 
 const log = (
   msg: string,
@@ -42,7 +43,9 @@ try {
     port: config.rtmpPort,
     handshakeTimeoutMs: RTMP_HANDSHAKE_TIMEOUT_MS,
     idleTimeoutMs: RTMP_IDLE_TIMEOUT_MS,
+    limits: RTMP_LIMITS,
     randomBytes,
+    onMessage: () => undefined,
   });
   const server = await startHttpServer({
     port: config.httpPort,
