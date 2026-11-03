@@ -65,21 +65,22 @@ Les ports `RoomDirectory`, `ChatterProfiles` et `LocalViewWriter` sont dans `app
 
 Vues locales dans Redis, lues sans appel à l'API (ADR 0004) :
 
-| Clé                     | Hash                                                                                                  |
-| ----------------------- | ----------------------------------------------------------------------------------------------------- |
-| `chat:room:<channelId>` | `sessionId` : session du live en cours, vide hors live ; `endedSessionId` : dernière session terminée |
-| `chat:chatter:<userId>` | `displayName` : nom affiché de l'auteur                                                               |
+| Clé                           | Contenu                                                                  |
+| ----------------------------- | ------------------------------------------------------------------------ |
+| `chat:room:<channelId>`       | `sessionId` : session du live en cours, vide hors live                   |
+| `chat:room:<channelId>:ended` | set des sessions terminées, expiré 7 jours après la dernière fin de live |
+| `chat:chatter:<userId>`       | `displayName` : nom affiché de l'auteur                                  |
 
 Une chaîne sans hash n'a pas de salon. Le groupe de consommateurs `chat` lit `events.channel`, `events.stream` et `events.identity`, écrits par le relais d'outbox de l'API :
 
-| Event                         | Écriture                                                                              |
-| ----------------------------- | ------------------------------------------------------------------------------------- |
-| `channel.created`             | `HSETNX sessionId ""` : ouvre le salon hors live, sans fermer un live déjà enregistré |
-| `stream.started`              | pose `sessionId`, sauf pour la session déjà terminée (script Lua)                     |
-| `stream.ended`                | vide `sessionId` s'il porte cette session, puis retient `endedSessionId` (script Lua) |
-| `identity.account.registered` | `HSET displayName`                                                                    |
+| Event                         | Écriture                                                                                            |
+| ----------------------------- | --------------------------------------------------------------------------------------------------- |
+| `channel.created`             | `HSETNX sessionId ""` : ouvre le salon hors live, sans fermer un live déjà enregistré               |
+| `stream.started`              | pose `sessionId`, sauf pour une session terminée (script Lua)                                       |
+| `stream.ended`                | vide `sessionId` s'il porte cette session, puis ajoute la session au set des terminées (script Lua) |
+| `identity.account.registered` | `HSET displayName`                                                                                  |
 
-Chaque écriture est idempotente et supporte le désordre : un event rejoué, ou une fin de live arrivée après le live suivant, laisse la vue juste. Un seul `XREADGROUP` bloquant lit les trois streams, sur une connexion Redis à part ; à chaque tour, `XAUTOCLAIM` reprend les entrées en attente depuis plus de 30 s. Une entrée est acquittée après son traitement, ou si elle est illisible ou sans handler ; un handler en échec la laisse en attente.
+Chaque écriture est idempotente et supporte le désordre : un event rejoué, un début de live repris après sa fin, ou une fin de live arrivée après le live suivant, laisse la vue juste. Un seul `XREADGROUP` bloquant lit les trois streams, sur une connexion Redis à part ; à chaque tour, `XAUTOCLAIM` reprend les entrées en attente depuis plus de 30 s. Une entrée est acquittée après son traitement, ou si elle est illisible ou sans handler ; un handler en échec la laisse en attente.
 
 La connexion Redis ne journalise que ses transitions : `redis injoignable` à la première erreur d'une panne, `redis rétabli` au retour, et rien pour les tentatives de reconnexion entre les deux. Le consommateur se tait pendant une panne de sa connexion, qui a son propre journal de transitions (`client: "events"`).
 

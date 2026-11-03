@@ -9,8 +9,12 @@ export type HashWriter = {
   hSet(key: string, field: string, value: string): Promise<unknown>;
 };
 
+const ENDED_SESSIONS_TTL_SECONDS = 7 * 24 * 3600;
+
+export const endedSessionsKey = (channelId: string): string => `chat:room:${channelId}:ended`;
+
 const START_SESSION = `
-if redis.call('HGET', KEYS[1], 'endedSessionId') ~= ARGV[1] then
+if redis.call('SISMEMBER', KEYS[2], ARGV[1]) == 0 then
   redis.call('HSET', KEYS[1], 'sessionId', ARGV[1])
 end
 return redis.call('HGET', KEYS[1], 'sessionId')
@@ -21,7 +25,8 @@ if redis.call('HGET', KEYS[1], 'sessionId') == ARGV[1] then
   redis.call('HSET', KEYS[1], 'sessionId', '')
 end
 redis.call('HSETNX', KEYS[1], 'sessionId', '')
-redis.call('HSET', KEYS[1], 'endedSessionId', ARGV[1])
+redis.call('SADD', KEYS[2], ARGV[1])
+redis.call('EXPIRE', KEYS[2], ARGV[2])
 return redis.call('HGET', KEYS[1], 'sessionId')
 `;
 
@@ -32,7 +37,10 @@ const runSessionScript = async (
   script: string,
   { channelId, sessionId }: LiveSession,
 ) => {
-  const reply = await redis.eval(script, { keys: [roomKey(channelId)], arguments: [sessionId] });
+  const reply = await redis.eval(script, {
+    keys: [roomKey(channelId), endedSessionsKey(channelId)],
+    arguments: [sessionId, String(ENDED_SESSIONS_TTL_SECONDS)],
+  });
   return toRoomState(channelId, SessionReply.parse(reply));
 };
 
