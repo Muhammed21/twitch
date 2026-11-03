@@ -21,6 +21,7 @@ struct TwitchApp: App {
         .environment(stores.home)
         .environment(stores.router)
         .environment(stores.player)
+        .environment(stores.channelPlayback)
     }
   }
 }
@@ -106,6 +107,7 @@ struct RootView: View {
 
 struct SignedInRoot: View {
   @Environment(Router.self) private var router
+  @Environment(ChannelPlayback.self) private var channelPlayback
   @State private var isShowingAccount = false
 
   var body: some View {
@@ -127,6 +129,7 @@ struct SignedInRoot: View {
               Spacer(minLength: 0)
             }
             .navigationTitle(slug.rawValue)
+            .task(id: slug) { await channelPlayback.open(slug) }
           }
         }
     }
@@ -140,6 +143,7 @@ struct Stores {
   let home: HomeStore
   let router: Router
   let player: PlayerController
+  let channelPlayback: ChannelPlayback
 }
 
 @MainActor
@@ -164,6 +168,7 @@ enum Composition {
       store: KeychainTokenStore(service: Bundle.main.bundleIdentifier ?? "com.muhammedcavus.twitch")
     )
     let now: @Sendable () -> Date = { Date.now }
+    let player = PlayerController(player: AVMediaPlayer(), startupRetry: .every(.seconds(2), attempts: 15))
     return Stores(
       session: SessionStore(
         configuration: configuration,
@@ -179,7 +184,12 @@ enum Composition {
       ),
       home: HomeStore(directory: LiveDirectoryClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
       router: Router(),
-      player: PlayerController(player: AVMediaPlayer())
+      player: player,
+      channelPlayback: ChannelPlayback(
+        channels: ChannelClient(apiBaseURL: configuration.apiBaseURL, transport: transport),
+        playback: PlaybackClient(apiBaseURL: configuration.apiBaseURL, transport: transport),
+        controller: player
+      )
     )
   }
 }

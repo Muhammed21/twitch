@@ -1,33 +1,8 @@
-import AVFoundation
 import Foundation
 import Player
 import Testing
 
 private let streamURL = URL(string: "http://127.0.0.1:8080/live/jean_dupont/index.m3u8")!
-
-@MainActor
-private final class FakeMediaPlayer: MediaPlayer {
-  var onEvent: ((MediaPlayerEvent) -> Void)?
-  private(set) var calls: [String] = []
-
-  func load(_ url: URL) {
-    calls.append("load \(url.absoluteString)")
-  }
-
-  func play() {
-    calls.append("play")
-  }
-
-  func stop() {
-    calls.append("stop")
-  }
-
-  func render(into _: AVPlayerLayer) {}
-
-  func send(_ event: MediaPlayerEvent) {
-    onEvent?(event)
-  }
-}
 
 @MainActor
 private func playing() -> (PlayerController, FakeMediaPlayer) {
