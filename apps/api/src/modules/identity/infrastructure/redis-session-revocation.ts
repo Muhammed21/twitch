@@ -1,6 +1,6 @@
 import { createClient } from "redis";
 
-import type { RevokedSessions } from "@repo/auth-verifier";
+import { type RevokedSessions, revokedSidKey } from "@repo/auth-verifier";
 
 import { withRedisDeadline } from "../../../platform/redis-deadline.ts";
 import type {
@@ -16,8 +16,6 @@ export const createIdentityRedis = (url?: string) =>
 export type IdentityRedis = ReturnType<typeof createIdentityRedis>;
 
 export const SESSION_REVOKED_CHANNEL = "identity.session.revoked";
-
-export const revokedSidKey = (sid: string): string => `identity:revoked-sid:${sid}`;
 
 export const redisRevokedSessions = (redis: IdentityRedis): RevokedSessions => ({
   isRevoked: async (sid) => (await withRedisDeadline(redis.exists(revokedSidKey(sid)))) === 1,

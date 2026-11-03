@@ -7,20 +7,29 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "check-types": "tsc --noEmit",
     "mutation": "stryker run"
   },
   "dependencies": {
+    "@repo/auth-verifier": "workspace:*",
     "@repo/authorization": "workspace:*",
-    "@repo/result": "workspace:*"
+    "@repo/result": "workspace:*",
+    "engine.io": "6.6.11",
+    "redis": "6.2.1",
+    "socket.io": "4.8.4",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
     "@stryker-mutator/core": "10.0.0",
     "@stryker-mutator/vitest-runner": "10.0.0",
     "@types/node": "^26.6.2",
+    "@types/ws": "8.18.2",
     "@vitest/coverage-v8": "4.1.12",
+    "jose": "6.2.12",
     "typescript": "7.0.2",
-    "vitest": "4.1.12"
+    "vitest": "4.1.12",
+    "ws": "8.21.3"
   }
 }
