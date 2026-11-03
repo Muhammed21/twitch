@@ -121,17 +121,17 @@ describe("flux HLS d'une session", () => {
   });
 });
 
-describe("parts du LL-HLS", () => {
-  const keyframeFragments = (durations: readonly number[]) =>
-    durations.map((duration, index) =>
-      makeFragment({
-        trackId: 1,
-        decodeTime: durations.slice(0, index).reduce((total, value) => total + value, 0),
-        defaultFlags: 0x0200_0000,
-        samples: [{ duration }],
-      }),
-    );
+const keyframeFragments = (durations: readonly number[]) =>
+  durations.map((duration, index) =>
+    makeFragment({
+      trackId: 1,
+      decodeTime: durations.slice(0, index).reduce((total, value) => total + value, 0),
+      defaultFlags: 0x0200_0000,
+      samples: [{ duration }],
+    }),
+  );
 
+describe("parts du LL-HLS", () => {
   it("rend les parts du segment ouvert sous le numéro du prochain segment", () => {
     const stream = feedAll([
       makeInit({ tracks: [VIDEO_TRACK] }),

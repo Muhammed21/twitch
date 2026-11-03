@@ -4,6 +4,13 @@ import { err, ok } from "@repo/result";
 
 import { blockingRequestOf, isTooFarAhead, partOf, satisfies } from "./blocking.ts";
 
+const makeParts = (count: number, seed: number) =>
+  Array.from({ length: count }, (_, index) => ({
+    seconds: 0.4,
+    independent: index === 0,
+    bytes: Uint8Array.of(seed, index),
+  }));
+
 const makeView = ({
   nextSequence,
   openParts = 0,
@@ -12,21 +19,13 @@ const makeView = ({
   readonly nextSequence: number;
   readonly openParts?: number;
   readonly closedParts?: number;
-}) => {
-  const makeParts = (count: number, seed: number) =>
-    Array.from({ length: count }, (_, index) => ({
-      seconds: 0.4,
-      independent: index === 0,
-      bytes: Uint8Array.of(seed, index),
-    }));
-  return {
-    segments: Array.from({ length: nextSequence }, (_, sequence) => ({
-      sequence,
-      parts: makeParts(closedParts, sequence),
-    })),
-    open: { sequence: nextSequence, parts: makeParts(openParts, nextSequence) },
-  };
-};
+}) => ({
+  segments: Array.from({ length: nextSequence }, (_, sequence) => ({
+    sequence,
+    parts: makeParts(closedParts, sequence),
+  })),
+  open: { sequence: nextSequence, parts: makeParts(openParts, nextSequence) },
+});
 
 describe("demande de rechargement bloquant", () => {
   it("n'en voit aucune sans paramètre _HLS_", () => {

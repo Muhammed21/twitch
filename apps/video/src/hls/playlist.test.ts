@@ -104,9 +104,9 @@ describe("playlist de média", () => {
   });
 
   it("ne liste plus les parts d'un segment fini trois durées cibles ou plus avant la fin", () => {
-    const parted = (sequence: number) =>
-      makeSegment({ sequence, parts: [makePart({ seconds: 2, independent: true })] });
-    const segments = [parted(0), parted(1), parted(2), parted(3)];
+    const segments = [0, 1, 2, 3].map((sequence) =>
+      makeSegment({ sequence, parts: [makePart({ seconds: 2, independent: true })] }),
+    );
 
     const playlist = renderMediaPlaylist({
       segments,

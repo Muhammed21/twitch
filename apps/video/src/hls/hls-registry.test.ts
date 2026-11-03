@@ -78,9 +78,10 @@ describe("registre des flux HLS", () => {
   });
 });
 
+const hasSegments = (count: number) => (stream: { readonly segments: readonly unknown[] }) =>
+  stream.segments.length >= count;
+
 describe("attente d'un flux", () => {
-  const hasSegments = (count: number) => (stream: { readonly segments: readonly unknown[] }) =>
-    stream.segments.length >= count;
   const LONG_WAIT_MS = 5000;
 
   it("rend aussitôt le flux qui remplit déjà la condition", async () => {
