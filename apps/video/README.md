@@ -82,6 +82,15 @@ Fonctions pures sur des `Uint8Array`, qui lisent le fMP4 fragmenté écrit par f
     -frag_duration 400000 ffmpeg-fragmented.mp4
   ```
 
+## Lecture HLS (`src/hls/`, `src/http/hls-routes.ts`)
+
+- Un flux HLS par session (`createHlsRegistry`) : `open`, puis `feed` avec les octets fMP4 dans n'importe quel découpage, `end` à la fin du live. Les octets passent par `readFmp4` puis le segmenteur (2 s, 6 segments en tampon, boîte de 8 Mio et segment de 32 Mio au plus). Un refus du lecteur, ou un second segment d'init, laisse le flux tel qu'il était et rend l'erreur. Le branchement sur la sortie de ffmpeg arrive avec la supervision des process (PR 8 du plan).
+- `GET /hls/{sessionId}/master.m3u8` : une variante, `BANDWIDTH` au débit de crête des segments du tampon (6 Mb/s avant le premier segment).
+- `GET /hls/{sessionId}/media.m3u8` : `EXT-X-MAP` vers `init.mp4`, `EXT-X-MEDIA-SEQUENCE` du plus ancien segment gardé, fenêtre glissante du tampon, `EXT-X-ENDLIST` une fois le live fini. `EXT-X-TARGETDURATION` couvre le plus long segment arrondi et ne redescend jamais pendant la session.
+- Playlists en `application/vnd.apple.mpegurl` et `cache-control: max-age=1` ; `init.mp4` et `{sequence}.m4s` en `video/mp4`, `public, max-age=31536000, immutable`.
+- Session inconnue, identifiant qui n'est pas un UUID, segment évincé ou pas encore fermé, nom de fichier inconnu → 404 en RFC 9457. Seul `GET` sert ces fichiers.
+- Le jeton de lecture de l'ADR 0031 (§6) sur la playlist maître arrive avec le module `stream` de l'API.
+
 ## Domaine (`src/domain/ingest.ts`)
 
 Fonctions pures, sans I/O ; l'instant arrive en paramètre.

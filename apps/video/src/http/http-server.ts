@@ -7,6 +7,7 @@ import type { Problem } from "@repo/video-contract";
 
 import type { ControlPlane } from "../control-plane/control-plane.ts";
 import { type Reply, routeControlPlane } from "./control-plane-routes.ts";
+import { type HlsPlayback, type HlsReply, routeHls } from "./hls-routes.ts";
 
 export type HttpServer = {
   readonly port: number;
@@ -43,14 +44,20 @@ const send = (response: ServerResponse, reply: Reply): void => {
   }
 };
 
+const sendHls = (response: ServerResponse, reply: HlsReply): void => {
+  response.writeHead(reply.status, reply.headers).end(reply.body);
+};
+
 export const startHttpServer = async ({
   port,
   serviceSecret,
   controlPlane,
+  hls,
 }: {
   port: number;
   serviceSecret: string;
   controlPlane: ControlPlane;
+  hls: HlsPlayback;
 }): Promise<HttpServer> => {
   const state: { draining: boolean } = { draining: false };
 
@@ -71,6 +78,12 @@ export const startHttpServer = async ({
         return;
       }
       sendJson(response, { status: "ready" });
+      return;
+    }
+    const playback =
+      request.method === "GET" ? routeHls({ playback: hls, pathname: target.pathname }) : undefined;
+    if (playback !== undefined) {
+      sendHls(response, playback);
       return;
     }
     void routeControlPlane({
