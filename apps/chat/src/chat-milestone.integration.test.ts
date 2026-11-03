@@ -19,6 +19,8 @@ import {
   sanctionsKey,
 } from "./infrastructure/redis-local-views.ts";
 import { startChatServer } from "./transport/chat-server.ts";
+import { readMetrics } from "./transport/testing/metrics.ts";
+import { SATURATION_LIMITS } from "./transport/testing/saturation.ts";
 import { makeTokenAuthority } from "./transport/testing/tokens.ts";
 
 const REDIS_URL = process.env["REDIS_URL"] ?? "redis://127.0.0.1:6379";
@@ -55,6 +57,7 @@ const startChat = async () => {
     chatters: redisChatterProfiles(redis),
     rooms,
     messages: createMessageSender(),
+    saturation: SATURATION_LIMITS,
   });
   onTestFinished(() => server.close());
   const consumer = startEventConsumer({
@@ -66,6 +69,7 @@ const startChat = async () => {
       views: redisLocalViewWriter(redis),
       rooms,
       sockets: server,
+      metrics: server,
       log: () => {},
     }),
     claimIdleMs: 30_000,
@@ -149,7 +153,16 @@ const startChat = async () => {
     );
   };
 
-  return { redis, rooms, registerAccount, createChannel, startLive, timeOut, connectAs };
+  return {
+    port: server.port,
+    redis,
+    rooms,
+    registerAccount,
+    createChannel,
+    startLive,
+    timeOut,
+    connectAs,
+  };
 };
 
 const nextMessage = (socket: Socket) =>
@@ -223,6 +236,9 @@ describe("jalon C2, contre le Redis de Compose", () => {
 
     expect(Date.now() - publishedAt).toBeLessThan(1000);
     expect(await send(ownerSocket, channelId, "toujours là")).toBeUndefined();
+    const metrics = await readMetrics(chat.port);
+    expect(metrics.get("chat_sanction_exclusion_delay_seconds_count")).toBe(1);
+    expect(metrics.get('chat_sanction_exclusion_delay_seconds_bucket{le="1"}')).toBe(1);
   });
 
   it("applique le timeout publié pendant l'absence du chatter dès sa reconnexion", async () => {

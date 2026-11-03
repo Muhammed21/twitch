@@ -7,6 +7,7 @@ import { createMessageSender } from "../application/message-sender.ts";
 import type { ChatterProfiles } from "../application/ports.ts";
 import { createRoomRegistry } from "../application/room-registry.ts";
 import { startChatServer, type TokenVerifier } from "./chat-server.ts";
+import { SATURATION_LIMITS } from "./testing/saturation.ts";
 import { makeTokenAuthority } from "./testing/tokens.ts";
 
 const deferred = <T>() => {
@@ -42,6 +43,7 @@ const startServer = async ({ chatters = ALICE }: { chatters?: ChatterProfiles } 
     chatters,
     rooms: createRoomRegistry({ find: async () => undefined }),
     messages: createMessageSender(),
+    saturation: SATURATION_LIMITS,
   });
   onTestFinished(() => server.close());
 

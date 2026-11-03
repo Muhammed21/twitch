@@ -10,12 +10,14 @@ Service de chat temps réel, process Node séparé (ADR 0004, ADR 0022). Découp
 | `pnpm test:integration` | Révocation, vues locales, consommateur et jalon C1 dans le Redis de Compose |
 | `pnpm mutation`         | Stryker sur `src/`, hors `main.ts` et `testing/`                            |
 
-| Variable            | Rôle                                                                           |
-| ------------------- | ------------------------------------------------------------------------------ |
-| `CHAT_HTTP_PORT`    | Port d'écoute, 3001 par défaut                                                 |
-| `CHAT_API_BASE_URL` | URL de l'API : JWKS `/auth/jwks`, émetteur `/auth`, audience `/v1`             |
-| `CHAT_API_JWKS_URL` | JWKS lu ailleurs qu'à `CHAT_API_BASE_URL`, émetteur et audience inchangés      |
-| `REDIS_URL`         | Redis de la liste de révocation et des vues locales, `redis://` ou `rediss://` |
+| Variable                         | Rôle                                                                           |
+| -------------------------------- | ------------------------------------------------------------------------------ |
+| `CHAT_HTTP_PORT`                 | Port d'écoute, 3001 par défaut                                                 |
+| `CHAT_API_BASE_URL`              | URL de l'API : JWKS `/auth/jwks`, émetteur `/auth`, audience `/v1`             |
+| `CHAT_API_JWKS_URL`              | JWKS lu ailleurs qu'à `CHAT_API_BASE_URL`, émetteur et audience inchangés      |
+| `REDIS_URL`                      | Redis de la liste de révocation et des vues locales, `redis://` ou `rediss://` |
+| `CHAT_SATURATION_MAX_PACKETS`    | Paquets en attente au-delà desquels une socket est saturée, 100 par défaut     |
+| `CHAT_SATURATION_CLOSE_AFTER_MS` | Saturation continue après laquelle la socket est fermée, 10 000 ms par défaut  |
 
 ## Image et Compose
 
@@ -35,6 +37,27 @@ Le gestionnaire d'upgrade lit `Authorization: Bearer <jeton>` avant toute connex
 
 Chaque handshake est journalisé avec son statut seul, jamais l'en-tête `Authorization`. Un client qui coupe sa connexion pendant la vérification est journalisé (`handshake interrompu`) sans arrêter le process. `GET /health/live` et `GET /health/ready` répondent `200`.
 
+### Clients lents
+
+Garde de l'ADR 0027 §2 : toutes les 10 ms, une socket dont le tampon d'écriture d'engine.io dépasse 100 paquets rejoint le salon interne `saturated`, et la diffusion d'un message de chat l'exclut (`io.to(room).except("saturated")`). Elle en sort dès que son tampon repasse sous le seuil ; restée saturée 10 s d'affilée, elle est fermée sans vider son tampon, et le client se reconnecte. `transport/write-buffer.ts` est le seul module qui lit `writeBuffer`, détail interne d'engine.io ; `slow-clients.test.ts` le couvre avec un client réel qui ne lit plus. `volatile` est refusé par `twitch/no-volatile` dans `apps/chat` (ADR 0027 §1).
+
+### Métriques
+
+`GET /metrics` répond au format texte de Prometheus, pendant l'arrêt compris :
+
+| Métrique                                | Type      | Valeur                                                                  |
+| --------------------------------------- | --------- | ----------------------------------------------------------------------- |
+| `chat_connections`                      | gauge     | connexions actives                                                      |
+| `chat_rooms_loaded`                     | gauge     | salons chargés en mémoire                                               |
+| `chat_saturated_sockets`                | gauge     | sockets exclues de la diffusion                                         |
+| `chat_messages_total`                   | counter   | messages de chat diffusés                                               |
+| `chat_deliveries_total`                 | counter   | livraisons : chaque message compte une fois par destinataire non saturé |
+| `chat_rejected_events_total`            | counter   | trames rejetées par la validation                                       |
+| `chat_saturation_closures_total`        | counter   | sockets fermées après 10 s de saturation                                |
+| `chat_sanction_exclusion_delay_seconds` | histogram | délai entre l'`occurredAt` d'un timeout et son application aux sockets  |
+
+Le seuil de réévaluation du moteur est de 150 000 livraisons par seconde soutenues sur une instance (ADR 0027 §3). L'histogramme a pour seaux 0,1, 0,25, 0,5, 1, 2,5, 5 et 10 s ; le seau de 5 s porte le seuil d'alerte du délai ban → déconnexion (ADR 0006).
+
 ### Arrêt
 
 Sur `SIGTERM` ou `SIGINT` (ADR 0028 §8), `/health/ready` passe en `503` et tout nouvel upgrade reçoit `503`, corps vide ; `/health/live` reste à `200`. Les sockets ouvertes sont fermées par 10 lots étalés sur 30 s, au niveau du transport : le client voit une coupure réseau (`transport close`) et se reconnecte avec backoff et gigue (ADR 0023 §3). Le consommateur d'events et la révocation restent actifs pendant ces 30 s ; le process sort ensuite, sous les 45 s de `stop_grace_period`.
@@ -48,7 +71,7 @@ Une socket acceptée garde le `sid` et le jeton de son handshake, et rejoint le 
 
 ### Timeouts
 
-Un timeout reçu par `moderation.user.timed_out` s'ajoute aux sanctions des sockets ouvertes du chatter (`sanction`) : son message suivant sur ce salon est refusé `timed_out`, ses autres salons ne changent pas. Un timeout arrivé pendant l'ouverture d'une connexion, entre la lecture des sanctions et l'entrée de la socket, est gardé en mémoire jusqu'à son échéance. Il est ajouté à la session juste avant l'entrée de la socket, après la seconde vérification du jeton, sans attente entre les deux. Le délai entre la sanction et son application sera exposé avec les métriques (PR 8 du plan).
+Un timeout reçu par `moderation.user.timed_out` s'ajoute aux sanctions des sockets ouvertes du chatter (`sanction`) : son message suivant sur ce salon est refusé `timed_out`, ses autres salons ne changent pas. Un timeout arrivé pendant l'ouverture d'une connexion, entre la lecture des sanctions et l'entrée de la socket, est gardé en mémoire jusqu'à son échéance. Il est ajouté à la session juste avant l'entrée de la socket, après la seconde vérification du jeton, sans attente entre les deux. Le délai entre la sanction et son application est mesuré dans `chat_sanction_exclusion_delay_seconds`.
 
 ### Salons et diffusion
 
@@ -62,7 +85,7 @@ Les événements d'une socket sont traités l'un après l'autre, dans leur ordre
 | `room:leave` | Sort du salon. Sans réponse                                                                                                                                                                                                                   |
 | `chat:send`  | Exige un ack. Accepté : diffusé en `chat:message` à tout le salon, auteur compris, puis ack sans valeur. Refusé : ack `RealtimeChatRejected` (`timed_out`, `banned`, `rate_limited`, ou `not_joined` hors d'un salon rejoint), sans diffusion |
 
-Un événement inconnu, une charge invalide ou un `chat:send` sans ack sont rejetés sans réponse et comptés (`rejectedEventCount()`). Une déconnexion sort la socket de tous ses salons ; un salon sans connecté est libéré de la mémoire. `main.ts` oublie toutes les 10 s les seaux redevenus pleins.
+Un événement inconnu, une charge invalide ou un `chat:send` sans ack sont rejetés sans réponse et comptés (`chat_rejected_events_total`). Une déconnexion sort la socket de tous ses salons ; un salon sans connecté est libéré de la mémoire. `main.ts` oublie toutes les 10 s les seaux redevenus pleins.
 
 ## Domaine
 
@@ -79,9 +102,9 @@ Un seau remonté à 5 jetons vaut l'absence de seau (`isBucketFull`). Le `Chatte
 - `createRoomRegistry(directory)` tient les salons chargés en mémoire (ADR 0032, §3) : l'état d'un salon est lu à la première entrée, une seule fois pour des entrées simultanées, et libéré à la dernière sortie. Une chaîne inconnue ou une lecture en échec ne laisse aucun salon chargé ; une entrée dont le salon est libéré pendant la lecture repart sans état et ne touche pas au salon relu ensuite. `loadedCount()` donne le nombre de salons chargés.
 - `createMessageSender()` applique `decide` avec un seau par utilisateur, en mémoire du process : la lecture, la décision et l'écriture du seau sont synchrones, donc sans course entre deux sockets du même utilisateur. `sweep(now)` oublie les seaux redevenus pleins. Le partage des seaux entre instances arrive avec le fan-out (PR 7 du plan).
 
-- `chatEventHandlers({ views, rooms, log })` projette les events dans les vues locales et rafraîchit l'état d'un salon chargé, même pendant sa lecture. Un payload hors contrat est journalisé puis écarté ; une version non gérée fait échouer le handler, et l'event reste à traiter.
+- `chatEventHandlers({ views, rooms, sockets, metrics, log })` projette les events dans les vues locales et rafraîchit l'état d'un salon chargé, même pendant sa lecture. Un payload hors contrat est journalisé puis écarté ; une version non gérée fait échouer le handler, et l'event reste à traiter.
 
-Les ports `RoomDirectory`, `ChatterProfiles`, `LocalViewWriter` et `SanctionedSockets` sont dans `application/ports.ts`.
+Les ports `RoomDirectory`, `ChatterProfiles`, `LocalViewWriter`, `SanctionedSockets` et `SanctionMetrics` sont dans `application/ports.ts`.
 
 ## Infrastructure
 
@@ -108,4 +131,4 @@ Chaque écriture est idempotente et supporte le désordre : un event rejoué, un
 
 La connexion Redis ne journalise que ses transitions : `redis injoignable` à la première erreur d'une panne, `redis rétabli` au retour, et rien pour les tentatives de reconnexion entre les deux. Le consommateur se tait pendant une panne de sa connexion, qui a son propre journal de transitions (`client: "events"`).
 
-`event-consumer.ts` et `redis-local-view-writer.ts` sont couverts par `pnpm test:integration`, hors couverture unitaire et hors Stryker. `chat-milestone.integration.test.ts` démontre le jalon C1 : une chaîne créée et deux comptes enregistrés par events, deux clients authentifiés qui échangent dans le salon, puis un message rattaché au live démarré. Il démontre aussi le jalon C2 : un timeout publié refuse `timed_out` le message suivant de l'auteur en moins d'une seconde, sans toucher les autres, et s'applique à une reconnexion ultérieure.
+`event-consumer.ts` et `redis-local-view-writer.ts` sont couverts par `pnpm test:integration`, hors couverture unitaire et hors Stryker. `chat-milestone.integration.test.ts` démontre le jalon C1 : une chaîne créée et deux comptes enregistrés par events, deux clients authentifiés qui échangent dans le salon, puis un message rattaché au live démarré. Il démontre aussi le jalon C2 : un timeout publié refuse `timed_out` le message suivant de l'auteur en moins d'une seconde, sans toucher les autres, compte son délai sous la seconde dans l'histogramme, et s'applique à une reconnexion ultérieure. Le jalon C3 est démontré par `slow-clients.test.ts` et `metrics.test.ts`.

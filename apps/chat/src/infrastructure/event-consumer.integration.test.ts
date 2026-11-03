@@ -19,11 +19,13 @@ const connect = async () => {
   return redis;
 };
 
+const OCCURRED_AT = new Date("2026-11-03T20:00:00.000Z");
+
 const makeEntry = (name: string, payload: unknown) => ({
   id: randomUUID(),
   name,
   version: "1",
-  occurredAt: new Date().toISOString(),
+  occurredAt: OCCURRED_AT.toISOString(),
   payload: JSON.stringify(payload),
 });
 
@@ -61,7 +63,12 @@ describe("consommateur d'events du chat, contre le Redis de Compose", () => {
     await publisher.xAdd(stream, "*", makeEntry("channel.created", payload));
 
     await vi.waitFor(() =>
-      expect(handler).toHaveBeenCalledWith({ name: "channel.created", version: 1, payload }),
+      expect(handler).toHaveBeenCalledWith({
+        name: "channel.created",
+        version: 1,
+        occurredAt: OCCURRED_AT,
+        payload,
+      }),
     );
     await vi.waitFor(async () => expect(await pendingCount()).toBe(0));
     expect(handler).toHaveBeenCalledTimes(1);

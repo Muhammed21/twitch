@@ -23,6 +23,8 @@ type Ack = (response?: unknown) => void;
 
 const { RealtimeChatSend, clientEvents, clientEventSchema } = realtime;
 
+export const SATURATED_ROOM = "saturated";
+
 const roomOf = (channelId: string): string => `room:${channelId}`;
 
 const isAck = (value: unknown): value is Ack => typeof value === "function";
@@ -37,14 +39,22 @@ export const bindChatEvents = ({
   rooms,
   messages,
   onRejectedEvent,
+  onBroadcast,
   onFailure,
 }: {
   io: ChatIo;
   rooms: RoomRegistry;
   messages: MessageSender;
   onRejectedEvent: () => void;
+  onBroadcast: (deliveries: number) => void;
   onFailure: (error: unknown) => void;
 }): void => {
+  const recipientsOf = (room: string): number => {
+    const members = io.sockets.adapter.rooms.get(room);
+    const saturated = [...new Set(io.sockets.adapter.rooms.get(SATURATED_ROOM))];
+    return Number(members?.size) - saturated.filter((id) => members?.has(id)).length;
+  };
+
   const bindSocket = (socket: ChatSocket) => {
     const joined = new Set<string>();
 
@@ -97,10 +107,10 @@ export const bindChatEvents = ({
         ack({ reason: sent.error });
         return;
       }
-      io.to(roomOf(channelId)).emit(
-        "chat:message",
-        toRealtimeMessage(sent.value, socket.data.author),
-      );
+      io.to(roomOf(channelId))
+        .except(SATURATED_ROOM)
+        .emit("chat:message", toRealtimeMessage(sent.value, socket.data.author));
+      onBroadcast(recipientsOf(roomOf(channelId)));
       ack();
     };
 

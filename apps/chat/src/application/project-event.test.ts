@@ -40,6 +40,7 @@ const setup = (rooms: readonly RoomState[] = []) => {
   });
   const logs: Readonly<Record<string, unknown>>[] = [];
   const applied: unknown[] = [];
+  const sanctionedAt: Date[] = [];
   const handlers = chatEventHandlers({
     views,
     rooms: registry,
@@ -48,18 +49,31 @@ const setup = (rooms: readonly RoomState[] = []) => {
         applied.push(sanction);
       },
     },
+    metrics: {
+      sanctionApplied: (instant) => {
+        sanctionedAt.push(instant);
+      },
+    },
     log: (entry) => {
       logs.push(entry);
     },
   });
-  const handle = (event: { name: string; version: number; payload: unknown }) => {
+  const handle = ({
+    occurredAt = new Date(),
+    ...event
+  }: {
+    name: string;
+    version: number;
+    payload: unknown;
+    occurredAt?: Date;
+  }) => {
     const handler = handlers[event.name];
     if (handler === undefined) {
       throw new Error(`aucun handler pour ${event.name}`);
     }
-    return handler(event);
+    return handler({ ...event, occurredAt });
   };
-  return { handlers, handle, writes, applied, registry, logs };
+  return { handlers, handle, writes, applied, sanctionedAt, registry, logs };
 };
 
 const { channelCreated } = events.channel;
@@ -79,7 +93,7 @@ describe("projection des events dans les vues locales du chat", () => {
   });
 
   it("enregistre le timeout d'un chatter, puis l'applique à ses sockets ouvertes", async () => {
-    const { handle, writes, applied } = setup();
+    const { handle, writes, applied, sanctionedAt } = setup();
     const sanction = {
       userId: randomUUID(),
       channelId: randomUUID(),
@@ -94,6 +108,25 @@ describe("projection des events dans les vues locales du chat", () => {
 
     expect(writes).toEqual([{ sanctionChatter: sanction }]);
     expect(applied).toEqual([sanction]);
+    expect(sanctionedAt).toHaveLength(1);
+  });
+
+  it("transmet l'instant de la sanction à sa mesure, une fois appliquée aux sockets", async () => {
+    const { handle, sanctionedAt } = setup();
+    const occurredAt = new Date("2026-11-03T20:00:00.000Z");
+
+    await handle({
+      name: userTimedOut.name,
+      version: 1,
+      occurredAt,
+      payload: {
+        userId: randomUUID(),
+        channelId: randomUUID(),
+        expiresAt: "2026-11-03T20:10:00.000Z",
+      },
+    });
+
+    expect(sanctionedAt).toEqual([occurredAt]);
   });
 
   it("ouvre le salon d'une chaîne créée", async () => {

@@ -17,6 +17,8 @@ export type ChatterSanction = {
 
 export type SanctionedSockets = { sanction(sanction: ChatterSanction): void };
 
+export type SanctionMetrics = { sanctionApplied(sanctionedAt: Date): void };
+
 export type LiveSession = { readonly channelId: string; readonly sessionId: string };
 
 export type LocalViewWriter = {

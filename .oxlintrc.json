@@ -79,6 +79,12 @@
       }
     },
     {
+      "files": ["apps/chat/src/**"],
+      "rules": {
+        "twitch/no-volatile": "error"
+      }
+    },
+    {
       "files": ["packages/db/scripts/schema-lint/read-prisma-schema.ts"],
       "rules": {
         "no-restricted-imports": "off"
