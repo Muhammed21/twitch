@@ -68,6 +68,8 @@ Vues locales dans Redis, lues sans appel à l'API (ADR 0004) :
 | `chat:room:<channelId>` | `sessionId` : session du live en cours, vide hors live |
 | `chat:chatter:<userId>` | `displayName` : nom affiché de l'auteur                |
 
-Une chaîne sans hash n'a pas de salon. Les consommateurs qui écrivent ces hashes à partir des events `channel.created`, `stream.started`, `stream.ended` et `identity.account.registered` arrivent avec la dernière partie de TWI-15.
+Une chaîne sans hash n'a pas de salon. Les handlers qui écrivent ces hashes à partir des events `channel.created`, `stream.started`, `stream.ended` et `identity.account.registered` arrivent avec la dernière partie de TWI-15.
+
+`startEventConsumer` lit les streams écrits par le relais d'outbox de l'API, dans un groupe de consommateurs. Un seul `XREADGROUP` bloquant couvre tous les streams, sur une connexion Redis à part (`createConsumerRedis`) ; à chaque tour, `XAUTOCLAIM` reprend sur chaque stream les entrées en attente depuis `claimIdleMs`. Une entrée est acquittée après son traitement, ou si elle est illisible (`parseStreamEntry`) ou sans handler ; un handler en échec la laisse en attente. Un groupe absent est recréé ; une erreur est signalée à `onError`, sauf pendant une panne de la connexion. `event-consumer.ts` est couvert par `pnpm test:integration`, hors couverture unitaire et hors Stryker.
 
 La connexion Redis ne journalise que ses transitions : `redis injoignable` à la première erreur d'une panne, `redis rétabli` au retour, et rien pour les tentatives de reconnexion entre les deux.
