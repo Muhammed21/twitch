@@ -41,7 +41,7 @@ describe("publish RTMP : la clé ouvre la session live du canal (ADR 0031, §3)"
   it("refuse une clé inconnue sans ouvrir de session", async () => {
     const { store, channel, gate } = await seedChannel();
 
-    expect(await gate(`${channel.streamKey.slice(0, -1)}0`)).toBeUndefined();
+    expect(await gate(`${channel.streamKey.slice(0, -1)}x`)).toBeUndefined();
     expect(await gate("")).toBeUndefined();
     expect(await store.liveSessions()).toEqual([]);
   });
