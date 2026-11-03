@@ -39,6 +39,14 @@ enum RootScreen: Equatable {
     case (false, .signedIn): self = isGreetingNewAccount ? .allSet : .signedIn
     }
   }
+
+  static func resetsNavigation(from old: SessionPhase, to new: SessionPhase) -> Bool {
+    switch (old, new) {
+    case (.signedIn, .signedIn): false
+    case (.signedIn, _): true
+    default: false
+    }
+  }
 }
 
 extension AuthorizationIntent {
@@ -61,6 +69,9 @@ struct RootView: View {
       .signInFailureAlert(session)
       .logOutFailureAlert(session)
       .onOpenURL { router.open($0) }
+      .onChange(of: session.phase) { old, new in
+        if RootScreen.resetsNavigation(from: old, to: new) { router.reset() }
+      }
       .task { await launch.run() }
       .task { await session.run() }
   }

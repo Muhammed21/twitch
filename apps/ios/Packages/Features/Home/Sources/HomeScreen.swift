@@ -16,11 +16,6 @@ public struct HomeScreen: View {
             LiveRow(live: live)
           }
           .buttonStyle(.plain)
-          .task {
-            if live.session.channelID == store.lives.last?.session.channelID {
-              await store.loadNextPage()
-            }
-          }
         }
         footer
       }
@@ -48,6 +43,10 @@ public struct HomeScreen: View {
         }
         .buttonStyle(ActionButtonStyle(.secondary))
       }
+    case .loaded(hasMore: true):
+      ProgressView()
+        .frame(maxWidth: .infinity)
+        .task { await store.loadNextPage() }
     case .loaded where store.lives.isEmpty:
       Text(HomeText.empty)
         .font(TextRole.body.font)

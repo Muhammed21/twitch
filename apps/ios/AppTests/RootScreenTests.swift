@@ -61,6 +61,21 @@ struct RootScreenTests {
     #expect(RootScreen(isSplashVisible: true, phase: phase, isGreetingNewAccount: false, isUpdateRequired: true) == .splash)
   }
 
+  @Test(
+    "quitter la session vide la pile de navigation ; un deep link reçu avant la connexion est gardé",
+    arguments: [
+      (SessionPhase.signedIn(viewer), SessionPhase.signedOut, true),
+      (.signedIn(nil), .signedOut, true),
+      (.signedOut, .signingIn, false),
+      (.signingIn, .signedIn(viewer), false),
+      (.launching, .signedIn(nil), false),
+      (.signedIn(nil), .signedIn(viewer), false),
+    ]
+  )
+  func navigationReset(from old: SessionPhase, to new: SessionPhase, resets: Bool) {
+    #expect(RootScreen.resetsNavigation(from: old, to: new) == resets)
+  }
+
   @Test("Log In de l'accueil demande la connexion, Sign Up l'inscription")
   func intents() {
     #expect(AuthorizationIntent(WelcomeIntent.logIn) == .signIn)

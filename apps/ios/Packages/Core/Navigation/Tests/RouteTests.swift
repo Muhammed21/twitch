@@ -54,4 +54,14 @@ struct RouterTests {
 
     #expect(try router.path == [.channel(ChannelSlug("jean_dupont"))])
   }
+
+  @Test("reset ramène la pile à la racine")
+  func reset() throws {
+    let router = Router()
+    try router.push(.channel(ChannelSlug("jean_dupont")))
+
+    router.reset()
+
+    #expect(router.path.isEmpty)
+  }
 }

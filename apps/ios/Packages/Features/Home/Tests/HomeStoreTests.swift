@@ -169,4 +169,54 @@ struct HomeStoreTests {
     #expect(store.lives.map(\.slug.rawValue) == ["marie_curie"])
     #expect(store.phase == .loaded(hasMore: false))
   }
+
+  @Test(
+    "réessayer après un rechargement en échec redemande la première page, même en fin de liste",
+    arguments: [nil, LiveCursor("c2")]
+  )
+  func retryFailedReload(nextCursor: LiveCursor?) async throws {
+    let directory = try FakeDirectory(pages: [
+      nil: .success(LivePage(lives: [live("jean_dupont", id: 1)], nextCursor: nextCursor)),
+    ])
+    let store = HomeStore(directory: directory)
+    await store.loadFirstPage()
+    await directory.serve(nil, with: .failure(DirectoryDown()))
+    await store.loadFirstPage()
+    try await directory.serve(nil, with: .success(LivePage(lives: [live("marie_curie", id: 2)], nextCursor: nil)))
+
+    await store.retry()
+
+    #expect(store.lives.map(\.slug.rawValue) == ["marie_curie"])
+    #expect(store.phase == .loaded(hasMore: false))
+    #expect(await directory.requested == [nil, nil, nil])
+  }
+
+  @Test("un nouvel essai réussi efface l'échec : réessayer encore ne redemande rien")
+  func retryOnlyOnce() async throws {
+    let directory = try FakeDirectory(pages: [
+      nil: .success(LivePage(lives: [live("jean_dupont", id: 1)], nextCursor: LiveCursor("c2"))),
+    ])
+    let store = HomeStore(directory: directory)
+    await store.loadFirstPage()
+    await store.loadNextPage()
+    try await directory.serve(LiveCursor("c2"), with: .success(LivePage(lives: [live("ada_lovelace", id: 3)], nextCursor: nil)))
+    await store.retry()
+
+    await store.retry()
+
+    #expect(await directory.requested == [nil, LiveCursor("c2"), LiveCursor("c2")])
+  }
+
+  @Test("réessayer sans échec ne demande rien")
+  func retryWithoutFailure() async throws {
+    let directory = try FakeDirectory(pages: [
+      nil: .success(LivePage(lives: [live("jean_dupont", id: 1)], nextCursor: LiveCursor("c2"))),
+    ])
+    let store = HomeStore(directory: directory)
+    await store.loadFirstPage()
+
+    await store.retry()
+
+    #expect(await directory.requested == [nil])
+  }
 }

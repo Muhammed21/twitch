@@ -28,6 +28,10 @@ public final class Router {
     path.append(route)
   }
 
+  public func reset() {
+    path = []
+  }
+
   @discardableResult
   public func open(_ url: URL) -> Bool {
     guard let route = Route(deepLink: url) else { return false }
