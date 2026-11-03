@@ -50,11 +50,9 @@ struct ChatRequestTests {
     #expect(request.url?.absoluteString == "ws://127.0.0.1:3001/socket.io/?EIO=4&transport=websocket")
   }
 
-  @Test("une base HTTPS donne une connexion WSS")
-  func secure() {
-    let base = URL(string: "https://chat.twitch.test") ?? chatBaseURL
-
-    let request = ChatSocketConnector.request(chatBaseURL: base, accessToken: "token-1")
+  @Test("une base chiffrée donne une connexion WSS", arguments: ["https://chat.twitch.test", "wss://chat.twitch.test"])
+  func secure(base: String) {
+    let request = ChatSocketConnector.request(chatBaseURL: URL(string: base) ?? chatBaseURL, accessToken: "token-1")
 
     #expect(request.url?.absoluteString == "wss://chat.twitch.test/socket.io/?EIO=4&transport=websocket")
   }

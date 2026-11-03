@@ -27,13 +27,21 @@ actor ChatSocket: ChatConnection {
   private var nextAckID = 0
   private var isClosed = false
 
-  static func open(socket: any WebSocket, ackTimeout: Duration, sleep: @escaping Sleep) async throws -> ChatSocket {
+  static func open(
+    socket: any WebSocket,
+    handshakeTimeout: Duration,
+    ackTimeout: Duration,
+    sleep: @escaping Sleep
+  ) async throws -> ChatSocket {
+    let nextFrame: () async throws -> ServerFrame? = {
+      try await ServerFrame.parse(Self.receive(from: socket, within: handshakeTimeout, sleep: sleep))
+    }
     do {
-      guard case let .open(pingInterval, pingTimeout) = try await ServerFrame.parse(socket.receive()) else {
+      guard case let .open(pingInterval, pingTimeout) = try await nextFrame() else {
         throw ChatConnectionError.unavailable
       }
       try await socket.send(ClientFrame.connect.text)
-      switch try await ServerFrame.parse(socket.receive()) {
+      switch try await nextFrame() {
       case .connected: break
       case let .connectError(message): throw ChatConnectionError.refused(message)
       default: throw ChatConnectionError.unavailable
@@ -52,6 +60,26 @@ actor ChatSocket: ChatConnection {
     }
   }
 
+  private static func receive(
+    from socket: any WebSocket,
+    within timeout: Duration,
+    sleep: @escaping Sleep
+  ) async throws -> String {
+    try await withThrowingTaskGroup(of: String?.self) { group in
+      group.addTask { try await socket.receive() }
+      group.addTask {
+        try await sleep(timeout)
+        return nil
+      }
+      defer { group.cancelAll() }
+      guard let first = try await group.next(), let text = first else {
+        await socket.close()
+        throw ChatConnectionError.unavailable
+      }
+      return text
+    }
+  }
+
   private init(socket: any WebSocket, ackTimeout: Duration, watchdogDelay: Duration, sleep: @escaping Sleep) {
     self.socket = socket
     self.ackTimeout = ackTimeout
@@ -61,12 +89,20 @@ actor ChatSocket: ChatConnection {
     let (frames, outbox) = AsyncStream<String>.makeStream()
     self.outbox = outbox
     tasks = [
-      Task { [socket] in
+      Task.detached { [socket] in
         for await frame in frames {
           try? await socket.send(frame)
         }
       },
     ]
+  }
+
+  deinit {
+    watchdog?.cancel()
+    timers.values.forEach { $0.cancel() }
+    tasks.forEach { $0.cancel() }
+    outbox.finish()
+    subscriber.finish(throwing: ChatConnectionError.closed)
   }
 
   func join(_ channel: ChannelID) throws {
@@ -85,9 +121,9 @@ actor ChatSocket: ChatConnection {
     nextAckID += 1
     return try await withCheckedThrowingContinuation { continuation in
       pending[id] = continuation
-      timers[id] = Task { [sleep, ackTimeout] in
+      timers[id] = Task.detached { [weak self, sleep, ackTimeout] in
         try? await sleep(ackTimeout)
-        await self.resolve(id, with: .failure(ChatConnectionError.ackTimedOut))
+        await self?.resolve(id, with: .failure(ChatConnectionError.ackTimedOut))
       }
       outbox.yield(ClientFrame.send(ackID: id, body: body, channel: channel).text)
     }
@@ -99,7 +135,22 @@ actor ChatSocket: ChatConnection {
 
   private func start() {
     armWatchdog()
-    tasks.append(Task { await self.read() })
+    tasks.append(Task { [weak self, socket] in
+      while true {
+        let text: String
+        do {
+          text = try await socket.receive()
+        } catch {
+          await self?.finish(throwing: error)
+          return
+        }
+        guard let self else {
+          await socket.close()
+          return
+        }
+        await handle(ServerFrame.parse(text))
+      }
+    })
   }
 
   private func transmit(_ frame: ClientFrame) throws {
@@ -109,17 +160,7 @@ actor ChatSocket: ChatConnection {
     outbox.yield(frame.text)
   }
 
-  private func read() async {
-    do {
-      while true {
-        try await handle(ServerFrame.parse(socket.receive()))
-      }
-    } catch {
-      await finish(throwing: error)
-    }
-  }
-
-  private func handle(_ frame: ServerFrame?) async throws {
+  private func handle(_ frame: ServerFrame?) async {
     switch frame {
     case .ping:
       armWatchdog()
@@ -137,7 +178,7 @@ actor ChatSocket: ChatConnection {
       }
       resolve(id, with: .success(outcome))
     case .close, .disconnected:
-      throw ChatConnectionError.closed
+      await finish(throwing: ChatConnectionError.closed)
     default:
       invalidFrames += 1
     }
@@ -152,11 +193,11 @@ actor ChatSocket: ChatConnection {
     watchdog?.cancel()
     watchdogGeneration += 1
     let generation = watchdogGeneration
-    watchdog = Task { [sleep, watchdogDelay] in
+    watchdog = Task.detached { [weak self, sleep, watchdogDelay] in
       guard await (try? sleep(watchdogDelay)) != nil else {
         return
       }
-      await self.expireWatchdog(generation)
+      await self?.expireWatchdog(generation)
     }
   }
 

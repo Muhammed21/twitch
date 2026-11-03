@@ -23,8 +23,12 @@ private func sentFrame(_ socket: FakeWebSocket, _ text: String) async -> Bool {
 }
 
 private func closingError(of chat: ChatSocket) async -> (any Error)? {
+  await closingError(of: chat.events)
+}
+
+private func closingError(of events: AsyncThrowingStream<ChatEvent, any Error>) async -> (any Error)? {
   do {
-    for try await _ in chat.events {}
+    for try await _ in events {}
     return nil
   } catch {
     return error
@@ -37,9 +41,10 @@ struct ChatSocketOpenTests {
   func connects() async throws {
     let socket = FakeWebSocket(frames: [openFrame, #"40{"sid":"x"}"#])
 
-    _ = try await openSocket(socket)
+    let chat = try await openSocket(socket)
 
     #expect(await socket.sent == ["40"])
+    await chat.close()
   }
 
   @Test("un refus de connexion socket.io remonte son message et ferme la socket")
@@ -66,6 +71,34 @@ struct ChatSocketOpenTests {
     #expect(await socket.isClosed)
   }
 
+  @Test(
+    "une poignée de main sans réponse dans le délai rend le chat indisponible et ferme la socket",
+    arguments: [[], [openFrame]]
+  )
+  func handshakeTimeout(frames: [String]) async {
+    let socket = FakeWebSocket(frames: frames)
+    let clock = ManualClock()
+    let opening = Task { try await openSocket(socket, clock: clock) }
+
+    #expect(await eventually { await clock.onlyWaits(on: handshakeDelay, afterStarting: frames.count + 1) })
+    await clock.fire(handshakeDelay)
+
+    await #expect(throws: ChatConnectionError.unavailable) {
+      try await opening.value
+    }
+    #expect(await socket.isClosed)
+  }
+
+  @Test("une réponse dans le délai annule l'attente de la poignée de main")
+  func handshakeInTime() async throws {
+    let clock = ManualClock()
+
+    let chat = try await openSocket(clock: clock)
+
+    #expect(await eventually { await clock.pending == [watchdogDelay] })
+    await chat.close()
+  }
+
   @Test("un refus du handshake HTTP remonte tel quel")
   func handshakeRefused() async {
     let socket = FakeWebSocket()
@@ -83,9 +116,10 @@ struct ChatSocketFrameTests {
   func pong() async throws {
     let socket = FakeWebSocket(frames: [openFrame, "40", "2"])
 
-    _ = try await openSocket(socket)
+    let chat = try await openSocket(socket)
 
     #expect(await sentFrame(socket, "3"))
+    await chat.close()
   }
 
   @Test("un message du salon est publié comme événement")
@@ -261,6 +295,17 @@ struct ChatSocketCloseTests {
     #expect(await socket.isClosed)
   }
 
+  @Test("une connexion lâchée sans close() est libérée, termine ses événements et ferme sa socket")
+  func released() async throws {
+    let socket = FakeWebSocket(frames: [openFrame, "40"])
+
+    let events = try await openSocket(socket).events
+    await socket.push("2")
+
+    #expect(await closingError(of: events) as? ChatConnectionError == .closed)
+    #expect(await eventually { await socket.isClosed })
+  }
+
   @Test("une erreur de lecture termine les événements par cette erreur")
   func readFailure() async throws {
     let socket = FakeWebSocket(frames: [openFrame, "40"])
@@ -287,11 +332,23 @@ struct ChatSocketWatchdogTests {
     #expect(await socket.isClosed)
   }
 
-  @Test("un ping réarme le chien de garde : l'ancien délai ne ferme plus la connexion")
-  func rearmed() async throws {
+  @Test("un ping annule l'attente du chien de garde précédent")
+  func rearmCancels() async throws {
     let socket = FakeWebSocket(frames: [openFrame, "40"])
     let clock = ManualClock()
-    _ = try await openSocket(socket, clock: clock)
+    let chat = try await openSocket(socket, clock: clock)
+
+    await socket.push("2")
+
+    #expect(await eventually { await clock.onlyWaits(on: watchdogDelay, afterStarting: 2) })
+    await chat.close()
+  }
+
+  @Test("un ping réarme le chien de garde : un ancien délai qui expire quand même ne ferme rien")
+  func rearmed() async throws {
+    let socket = FakeWebSocket(frames: [openFrame, "40"])
+    let clock = ManualClock(uncancellable: watchdogDelay)
+    let chat = try await openSocket(socket, clock: clock)
     #expect(await eventually { await clock.pending == [watchdogDelay] })
 
     await socket.push("2")
@@ -301,5 +358,6 @@ struct ChatSocketWatchdogTests {
 
     #expect(await eventually { await socket.sent.filter { $0 == "3" }.count == 2 })
     #expect(await !socket.isClosed)
+    await chat.close()
   }
 }

@@ -15,6 +15,7 @@ public struct ChatSocketConnector: ChatConnector {
     task.resume()
     return try await ChatSocket.open(
       socket: URLSessionWebSocket(task: task),
+      handshakeTimeout: .seconds(10),
       ackTimeout: .seconds(10),
       sleep: { try await Task.sleep(for: $0) }
     )
@@ -22,7 +23,7 @@ public struct ChatSocketConnector: ChatConnector {
 
   static func request(chatBaseURL: URL, accessToken: String) -> URLRequest {
     var components = URLComponents(url: chatBaseURL, resolvingAgainstBaseURL: false)
-    components?.scheme = chatBaseURL.scheme == "https" ? "wss" : "ws"
+    components?.scheme = ["https", "wss"].contains(chatBaseURL.scheme) ? "wss" : "ws"
     components?.path = "/socket.io/"
     components?.queryItems = [URLQueryItem(name: "EIO", value: "4"), URLQueryItem(name: "transport", value: "websocket")]
     var request = URLRequest(url: components?.url ?? chatBaseURL)
