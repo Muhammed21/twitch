@@ -1,8 +1,9 @@
 import { setImmediate } from "node:timers/promises";
 
+import { ClientOfflineError } from "redis";
 import { describe, expect, it } from "vitest";
 
-import { withSettledCommands } from "./settled-commands.ts";
+import { unlessOffline, withSettledCommands } from "./settled-commands.ts";
 
 const makeClient = () => ({
   name: "fan-out",
@@ -38,5 +39,19 @@ describe("commandes Redis du fan-out sans rejet non géré", () => {
 
     expect(client.on("error")).toBe("error");
     expect(client.name).toBe("fan-out");
+  });
+});
+
+describe("échecs du fan-out pendant une panne de Redis", () => {
+  it("tait le refus d'un client hors ligne, déjà journalisé par sa connexion", () => {
+    const failures: unknown[] = [];
+    const onError = unlessOffline((error) => {
+      failures.push(error);
+    });
+
+    onError(new ClientOfflineError());
+    onError(new Error("ERR unknown command"));
+
+    expect(failures).toEqual([new Error("ERR unknown command")]);
   });
 });

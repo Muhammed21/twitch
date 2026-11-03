@@ -1,3 +1,13 @@
+import { ClientOfflineError } from "redis";
+
+export const unlessOffline =
+  (onError: (error: unknown) => void) =>
+  (error: unknown): void => {
+    if (!(error instanceof ClientOfflineError)) {
+      onError(error);
+    }
+  };
+
 export const withSettledCommands = <T extends object>(
   client: T,
   onError: (error: unknown) => void,

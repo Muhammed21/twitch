@@ -21,7 +21,6 @@ import {
   type ChatSocket,
   SATURATED_ROOM,
 } from "./chat-events.ts";
-import { onRemoteSanction, publishSanction } from "./fan-out.ts";
 import { createHistogram, renderMetrics } from "./metrics.ts";
 import { createSaturationGuard } from "./saturation-guard.ts";
 import { pendingPacketsOf } from "./write-buffer.ts";
@@ -309,11 +308,6 @@ export const startChatServer = async ({
       }
     });
   };
-  onRemoteSanction({
-    io,
-    apply: applySanction,
-    log,
-  });
 
   const guarded = (socket: ChatSocket) => ({
     id: socket.id,
@@ -351,10 +345,7 @@ export const startChatServer = async ({
       revoked.emit("session:revoked", { action: "stop" });
       revoked.disconnectSockets(true);
     },
-    sanction: (sanction: ChatterSanction) => {
-      applySanction(sanction);
-      publishSanction(io, sanction);
-    },
+    sanction: applySanction,
     pendingSanctionCount: () => recentSanctions.size,
     sanctionApplied: (sanctionedAt: Date) => {
       sanctionDelays.observe((Date.now() - sanctionedAt.getTime()) / 1000);
