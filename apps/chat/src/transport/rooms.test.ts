@@ -235,6 +235,37 @@ describe("salons et diffusion", () => {
   });
 });
 
+describe("identifiant de chaîne en majuscules", () => {
+  it("accepte puis diffuse en minuscules le message d'un client qui écrit l'identifiant en majuscules", async () => {
+    const room = makeOfflineRoom();
+    const { connectAs } = await startServer({ directory: listDirectory([room]) });
+    const alice = await connectAs(ALICE);
+    const bob = await connectAs(BOB);
+    await joinAndSync(alice, room.channelId.toUpperCase());
+    await joinAndSync(bob, room.channelId);
+    const atBob = nextMessage(bob);
+
+    expect(await send(alice, room.channelId.toUpperCase())).toBeUndefined();
+
+    expect(realtime.RealtimeChatMessage.parse(await atBob)).toMatchObject({
+      channelId: room.channelId,
+      author: { id: ALICE },
+    });
+  });
+
+  it("fait sortir du salon le client qui le quitte avec l'identifiant en majuscules", async () => {
+    const room = makeOfflineRoom();
+    const { connectAs, rooms } = await startServer({ directory: listDirectory([room]) });
+    const alice = await connectAs(ALICE);
+    await joinAndSync(alice, room.channelId);
+
+    alice.emit("room:leave", { channelId: room.channelId.toUpperCase() });
+
+    expect(await send(alice, room.channelId)).toEqual({ reason: "not_joined" });
+    expect(rooms.loadedCount()).toBe(0);
+  });
+});
+
 describe("salons chargés en mémoire", () => {
   it("libère un salon après la dernière sortie, déconnexion comprise", async () => {
     const room = makeOfflineRoom();
