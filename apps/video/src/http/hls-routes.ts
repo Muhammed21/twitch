@@ -9,6 +9,7 @@ import {
 
 export type HlsPlayback = {
   readonly find: (sessionId: string) => HlsStream | undefined;
+  readonly liveSessionOf: (channelId: string) => Promise<string | undefined>;
   readonly fallbackBandwidth: number;
 };
 
@@ -18,7 +19,9 @@ export type HlsReply = {
   readonly body: string | Uint8Array;
 };
 
-const HLS_PATH = /^\/hls\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/([^/]+)$/;
+const UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
+const CHANNEL_MASTER_PATH = new RegExp(`^/hls/channels/(${UUID})/master\\.m3u8$`);
+const HLS_PATH = new RegExp(`^/hls/(${UUID})/([^/]+)$`);
 const SEGMENT_FILE = /^(\d{1,15})\.m4s$/;
 
 const PLAYLIST_HEADERS = {
@@ -40,10 +43,18 @@ const NOT_FOUND: HlsReply = {
 const media = (bytes: Uint8Array | undefined): HlsReply =>
   bytes === undefined ? NOT_FOUND : { status: 200, headers: MEDIA_HEADERS, body: bytes };
 
+const masterOf = (stream: HlsStream, mediaUri: string, fallbackBandwidth: number): HlsReply => {
+  const bandwidth = peakBandwidth({ segments: stream.segments, fallback: fallbackBandwidth });
+  return {
+    status: 200,
+    headers: PLAYLIST_HEADERS,
+    body: renderMasterPlaylist({ bandwidth, mediaUri }),
+  };
+};
+
 const fileOf = (stream: HlsStream, file: string, fallbackBandwidth: number): HlsReply => {
   if (file === "master.m3u8") {
-    const bandwidth = peakBandwidth({ segments: stream.segments, fallback: fallbackBandwidth });
-    return { status: 200, headers: PLAYLIST_HEADERS, body: renderMasterPlaylist({ bandwidth }) };
+    return masterOf(stream, MEDIA_URI, fallbackBandwidth);
   }
   if (file === MEDIA_URI) {
     return { status: 200, headers: PLAYLIST_HEADERS, body: renderMediaPlaylist(stream) };
@@ -55,15 +66,27 @@ const fileOf = (stream: HlsStream, file: string, fallbackBandwidth: number): Hls
   return media(stream.segments.find((segment) => String(segment.sequence) === sequence)?.bytes);
 };
 
-export const routeHls = ({
+const channelMaster = async (playback: HlsPlayback, channelId: string): Promise<HlsReply> => {
+  const sessionId = await playback.liveSessionOf(channelId);
+  if (sessionId === undefined) {
+    return NOT_FOUND;
+  }
+  const stream = playback.find(sessionId);
+  return stream === undefined
+    ? NOT_FOUND
+    : masterOf(stream, `/hls/${sessionId}/${MEDIA_URI}`, playback.fallbackBandwidth);
+};
+
+export const routeHls = async ({
   playback,
   pathname,
 }: {
   readonly playback: HlsPlayback;
   readonly pathname: string;
-}): HlsReply | undefined => {
-  if (!pathname.startsWith("/hls/")) {
-    return undefined;
+}): Promise<HlsReply> => {
+  const channel = CHANNEL_MASTER_PATH.exec(pathname);
+  if (channel !== null) {
+    return await channelMaster(playback, String(channel[1]));
   }
   const match = HLS_PATH.exec(pathname);
   if (match === null) {

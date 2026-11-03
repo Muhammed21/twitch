@@ -3,7 +3,13 @@ import { describe, expect, it } from "vitest";
 import { FFMPEG_FRAGMENTED_MP4, makeFragment } from "../segmenter/testing/fmp4-fixtures.ts";
 import { createHlsRegistry } from "./hls-registry.ts";
 
-const OPTIONS = { maxBoxSize: 1 << 20, targetSeconds: 2, capacity: 6, maxSegmentBytes: 1 << 20 };
+const OPTIONS = {
+  maxBoxSize: 1 << 20,
+  targetSeconds: 2,
+  targetDuration: 4,
+  capacity: 6,
+  maxSegmentBytes: 1 << 20,
+};
 
 describe("registre des flux HLS", () => {
   it("suit le flux d'une session ouverte, nourri par morceaux, jusqu'à sa fin", () => {
@@ -46,6 +52,19 @@ describe("registre des flux HLS", () => {
 
     expect(refused).toEqual({ ok: false, error: "fragment_before_init" });
     expect(registry.find("session-a")).toBe(before);
+  });
+
+  it("refuse les octets d'une session terminée sans toucher à son flux", () => {
+    const registry = createHlsRegistry(OPTIONS);
+    registry.open("session-a");
+    registry.end("session-a");
+    const ended = registry.find("session-a");
+
+    expect(registry.feed("session-a", FFMPEG_FRAGMENTED_MP4)).toEqual({
+      ok: false,
+      error: "ended",
+    });
+    expect(registry.find("session-a")).toBe(ended);
   });
 
   it("oublie une session retirée", () => {

@@ -77,7 +77,7 @@ describe("durée cible", () => {
 
 describe("playlist maître", () => {
   it("pointe la playlist de média avec son débit de crête", () => {
-    expect(renderMasterPlaylist({ bandwidth: 128_000 })).toBe(
+    expect(renderMasterPlaylist({ bandwidth: 128_000, mediaUri: "media.m3u8" })).toBe(
       [
         "#EXTM3U",
         "#EXT-X-VERSION:7",
