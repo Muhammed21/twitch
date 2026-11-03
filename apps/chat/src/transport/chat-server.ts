@@ -4,7 +4,7 @@ import type { Duplex } from "node:stream";
 import { setTimeout as sleep } from "node:timers/promises";
 
 import { Server as EngineServer, type ServerOptions, type Socket as EngineSocket } from "engine.io";
-import { Server as SocketServer } from "socket.io";
+import { Server as SocketServer, type ServerOptions as SocketOptions } from "socket.io";
 import { z } from "zod";
 
 import type { AccessTokenIdentity, VerificationFailure } from "@repo/auth-verifier";
@@ -14,7 +14,16 @@ import type { Result } from "@repo/result";
 import type { MessageSender } from "../application/message-sender.ts";
 import type { ChatterProfiles, ChatterSanction } from "../application/ports.ts";
 import type { RoomRegistry } from "../application/room-registry.ts";
-import { bindChatEvents, type ChatIo, type ChatSession, type ChatSocket } from "./chat-events.ts";
+import {
+  bindChatEvents,
+  type ChatIo,
+  type ChatSession,
+  type ChatSocket,
+  SATURATED_ROOM,
+} from "./chat-events.ts";
+import { createHistogram, renderMetrics } from "./metrics.ts";
+import { createSaturationGuard } from "./saturation-guard.ts";
+import { pendingPacketsOf } from "./write-buffer.ts";
 
 const SOCKET_IO_PATH = "/socket.io/";
 
@@ -35,6 +44,14 @@ const REFUSALS = {
 } as const;
 
 const SHUTDOWN_BATCHES = 10;
+
+const SATURATION_TICK_MS = 10;
+
+const SANCTION_DELAY_BUCKETS_SECONDS = [0.1, 0.25, 0.5, 1, 2.5, 5, 10];
+
+const METRICS_CONTENT_TYPE = "text/plain; version=0.0.4; charset=utf-8";
+
+export type SaturationLimits = { readonly maxPackets: number; readonly closeAfterMs: number };
 
 type Refusal = keyof typeof REFUSALS;
 
@@ -85,8 +102,12 @@ const refuse = (socket: Duplex, status: Refusal): void => {
 };
 
 const answerProbe =
-  (isDraining: () => boolean) =>
+  ({ isDraining, metrics }: { isDraining: () => boolean; metrics: () => string }) =>
   (request: IncomingMessage, response: ServerResponse): void => {
+    if (request.url === "/metrics") {
+      response.writeHead(200, { "content-type": METRICS_CONTENT_TYPE }).end(metrics());
+      return;
+    }
     const body = PROBES.get(String(request.url));
     if (body === undefined) {
       response.writeHead(404).end();
@@ -106,6 +127,8 @@ export const startChatServer = async ({
   chatters,
   rooms,
   messages,
+  saturation,
+  adapter,
 }: {
   port: number;
   verifier: TokenVerifier;
@@ -113,9 +136,11 @@ export const startChatServer = async ({
   chatters: ChatterProfiles;
   rooms: RoomRegistry;
   messages: MessageSender;
+  saturation: SaturationLimits;
+  adapter: SocketOptions["adapter"];
 }) => {
   const engine = new EngineServer(ENGINE_OPTIONS);
-  const io: ChatIo = new SocketServer();
+  const io: ChatIo = new SocketServer({ adapter });
   io.bind(engine);
   engine.on("connection", (socket: EngineSocket) => {
     socket.on("message", (data: unknown) => {
@@ -163,7 +188,8 @@ export const startChatServer = async ({
   io.use((socket, next) => {
     void attachSession(socket, next);
   });
-  const counters = { rejectedEvents: 0 };
+  const counters = { rejectedEvents: 0, saturationClosures: 0, messages: 0, deliveries: 0 };
+  const sanctionDelays = createHistogram(SANCTION_DELAY_BUCKETS_SECONDS);
   bindChatEvents({
     io,
     rooms,
@@ -171,13 +197,71 @@ export const startChatServer = async ({
     onRejectedEvent: () => {
       counters.rejectedEvents += 1;
     },
+    onBroadcast: () => {
+      counters.messages += 1;
+    },
+    onDelivery: () => {
+      counters.deliveries += 1;
+    },
     onFailure: (error) => {
       log({ msg: "événement en échec", error: String(error) });
     },
   });
 
   const state = { draining: false };
-  const server = createServer(answerProbe(() => state.draining));
+  const guard = createSaturationGuard(saturation);
+  const metrics = () =>
+    renderMetrics([
+      {
+        name: "chat_connections",
+        help: "Connexions actives.",
+        type: "gauge",
+        value: engine.clientsCount,
+      },
+      {
+        name: "chat_rooms_loaded",
+        help: "Salons chargés en mémoire.",
+        type: "gauge",
+        value: rooms.loadedCount(),
+      },
+      {
+        name: "chat_saturated_sockets",
+        help: "Sockets exclues de la diffusion pour saturation.",
+        type: "gauge",
+        value: guard.saturatedCount(),
+      },
+      {
+        name: "chat_messages_total",
+        help: "Messages de chat diffusés.",
+        type: "counter",
+        value: counters.messages,
+      },
+      {
+        name: "chat_deliveries_total",
+        help: "Livraisons de messages de chat, destinataires compris.",
+        type: "counter",
+        value: counters.deliveries,
+      },
+      {
+        name: "chat_rejected_events_total",
+        help: "Trames rejetées par la validation.",
+        type: "counter",
+        value: counters.rejectedEvents,
+      },
+      {
+        name: "chat_saturation_closures_total",
+        help: "Sockets fermées après une saturation prolongée.",
+        type: "counter",
+        value: counters.saturationClosures,
+      },
+      {
+        name: "chat_sanction_exclusion_delay_seconds",
+        help: "Délai entre une sanction et son application aux sockets du chatter.",
+        type: "histogram",
+        histogram: sanctionDelays,
+      },
+    ]);
+  const server = createServer(answerProbe({ isDraining: () => state.draining, metrics }));
   const handleUpgrade = async (request: IncomingMessage, socket: Duplex, head: Buffer) => {
     const logInterruption = (error: Error) => {
       log({ msg: "handshake interrompu", error: error.message });
@@ -209,6 +293,40 @@ export const startChatServer = async ({
   server.listen(port);
   await once(server, "listening");
 
+  const applySanction = ({ userId, channelId, expiresAt }: ChatterSanction) => {
+    const now = Date.now();
+    const sanction = { channelId, expiresAt };
+    recentSanctions.forEach((recent, user) => {
+      if (recent.every((entry) => Number(entry.expiresAt) <= now)) {
+        recentSanctions.delete(user);
+      }
+    });
+    recentSanctions.set(userId, [...(recentSanctions.get(userId) ?? []), sanction]);
+    io.sockets.sockets.forEach((socket) => {
+      if (socket.data.author.id === userId) {
+        socket.data = withSanctions(socket.data, [sanction]);
+      }
+    });
+  };
+
+  const guarded = (socket: ChatSocket) => ({
+    id: socket.id,
+    pendingPackets: () => pendingPacketsOf(socket.conn),
+    saturate: () => {
+      void socket.join(SATURATED_ROOM);
+    },
+    release: () => {
+      void socket.leave(SATURATED_ROOM);
+    },
+    close: () => {
+      socket.conn.close(true);
+    },
+  });
+  const saturationTick = setInterval(() => {
+    const { closed } = guard.inspect([...io.sockets.sockets.values()].map(guarded), Date.now());
+    counters.saturationClosures += closed;
+  }, SATURATION_TICK_MS);
+
   const revalidate = async (socket: ChatSocket) => {
     const verified = await verifier.verify(socket.data.credentials.token);
     if (!verified.ok) {
@@ -223,26 +341,15 @@ export const startChatServer = async ({
       if (sids.length === 0) {
         return;
       }
-      const revoked = io.in(sids.map(sessionRoomOf));
+      const revoked = io.local.in(sids.map(sessionRoomOf));
       revoked.emit("session:revoked", { action: "stop" });
       revoked.disconnectSockets(true);
     },
-    sanction: ({ userId, channelId, expiresAt }: ChatterSanction) => {
-      const now = Date.now();
-      const sanction = { channelId, expiresAt };
-      recentSanctions.forEach((recent, user) => {
-        if (recent.every((entry) => Number(entry.expiresAt) <= now)) {
-          recentSanctions.delete(user);
-        }
-      });
-      recentSanctions.set(userId, [...(recentSanctions.get(userId) ?? []), sanction]);
-      io.sockets.sockets.forEach((socket) => {
-        if (socket.data.author.id === userId) {
-          socket.data = withSanctions(socket.data, [sanction]);
-        }
-      });
-    },
+    sanction: applySanction,
     pendingSanctionCount: () => recentSanctions.size,
+    sanctionApplied: (sanctionedAt: Date) => {
+      sanctionDelays.observe((Date.now() - sanctionedAt.getTime()) / 1000);
+    },
     revalidateSessions: async () => {
       await Promise.all([...io.sockets.sockets.values()].map(revalidate));
     },
@@ -250,6 +357,7 @@ export const startChatServer = async ({
     rejectedEventCount: () => counters.rejectedEvents,
     close: async ({ spreadMs }: { spreadMs: number } = { spreadMs: 0 }) => {
       state.draining = true;
+      clearInterval(saturationTick);
       const sockets = [...io.sockets.sockets.values()];
       await Promise.all(
         sockets.map(async (socket, index) => {

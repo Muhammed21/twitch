@@ -20,6 +20,7 @@ export default {
     "!src/discovery-rebuild/main.ts",
     "!src/platform/testing/**",
     "!src/platform/stream-consumer.ts",
+    "!src/platform/redis-window-counter.ts",
   ],
   tsconfigFile: "stryker-skips-tsconfig-rewrite.json",
   thresholds: { high: 100, low: 90, break: null },

@@ -9,6 +9,7 @@ public final class ChannelPlayback {
   private let playback: any PlaybackSource
   private let controller: PlayerController
   @ObservationIgnored private var opened = 0
+  @ObservationIgnored private var live: AsyncStream<Void>.Continuation?
 
   public init(channels: any ChannelRepository, playback: any PlaybackSource, controller: PlayerController) {
     self.channels = channels
@@ -17,29 +18,39 @@ public final class ChannelPlayback {
   }
 
   public func open(_ slug: ChannelSlug) async {
-    let url: URL?
-    do {
-      let channel = try await channels.channel(withSlug: slug)
-      url = try await playback.playbackURL(for: channel.id)
-    } catch {
-      url = nil
-    }
-    guard !Task.isCancelled else { return }
-    guard let url else {
-      controller.stop()
-      return
-    }
     opened += 1
     let screen = opened
-    controller.load(url)
-    await Self.untilCancelled()
-    guard opened == screen else { return }
+    let (lives, signal) = AsyncStream<Void>.makeStream(bufferingPolicy: .bufferingNewest(1))
+    live = signal
+    var loaded = await play(slug)
+    for await _ in lives {
+      loaded = await play(slug) || loaded
+    }
+    guard loaded, opened == screen else { return }
     controller.stop()
   }
 
-  private static func untilCancelled() async {
-    while !Task.isCancelled {
-      try? await Task.sleep(for: .seconds(3600))
+  public func channelWentLive() {
+    live?.yield()
+  }
+
+  private func play(_ slug: ChannelSlug) async -> Bool {
+    let url = await url(of: slug)
+    guard !Task.isCancelled else { return false }
+    guard let url else {
+      controller.stop()
+      return false
+    }
+    controller.load(url)
+    return true
+  }
+
+  private func url(of slug: ChannelSlug) async -> URL? {
+    do {
+      let channel = try await channels.channel(withSlug: slug)
+      return try await playback.playbackURL(for: channel.id)
+    } catch {
+      return nil
     }
   }
 }

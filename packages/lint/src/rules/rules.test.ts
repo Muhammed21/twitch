@@ -4,6 +4,7 @@ import { describe, it } from "vitest";
 import { layerDependencies } from "./layer-dependencies.ts";
 import { moduleBoundaries } from "./module-boundaries.ts";
 import { noDisableArchitecture } from "./no-disable-architecture.ts";
+import { noVolatile } from "./no-volatile.ts";
 
 RuleTester.describe = describe;
 RuleTester.it = it;
@@ -187,4 +188,80 @@ tester.run("no-disable-architecture", noDisableArchitecture, {
     code: `${comment}\nconst a = 1;`,
     errors: [{ messageId: "disabled" }],
   })),
+});
+
+tester.run("no-volatile", noVolatile, {
+  valid: [
+    {
+      name: "diffusion qui exclut les sockets saturées",
+      code: 'io.to(room).except("saturated").emit("chat:message", message);',
+    },
+    { name: "propriété calculée par une variable", code: "const flag = socket[name];" },
+    {
+      name: "propriété calculée par une variable nommée volatile",
+      code: "const flag = socket[volatile];",
+    },
+    {
+      name: "champ privé nommé volatile",
+      code: "class A { #volatile = 1; read() { return this.#volatile; } }",
+    },
+    {
+      name: "propriété calculée par un autre littéral",
+      code: 'const flag = socket["volatileCount"];',
+    },
+    { name: "identifiant volatile hors d'un accès membre", code: "const volatile = 1;" },
+    {
+      name: "gabarit calculé avec une expression",
+      code: "const flag = socket[`vol${suffix}`];",
+    },
+    { name: "gabarit calculé d'un autre texte", code: "const flag = socket[`count`];" },
+    {
+      name: "gabarit calculé qui commence par volatile",
+      code: "const flag = socket[`volatile${suffix}`];",
+    },
+    { name: "reste déstructuré", code: "const { ...rest } = socket;" },
+    { name: "clé volatile d'un objet construit", code: "const options = { volatile: true };" },
+    { name: "autre clé déstructurée", code: "const { emit } = socket;" },
+    {
+      name: "clé déstructurée calculée par une variable nommée volatile",
+      code: "const { [volatile]: flag } = socket;",
+    },
+  ],
+  invalid: [
+    {
+      name: "diffusion volatile",
+      code: 'io.to(room).volatile.emit("chat:message", message);',
+      errors: [{ messageId: "volatile" }],
+    },
+    {
+      name: "émission volatile sur une socket",
+      code: 'socket.volatile.emit("chat:message", message);',
+      errors: [{ messageId: "volatile" }],
+    },
+    {
+      name: "accès calculé",
+      code: 'socket["volatile"].emit("chat:message", message);',
+      errors: [{ messageId: "volatile" }],
+    },
+    {
+      name: "chaînage optionnel",
+      code: 'socket?.volatile?.emit("chat:message", message);',
+      errors: [{ messageId: "volatile" }],
+    },
+    {
+      name: "accès calculé par un gabarit sans expression",
+      code: 'socket[`volatile`].emit("chat:message", message);',
+      errors: [{ messageId: "volatile" }],
+    },
+    {
+      name: "déstructuration",
+      code: 'const { volatile } = io.to(room);\nvolatile.emit("chat:message", message);',
+      errors: [{ messageId: "volatile" }],
+    },
+    {
+      name: "déstructuration calculée",
+      code: 'const { ["volatile"]: quiet } = socket;',
+      errors: [{ messageId: "volatile" }],
+    },
+  ],
 });

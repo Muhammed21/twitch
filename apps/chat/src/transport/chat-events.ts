@@ -23,6 +23,8 @@ type Ack = (response?: unknown) => void;
 
 const { RealtimeChatSend, clientEvents, clientEventSchema } = realtime;
 
+export const SATURATED_ROOM = "saturated";
+
 const roomOf = (channelId: string): string => `room:${channelId}`;
 
 const isAck = (value: unknown): value is Ack => typeof value === "function";
@@ -37,12 +39,16 @@ export const bindChatEvents = ({
   rooms,
   messages,
   onRejectedEvent,
+  onBroadcast,
+  onDelivery,
   onFailure,
 }: {
   io: ChatIo;
   rooms: RoomRegistry;
   messages: MessageSender;
   onRejectedEvent: () => void;
+  onBroadcast: () => void;
+  onDelivery: () => void;
   onFailure: (error: unknown) => void;
 }): void => {
   const bindSocket = (socket: ChatSocket) => {
@@ -97,10 +103,10 @@ export const bindChatEvents = ({
         ack({ reason: sent.error });
         return;
       }
-      io.to(roomOf(channelId)).emit(
-        "chat:message",
-        toRealtimeMessage(sent.value, socket.data.author),
-      );
+      io.to(roomOf(channelId))
+        .except(SATURATED_ROOM)
+        .emit("chat:message", toRealtimeMessage(sent.value, socket.data.author));
+      onBroadcast();
       ack();
     };
 
@@ -108,6 +114,11 @@ export const bindChatEvents = ({
     const inTurn = (task: () => Promise<void> | void) => {
       queue.tail = queue.tail.then(task).catch(onFailure);
     };
+    socket.onAnyOutgoing((event: string) => {
+      if (event === "chat:message") {
+        onDelivery();
+      }
+    });
     socket.onAny((event: string) => {
       if (clientEventSchema(event) === undefined) {
         onRejectedEvent();

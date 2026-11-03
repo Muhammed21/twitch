@@ -94,6 +94,7 @@ export const createApp = async ({
         video: config.video,
         consumerRedis: streamConsumerRedis,
         presenceRedis,
+        trustedProxyCount: config.trustedProxyCount,
       },
       moderation: { prisma: createContextClient({ context: "moderation", env }) },
       discovery: {

@@ -38,6 +38,7 @@ const startService = async () => {
     maxBoxSize: 8 * 1024 * 1024,
     targetSeconds: 2,
     targetDuration: 6,
+    partTarget: 0.334,
     capacity: 6,
     maxSegmentBytes: 32 * 1024 * 1024,
   });
@@ -83,6 +84,8 @@ const startService = async () => {
     }),
     hls: {
       find: registry.find,
+      waitFor: registry.waitFor,
+      blockingTimeoutMs: 18_000,
       liveSessionOf: async (channelId) => (await store.liveSessionOf(channelId))?.id,
       fallbackBandwidth: 6_000_000,
     },
@@ -174,6 +177,12 @@ describe("publication ffmpeg réelle jusqu'à la lecture HLS (ADR 0031, §5 et �
       const segment = await get(new URL(String(firstSegment), mediaUrl).pathname);
 
       expect(media).toContain("#EXT-X-TARGETDURATION:6\n");
+      const partDurations = String(media)
+        .split("\n")
+        .filter((line) => line.startsWith("#EXT-X-PART:"))
+        .map((line) => Number(/DURATION=([\d.]+)/.exec(line)?.[1]));
+      expect(partDurations.length).toBeGreaterThan(0);
+      expect(Math.max(...partDurations)).toBeLessThanOrEqual(0.5);
       expect(init.headers.get("content-type")).toBe("video/mp4");
       expect(segment.status).toBe(200);
       expect(

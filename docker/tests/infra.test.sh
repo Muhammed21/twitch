@@ -121,10 +121,11 @@ up_with_failing_migrate() {
   compose -f "$ROOT/compose.yaml" -f "$ROOT/docker/tests/compose.failing-migrate.yaml" \
     --profile full up -d --wait --wait-timeout 120 api
 }
-check "api et outbox-relay démarrent, l'API devient saine" full up -d --build --wait --wait-timeout 600 api outbox-relay
+check "démarrer api démarre aussi outbox-relay, l'API devient saine" full up -d --build --wait --wait-timeout 600 api
 check "/health/ready de l'API répond 200 depuis l'hôte" curl -sf "http://127.0.0.1:${API_PORT:-3000}/health/ready"
 check "l'API démarre après la fin de migrate" started_after_migrate api
 check "l'API joint le plan de contrôle de video à VIDEO_SERVICE_URL" in_api node -e 'fetch(process.env.VIDEO_SERVICE_URL + "/health/ready").then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))'
+check "le relais démarre avec l'API, sans être nommé" test -n "$(container_of outbox-relay)"
 check "le relais démarre après la fin de migrate" started_after_migrate outbox-relay
 check "le relais tourne" test "$(state_of outbox-relay Running)" = "true"
 check "l'API tourne sous l'utilisateur node" test "$(in_api id -un)" = "node"

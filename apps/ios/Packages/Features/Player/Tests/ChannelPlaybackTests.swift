@@ -25,19 +25,34 @@ private struct FakeChannels: ChannelRepository {
 }
 
 private actor FakePlayback: PlaybackSource {
-  private let url: URL?
+  private var urls: [URL?]
   private let fails: Bool
+  private var held: CheckedContinuation<Void, Never>?
+  private let holding: Int?
   private(set) var requested: [ChannelID] = []
 
   init(url: URL?, fails: Bool = false) {
-    self.url = url
+    self.init(urls: [url], fails: fails)
+  }
+
+  init(urls: [URL?], fails: Bool = false, holding: Int? = nil) {
+    self.urls = urls
     self.fails = fails
+    self.holding = holding
+  }
+
+  func release() {
+    held?.resume()
+    held = nil
   }
 
   func playbackURL(for channel: ChannelID) async throws -> URL? {
     requested.append(channel)
+    if requested.count == holding {
+      await withCheckedContinuation { held = $0 }
+    }
     if fails { throw Unreachable() }
-    return url
+    return urls.count > 1 ? urls.removeFirst() : urls.first ?? nil
   }
 }
 
@@ -108,11 +123,123 @@ struct ChannelPlaybackTests {
   func offline() async throws {
     let screen = ChannelScreen(playback: FakePlayback(url: nil))
     screen.controller.load(previousURL)
+    let slug = try jeanDupont()
 
-    try await screen.playback.open(jeanDupont())
+    let opening = Task { await screen.playback.open(slug) }
+    try await waitUntil { screen.player.calls.last == "stop" }
 
     #expect(screen.controller.state == .idle)
+    opening.cancel()
+    await opening.value
+    #expect(screen.player.calls.filter { $0 == "stop" }.count == 1)
+  }
+
+  @Test("une chaîne qui passe en live pendant que l'écran est ouvert lance la lecture")
+  func startsWhenLive() async throws {
+    let source = FakePlayback(urls: [nil, liveURL])
+    let screen = ChannelScreen(playback: source)
+    let slug = try jeanDupont()
+    let opening = Task { await screen.playback.open(slug) }
+    try await waitUntil { screen.player.calls == ["stop"] }
+
+    screen.playback.channelWentLive()
+    try await waitUntil { screen.player.calls.count == 3 }
+
+    #expect(screen.player.calls == ["stop", "load \(liveURL.absoluteString)", "play"])
+    #expect(await source.requested == [channelID, channelID])
+    opening.cancel()
+    await opening.value
     #expect(screen.player.calls.last == "stop")
+  }
+
+  @Test("un passage en live reçu pendant la demande de l'URL n'est pas perdu")
+  func liveDuringRequest() async throws {
+    let source = FakePlayback(urls: [nil, liveURL], holding: 1)
+    let screen = ChannelScreen(playback: source)
+    let slug = try jeanDupont()
+    let opening = Task { await screen.playback.open(slug) }
+    while await source.requested.isEmpty {
+      try await Task.sleep(for: .milliseconds(5))
+    }
+
+    screen.playback.channelWentLive()
+    await source.release()
+    try await waitUntil { screen.player.calls.count == 3 }
+
+    #expect(screen.player.calls == ["stop", "load \(liveURL.absoluteString)", "play"])
+    opening.cancel()
+    await opening.value
+  }
+
+  @Test("un live terminé puis relancé reprend la lecture")
+  func restartsAfterEnd() async throws {
+    let screen = ChannelScreen(playback: FakePlayback(url: liveURL))
+    let slug = try jeanDupont()
+    let opening = Task { await screen.playback.open(slug) }
+    try await waitUntil { screen.player.calls.count == 2 }
+    screen.controller.end()
+
+    screen.playback.channelWentLive()
+    try await waitUntil { screen.player.calls.count == 5 }
+
+    #expect(screen.controller.state == .loading)
+    #expect(screen.player.calls.suffix(2) == ["load \(liveURL.absoluteString)", "play"])
+    opening.cancel()
+    await opening.value
+  }
+
+  @Test("quitter l'écran pendant la relance d'un live terminé arrête le player")
+  func leavesDuringRestart() async throws {
+    let source = FakePlayback(urls: [liveURL], holding: 2)
+    let screen = ChannelScreen(playback: source)
+    let slug = try jeanDupont()
+    let opening = Task { await screen.playback.open(slug) }
+    try await waitUntil { screen.player.calls.count == 2 }
+    screen.controller.end()
+    screen.playback.channelWentLive()
+    while await source.requested.count < 2 {
+      try await Task.sleep(for: .milliseconds(5))
+    }
+
+    opening.cancel()
+    await source.release()
+    await opening.value
+
+    #expect(screen.controller.state == .idle)
+    #expect(screen.player.calls == ["load \(liveURL.absoluteString)", "play", "stop", "stop"])
+  }
+
+  @Test("un passage en live sans écran ouvert ne lance rien")
+  func liveWithoutScreen() async throws {
+    let source = FakePlayback(url: liveURL)
+    let screen = ChannelScreen(playback: source)
+
+    screen.playback.channelWentLive()
+    try await Task.sleep(for: .milliseconds(50))
+
+    #expect(screen.player.calls.isEmpty)
+    #expect(await source.requested.isEmpty)
+  }
+
+  @Test("seul l'écran le plus récent reprend la lecture au passage en live")
+  func liveGoesToNewestScreen() async throws {
+    let source = FakePlayback(urls: [nil, nil, liveURL])
+    let screen = ChannelScreen(playback: source)
+    let slug = try jeanDupont()
+    let previous = Task { await screen.playback.open(slug) }
+    try await waitUntil { screen.player.calls.count == 1 }
+    let next = Task { await screen.playback.open(slug) }
+    try await waitUntil { screen.player.calls.count == 2 }
+
+    screen.playback.channelWentLive()
+    try await waitUntil { screen.player.calls.count == 4 }
+    try await Task.sleep(for: .milliseconds(50))
+
+    #expect(await source.requested.count == 3)
+    previous.cancel()
+    next.cancel()
+    await previous.value
+    await next.value
   }
 
   @Test(
@@ -125,11 +252,14 @@ struct ChannelPlaybackTests {
       playback: FakePlayback(url: liveURL, fails: playbackFails)
     )
     screen.controller.load(previousURL)
+    let slug = try jeanDupont()
 
-    try await screen.playback.open(jeanDupont())
+    let opening = Task { await screen.playback.open(slug) }
+    try await waitUntil { screen.player.calls.last == "stop" }
 
     #expect(screen.controller.state == .idle)
-    #expect(screen.player.calls.last == "stop")
+    opening.cancel()
+    await opening.value
   }
 
   @Test("un écran quitté pendant la demande ne charge rien")

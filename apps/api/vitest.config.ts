@@ -21,6 +21,7 @@ export default defineConfig({
         "src/discovery-rebuild/main.ts",
         "src/platform/testing/**",
         "src/platform/stream-consumer.ts",
+        "src/platform/redis-window-counter.ts",
       ],
       reporter: ["text"],
       thresholds: {
