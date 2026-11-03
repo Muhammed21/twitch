@@ -20,6 +20,16 @@ model StreamSession {
   @@schema("stream")
 }
 
+/// Échantillon du compteur de viewers d'une session ouverte, daté du début de sa fenêtre de présence de 30 s (ADR 0004 §3).
+model StreamViewerCountSample {
+  sessionId   String   @db.Uuid
+  sampledAt   DateTime
+  viewerCount Int
+
+  @@id([sessionId, sampledAt])
+  @@schema("stream")
+}
+
 model StreamOutbox {
   id            String    @id @db.Uuid
   name          String
