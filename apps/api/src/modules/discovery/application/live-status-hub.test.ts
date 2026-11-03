@@ -290,4 +290,20 @@ describe("hub du statut des lives (canal 2, ADR 0004 §2)", () => {
     expect(received).toEqual([offlineStatus(LIVE_CHANNEL)]);
     expect(other.received).toEqual([offlineStatus(OFFLINE_CHANNEL), liveStatus(OFFLINE_CHANNEL)]);
   });
+
+  it("envoie au tick un changement du nombre de viewers d'une chaîne en live", async () => {
+    const projection = makeProjection([{ ...liveStatus(LIVE_CHANNEL), viewerCount: 3 }]);
+    const hub = createLiveStatusHub(projection.reader);
+    const { received, listener } = makeListener();
+    await subscribed(hub, LIVE_CHANNEL, listener);
+
+    await hub.tick();
+    projection.set({ ...liveStatus(LIVE_CHANNEL), viewerCount: 4 });
+    await hub.tick();
+
+    expect(received).toEqual([
+      { ...liveStatus(LIVE_CHANNEL), viewerCount: 3 },
+      { ...liveStatus(LIVE_CHANNEL), viewerCount: 4 },
+    ]);
+  });
 });

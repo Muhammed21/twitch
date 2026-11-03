@@ -26,10 +26,11 @@ class LiveStatusParams extends createZodDto(z.object({ channelId: Uuid })) {}
 const toLiveStatus = ({
   channelId,
   startedAt,
+  viewerCount,
 }: ChannelLiveStatus): z.input<typeof responses.LiveStatus> =>
   startedAt === undefined
     ? { channelId, live: false }
-    : { channelId, live: true, startedAt: startedAt.toISOString() };
+    : { channelId, live: true, startedAt: startedAt.toISOString(), viewerCount };
 
 @Controller("channels")
 @ApiExtraModels(LiveStatus)

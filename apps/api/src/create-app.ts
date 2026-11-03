@@ -15,6 +15,7 @@ import {
   mountIdentityRoutes,
 } from "./modules/identity/identity.module.ts";
 import { createSmtpMailer } from "./modules/identity/infrastructure/smtp-mailer.ts";
+import { createPresenceRedis } from "./modules/stream/stream.module.ts";
 import { type AppConfig, loadEnv } from "./platform/config/env.ts";
 import { configureApp } from "./platform/configure-app.ts";
 import { errorDetails, type LogSink, stdoutSink, writeLog } from "./platform/logging.ts";
@@ -49,6 +50,10 @@ export const createApp = async ({
     },
   );
   streamConsumerRedis.connect().catch(() => {});
+  const presenceRedis = createPresenceRedis(config.redisUrl).on("error", (error: unknown) => {
+    writeLog(logSink, { level: "error", msg: "redis présence", ...errorDetails(error) });
+  });
+  presenceRedis.connect().catch(() => {});
   const connectedConsumerRedis = () => {
     const client = createStreamConsumerRedis(config.redisUrl).on("error", (error: unknown) => {
       writeLog(logSink, { level: "error", msg: "redis stream consumer", ...errorDetails(error) });
@@ -87,6 +92,7 @@ export const createApp = async ({
         webhookSecret: config.videoWebhookSecret,
         video: config.video,
         consumerRedis: streamConsumerRedis,
+        presenceRedis,
       },
       moderation: { prisma: createContextClient({ context: "moderation", env }) },
       discovery: {

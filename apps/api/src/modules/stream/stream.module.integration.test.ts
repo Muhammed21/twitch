@@ -16,7 +16,7 @@ import { PlatformModule } from "../../platform/platform.module.ts";
 import { createStreamConsumerRedis } from "../../platform/stream-consumer.ts";
 import { startVideoService } from "./infrastructure/testing/video-service.ts";
 import { videoServiceProvider } from "./infrastructure/video-service-provider.ts";
-import { StreamModule } from "./stream.module.ts";
+import { createPresenceRedis, StreamModule } from "./stream.module.ts";
 
 const urlOf = (variable: string): string => {
   const url = process.env[variable];
@@ -64,6 +64,7 @@ const withStreamModule = async (
         video,
         authzRedis,
         consumerRedis,
+        presenceRedis: createPresenceRedis(),
         logSink: (line) => logs.push(line),
       }),
     ],

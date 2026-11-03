@@ -17,6 +17,7 @@ import { startStreamConsumer, type StreamConsumerRedis } from "../../platform/st
 import type { LiveVideoProviderPort } from "./application/live-video-provider.ts";
 import { receiveProviderWebhook } from "./application/receive-provider-webhook.ts";
 import { reconcileStreamSessions } from "./application/reconcile-stream-sessions.ts";
+import { recordPresence } from "./application/record-presence.ts";
 import { recordStreamLifecycle } from "./application/record-stream-lifecycle.ts";
 import {
   getStreamKey,
@@ -31,8 +32,10 @@ import {
   type StreamPrisma,
 } from "./infrastructure/prisma-stream-sessions.ts";
 import { reconciliationEndEventId } from "./infrastructure/reconciliation-end-event-id.ts";
+import { type PresenceRedis, redisPresenceStore } from "./infrastructure/redis-presence-store.ts";
 import { videoServiceProvider } from "./infrastructure/video-service-provider.ts";
 import { channelEventHandlers } from "./presentation/channel-event-handlers.ts";
+import { PresenceController, RECORD_PRESENCE } from "./presentation/presence.controller.ts";
 import {
   GET_STREAM_KEY,
   ROTATE_STREAM_KEY,
@@ -44,6 +47,12 @@ import {
 } from "./presentation/video-webhook.controller.ts";
 
 export type { StreamPrisma } from "./infrastructure/prisma-stream-sessions.ts";
+export { createPresenceRedis, type PresenceRedis } from "./infrastructure/redis-presence-store.ts";
+
+export const createViewerCountReader =
+  (presenceRedis: PresenceRedis) =>
+  (channelIds: readonly string[]): Promise<ReadonlyMap<string, number>> =>
+    redisPresenceStore(presenceRedis).count({ channelIds, at: new Date() });
 
 export const RECONCILIATION_INTERVAL_MS = 60_000;
 
@@ -60,6 +69,7 @@ type StreamDependencies = {
   video: VideoProviderConfig;
   authzRedis: AuthzRedis;
   consumerRedis: StreamConsumerRedis;
+  presenceRedis: PresenceRedis;
   logSink: LogSink;
   reconciliationIntervalMs?: number;
 };
@@ -77,7 +87,7 @@ export class StreamModule implements OnModuleInit, OnModuleDestroy {
   constructor(@Inject(STREAM_DEPENDENCIES) private readonly dependencies: ModuleState) {}
 
   static register(dependencies: StreamDependencies): DynamicModule {
-    const { prisma, webhookSecret, video, authzRedis } = dependencies;
+    const { prisma, webhookSecret, video, authzRedis, presenceRedis } = dependencies;
     const provider =
       video.provider === "fake"
         ? fakeLiveVideoProvider({ webhookSecret })
@@ -103,7 +113,7 @@ export class StreamModule implements OnModuleInit, OnModuleDestroy {
     };
     return {
       module: StreamModule,
-      controllers: [VideoWebhookController, StreamKeyController],
+      controllers: [VideoWebhookController, StreamKeyController, PresenceController],
       providers: [
         {
           provide: STREAM_DEPENDENCIES,
@@ -120,6 +130,13 @@ export class StreamModule implements OnModuleInit, OnModuleDestroy {
         {
           provide: ROTATE_STREAM_KEY,
           useValue: rotateStreamKey(streamKeyDependencies),
+        },
+        {
+          provide: RECORD_PRESENCE,
+          useValue: recordPresence({
+            store: redisPresenceStore(presenceRedis),
+            now: () => new Date(),
+          }),
         },
       ],
     };
@@ -179,12 +196,15 @@ export class StreamModule implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy(): Promise<void> {
-    const { prisma, consumerRedis } = this.dependencies;
+    const { prisma, consumerRedis, presenceRedis } = this.dependencies;
     await this.#reconciliation?.stop();
     await this.#consumer?.stop();
     await prisma.$disconnect();
     if (consumerRedis.isOpen) {
       consumerRedis.destroy();
+    }
+    if (presenceRedis.isOpen) {
+      presenceRedis.destroy();
     }
   }
 }

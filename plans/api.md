@@ -215,6 +215,19 @@ _Critères d'acceptation_ :
 - la route répond sans jeton d'accès ; un client qui se déconnecte n'est plus lu au tick suivant ; l'arrêt de l'API ferme les flux ouverts ;
 - `/v1/channels/{channelId}/live-status` figure dans l'OpenAPI, avec `LiveStatus`.
 
+**PR 12c — Compteur de viewers du canal 2.** Présence du lecteur et compteur temps réel dans Redis (ADR 0004 §3), possédés par `stream` ; le SSE de `discovery` (PR 12b) y lit les compteurs par une fonction que `stream.module.ts` expose et qu'`AppModule` lui passe, sans import entre modules. `POST /v1/channels/{channelId}/presence`, à jeton optionnel : le viewer est le compte du jeton, ou à défaut le `viewerId` (UUID d'installation, le `distinct_id` anonyme de l'ADR 0012) du corps. Un HyperLogLog par chaîne et par fenêtre de 30 s (`PFADD`, expiration à 90 s) ; le compteur est l'union des deux dernières fenêtres (`PFCOUNT`), donc les viewers vus dans les 30 à 60 dernières secondes. Le client envoie un heartbeat toutes les 15 s. `LiveStatus` gagne `viewerCount`, présent quand la chaîne est en live. PostgreSQL ne voit pas le heartbeat.
+_Critères d'acceptation_ :
+
+- un heartbeat répond `204` ; avec un jeton valide le viewer est le compte, sans jeton le `viewerId` du corps ; sans jeton ni `viewerId` UUID → `400` RFC 9457 ; jeton invalide → `401` ; identifiant de chaîne qui n'est pas un UUID → `400` ;
+- deux heartbeats du même viewer comptent une fois ; deux viewers distincts comptent deux ;
+- un viewer qui n'envoie plus de heartbeat sort du compteur au plus tard 60 s après son dernier heartbeat, et y reste au moins 30 s ;
+- les compteurs de toutes les chaînes suivies se lisent en un seul aller-retour Redis par tick ;
+- l'event `status` d'une chaîne en live porte `viewerCount`, et un changement du compteur est envoyé au tick suivant, en une seconde au plus ; une chaîne hors live n'a pas de `viewerCount` ;
+- le heartbeat n'écrit ni ne lit PostgreSQL ;
+- `/v1/channels/{channelId}/presence` figure dans l'OpenAPI, et `LiveStatus` y porte `viewerCount`.
+
+**PR 12d — Échantillon du compteur de viewers.** Toutes les 30 s, `stream` persiste `(sessionId, timestamp, viewerCount)` pour chaque session ouverte et publie `stream.viewer_count.sampled` (ADR 0003, ADR 0004 §3). Critères à valider au début de la PR.
+
 **PR 13 — `moderation` minimal (jalon A4).** Un use-case : le propriétaire met un utilisateur en timeout sur sa chaîne. Attribution `banned` avec `expiresAt` dans `authz`, entrée d'audit et `moderation.user.timed_out` dans la **même transaction**, publiée sur Redis Streams pour le chat.
 _Tests d'abord_ : un non-propriétaire ne peut pas mettre en timeout ; le timeout expire seul ; l'event est publié même si le relais redémarre entre le commit et l'envoi ; audit écrit avec l'acteur humain.
 

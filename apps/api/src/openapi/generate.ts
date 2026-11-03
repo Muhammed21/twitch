@@ -7,6 +7,7 @@ import { createContextClient } from "@repo/db";
 import { AppModule } from "../app.module.ts";
 import { createAuthzRedis } from "../authz/authz-context.ts";
 import { createIdentityRedis } from "../modules/identity/identity.module.ts";
+import { createPresenceRedis } from "../modules/stream/stream.module.ts";
 import { rejectingVerifier } from "../platform/authentication.ts";
 import { configureApp } from "../platform/configure-app.ts";
 import { createStreamConsumerRedis } from "../platform/stream-consumer.ts";
@@ -42,6 +43,7 @@ const app = configureApp(
         webhookSecret: "openapi-aucun-webhook-recu-par-ce-document",
         video: { provider: "fake" },
         consumerRedis: createStreamConsumerRedis(),
+        presenceRedis: createPresenceRedis(),
       },
       moderation: {
         prisma: createContextClient({

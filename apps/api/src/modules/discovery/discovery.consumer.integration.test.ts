@@ -12,11 +12,14 @@ import { createAuthzRedis } from "../../authz/authz-context.ts";
 import { createApp } from "../../create-app.ts";
 import { createStreamConsumerRedis } from "../../platform/stream-consumer.ts";
 import { toStreamEntry } from "../../platform/stream-entry.ts";
+import type { ChannelLiveStatus, LiveStatusHub } from "./application/live-status-hub.ts";
+import type { ViewerCountReader } from "./application/live-status-viewers.ts";
 import { DiscoveryModule, rebuildDiscoveryProjection } from "./discovery.module.ts";
 import {
   prismaLiveChannelProjection,
   prismaLiveChannelStore,
 } from "./infrastructure/prisma-live-channel-projection.ts";
+import { LIVE_STATUS_HUB } from "./presentation/live-status.controller.ts";
 
 const urlOf = (variable: string): string => {
   const url = process.env[variable];
@@ -109,7 +112,12 @@ const eventually = (assertion: () => Promise<void>) =>
 type ConsumerRedis = ReturnType<typeof createStreamConsumerRedis>;
 
 const withDiscoveryModule = async (
-  run: (logs: string[], consumerRedis: readonly ConsumerRedis[]) => Promise<void>,
+  run: (
+    logs: string[],
+    consumerRedis: readonly ConsumerRedis[],
+    hub: LiveStatusHub,
+  ) => Promise<void>,
+  { viewerCounts = async () => new Map() }: { viewerCounts?: ViewerCountReader } = {},
 ) => {
   const logs: string[] = [];
   const channelConsumerRedis = createStreamConsumerRedis(urlOf("REDIS_URL"));
@@ -121,6 +129,7 @@ const withDiscoveryModule = async (
         prisma: createContextClient({ context: "discovery", env: process.env }),
         channelConsumerRedis,
         streamConsumerRedis,
+        viewerCounts,
         logSink: (line) => logs.push(line),
       }),
     ],
@@ -128,7 +137,7 @@ const withDiscoveryModule = async (
   const app = moduleRef.createNestApplication({ logger: false });
   await app.init();
   try {
-    await run(logs, [channelConsumerRedis, streamConsumerRedis]);
+    await run(logs, [channelConsumerRedis, streamConsumerRedis], app.get(LIVE_STATUS_HUB));
   } finally {
     await app.close();
   }
@@ -421,6 +430,47 @@ describe("projection LiveChannelView de discovery (ADR 0003, §6)", () => {
 
     expect(await openDiscoveryConnections()).toBe(before);
     expect(closed.map((redis) => redis.isOpen)).toEqual([false, false]);
+  });
+});
+
+describe("statut des lives de discovery quand Redis présence est en panne (ADR 0004 §2)", () => {
+  it("envoie l'état du live sans nombre de viewers, et journalise l'échec", async () => {
+    const channelId = randomUUID();
+    const startedAt = new Date("2026-11-03T20:00:00.000Z");
+    await discovery.discoveryLiveChannelView.create({
+      data: {
+        channelId,
+        slug: `panne_${randomUUID().replaceAll("-", "").slice(0, 12)}`,
+        title: "Panne",
+        liveSessionId: randomUUID(),
+        liveStartedAt: startedAt,
+      },
+    });
+    const received: ChannelLiveStatus[] = [];
+    try {
+      await withDiscoveryModule(
+        async (logs, _, hub) => {
+          const subscription = await hub.subscribe(channelId, (status) => received.push(status));
+
+          expect(subscription.ok).toBe(true);
+          expect(received).toEqual([{ channelId, startedAt }]);
+          expect(logs.map((line) => JSON.parse(line) as Record<string, unknown>)).toContainEqual(
+            expect.objectContaining({
+              level: "error",
+              msg: "lecture du nombre de viewers en échec",
+              error: "Redis présence injoignable",
+            }),
+          );
+        },
+        {
+          viewerCounts: async () => {
+            throw new Error("Redis présence injoignable");
+          },
+        },
+      );
+    } finally {
+      await discovery.discoveryLiveChannelView.delete({ where: { channelId } });
+    }
   });
 });
 

@@ -3,6 +3,7 @@ import { err, ok, type Result } from "@repo/result";
 export type ChannelLiveStatus = {
   readonly channelId: string;
   readonly startedAt: Date | undefined;
+  readonly viewerCount?: number;
 };
 
 export interface LiveStatusReader {
@@ -18,7 +19,8 @@ type Subscriber = {
 };
 
 const sameStatus = (left: ChannelLiveStatus, right: ChannelLiveStatus): boolean =>
-  left.startedAt?.getTime() === right.startedAt?.getTime();
+  left.startedAt?.getTime() === right.startedAt?.getTime() &&
+  left.viewerCount === right.viewerCount;
 
 export const createLiveStatusHub = (reader: LiveStatusReader) => {
   const subscribers = new Map<string, Set<Subscriber>>();
