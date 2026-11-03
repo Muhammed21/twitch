@@ -6,6 +6,7 @@ const WEBHOOK_SECRET_MIN_LENGTH = 32;
 
 const envSchema = z.object({
   VIDEO_HTTP_PORT: z.coerce.number().int().min(1).max(65_535).default(3002),
+  VIDEO_RTMP_PORT: z.coerce.number().int().min(0).max(65_535).default(1935),
   VIDEO_SERVICE_SECRET: z.string().min(SERVICE_SECRET_MIN_LENGTH),
   VIDEO_INGEST_URL: z.url({ protocol: /^rtmps?$/ }).default("rtmp://127.0.0.1:1935/live"),
   VIDEO_STREAM_KEY_ENCRYPTION_KEY: z
@@ -22,6 +23,7 @@ const envSchema = z.object({
 
 export type VideoConfig = {
   readonly httpPort: number;
+  readonly rtmpPort: number;
   readonly serviceSecret: string;
   readonly ingestUrl: string;
   readonly streamKeyEncryptionKey: Uint8Array;
@@ -37,6 +39,7 @@ export const loadEnv = (env: Readonly<Record<string, string | undefined>>): Vide
   }
   return {
     httpPort: parsed.data.VIDEO_HTTP_PORT,
+    rtmpPort: parsed.data.VIDEO_RTMP_PORT,
     serviceSecret: parsed.data.VIDEO_SERVICE_SECRET,
     ingestUrl: parsed.data.VIDEO_INGEST_URL,
     streamKeyEncryptionKey: parsed.data.VIDEO_STREAM_KEY_ENCRYPTION_KEY,

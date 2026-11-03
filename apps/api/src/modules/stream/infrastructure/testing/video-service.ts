@@ -26,7 +26,12 @@ export const startVideoService = async ({
 }): Promise<RunningVideoService> => {
   const port = await freePort();
   const child = spawn(process.execPath, [VIDEO_MAIN], {
-    env: { ...process.env, VIDEO_HTTP_PORT: String(port), VIDEO_SERVICE_SECRET: serviceSecret },
+    env: {
+      ...process.env,
+      VIDEO_HTTP_PORT: String(port),
+      VIDEO_RTMP_PORT: "0",
+      VIDEO_SERVICE_SECRET: serviceSecret,
+    },
     stdio: ["ignore", "pipe", "inherit"],
   });
   await new Promise<void>((resolve, reject) => {

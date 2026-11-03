@@ -13,6 +13,7 @@ Service vidéo maison, à la manière d'Amazon IVS (ADR 0031). Process Node sép
 | Variable                          | Rôle                                                               |
 | --------------------------------- | ------------------------------------------------------------------ |
 | `VIDEO_HTTP_PORT`                 | Port d'écoute HTTP, 3002 par défaut                                |
+| `VIDEO_RTMP_PORT`                 | Port d'écoute de l'ingest RTMP, 1935 par défaut, `0` pour un libre |
 | `VIDEO_SERVICE_SECRET`            | Secret du plan de contrôle, partagé avec l'API, 32 caractères min. |
 | `VIDEO_STREAM_KEY_ENCRYPTION_KEY` | Clé AES-256-GCM des clés de stream, 32 octets en base64            |
 | `DATABASE_URL_VIDEO`              | Connexion du rôle `app_video` au schéma `video`                    |
@@ -33,6 +34,13 @@ Une variable invalide arrête le démarrage en code 1, avec le nom de la variabl
 - Schéma `video` (ADR 0025) : `VideoChannel`, `VideoStreamKey`, `VideoIngestSession`, `VideoOutbox`. Une seule session `live` par canal, garantie par un index unique partiel.
 - La clé de stream est chiffrée en AES-256-GCM, IV aléatoire de 12 octets ; la ligne garde la version de la clé de chiffrement (`1`). Une clé illisible avec la clé courante, ou d'une version inconnue, lève une erreur au lieu d'être rendue.
 - Le dépôt Prisma et le dépôt en mémoire passent la même suite de contrat (`src/control-plane/testing/video-store.contract.ts`).
+
+## Ingest RTMP (`src/rtmp/`)
+
+- Serveur TCP de `node:net` sur `VIDEO_RTMP_PORT`, démarré avant le serveur HTTP : un port pris arrête le démarrage en code 1. Il se ferme sur `SIGTERM`, connexions ouvertes comprises.
+- Poignée de main simple (`advanceHandshake`, fonction pure sur des `Uint8Array`) : C0 de version 3, sinon la connexion est fermée dès le premier octet ; réponse S0, S1 (horodatage nul, 1528 octets aléatoires) et S2 en écho de C1 ; C2 lu sans vérification, comme le fait ffmpeg pour S2. Le test rejoue les octets d'une publication ffmpeg (`src/rtmp/testing/ffmpeg-publish-handshake.bin`).
+- Délais : 5 s pour toute la poignée de main, même si des octets arrivent au compte-gouttes ; 30 s sans données ensuite. Chaque fermeture pour version, délai de poignée de main ou inactivité est comptée (`stats()`).
+- Les octets qui suivent la poignée de main attendent le démultiplexage des chunks.
 
 ## Événements sortants (`src/outbox/`, `src/webhooks/`)
 
