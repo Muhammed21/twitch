@@ -293,6 +293,36 @@ describe("salons chargés en mémoire", () => {
 
     await vi.waitFor(() => expect(rooms.loadedCount()).toBe(0));
   });
+
+  it("garde le salon des autres quand une sortie attend encore à la déconnexion", async () => {
+    const room = makeOfflineRoom();
+    const slowRoom = makeOfflineRoom();
+    const loading = { requested: false, release: () => {} };
+    const { server, connectAs } = await startServer({
+      directory: {
+        find: async (channelId) =>
+          channelId === slowRoom.channelId
+            ? new Promise((resolve) => {
+                loading.requested = true;
+                loading.release = () => resolve(slowRoom);
+              })
+            : room,
+      },
+    });
+    const alice = await connectAs(ALICE);
+    const bob = await connectAs(BOB);
+    await joinAndSync(alice, room.channelId);
+    await joinAndSync(bob, room.channelId);
+    alice.emit("room:join", { channelId: slowRoom.channelId });
+    alice.emit("room:leave", { channelId: room.channelId });
+    await vi.waitFor(() => expect(loading.requested).toBe(true));
+
+    alice.disconnect();
+    await vi.waitFor(() => expect(server.connectionCount()).toBe(1));
+    loading.release();
+
+    await joinAndSync(bob, room.channelId);
+  });
 });
 
 describe("événements refusés", () => {

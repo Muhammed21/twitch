@@ -117,6 +117,7 @@ export const bindChatEvents = ({
     socket.on("chat:send", (payload: unknown, ack: unknown) => inTurn(() => send(payload, ack)));
     socket.on("disconnect", () => {
       joined.forEach((channelId) => rooms.leave(channelId));
+      joined.clear();
     });
   };
 
