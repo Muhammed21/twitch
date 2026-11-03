@@ -11,7 +11,7 @@ import { GET_PLAYBACK, PlaybackController } from "./playback.controller.ts";
 
 const LIVE_CHANNEL_ID = "00000000-0000-4000-8000-000000000001";
 const OFFLINE_CHANNEL_ID = "00000000-0000-4000-8000-000000000002";
-const PROVIDER_SESSION_ID = "0c9f3b2e-4d5a-4b6c-8d7e-9f0a1b2c3d4e";
+const PROVIDER_CHANNEL_ID = "0c9f3b2e-4d5a-4b6c-8d7e-9f0a1b2c3d4e";
 const PLAYBACK_BASE_URL = "http://127.0.0.1:3002";
 
 const withPlayback = async (
@@ -32,8 +32,8 @@ const withPlayback = async (
         provide: GET_PLAYBACK,
         useValue: getPlayback({
           sessions: {
-            openProviderSessionOf: async (channelId) =>
-              channelId === LIVE_CHANNEL_ID ? PROVIDER_SESSION_ID : null,
+            liveProviderChannelOf: async (channelId) =>
+              channelId === LIVE_CHANNEL_ID ? PROVIDER_CHANNEL_ID : null,
           },
           baseUrl,
         }),
@@ -51,14 +51,14 @@ const withPlayback = async (
 };
 
 describe("GET /v1/channels/{channelId}/playback (ADR 0031 §6)", () => {
-  it("rend la playlist maître de la session ouverte de la chaîne, sans authentification", async () => {
+  it("rend la playlist maître du canal provider de la chaîne en live, sans authentification", async () => {
     await withPlayback(async (get) => {
       const response = await get(LIVE_CHANNEL_ID);
 
       expect(response.status).toBe(200);
       expect(response.headers.get("cache-control")).toBe("no-store");
       expect(await response.json()).toEqual({
-        playbackUrl: `http://127.0.0.1:3002/hls/${PROVIDER_SESSION_ID}/master.m3u8`,
+        playbackUrl: `http://127.0.0.1:3002/hls/channels/${PROVIDER_CHANNEL_ID}/master.m3u8`,
       });
     });
   });
@@ -69,7 +69,7 @@ describe("GET /v1/channels/{channelId}/playback (ADR 0031 §6)", () => {
       await withPlayback(
         async (get) => {
           expect(responses.Playback.parse(await (await get(LIVE_CHANNEL_ID)).json())).toEqual({
-            playbackUrl: `https://cdn.example.test/video/hls/${PROVIDER_SESSION_ID}/master.m3u8`,
+            playbackUrl: `https://cdn.example.test/video/hls/channels/${PROVIDER_CHANNEL_ID}/master.m3u8`,
           });
         },
         { baseUrl },

@@ -292,7 +292,8 @@ describe("LiveStatus", () => {
 
 describe("Playback", () => {
   const makePlayback = (overrides: Record<string, unknown> = {}) => ({
-    playbackUrl: "https://video.example.test/hls/0c9f3b2e-4d5a-4b6c-8d7e-9f0a1b2c3d4e/master.m3u8",
+    playbackUrl:
+      "https://video.example.test/hls/channels/0c9f3b2e-4d5a-4b6c-8d7e-9f0a1b2c3d4e/master.m3u8",
     ...overrides,
   });
 
@@ -302,7 +303,7 @@ describe("Playback", () => {
 
   it("décode une URL de lecture en http, celle du service vidéo local", () => {
     const playbackUrl =
-      "http://127.0.0.1:3002/hls/0c9f3b2e-4d5a-4b6c-8d7e-9f0a1b2c3d4e/master.m3u8";
+      "http://127.0.0.1:3002/hls/channels/0c9f3b2e-4d5a-4b6c-8d7e-9f0a1b2c3d4e/master.m3u8";
 
     expect(responses.Playback.parse(makePlayback({ playbackUrl })).playbackUrl).toBe(playbackUrl);
   });

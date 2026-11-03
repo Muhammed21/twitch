@@ -148,7 +148,7 @@ Clé de stream :
 - la clé n'est ni stockée par l'API, ni journalisée, ni présente dans une autre réponse (ADR 0001) ;
 - `FakeLiveVideoProvider` est déterministe : canal `fake-<channelId>`, clé dérivée par HMAC de `VIDEO_WEBHOOK_SECRET` et de la génération du canal, ingest `rtmp://127.0.0.1:1935/live`. Chaque rotation incrémente la génération, gardée en mémoire : un redémarrage de l'API rend la clé d'avant les rotations.
 
-Lecture : `GET /v1/channels/{channelId}/playback` (sans jeton) rend `{ playbackUrl }`, la playlist maître HLS de la session ouverte de la chaîne, `<VIDEO_PLAYBACK_BASE_URL>/hls/<session provider>/master.m3u8`, avec `Cache-Control: no-store` ; 404 quand la chaîne n'a pas de session ouverte, 400 pour un identifiant qui n'est pas un UUID. L'URL est en clair ; sa signature arrive avec T2 (ADR 0031 §6).
+Lecture : `GET /v1/channels/{channelId}/playback` (sans jeton) rend `{ playbackUrl }`, la playlist maître HLS du canal provider de la chaîne, `<VIDEO_PLAYBACK_BASE_URL>/hls/channels/<providerChannelId>/master.m3u8`, stable d'un live à l'autre, avec `Cache-Control: no-store` ; 404 quand la chaîne n'a pas de session ouverte ou pas de canal provider, 400 pour un identifiant qui n'est pas un UUID. `apps/video` répond 404 à cette URL tant que le premier segment du live n'est pas produit : le lecteur réessaie. L'URL est en clair ; sa signature arrive avec T2 (ADR 0031 §6).
 
 Une erreur client exposée par une bibliothèque HTTP (`expose: true`, statut 4xx, comme celles de body-parser) garde son statut dans le `Problem`.
 

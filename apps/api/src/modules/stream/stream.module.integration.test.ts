@@ -30,6 +30,8 @@ const PLAYBACK_BASE_URL = "http://127.0.0.1:3002";
 
 const seededSessions: string[] = [];
 
+const seededChannels: string[] = [];
+
 const channelDb = createContextClient({ context: "channel", env: process.env });
 const stream = createContextClient({ context: "stream", env: process.env });
 const admin = createAuthzRedis(urlOf("REDIS_URL"));
@@ -137,8 +139,16 @@ const seedSession = async ({
   return session;
 };
 
+const seedLiveChannel = async () => {
+  const channel = { channelId: randomUUID(), providerChannelId: randomUUID() };
+  seededChannels.push(channel.channelId);
+  await stream.streamChannel.create({ data: channel });
+  return channel;
+};
+
 afterAll(async () => {
   await stream.streamSession.deleteMany({ where: { id: { in: seededSessions } } });
+  await stream.streamChannel.deleteMany({ where: { channelId: { in: seededChannels } } });
   admin.destroy();
   await stream.$disconnect();
   await channelDb.$disconnect();
@@ -257,24 +267,33 @@ describe("StreamModule branché sur la base et Redis", () => {
     });
   });
 
-  it("rend l'URL de lecture de la session ouverte de la chaîne", async () => {
-    const channelId = randomUUID();
+  it("rend l'URL de lecture du canal provider d'une chaîne en live", async () => {
+    const { channelId, providerChannelId } = await seedLiveChannel();
     await seedSession({ channelId, endedAt: new Date("2026-11-03T19:00:00.000Z") });
-    const { providerSessionId } = await seedSession({ channelId });
+    await seedSession({ channelId });
 
     await withStreamModule(randomUUID(), async (base) => {
       const response = await fetch(`${base}/channels/${channelId}/playback`);
 
       expect(response.status).toBe(200);
       expect(await response.json()).toEqual({
-        playbackUrl: `${PLAYBACK_BASE_URL}/hls/${providerSessionId}/master.m3u8`,
+        playbackUrl: `${PLAYBACK_BASE_URL}/hls/channels/${providerChannelId}/master.m3u8`,
       });
     });
   });
 
   it("répond 404 à la lecture d'une chaîne dont la session est close", async () => {
-    const channelId = randomUUID();
+    const { channelId } = await seedLiveChannel();
     await seedSession({ channelId, endedAt: new Date("2026-11-03T21:00:00.000Z") });
+
+    await withStreamModule(randomUUID(), async (base) => {
+      expect((await fetch(`${base}/channels/${channelId}/playback`)).status).toBe(404);
+    });
+  });
+
+  it("répond 404 à la lecture d'une session ouverte sans canal provider", async () => {
+    const channelId = randomUUID();
+    await seedSession({ channelId });
 
     await withStreamModule(randomUUID(), async (base) => {
       expect((await fetch(`${base}/channels/${channelId}/playback`)).status).toBe(404);

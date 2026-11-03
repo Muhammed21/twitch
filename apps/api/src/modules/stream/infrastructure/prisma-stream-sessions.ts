@@ -129,11 +129,18 @@ export const prismaOpenStreamSessions = ({
 });
 
 export const prismaPlaybackSessions = (prisma: StreamPrisma): PlaybackSessions => ({
-  openProviderSessionOf: async (channelId) =>
-    (
-      await prisma.streamSession.findFirst({
-        where: { channelId, endedAt: null },
-        select: { providerSessionId: true },
-      })
-    )?.providerSessionId ?? null,
+  liveProviderChannelOf: async (channelId) => {
+    const open = await prisma.streamSession.findFirst({
+      where: { channelId, endedAt: null },
+      select: { id: true },
+    });
+    if (open === null) {
+      return null;
+    }
+    const channel = await prisma.streamChannel.findUnique({
+      where: { channelId },
+      select: { providerChannelId: true },
+    });
+    return channel?.providerChannelId ?? null;
+  },
 });
