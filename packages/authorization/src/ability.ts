@@ -28,8 +28,9 @@ type PlatformAssignment = Validity & {
 
 export type RoleAssignment = ChannelAssignment | PlatformAssignment;
 
-const isPlatformAssignment = (assignment: RoleAssignment): assignment is PlatformAssignment =>
-  assignment.scope.type === "platform";
+export const isPlatformAssignment = (
+  assignment: RoleAssignment,
+): assignment is PlatformAssignment => assignment.scope.type === "platform";
 
 type Channel = ForcedSubject<"Channel"> & { readonly id: string };
 type ChannelRoleGrant = ForcedSubject<"ChannelRole"> & {
@@ -52,7 +53,7 @@ type Abilities =
 
 export type AppAbility = MongoAbility<Abilities>;
 
-const isActive = ({ expiresAt, revokedAt }: Validity, now: Date) =>
+export const isActive = ({ expiresAt, revokedAt }: Validity, now: Date) =>
   revokedAt === null && (expiresAt === null || expiresAt.getTime() > now.getTime());
 
 const UNPROTECTED_FOR_OWNER = { targetIsOwner: false } as const;
