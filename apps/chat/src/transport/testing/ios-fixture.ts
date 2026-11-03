@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { createMessageSender } from "../../application/message-sender.ts";
 import { createRoomRegistry } from "../../application/room-registry.ts";
 import { startChatServer } from "../chat-server.ts";
+import { SATURATION_LIMITS } from "./saturation.ts";
 import { makeTokenAuthority } from "./tokens.ts";
 
 const REVOKED_SESSION = "sid-revoked";
@@ -21,6 +22,7 @@ const server = await startChatServer({
     find: async (id) => (id === channelId ? { channelId, sessionId: null } : undefined),
   }),
   messages: createMessageSender(),
+  saturation: SATURATION_LIMITS,
 });
 
 const fixture = {
