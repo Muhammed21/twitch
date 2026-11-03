@@ -19,3 +19,7 @@ Définition unique des droits (ADR 0006), partagée par l'API et le process chat
 - `admin` et `staff` peuvent `suspend` n'importe quelle `Channel`, et n'héritent d'aucun droit de chaîne. `support` n'a aucun droit.
 
 Les tests de `src/ability.test.ts` vérifient chaque case du tableau.
+
+## Contexte du chatter
+
+`chatterContextFor({ userId, assignments, now })` construit le `ChatterContext` lu par le chat (ADR 0004) : l'identité, les rôles de chaîne actifs et les sanctions actives, un `banned` donnant une sanction `{ channelId, expiresAt }` (`null` pour un ban sans échéance). `activeSanction({ chatter, channelId, now })` rend la sanction qui court encore sur un salon ; quand plusieurs courent, celle qui finit le plus tard, un ban sans échéance avant tout timeout. Un test vérifie qu'elle existe exactement quand l'ability refuse `send` `Chat`.
