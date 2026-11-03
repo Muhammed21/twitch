@@ -49,11 +49,17 @@ export const peakBandwidth = ({
     ? fallback
     : Math.max(...segments.map(({ bytes, seconds }) => Math.ceil((bytes.length * 8) / seconds)));
 
-export const renderMasterPlaylist = ({ bandwidth }: { readonly bandwidth: number }): string =>
+export const renderMasterPlaylist = ({
+  bandwidth,
+  mediaUri,
+}: {
+  readonly bandwidth: number;
+  readonly mediaUri: string;
+}): string =>
   lines(
     "#EXTM3U",
     "#EXT-X-VERSION:7",
     "#EXT-X-INDEPENDENT-SEGMENTS",
     `#EXT-X-STREAM-INF:BANDWIDTH=${bandwidth}`,
-    MEDIA_URI,
+    mediaUri,
   );

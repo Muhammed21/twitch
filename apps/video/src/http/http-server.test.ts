@@ -18,7 +18,7 @@ const serverOptions = (port: number) => ({
     newId: randomUUID,
     randomBytes,
   }),
-  hls: { find: () => undefined, fallbackBandwidth: 1 },
+  hls: { find: () => undefined, liveSessionOf: async () => undefined, fallbackBandwidth: 1 },
 });
 
 const startServer = async () => {

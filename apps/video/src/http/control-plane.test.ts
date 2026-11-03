@@ -28,7 +28,7 @@ const startControlPlane = async ({
       newId: randomUUID,
       randomBytes: entropy,
     }),
-    hls: { find: () => undefined, fallbackBandwidth: 1 },
+    hls: { find: () => undefined, liveSessionOf: async () => undefined, fallbackBandwidth: 1 },
   });
   onTestFinished(() => server.close());
   const call = async (

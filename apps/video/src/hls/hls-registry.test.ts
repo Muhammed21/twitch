@@ -54,6 +54,19 @@ describe("registre des flux HLS", () => {
     expect(registry.find("session-a")).toBe(before);
   });
 
+  it("refuse les octets d'une session terminée sans toucher à son flux", () => {
+    const registry = createHlsRegistry(OPTIONS);
+    registry.open("session-a");
+    registry.end("session-a");
+    const ended = registry.find("session-a");
+
+    expect(registry.feed("session-a", FFMPEG_FRAGMENTED_MP4)).toEqual({
+      ok: false,
+      error: "ended",
+    });
+    expect(registry.find("session-a")).toBe(ended);
+  });
+
   it("oublie une session retirée", () => {
     const registry = createHlsRegistry(OPTIONS);
     registry.open("session-a");

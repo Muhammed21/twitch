@@ -80,10 +80,11 @@ export const startHttpServer = async ({
       sendJson(response, { status: "ready" });
       return;
     }
-    const playback =
-      request.method === "GET" ? routeHls({ playback: hls, pathname: target.pathname }) : undefined;
-    if (playback !== undefined) {
-      sendHls(response, playback);
+    if (request.method === "GET" && target.pathname.startsWith("/hls/")) {
+      void routeHls({ playback: hls, pathname: target.pathname }).then(
+        (reply) => sendHls(response, reply),
+        () => sendProblem(response, { title: "Erreur interne", status: 500 }),
+      );
       return;
     }
     void routeControlPlane({
