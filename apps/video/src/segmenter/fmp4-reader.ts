@@ -263,6 +263,9 @@ const timingOf = (bytes: Uint8Array, moof: Box, video: VideoTrack): Timing | und
 };
 
 const readBox = (reader: Fmp4Reader, bytes: Uint8Array, box: Box): Result<Step, Fmp4Refusal> => {
+  if (reader.moof !== undefined && box.type !== "mdat") {
+    return err("malformed_fragment");
+  }
   if (box.type === "moov") {
     const video = videoTrackOf(bytes, box);
     if (video === undefined) {
