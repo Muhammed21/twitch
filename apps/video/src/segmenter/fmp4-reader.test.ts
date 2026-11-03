@@ -364,6 +364,20 @@ describe("refus", () => {
     });
   });
 
+  it.each([
+    ["une boîte inconnue", makeBox("free")],
+    ["un second moof", makeFragment({ trackId: 1, decodeTime: 9, samples: [{}] }).subarray(0, -12)],
+  ])("refuse %s entre un moof et son mdat", (_, intruder) => {
+    const fragment = makeFragment({ trackId: 1, decodeTime: 0, samples: [{}] });
+    const mdatAt = fragment.length - 12;
+
+    expect(
+      readOnce(
+        concatBytes(init, fragment.subarray(0, mdatAt), intruder, fragment.subarray(mdatAt)),
+      ),
+    ).toEqual({ ok: false, error: "malformed_fragment" });
+  });
+
   it("refuse un mdat sans moof", () => {
     expect(readOnce(concatBytes(init, makeBox("mdat")))).toEqual({
       ok: false,

@@ -56,7 +56,7 @@ Une variable invalide arrête le démarrage en code 1, avec le nom de la variabl
 Fonctions pures sur des `Uint8Array`, qui lisent le fMP4 fragmenté écrit par ffmpeg sans décoder la vidéo.
 
 - `readFmp4` lit les boîtes ISO BMFF à mesure qu'elles arrivent et rend le reste à rappeler avec les octets suivants. Le segment d'init est le dernier `ftyp` suivi du `moov` ; la piste vidéo est celle dont le `hdlr` vaut `vide`. Chaque `moof` suivi de son `mdat` forme un fragment : instant de décodage du `tfdt`, durée des `trun`, et image clé si le premier échantillon n'est pas marqué _non-sync_ (flags du `trun`, sinon du `tfhd`, sinon du `trex`). Les autres boîtes (`styp`, `free`, `mfra`…) sont ignorées.
-- Refus, sans jamais lever d'exception : boîte de taille invalide ou au-delà de `maxBoxSize` (vérifié dès l'en-tête), fragment avant le `moov`, `mdat` sans `moof`, `moov` sans piste vidéo, fragment sans traf vidéo lisible ou dont un `trun` déborde de sa boîte.
+- Refus, sans jamais lever d'exception : boîte de taille invalide ou au-delà de `maxBoxSize` (vérifié dès l'en-tête), fragment avant le `moov`, `mdat` sans `moof` ou autre boîte que `mdat` derrière un `moof`, `moov` sans piste vidéo, fragment sans traf vidéo lisible ou dont un `trun` déborde de sa boîte.
 - Le test rejoue `src/segmenter/testing/ffmpeg-fragmented.mp4`, 7 s de mire et de sinusoïde avec une image clé toutes les 0,8 s :
 
   ```sh
