@@ -9,6 +9,7 @@ private struct Fixture {
   let token: String
   let expiredToken: String
   let revokedToken: String
+  let revokedLaterToken: String
 
   static let current: Fixture? = {
     let environment = ProcessInfo.processInfo.environment
@@ -17,7 +18,8 @@ private struct Fixture {
       let channel = environment["CHAT_FIXTURE_CHANNEL"].flatMap(UUID.init(uuidString:)),
       let token = environment["CHAT_FIXTURE_TOKEN"],
       let expiredToken = environment["CHAT_FIXTURE_EXPIRED_TOKEN"],
-      let revokedToken = environment["CHAT_FIXTURE_REVOKED_TOKEN"]
+      let revokedToken = environment["CHAT_FIXTURE_REVOKED_TOKEN"],
+      let revokedLaterToken = environment["CHAT_FIXTURE_REVOKED_LATER_TOKEN"]
     else {
       return nil
     }
@@ -26,7 +28,8 @@ private struct Fixture {
       channel: ChannelID(channel),
       token: token,
       expiredToken: expiredToken,
-      revokedToken: revokedToken
+      revokedToken: revokedToken,
+      revokedLaterToken: revokedLaterToken
     )
   }()
 
@@ -92,6 +95,20 @@ struct ChatIntegrationTests {
 
     await #expect(throws: ChatConnectionError.forbidden) {
       try await fixture.connector.connect(accessToken: fixture.revokedToken)
+    }
+  }
+
+  @Test("une session révoquée en cours de connexion reçoit stop, puis la connexion se ferme")
+  func revokedWhileConnected() async throws {
+    let fixture = try fixture()
+    let chat = try await fixture.connector.connect(accessToken: fixture.revokedLaterToken)
+    var events = chat.events.makeAsyncIterator()
+
+    let event = try await events.next()
+
+    #expect(event == .revoked(.stop))
+    await #expect(throws: ChatConnectionError.closed) {
+      try await events.next()
     }
   }
 
