@@ -7,7 +7,7 @@ let package = Package(
   platforms: [.iOS(.v17)],
   products: [
     .library(name: "DesignSystem", targets: ["DesignSystem"]),
-    .library(name: "Onboarding", targets: ["Onboarding", "Home", "Navigation"]),
+    .library(name: "Onboarding", targets: ["Onboarding", "Home", "Navigation", "Player"]),
     .library(name: "Auth", targets: ["Auth"]),
     .library(name: "Domain", targets: ["Domain"]),
     .library(name: "Networking", targets: ["Networking"]),
@@ -70,6 +70,19 @@ let package = Package(
       name: "HomeTests",
       dependencies: ["Home", "Domain", "Navigation"],
       path: "Features/Home/Tests",
+      swiftSettings: [.swiftLanguageMode(.v6)]
+    ),
+    .target(
+      name: "Player",
+      dependencies: ["DesignSystem"],
+      path: "Features/Player/Sources",
+      resources: [.process("Localizable.xcstrings")],
+      swiftSettings: [.swiftLanguageMode(.v6)]
+    ),
+    .testTarget(
+      name: "PlayerTests",
+      dependencies: ["Player"],
+      path: "Features/Player/Tests",
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
     .target(
