@@ -15,6 +15,7 @@ import { errorDetails, type LogSink, writeLog } from "../../platform/logging.ts"
 import { startPeriodicJob } from "../../platform/periodic-job.ts";
 import { startStreamConsumer, type StreamConsumerRedis } from "../../platform/stream-consumer.ts";
 import type { LiveVideoProviderPort } from "./application/live-video-provider.ts";
+import { getPlayback } from "./application/playback.ts";
 import { receiveProviderWebhook } from "./application/receive-provider-webhook.ts";
 import { reconcileStreamSessions } from "./application/reconcile-stream-sessions.ts";
 import { recordPresence } from "./application/record-presence.ts";
@@ -29,6 +30,7 @@ import { fakeLiveVideoProvider } from "./infrastructure/fake-live-video-provider
 import { prismaStreamChannels } from "./infrastructure/prisma-stream-channels.ts";
 import {
   prismaOpenStreamSessions,
+  prismaPlaybackSessions,
   prismaStreamSessions,
   type StreamPrisma,
 } from "./infrastructure/prisma-stream-sessions.ts";
@@ -40,6 +42,7 @@ import { reconciliationEndEventId } from "./infrastructure/reconciliation-end-ev
 import { type PresenceRedis, redisPresenceStore } from "./infrastructure/redis-presence-store.ts";
 import { videoServiceProvider } from "./infrastructure/video-service-provider.ts";
 import { channelEventHandlers } from "./presentation/channel-event-handlers.ts";
+import { GET_PLAYBACK, PlaybackController } from "./presentation/playback.controller.ts";
 import { PresenceController, RECORD_PRESENCE } from "./presentation/presence.controller.ts";
 import {
   GET_STREAM_KEY,
@@ -72,6 +75,7 @@ const BLOCK_MS = 1000;
 type StreamDependencies = {
   prisma: StreamPrisma;
   webhookSecret: string;
+  playbackBaseUrl: string;
   video: VideoProviderConfig;
   authzRedis: AuthzRedis;
   consumerRedis: StreamConsumerRedis;
@@ -96,7 +100,8 @@ export class StreamModule implements OnModuleInit, OnModuleDestroy {
   constructor(@Inject(STREAM_DEPENDENCIES) private readonly dependencies: ModuleState) {}
 
   static register(dependencies: StreamDependencies): DynamicModule {
-    const { prisma, webhookSecret, video, authzRedis, presenceRedis } = dependencies;
+    const { prisma, webhookSecret, playbackBaseUrl, video, authzRedis, presenceRedis } =
+      dependencies;
     const provider =
       video.provider === "fake"
         ? fakeLiveVideoProvider({ webhookSecret })
@@ -127,7 +132,12 @@ export class StreamModule implements OnModuleInit, OnModuleDestroy {
     };
     return {
       module: StreamModule,
-      controllers: [VideoWebhookController, StreamKeyController, PresenceController],
+      controllers: [
+        VideoWebhookController,
+        StreamKeyController,
+        PresenceController,
+        PlaybackController,
+      ],
       providers: [
         {
           provide: STREAM_DEPENDENCIES,
@@ -144,6 +154,13 @@ export class StreamModule implements OnModuleInit, OnModuleDestroy {
         {
           provide: ROTATE_STREAM_KEY,
           useValue: rotateStreamKey(streamKeyDependencies),
+        },
+        {
+          provide: GET_PLAYBACK,
+          useValue: getPlayback({
+            sessions: prismaPlaybackSessions(prisma),
+            baseUrl: playbackBaseUrl,
+          }),
         },
         {
           provide: RECORD_PRESENCE,

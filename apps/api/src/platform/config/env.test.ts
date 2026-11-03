@@ -28,6 +28,7 @@ const makeEnv = (overrides: Record<string, string | undefined> = {}) => ({
   BETTER_AUTH_URL: "http://127.0.0.1:3000",
   REDIS_URL: "redis://127.0.0.1:6379",
   VIDEO_WEBHOOK_SECRET: WEBHOOK_SECRET,
+  VIDEO_PLAYBACK_BASE_URL: "http://127.0.0.1:3002",
   SMTP_HOST: "127.0.0.1",
   SMTP_PORT: "1025",
   VIDEO_PROVIDER: "fake",
@@ -45,6 +46,7 @@ describe("loadEnv", () => {
       authBaseUrl: "http://127.0.0.1:3000",
       redisUrl: "redis://127.0.0.1:6379",
       videoWebhookSecret: WEBHOOK_SECRET,
+      videoPlaybackBaseUrl: "http://127.0.0.1:3002",
       smtp: { host: "127.0.0.1", port: 1025, from: "Twitch <no-reply@twitch.local>" },
       video: { provider: "fake" },
       featureFlags: { provider: "defaults" },
@@ -173,7 +175,7 @@ describe("loadEnv", () => {
 
   it("nomme toutes les variables invalides à la fois", () => {
     expect(() => loadEnv({ API_PORT: "abc" })).toThrow(
-      "Configuration invalide, variables à corriger : API_PORT, DATABASE_URL_HEALTH, BETTER_AUTH_SECRET, BETTER_AUTH_URL, REDIS_URL, VIDEO_WEBHOOK_SECRET, SMTP_HOST, SMTP_PORT, MOBILE_MIN_SUPPORTED_VERSION, VIDEO_PROVIDER, FEATURE_FLAGS_PROVIDER",
+      "Configuration invalide, variables à corriger : API_PORT, DATABASE_URL_HEALTH, BETTER_AUTH_SECRET, BETTER_AUTH_URL, REDIS_URL, VIDEO_WEBHOOK_SECRET, VIDEO_PLAYBACK_BASE_URL, SMTP_HOST, SMTP_PORT, MOBILE_MIN_SUPPORTED_VERSION, VIDEO_PROVIDER, FEATURE_FLAGS_PROVIDER",
     );
   });
 
@@ -189,6 +191,22 @@ describe("loadEnv", () => {
       );
     },
   );
+
+  it.each([undefined, "", "pas une url", "ftp://h", "xhttp://h", "https2://h"])(
+    "refuse VIDEO_PLAYBACK_BASE_URL %j en la nommant",
+    (url) => {
+      expect(() => loadEnv(makeEnv({ VIDEO_PLAYBACK_BASE_URL: url }))).toThrow(
+        "VIDEO_PLAYBACK_BASE_URL",
+      );
+    },
+  );
+
+  it("accepte une base de lecture https", () => {
+    expect(
+      loadEnv(makeEnv({ VIDEO_PLAYBACK_BASE_URL: "https://video.example.test/live" }))
+        .videoPlaybackBaseUrl,
+    ).toBe("https://video.example.test/live");
+  });
 
   it.each([undefined, "", "pas une url", "ftp://h", "xhttp://h", "https2://h"])(
     "refuse BETTER_AUTH_URL %j en la nommant",

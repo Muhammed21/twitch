@@ -23,6 +23,7 @@ API NestJS 11 (ADR 0002, 0009). Architecture et découpage : [plan de l'API](../
 | `BETTER_AUTH_URL`         | URL publique de l'API, origine de confiance de better-auth, requis                                                                                          |
 | `REDIS_URL`               | Redis (`redis://` ou `rediss://`) : liste de révocation des sessions et Pub/Sub, requis                                                                     |
 | `VIDEO_WEBHOOK_SECRET`    | Secret partagé des webhooks du provider vidéo (ADR 0031), au moins 32 caractères, requis                                                                    |
+| `VIDEO_PLAYBACK_BASE_URL` | Base publique (`http` ou `https`) des playlists HLS d'`apps/video`, requis                                                                                  |
 | `SMTP_HOST`, `SMTP_PORT`  | Serveur SMTP des e-mails (codes de vérification), sans authentification ni TLS : Mailpit en local ; un relais authentifié arrive avec l'hébergement. Requis |
 | `SMTP_FROM`               | Expéditeur des e-mails, `Twitch <no-reply@twitch.local>` par défaut                                                                                         |
 
@@ -146,6 +147,8 @@ Clé de stream :
 - `POST /v1/channels/{id}/stream-key/rotate` (jeton requis) révoque la clé chez le provider (`revokeStreamKey`, ADR 0031) et rend la nouvelle, avec les mêmes réponses : 200 et `Cache-Control: no-store`, 403 sans le droit `rotateStreamKey` (propriétaire seulement, perdu par un banni), 404 ;
 - la clé n'est ni stockée par l'API, ni journalisée, ni présente dans une autre réponse (ADR 0001) ;
 - `FakeLiveVideoProvider` est déterministe : canal `fake-<channelId>`, clé dérivée par HMAC de `VIDEO_WEBHOOK_SECRET` et de la génération du canal, ingest `rtmp://127.0.0.1:1935/live`. Chaque rotation incrémente la génération, gardée en mémoire : un redémarrage de l'API rend la clé d'avant les rotations.
+
+Lecture : `GET /v1/channels/{channelId}/playback` (sans jeton) rend `{ playbackUrl }`, la playlist maître HLS du canal provider de la chaîne, `<VIDEO_PLAYBACK_BASE_URL>/hls/channels/<providerChannelId>/master.m3u8`, stable d'un live à l'autre, avec `Cache-Control: no-store` ; 404 quand la chaîne n'a pas de session ouverte ou pas de canal provider, 400 pour un identifiant qui n'est pas un UUID. `apps/video` répond 404 à cette URL tant que le premier segment du live n'est pas produit : le lecteur réessaie. L'URL est en clair ; sa signature arrive avec T2 (ADR 0031 §6).
 
 Une erreur client exposée par une bibliothèque HTTP (`expose: true`, statut 4xx, comme celles de body-parser) garde son statut dans le `Problem`.
 

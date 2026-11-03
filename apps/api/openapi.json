@@ -245,6 +245,46 @@
         ]
       }
     },
+    "/v1/channels/{channelId}/playback": {
+      "get": {
+        "operationId": "PlaybackController_read",
+        "parameters": [
+          {
+            "name": "channelId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Playback"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erreur au format RFC 9457",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Playback"
+        ]
+      }
+    },
     "/v1/channels/{id}/timeouts": {
       "post": {
         "operationId": "TimeoutsController_create",
@@ -514,6 +554,19 @@
             "$ref": "#/components/schemas/Uuid"
           }
         }
+      },
+      "Playback": {
+        "type": "object",
+        "properties": {
+          "playbackUrl": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "playbackUrl"
+        ],
+        "additionalProperties": {}
       },
       "TimeoutUserRequest": {
         "type": "object",

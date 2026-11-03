@@ -185,6 +185,7 @@ const withStreamModule = async (
       StreamModule.register({
         prisma: createContextClient({ context: "stream", env: process.env }),
         webhookSecret: "secret-de-test",
+        playbackBaseUrl: "http://127.0.0.1:3002",
         video: { provider: "fake" },
         authzRedis,
         consumerRedis,

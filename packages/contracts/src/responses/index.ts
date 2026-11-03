@@ -6,3 +6,4 @@ export { Timeout } from "./timeout.ts";
 export { Live, LivePage } from "./live-page.ts";
 export { MobileBootstrap, Profile } from "./mobile-bootstrap.ts";
 export { LiveStatus } from "./live-status.ts";
+export { Playback } from "./playback.ts";
