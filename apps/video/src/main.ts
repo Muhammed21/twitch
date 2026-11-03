@@ -46,6 +46,14 @@ try {
     limits: RTMP_LIMITS,
     randomBytes,
     onMessage: () => undefined,
+    publish: async () => undefined,
+    onError: (error) => {
+      log(
+        "publication RTMP en échec",
+        { error: error instanceof Error ? error.message : String(error) },
+        "error",
+      );
+    },
   });
   const server = await startHttpServer({
     port: config.httpPort,

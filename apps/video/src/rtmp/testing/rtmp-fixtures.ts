@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs";
 
+import { demuxChunks, type RtmpMessage, startDemuxer } from "../chunk-stream.ts";
+
 const HANDSHAKE_BYTES = 1 + 2 * 1536;
 const FLV_HEADER_SIZE = 9;
 const FLV_TAG_HEADER_SIZE = 11;
@@ -10,6 +12,49 @@ const fixture = (name: string): Buffer => readFileSync(new URL(`./${name}`, impo
 export const FFMPEG_PUBLISH = new Uint8Array(fixture("ffmpeg-publish.bin"));
 
 export const FFMPEG_PUBLISH_CHUNKS = FFMPEG_PUBLISH.subarray(HANDSHAKE_BYTES);
+
+export const FFMPEG_STREAM_KEY = "sk_live_test";
+
+const COMMAND = 20;
+const FIXTURE_LIMITS = { maxChunkSize: 65_536, maxMessageSize: 1024 * 1024, maxChunkStreams: 16 };
+
+const messagesOf = (chunks: Uint8Array): readonly RtmpMessage[] => {
+  const step = demuxChunks({ demuxer: startDemuxer(FIXTURE_LIMITS), input: chunks });
+  return step.ok ? step.value.messages : [];
+};
+
+const FFMPEG_MESSAGES = messagesOf(FFMPEG_PUBLISH_CHUNKS);
+
+const namesCommand = (name: string) => (message: RtmpMessage) =>
+  message.typeId === COMMAND &&
+  Buffer.from(message.payload.subarray(3, 3 + name.length)).toString("latin1") === name &&
+  message.payload[2] === name.length;
+
+export const ffmpegMessage = (name: string): RtmpMessage => {
+  const message = FFMPEG_MESSAGES.find(namesCommand(name));
+  if (message === undefined) {
+    throw new Error(`commande ${name} absente de la fixture`);
+  }
+  return message;
+};
+
+const shortestPrefixWith = (count: number, low: number, high: number): number => {
+  if (low === high) {
+    return low;
+  }
+  const middle = Math.floor((low + high) / 2);
+  return messagesOf(FFMPEG_PUBLISH_CHUNKS.subarray(0, middle)).length >= count
+    ? shortestPrefixWith(count, low, middle)
+    : shortestPrefixWith(count, middle + 1, high);
+};
+
+export const ffmpegPublishThrough = (name: string): Uint8Array => {
+  const count = FFMPEG_MESSAGES.findIndex(namesCommand(name)) + 1;
+  return FFMPEG_PUBLISH.subarray(
+    0,
+    HANDSHAKE_BYTES + shortestPrefixWith(count, 0, FFMPEG_PUBLISH_CHUNKS.length),
+  );
+};
 
 export type FlvTag = {
   readonly typeId: number;
