@@ -73,7 +73,7 @@ struct ChatSessionReconnectionTests {
     #expect(await clock.backoffs.isEmpty)
   }
 
-  @Test("une connexion établie après un 401 remet le compte à zéro : une révocation suivante reconnecte sans attendre")
+  @Test("une connexion vivante après un 401 remet le compte à zéro : une révocation suivante reconnecte sans attendre")
   func unauthorizedThenRevoked() async throws {
     let clock = TestClock()
     let connection = FakeConnection()
@@ -82,7 +82,7 @@ struct ChatSessionReconnectionTests {
     let run = running(session)
     try await waitUntil { session.status == .live }
 
-    await connection.emit([.revoked(.refreshAndReconnect)])
+    await connection.emit([.message(message(1)), .revoked(.refreshAndReconnect)])
     try await waitUntil { await connector.tokens.count == 3 }
     try await waitUntil { session.status == .live }
     run.cancel()
@@ -110,7 +110,7 @@ struct ChatSessionReconnectionTests {
     #expect(await clock.backoffs == [.seconds(1)])
   }
 
-  @Test("une révocation après une connexion établie remet aussi le backoff à zéro")
+  @Test("une révocation sur une connexion vivante remet aussi le backoff à zéro")
   func revokedResetsBackoff() async throws {
     let clock = TestClock()
     let connection = FakeConnection()
@@ -121,7 +121,7 @@ struct ChatSessionReconnectionTests {
     let run = running(session)
     try await waitUntil { await connector.tokens.count == 3 && session.status == .live }
 
-    await connection.emit([.revoked(.refreshAndReconnect)])
+    await connection.emit([.message(message(1)), .revoked(.refreshAndReconnect)])
     try await waitUntil { await connector.tokens.count == 5 && session.status == .live }
     run.cancel()
     await run.value
@@ -167,7 +167,7 @@ struct ChatSessionReconnectionTests {
   }
 
   @Test(
-    "une erreur réseau reconnecte en backoff exponentiel, remis à zéro par une connexion établie",
+    "une erreur réseau reconnecte en backoff exponentiel, remis à zéro par une connexion vivante",
     arguments: [ChatConnectionError.unavailable, .refused("chatter_unavailable")]
   )
   func backoff(error: ChatConnectionError) async throws {
@@ -180,6 +180,7 @@ struct ChatSessionReconnectionTests {
     let run = running(session)
     try await waitUntil { await clock.backoffs.count == 3 && session.status == .live }
 
+    await dropped.emit([.message(message(1))])
     await dropped.drop(ChatConnectionError.unavailable)
     try await waitUntil { await connector.tokens.count == 6 && session.status == .live }
     run.cancel()

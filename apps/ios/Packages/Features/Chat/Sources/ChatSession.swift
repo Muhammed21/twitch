@@ -1,6 +1,7 @@
 import Domain
 import Foundation
 import Observation
+import os
 
 @MainActor
 @Observable
@@ -19,13 +20,14 @@ public final class ChatSession {
 
   private enum Ending {
     case cancelled
-    case unauthorized(token: String, afterConnecting: Bool)
-    case failed(afterConnecting: Bool)
+    case unauthorized(token: String, lived: Bool)
+    case failed(lived: Bool)
     case final(Status)
   }
 
   private static let maxDelaySeconds = 30
   private static let batchInterval = Duration.milliseconds(100)
+  private static let livedAfter: TimeInterval = 30
 
   public private(set) var messages: [ChatMessage] = []
   public private(set) var status = Status.connecting
@@ -36,6 +38,7 @@ public final class ChatSession {
   @ObservationIgnored private let wait: Wait
   @ObservationIgnored private let jitter: Jitter
   @ObservationIgnored private let now: @Sendable () -> Date
+  @ObservationIgnored private let log: @Sendable (String) -> Void
   @ObservationIgnored private var connection: (any ChatConnection)?
   @ObservationIgnored private var channel: ChannelID?
   @ObservationIgnored private var batch: [ChatMessage] = []
@@ -47,7 +50,8 @@ public final class ChatSession {
     window: Int = 300,
     wait: @escaping Wait = { try await Task.sleep(for: $0) },
     jitter: @escaping Jitter = { $0 * Double.random(in: 0.5 ... 1) },
-    now: @escaping @Sendable () -> Date = Date.init
+    now: @escaping @Sendable () -> Date = Date.init,
+    log: @escaping @Sendable (String) -> Void = { Logger(subsystem: "Chat", category: "ChatSession").error("\($0, privacy: .public)") }
   ) {
     self.connector = connector
     self.tokens = tokens
@@ -55,6 +59,7 @@ public final class ChatSession {
     self.wait = wait
     self.jitter = jitter
     self.now = now
+    self.log = log
   }
 
   public func run(in channel: ChannelID) async {
@@ -70,17 +75,17 @@ public final class ChatSession {
       case let .final(final):
         status = final
         return
-      case let .unauthorized(token, afterConnecting):
+      case let .unauthorized(token, lived):
         rejectedToken = token
-        unauthorized = afterConnecting ? 1 : unauthorized + 1
-        failures = afterConnecting ? 0 : failures
+        unauthorized = lived ? 1 : unauthorized + 1
+        failures = lived ? 0 : failures
         if unauthorized == 1 {
           continue
         }
-      case let .failed(afterConnecting):
+      case let .failed(lived):
         rejectedToken = nil
         unauthorized = 0
-        failures = afterConnecting ? 0 : failures
+        failures = lived ? 0 : failures
       }
       guard !Task.isCancelled else {
         return
@@ -109,17 +114,17 @@ public final class ChatSession {
     } catch SessionError.signedOut {
       return .final(.signedOut)
     } catch {
-      return .failed(afterConnecting: false)
+      return .failed(lived: false)
     }
     let opened: any ChatConnection
     do {
       opened = try await connector.connect(accessToken: token)
     } catch ChatConnectionError.unauthorized {
-      return .unauthorized(token: token, afterConnecting: false)
+      return .unauthorized(token: token, lived: false)
     } catch ChatConnectionError.forbidden {
       return .final(.denied)
     } catch {
-      return .failed(afterConnecting: false)
+      return .failed(lived: false)
     }
     connection = opened
     let ending = await follow(opened, in: channel, token: token)
@@ -129,22 +134,30 @@ public final class ChatSession {
   }
 
   private func follow(_ opened: any ChatConnection, in channel: ChannelID, token: String) async -> Ending {
+    let joinedAt = now()
+    var heard = false
+    var lived: Bool {
+      heard || now().timeIntervalSince(joinedAt) >= Self.livedAfter
+    }
     do {
       try await opened.join(channel)
       status = .live
       for try await event in opened.events {
         switch event {
-        case let .message(message): receive(message)
-        case .revoked(.refreshAndReconnect): return .unauthorized(token: token, afterConnecting: true)
+        case let .message(message):
+          heard = true
+          receive(message)
+        case .revoked(.refreshAndReconnect): return .unauthorized(token: token, lived: lived)
         case .revoked(.stop): return .final(.denied)
         case .revoked(.unknown): continue
         }
       }
       return .cancelled
     } catch ChatConnectionError.messageTooLarge {
+      log("chat: frame refused by the server (close 1009), client bug")
       return .final(.halted)
     } catch {
-      return .failed(afterConnecting: true)
+      return .failed(lived: lived)
     }
   }
 

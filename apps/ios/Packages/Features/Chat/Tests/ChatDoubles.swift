@@ -1,6 +1,7 @@
 import Chat
 import Domain
 import Foundation
+import os
 
 let channel = ChannelID(UUID(uuidString: "9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69") ?? UUID())
 let batchInterval = Duration.milliseconds(100)
@@ -173,6 +174,30 @@ actor TestClock {
   }
 }
 
+final class TestNow: Sendable {
+  private let current = OSAllocatedUnfairLock(initialState: Date(timeIntervalSince1970: 1_793_736_900))
+
+  func date() -> Date {
+    current.withLock { $0 }
+  }
+
+  func advance(by seconds: TimeInterval) {
+    current.withLock { $0 += seconds }
+  }
+}
+
+final class LogBook: Sendable {
+  private let lines = OSAllocatedUnfairLock(initialState: [String]())
+
+  var entries: [String] {
+    lines.withLock { $0 }
+  }
+
+  func write(_ line: String) {
+    lines.withLock { $0.append(line) }
+  }
+}
+
 struct TimedOut: Error {}
 
 @MainActor
@@ -197,13 +222,17 @@ func makeSession(
   tokens: any AccessTokenProvider = FakeTokens(),
   clock: TestClock = TestClock(),
   window: Int = 300,
-  jitter: @escaping @Sendable (Duration) -> Duration = { $0 }
+  jitter: @escaping @Sendable (Duration) -> Duration = { $0 },
+  now: TestNow = TestNow(),
+  log: LogBook = LogBook()
 ) -> ChatSession {
   ChatSession(
     connector: connector,
     tokens: tokens,
     window: window,
     wait: { await clock.wait($0) },
-    jitter: jitter
+    jitter: jitter,
+    now: { now.date() },
+    log: { log.write($0) }
   )
 }
