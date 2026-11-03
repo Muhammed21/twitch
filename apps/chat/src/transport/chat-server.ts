@@ -45,8 +45,15 @@ const bearerToken = (header: string | undefined): string | undefined =>
   /^Bearer (\S+)$/i.exec(String(header))?.[1];
 
 type Handshake =
-  | { readonly status: 101; readonly identity: AccessTokenIdentity }
+  | { readonly status: 101; readonly identity: AccessTokenIdentity; readonly token: string }
   | { readonly status: Refusal };
+
+const REVALIDATION_ACTIONS = {
+  invalid_token: "refresh_and_reconnect",
+  revoked: "stop",
+} as const satisfies Record<VerificationFailure, string>;
+
+const sessionRoomOf = (sid: string): string => `sid:${sid}`;
 
 const handshake = async (verifier: TokenVerifier, request: IncomingMessage): Promise<Handshake> => {
   if (!String(request.url).startsWith(SOCKET_IO_PATH)) {
@@ -58,7 +65,7 @@ const handshake = async (verifier: TokenVerifier, request: IncomingMessage): Pro
   }
   const verified = await verifier.verify(token);
   if (verified.ok) {
-    return { status: 101, identity: verified.value };
+    return { status: 101, identity: verified.value, token };
   }
   return { status: verified.error === "revoked" ? 403 : 401 };
 };
@@ -105,7 +112,7 @@ export const startChatServer = async ({
   });
 
   const sessions = new WeakMap<IncomingMessage, Promise<ChatSession | undefined>>();
-  const openSession = async ({ userId }: AccessTokenIdentity) => {
+  const openSession = async ({ userId, sid }: AccessTokenIdentity, token: string) => {
     const displayName = await chatters.displayNameOf(userId);
     if (displayName === null) {
       return undefined;
@@ -113,6 +120,7 @@ export const startChatServer = async ({
     return {
       chatter: chatterContextFor({ userId, assignments: [], now: new Date() }),
       author: { id: userId, displayName },
+      credentials: { sid, token },
     };
   };
   const attachSession = async (socket: ChatSocket, next: (error?: Error) => void) => {
@@ -122,6 +130,12 @@ export const startChatServer = async ({
       return;
     }
     socket.data = session;
+    await socket.join(sessionRoomOf(session.credentials.sid));
+    const stillValid = await verifier.verify(session.credentials.token);
+    if (!stillValid.ok) {
+      next(new Error("session_revoked"));
+      return;
+    }
     next();
   };
   io.use((socket, next) => {
@@ -151,7 +165,7 @@ export const startChatServer = async ({
     if (outcome.status === 101) {
       sessions.set(
         request,
-        openSession(outcome.identity).catch((error: unknown) => {
+        openSession(outcome.identity, outcome.token).catch((error: unknown) => {
           log({ msg: "profil illisible", error: String(error) });
           return undefined;
         }),
@@ -168,8 +182,27 @@ export const startChatServer = async ({
   server.listen(port);
   await once(server, "listening");
 
+  const revalidate = async (socket: ChatSocket) => {
+    const verified = await verifier.verify(socket.data.credentials.token);
+    if (!verified.ok) {
+      socket.emit("session:revoked", { action: REVALIDATION_ACTIONS[verified.error] });
+      socket.disconnect(true);
+    }
+  };
+
   return {
     port: BoundAddress.parse(server.address()).port,
+    revokeSessions: (sids: readonly string[]) => {
+      if (sids.length === 0) {
+        return;
+      }
+      const revoked = io.in(sids.map(sessionRoomOf));
+      revoked.emit("session:revoked", { action: "stop" });
+      revoked.disconnectSockets(true);
+    },
+    revalidateSessions: async () => {
+      await Promise.all([...io.sockets.sockets.values()].map(revalidate));
+    },
     connectionCount: () => engine.clientsCount,
     rejectedEventCount: () => counters.rejectedEvents,
     close: async () => {
