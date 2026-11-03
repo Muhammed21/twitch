@@ -170,3 +170,44 @@ struct PlayerControllerTests {
     #expect(player.calls.last == "stop")
   }
 }
+
+@MainActor
+@Suite("PlayerController : fin du live annoncée par le statut")
+struct PlayerEndTests {
+  @Test("la fin annoncée passe en terminé et coupe le lecteur ; les événements tardifs sont ignorés")
+  func end() {
+    let (controller, player) = playing()
+
+    controller.end()
+    player.send(.playing)
+
+    #expect(controller.state == .ended)
+    #expect(player.calls.last == "stop")
+  }
+
+  @Test("la fin annoncée annule la relance de démarrage prévue")
+  func endCancelsStartupRetry() {
+    let player = FakeMediaPlayer()
+    let scheduler = ManualScheduler()
+    let controller = PlayerController(player: player, startupRetry: StartupRetry(attempts: 3) { scheduler.schedule($0) })
+    controller.load(streamURL)
+    player.send(.failed)
+
+    controller.end()
+    scheduler.runPending()
+
+    #expect(controller.state == .ended)
+    #expect(player.calls.last == "stop")
+  }
+
+  @Test("au repos, la fin annoncée ne change rien")
+  func endWhileIdle() {
+    let player = FakeMediaPlayer()
+    let controller = PlayerController(player: player)
+
+    controller.end()
+
+    #expect(controller.state == .idle)
+    #expect(player.calls.isEmpty)
+  }
+}
