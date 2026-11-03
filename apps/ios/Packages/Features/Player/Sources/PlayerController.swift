@@ -98,6 +98,13 @@ public final class PlayerController {
     player.stop()
   }
 
+  public func end() {
+    guard state != .idle else { return }
+    generation += 1
+    state = .ended
+    player.stop()
+  }
+
   public func render(into layer: AVPlayerLayer) {
     player.render(into: layer)
   }
