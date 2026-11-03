@@ -137,13 +137,13 @@ export const startChatServer = async ({
       next(new Error("chatter_unavailable"));
       return;
     }
-    socket.data = withSanctions(session, recentSanctions.get(session.author.id) ?? []);
     await socket.join(sessionRoomOf(session.credentials.sid));
     const stillValid = await verifier.verify(session.credentials.token);
     if (!stillValid.ok) {
       next(new Error("session_revoked"));
       return;
     }
+    socket.data = withSanctions(session, recentSanctions.get(session.author.id) ?? []);
     next();
   };
   io.use((socket, next) => {

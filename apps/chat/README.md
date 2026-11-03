@@ -44,7 +44,7 @@ Une socket acceptée garde le `sid` et le jeton de son handshake, et rejoint le 
 
 ### Timeouts
 
-Un timeout reçu par `moderation.user.timed_out` s'ajoute aux sanctions des sockets ouvertes du chatter (`sanction`) : son message suivant sur ce salon est refusé `timed_out`, ses autres salons ne changent pas. Un timeout arrivé pendant l'ouverture d'une connexion, entre la lecture des sanctions et l'entrée de la socket, est gardé en mémoire jusqu'à son échéance et ajouté à la connexion. Le délai entre la sanction et son application sera exposé avec les métriques (PR 8 du plan).
+Un timeout reçu par `moderation.user.timed_out` s'ajoute aux sanctions des sockets ouvertes du chatter (`sanction`) : son message suivant sur ce salon est refusé `timed_out`, ses autres salons ne changent pas. Un timeout arrivé pendant l'ouverture d'une connexion, entre la lecture des sanctions et l'entrée de la socket, est gardé en mémoire jusqu'à son échéance. Il est ajouté à la session juste avant l'entrée de la socket, après la seconde vérification du jeton, sans attente entre les deux. Le délai entre la sanction et son application sera exposé avec les métriques (PR 8 du plan).
 
 ### Salons et diffusion
 

@@ -31,15 +31,27 @@ const startServer = async ({
   rooms,
   sanctions = new Map(),
   displayNameOf = async () => "Alice",
+  recheck = async () => undefined,
 }: {
   rooms: readonly RoomState[];
   sanctions?: ReadonlyMap<string, readonly ChatSanction[]>;
   displayNameOf?: () => Promise<string>;
+  recheck?: () => Promise<void>;
 }) => {
   const authority = await makeTokenAuthority();
+  const verifier = authority.verifier();
+  const verified = new Set<string>();
   const server = await startChatServer({
     port: 0,
-    verifier: authority.verifier(),
+    verifier: {
+      verify: async (token) => {
+        if (verified.has(token)) {
+          await recheck();
+        }
+        verified.add(token);
+        return verifier.verify(token);
+      },
+    },
     log: () => undefined,
     chatters: {
       displayNameOf,
@@ -163,6 +175,28 @@ describe("sanctions des chatters connectés", () => {
 
     server.sanction({ userId: ALICE, channelId: room.channelId, expiresAt: minutesFromNow(10) });
     profile.resolve("Alice");
+    const alice = await connecting;
+    alice.emit("room:join", { channelId: room.channelId });
+
+    expect(await send(alice, room.channelId)).toEqual({ reason: "timed_out" });
+  });
+
+  it("applique un timeout arrivé pendant la seconde vérification du jeton, à la connexion", async () => {
+    const room = makeRoom();
+    const rechecking = deferred<void>();
+    const recheck = deferred<void>();
+    const { server, connectAs } = await startServer({
+      rooms: [room],
+      recheck: () => {
+        rechecking.resolve();
+        return recheck.promise;
+      },
+    });
+    const connecting = connectAs(ALICE);
+    await rechecking.promise;
+
+    server.sanction({ userId: ALICE, channelId: room.channelId, expiresAt: minutesFromNow(10) });
+    recheck.resolve();
     const alice = await connecting;
     alice.emit("room:join", { channelId: room.channelId });
 
