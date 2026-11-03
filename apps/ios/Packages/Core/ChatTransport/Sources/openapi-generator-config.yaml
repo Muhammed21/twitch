@@ -1,0 +1,14 @@
+generate:
+  - types
+accessModifier: internal
+namingStrategy: idiomatic
+filter:
+  schemas:
+    - RealtimeChatMessage
+    - RealtimeChatRejected
+    - RealtimeSessionRevoked
+additionalImports:
+  - Foundation
+typeOverrides:
+  schemas:
+    Uuid: Foundation.UUID
