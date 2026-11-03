@@ -74,14 +74,14 @@ let package = Package(
     ),
     .target(
       name: "Player",
-      dependencies: ["DesignSystem"],
+      dependencies: ["Domain", "DesignSystem"],
       path: "Features/Player/Sources",
       resources: [.process("Localizable.xcstrings")],
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
     .testTarget(
       name: "PlayerTests",
-      dependencies: ["Player"],
+      dependencies: ["Player", "Domain"],
       path: "Features/Player/Tests",
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
