@@ -15,12 +15,12 @@ struct RootScreenTests {
     arguments: [SessionPhase.launching, .signedOut, .signedIn(viewer)]
   )
   func splashFirst(phase: SessionPhase) {
-    #expect(RootScreen(isSplashVisible: true, phase: phase, isGreetingNewAccount: false) == .splash)
+    #expect(RootScreen(isSplashVisible: true, phase: phase, isGreetingNewAccount: false, isUpdateRequired: false) == .splash)
   }
 
   @Test("après le splash, le splash reste tant que la session n'est pas résolue")
   func launching() {
-    #expect(RootScreen(isSplashVisible: false, phase: .launching, isGreetingNewAccount: false) == .splash)
+    #expect(RootScreen(isSplashVisible: false, phase: .launching, isGreetingNewAccount: false, isUpdateRequired: false) == .splash)
   }
 
   @Test(
@@ -28,7 +28,7 @@ struct RootScreenTests {
     arguments: [SessionPhase.signedOut, .signingIn]
   )
   func welcome(phase: SessionPhase) {
-    #expect(RootScreen(isSplashVisible: false, phase: phase, isGreetingNewAccount: false) == .welcome)
+    #expect(RootScreen(isSplashVisible: false, phase: phase, isGreetingNewAccount: false, isUpdateRequired: false) == .welcome)
   }
 
   @Test(
@@ -36,7 +36,7 @@ struct RootScreenTests {
     arguments: [SessionPhase.signedIn(viewer), .signedIn(nil)]
   )
   func signedIn(phase: SessionPhase) {
-    #expect(RootScreen(isSplashVisible: false, phase: phase, isGreetingNewAccount: false) == .signedIn)
+    #expect(RootScreen(isSplashVisible: false, phase: phase, isGreetingNewAccount: false, isUpdateRequired: false) == .signedIn)
   }
 
   @Test(
@@ -44,12 +44,36 @@ struct RootScreenTests {
     arguments: [SessionPhase.signedIn(viewer), .signedIn(nil)]
   )
   func allSet(phase: SessionPhase) {
-    #expect(RootScreen(isSplashVisible: false, phase: phase, isGreetingNewAccount: true) == .allSet)
+    #expect(RootScreen(isSplashVisible: false, phase: phase, isGreetingNewAccount: true, isUpdateRequired: false) == .allSet)
   }
 
   @Test("le splash passe avant « You're All Set! »")
   func splashBeforeAllSet() {
-    #expect(RootScreen(isSplashVisible: true, phase: .signedIn(viewer), isGreetingNewAccount: true) == .splash)
+    #expect(RootScreen(isSplashVisible: true, phase: .signedIn(viewer), isGreetingNewAccount: true, isUpdateRequired: false) == .splash)
+  }
+
+  @Test(
+    "après le splash, une version non supportée montre l'écran de mise à jour, quelle que soit la session",
+    arguments: [SessionPhase.launching, .signedOut, .signingIn, .signedIn(viewer)]
+  )
+  func updateRequired(phase: SessionPhase) {
+    #expect(RootScreen(isSplashVisible: false, phase: phase, isGreetingNewAccount: true, isUpdateRequired: true) == .updateRequired)
+    #expect(RootScreen(isSplashVisible: true, phase: phase, isGreetingNewAccount: false, isUpdateRequired: true) == .splash)
+  }
+
+  @Test(
+    "quitter la session vide la pile de navigation ; un deep link reçu avant la connexion est gardé",
+    arguments: [
+      (SessionPhase.signedIn(viewer), SessionPhase.signedOut, true),
+      (.signedIn(nil), .signedOut, true),
+      (.signedOut, .signingIn, false),
+      (.signingIn, .signedIn(viewer), false),
+      (.launching, .signedIn(nil), false),
+      (.signedIn(nil), .signedIn(viewer), false),
+    ]
+  )
+  func navigationReset(from old: SessionPhase, to new: SessionPhase, resets: Bool) {
+    #expect(RootScreen.resetsNavigation(from: old, to: new) == resets)
   }
 
   @Test("Log In de l'accueil demande la connexion, Sign Up l'inscription")
