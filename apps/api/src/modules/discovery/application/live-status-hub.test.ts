@@ -239,4 +239,55 @@ describe("hub du statut des lives (canal 2, ADR 0004 §2)", () => {
 
     expect(received).toEqual([offlineStatus(LIVE_CHANNEL)]);
   });
+
+  it("n'envoie pas l'état périmé d'un tick à un abonné arrivé pendant sa lecture", async () => {
+    const projection = makeProjection([offlineStatus(LIVE_CHANNEL)]);
+    const during: { tickRead: () => Promise<void> } = { tickRead: async () => {} };
+    const reader: LiveStatusReader = {
+      read: async (channelIds) => {
+        const statuses = await projection.reader.read(channelIds);
+        const arriving = during.tickRead;
+        during.tickRead = async () => {};
+        await arriving();
+        return statuses;
+      },
+    };
+    const hub = createLiveStatusHub(reader);
+    await subscribed(hub, LIVE_CHANNEL, makeListener().listener);
+    const late = makeListener();
+    during.tickRead = async () => {
+      projection.set(liveStatus(LIVE_CHANNEL));
+      await subscribed(hub, LIVE_CHANNEL, late.listener);
+    };
+
+    await hub.tick();
+
+    expect(late.received).toEqual([liveStatus(LIVE_CHANNEL)]);
+  });
+
+  it("n'envoie rien pour une chaîne qui disparaît de la projection", async () => {
+    const projection = makeProjection([
+      offlineStatus(LIVE_CHANNEL),
+      offlineStatus(OFFLINE_CHANNEL),
+    ]);
+    const vanishing: { gone: boolean } = { gone: false };
+    const reader: LiveStatusReader = {
+      read: async (channelIds) =>
+        (await projection.reader.read(channelIds)).filter(
+          ({ channelId }) => !(vanishing.gone && channelId === LIVE_CHANNEL),
+        ),
+    };
+    const hub = createLiveStatusHub(reader);
+    const { received, listener } = makeListener();
+    await subscribed(hub, LIVE_CHANNEL, listener);
+    const other = makeListener();
+    await subscribed(hub, OFFLINE_CHANNEL, other.listener);
+
+    vanishing.gone = true;
+    projection.set(liveStatus(OFFLINE_CHANNEL));
+    await hub.tick();
+
+    expect(received).toEqual([offlineStatus(LIVE_CHANNEL)]);
+    expect(other.received).toEqual([offlineStatus(OFFLINE_CHANNEL), liveStatus(OFFLINE_CHANNEL)]);
+  });
 });
