@@ -89,6 +89,12 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
             withViewerCounts({
               statuses: prismaLiveStatusReader(dependencies.prisma),
               viewerCounts: dependencies.viewerCounts,
+              onViewerCountFailure: (error) =>
+                writeLog(dependencies.logSink, {
+                  level: "error",
+                  msg: "lecture du nombre de viewers en échec",
+                  ...errorDetails(error),
+                }),
             }),
           ),
         },

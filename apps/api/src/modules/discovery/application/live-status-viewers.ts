@@ -7,15 +7,24 @@ export type ViewerCountReader = (
 export const withViewerCounts = ({
   statuses,
   viewerCounts,
+  onViewerCountFailure,
 }: {
   statuses: LiveStatusReader;
   viewerCounts: ViewerCountReader;
+  onViewerCountFailure: (error: unknown) => void;
 }): LiveStatusReader => ({
   read: async (channelIds) => {
     const read = await statuses.read(channelIds);
-    const counts = await viewerCounts(
-      read.filter(({ startedAt }) => startedAt !== undefined).map(({ channelId }) => channelId),
-    );
+    const liveChannelIds = read
+      .filter(({ startedAt }) => startedAt !== undefined)
+      .map(({ channelId }) => channelId);
+    const counts = await viewerCounts(liveChannelIds).catch((error: unknown) => {
+      onViewerCountFailure(error);
+      return undefined;
+    });
+    if (counts === undefined) {
+      return read;
+    }
     return read.map((status) =>
       status.startedAt === undefined
         ? status

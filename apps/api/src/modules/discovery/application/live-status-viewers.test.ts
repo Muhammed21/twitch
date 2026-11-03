@@ -46,7 +46,11 @@ describe("statut des lives avec le nombre de viewers (ADR 0004 §3)", () => {
         [OFFLINE_CHANNEL, 2],
       ]),
     );
-    const reader = withViewerCounts({ statuses, viewerCounts: viewerCounts.read });
+    const reader = withViewerCounts({
+      statuses,
+      viewerCounts: viewerCounts.read,
+      onViewerCountFailure: () => {},
+    });
 
     expect(
       await reader.read([LIVE_CHANNEL, OTHER_LIVE_CHANNEL, OFFLINE_CHANNEL, SILENT_CHANNEL]),
@@ -60,10 +64,32 @@ describe("statut des lives avec le nombre de viewers (ADR 0004 §3)", () => {
 
   it("lit les compteurs des seules chaînes en live, en une lecture", async () => {
     const viewerCounts = makeViewerCounts(new Map());
-    const reader = withViewerCounts({ statuses, viewerCounts: viewerCounts.read });
+    const reader = withViewerCounts({
+      statuses,
+      viewerCounts: viewerCounts.read,
+      onViewerCountFailure: () => {},
+    });
 
     await reader.read([LIVE_CHANNEL, OFFLINE_CHANNEL, SILENT_CHANNEL]);
 
     expect(viewerCounts.reads).toEqual([[LIVE_CHANNEL, SILENT_CHANNEL]]);
+  });
+
+  it("rend l'état des lives sans nombre de viewers quand les compteurs sont illisibles, et signale l'échec", async () => {
+    const failures: unknown[] = [];
+    const outage = new Error("Redis présence injoignable");
+    const reader = withViewerCounts({
+      statuses,
+      viewerCounts: async () => {
+        throw outage;
+      },
+      onViewerCountFailure: (error) => failures.push(error),
+    });
+
+    expect(await reader.read([LIVE_CHANNEL, OFFLINE_CHANNEL])).toEqual([
+      { channelId: LIVE_CHANNEL, startedAt: STARTED_AT },
+      { channelId: OFFLINE_CHANNEL, startedAt: undefined },
+    ]);
+    expect(failures).toEqual([outage]);
   });
 });
