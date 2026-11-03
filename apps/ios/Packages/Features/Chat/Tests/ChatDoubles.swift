@@ -198,6 +198,28 @@ final class LogBook: Sendable {
   }
 }
 
+struct Unreachable: Error {}
+
+actor FakeChannels: ChannelRepository {
+  private var failures: Int
+  private var ids: [String: ChannelID]
+  private(set) var lookups: [String] = []
+
+  init(failures: Int = 0, ids: [String: ChannelID] = [:]) {
+    self.failures = failures
+    self.ids = ids
+  }
+
+  func channel(withSlug slug: ChannelSlug) throws -> Channel {
+    lookups.append(slug.rawValue)
+    guard failures == 0 else {
+      failures -= 1
+      throw Unreachable()
+    }
+    return Channel(id: ids[slug.rawValue] ?? ChatTests.channel, slug: slug, title: "Speedrun", ownerID: UUID())
+  }
+}
+
 struct TimedOut: Error {}
 
 @MainActor
@@ -223,12 +245,14 @@ func makeSession(
   clock: TestClock = TestClock(),
   window: Int = 300,
   jitter: @escaping @Sendable (Duration) -> Duration = { $0 },
+  channels: FakeChannels = FakeChannels(),
   now: TestNow = TestNow(),
   log: LogBook = LogBook()
 ) -> ChatSession {
   ChatSession(
     connector: connector,
     tokens: tokens,
+    channels: channels,
     window: window,
     wait: { await clock.wait($0) },
     jitter: jitter,
