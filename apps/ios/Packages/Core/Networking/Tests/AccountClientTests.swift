@@ -109,11 +109,11 @@ struct AccountClientTests {
     #expect(await transport.requests.isEmpty)
   }
 
-  @Test("une réponse d'erreur du serveur remonte son statut, sans type généré")
-  func serverErrorSurfacesItsStatus() async throws {
+  @Test("une réponse d'erreur RFC 9457 devient un ServiceProblem, sans type généré")
+  func serverErrorSurfacesItsProblem() async throws {
     let transport = FakeTransport(status: 500, json: #"{"type":"about:blank","title":"Internal Server Error","status":500}"#)
 
-    await #expect(throws: APIError.unexpectedStatus(500)) {
+    await #expect(throws: ServiceProblem(type: "about:blank", title: "Internal Server Error", status: 500, detail: nil)) {
       try await makeClient(transport: transport).currentAccount()
     }
   }

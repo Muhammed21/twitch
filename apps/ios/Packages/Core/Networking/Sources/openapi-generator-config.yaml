@@ -6,6 +6,8 @@ namingStrategy: idiomatic
 filter:
   operations:
     - MeController_read
+    - MobileBootstrapController_read
+    - LivesController_list
 additionalImports:
   - Foundation
 typeOverrides:

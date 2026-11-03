@@ -73,6 +73,10 @@ struct RootView: View {
 
 @MainActor
 enum Composition {
+  nonisolated static func clientVersion(info: [String: Any]) -> String? {
+    info["CFBundleShortVersionString"] as? String
+  }
+
   static func sessionStore(info: [String: Any]) -> SessionStore {
     let configuration: OAuthConfiguration
     do {
@@ -80,7 +84,10 @@ enum Composition {
     } catch {
       fatalError("Info.plist : configuration OAuth invalide (\(error)).")
     }
-    let transport = URLSessionHTTPTransport()
+    guard let version = clientVersion(info: info) else {
+      fatalError("Info.plist : CFBundleShortVersionString manquant.")
+    }
+    let transport = ClientVersionTransport(wrapping: URLSessionHTTPTransport(), version: version)
     let session = OAuthSession(
       endpoint: TokenEndpoint(configuration: configuration, transport: transport),
       store: KeychainTokenStore(service: Bundle.main.bundleIdentifier ?? "com.muhammedcavus.twitch")
