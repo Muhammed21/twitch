@@ -1,6 +1,8 @@
 @testable import Chat
+import DesignSystem
 import Domain
 import Foundation
+import SwiftUI
 import Testing
 
 private let english = Locale(identifier: "en_US")
@@ -45,6 +47,21 @@ struct ChatLineTests {
     #expect(line.author == "yahway_810:")
     #expect(line.body == "valid")
   }
+
+  @Test("la ligne affichée réunit l'heure, l'auteur et le corps, chacun dans son style")
+  func styled() {
+    let text = ChatLine(sent(at: "2026-11-03T04:13:00Z"), locale: english, timeZone: utc).styled
+
+    #expect(String(text.characters) == "04:13 yahway_810: valid")
+    #expect(segments(of: text) { $0.foregroundColor == ColorRole.textSecondary.color } == ["04:13"])
+    #expect(segments(of: text) { $0.foregroundColor == ColorRole.link.color } == ["yahway_810:"])
+    #expect(segments(of: text) { $0.font == TextRole.chatAuthor.font } == ["yahway_810:"])
+    #expect(segments(of: text) { $0.foregroundColor == ColorRole.textPrimary.color } == ["valid"])
+  }
+
+  private func segments(of text: AttributedString, where matches: (AttributedString.Runs.Run) -> Bool) -> [String] {
+    text.runs.filter(matches).map { String(text[$0.range].characters) }
+  }
 }
 
 @Suite("Brouillon du compositeur")
@@ -87,6 +104,19 @@ struct ComposerFeedbackTests {
   )
   func rejected(reason: ChatRejectionReason, notice: String) {
     #expect(ComposerFeedback(.rejected(reason)) == ComposerFeedback(clearsDraft: false, notice: notice))
+  }
+
+  @Test(
+    "un message accepté ne vide le champ que s'il contient encore le brouillon envoyé",
+    arguments: [("hi", ""), (" hi ", ""), ("hi next", "hi next"), ("", "")]
+  )
+  func remainingAfterAccepted(current: String, remaining: String) {
+    #expect(ComposerFeedback(.accepted).draft(current, after: "hi") == remaining)
+  }
+
+  @Test("un message refusé laisse le champ tel quel")
+  func remainingAfterRejected() {
+    #expect(ComposerFeedback(.rejected(.banned)).draft("hi", after: "hi") == "hi")
   }
 
   @Test("un envoi sans verdict garde le brouillon et dit que le message n'est pas parti")

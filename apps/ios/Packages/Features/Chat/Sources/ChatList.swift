@@ -35,12 +35,8 @@ struct ChatRow: View {
   let line: ChatLine
 
   var body: some View {
-    Text(
-      "\(Text(line.time).foregroundStyle(ColorRole.textSecondary.color)) "
-        + "\(Text(line.author).font(TextRole.chatAuthor.font).foregroundStyle(ColorRole.link.color)) "
-        + "\(Text(line.body).foregroundStyle(ColorRole.textPrimary.color))"
-    )
-    .font(TextRole.chatMessage.font)
-    .frame(maxWidth: .infinity, alignment: .leading)
+    Text(line.styled)
+      .font(TextRole.chatMessage.font)
+      .frame(maxWidth: .infinity, alignment: .leading)
   }
 }

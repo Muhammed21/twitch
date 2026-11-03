@@ -1,5 +1,7 @@
+import DesignSystem
 import Domain
 import Foundation
+import SwiftUI
 
 struct ChatLine: Equatable {
   let time: String
@@ -13,6 +15,19 @@ extension ChatLine {
       .hour(.twoDigits(amPM: .omitted))
       .minute(.twoDigits)
     self.init(time: message.sentAt.formatted(style), author: "\(message.author.displayName):", body: message.body)
+  }
+
+  var styled: AttributedString {
+    let separator = AttributedString(" ")
+    return Self.styled(time, color: .textSecondary)
+      + separator
+      + Self.styled(author, color: .link, font: TextRole.chatAuthor.font)
+      + separator
+      + Self.styled(body, color: .textPrimary)
+  }
+
+  private static func styled(_ text: String, color: ColorRole, font: Font = TextRole.chatMessage.font) -> AttributedString {
+    AttributedString(text, attributes: AttributeContainer().foregroundColor(color.color).font(font))
   }
 }
 
@@ -40,6 +55,10 @@ extension ComposerFeedback {
     case let .rejected(reason): self.init(clearsDraft: false, notice: ChatText.rejection(reason))
     case nil: self.init(clearsDraft: false, notice: ChatText.unsent)
     }
+  }
+
+  func draft(_ current: String, after sent: String) -> String {
+    clearsDraft && ChatDraft.sendable(current) == sent ? "" : current
   }
 }
 

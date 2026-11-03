@@ -126,7 +126,7 @@ let package = Package(
     ),
     .testTarget(
       name: "ChatTests",
-      dependencies: ["Chat", "Domain"],
+      dependencies: ["Chat", "Domain", "DesignSystem"],
       path: "Features/Chat/Tests",
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),

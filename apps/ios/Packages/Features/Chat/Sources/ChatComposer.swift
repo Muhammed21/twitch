@@ -54,9 +54,7 @@ public struct ChatComposer: View {
     isSending = true
     Task {
       let feedback = await ComposerFeedback(session.send(body))
-      if feedback.clearsDraft {
-        draft = ""
-      }
+      draft = feedback.draft(draft, after: body)
       notice = feedback.notice
       isSending = false
     }
