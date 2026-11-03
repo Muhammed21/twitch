@@ -1,0 +1,11 @@
+appId: com.muhammedcavus.twitch
+name: Connexion
+---
+- runFlow: subflows/sign-in.yaml
+- tapOn:
+    id: root.account
+- extendedWaitUntil:
+    visible:
+      id: account.logOut
+    timeout: 10000
+- assertVisible: viewer@twitch.local

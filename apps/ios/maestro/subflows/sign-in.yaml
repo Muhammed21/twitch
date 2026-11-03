@@ -1,0 +1,23 @@
+appId: com.muhammedcavus.twitch
+---
+- launchApp:
+    clearState: true
+    clearKeychain: true
+- extendedWaitUntil:
+    visible:
+      id: welcome.logIn
+    timeout: 30000
+- tapOn:
+    id: welcome.logIn
+- extendedWaitUntil:
+    visible: Username
+    timeout: 30000
+- tapOn: Username
+- inputText: viewer@twitch.local
+- pressKey: Enter
+- inputText: twitch-dev-password
+- pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: root.account
+    timeout: 30000
