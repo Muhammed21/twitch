@@ -42,3 +42,20 @@ model VideoIngestSession {
 
   @@schema("video")
 }
+
+/// Événements stream.started et stream.ended d'apps/video, écrits avec la session qui change d'état,
+/// puis envoyés à l'API en webhooks signés par le relais. payload est le corps du webhook.
+model VideoOutbox {
+  id            String    @id @db.Uuid
+  name          String
+  version       Int
+  payload       Json
+  occurredAt    DateTime
+  publishedAt   DateTime?
+  attempts      Int       @default(0)
+  nextAttemptAt DateTime  @default(now())
+  lastError     String?
+
+  @@index([publishedAt, nextAttemptAt])
+  @@schema("video")
+}

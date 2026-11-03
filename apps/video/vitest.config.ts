@@ -10,8 +10,9 @@ export default defineConfig({
       exclude: [
         "src/**/*.test.ts",
         "src/main.ts",
-        "src/control-plane/testing/**",
+        "src/**/testing/**",
         "src/persistence/prisma-video-store.ts",
+        "src/outbox/video-outbox-relay.ts",
       ],
       reporter: ["text"],
       thresholds: {

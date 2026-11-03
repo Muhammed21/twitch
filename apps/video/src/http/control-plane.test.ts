@@ -2,7 +2,7 @@ import { randomBytes, randomUUID } from "node:crypto";
 
 import { describe, expect, it, onTestFinished } from "vitest";
 
-import { LiveStreams, Problem, StreamKey, VideoChannel } from "@repo/video-contract";
+import { LiveStreams, Problem, StreamEnded, StreamKey, VideoChannel } from "@repo/video-contract";
 
 import { createControlPlane, type VideoStore } from "../control-plane/control-plane.ts";
 import { inMemoryVideoStore } from "../control-plane/in-memory-video-store.ts";
@@ -65,7 +65,7 @@ const startControlPlane = async ({
     return channel;
   };
   const seedSessions = async (...sessions: readonly IngestSession[]) => {
-    await Promise.all(sessions.map((session) => store.saveSession(session)));
+    await Promise.all(sessions.map((session) => store.saveSession(session, [])));
   };
   return { store, call, createChannel, streamKeyOf, seedChannel, seedSessions };
 };
@@ -347,6 +347,29 @@ describe("POST /channels/{id}/stop", () => {
     expect(response.body).toBeUndefined();
     expect(LiveStreams.parse(streams.body).streams).toEqual([]);
     expect(await store.liveSessions()).toEqual([]);
+  });
+
+  it("écrit l'événement stream.ended de la session terminée, à l'instant de l'arrêt", async () => {
+    const store = inMemoryVideoStore();
+    const { call, seedChannel, seedSessions } = await startControlPlane({ store });
+    const { id: channelId } = await seedChannel();
+    const live = makeSession(channelId, LIVE_STATE);
+    await seedSessions(live);
+    const before = Date.now();
+
+    await call("POST", `/channels/${channelId}/stop`);
+
+    const [event, ...others] = await store.eventsOf(live.id);
+    expect(others).toEqual([]);
+    expect(StreamEnded.parse(event)).toEqual({
+      id: expect.stringMatching(/^[0-9a-f-]{36}$/),
+      type: "stream.ended",
+      channelId,
+      sessionId: live.id,
+      occurredAt: expect.any(String),
+    });
+    expect(Date.parse(String(event?.occurredAt))).toBeGreaterThanOrEqual(before);
+    expect(Date.parse(String(event?.occurredAt))).toBeLessThanOrEqual(Date.now());
   });
 
   it("ne termine que le live du canal visé", async () => {

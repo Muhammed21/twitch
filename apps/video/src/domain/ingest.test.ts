@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+import { StreamEnded, StreamStarted } from "@repo/video-contract";
+
 import {
   type IngestSession,
+  lifecycleEvent,
   openSession,
   publish,
   rotateStreamKey,
@@ -163,5 +166,37 @@ describe("machine à états d'une session d'ingest", () => {
     ["déjà terminée", { ...LIVE_ON_CANAL_1, state: "ended", endedAt: ENDED_AT }],
   ])("ne termine pas une session %s", (_name, session) => {
     expect(stop(session, ENDED_AT)).toEqual({ ok: false, error: "not_live" });
+  });
+});
+
+describe("événement de cycle de vie d'une session", () => {
+  const EVENT_ID = "0b6f5c1e-2d3a-4e5f-8a9b-1c2d3e4f5a6b";
+
+  it("annonce le début d'une session live, à l'instant de son début", () => {
+    const event = lifecycleEvent({ id: EVENT_ID, session: LIVE_ON_CANAL_1 });
+
+    expect(event).toEqual({
+      id: EVENT_ID,
+      type: "stream.started",
+      channelId: "canal-1",
+      sessionId: "session-0",
+      occurredAt: "2026-10-15T20:00:00.000Z",
+    });
+    expect(StreamStarted.parse(event)).toEqual(event);
+  });
+
+  it("annonce la fin d'une session terminée, à l'instant de sa fin", () => {
+    const session = { ...LIVE_ON_CANAL_1, state: "ended" as const, endedAt: ENDED_AT };
+
+    const event = lifecycleEvent({ id: EVENT_ID, session });
+
+    expect(event).toEqual({
+      id: EVENT_ID,
+      type: "stream.ended",
+      channelId: "canal-1",
+      sessionId: "session-0",
+      occurredAt: "2026-10-15T21:30:00.000Z",
+    });
+    expect(StreamEnded.parse(event)).toEqual(event);
   });
 });

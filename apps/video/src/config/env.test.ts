@@ -14,20 +14,94 @@ const failureOf = (load: () => unknown): string => {
 const SERVICE_SECRET = "s".repeat(32);
 const ENCRYPTION_KEY = Buffer.alloc(32, 7);
 
+const WEBHOOK_SECRET = "w".repeat(32);
+const RELAY_DATABASE_URL = "postgresql://app_outbox_relay:secret@127.0.0.1:5432/app";
+
 const makeEnv = (overrides: Record<string, string> = {}) => ({
   VIDEO_SERVICE_SECRET: SERVICE_SECRET,
   VIDEO_STREAM_KEY_ENCRYPTION_KEY: ENCRYPTION_KEY.toString("base64"),
+  VIDEO_WEBHOOK_SECRET: WEBHOOK_SECRET,
+  DATABASE_URL_OUTBOX_RELAY: RELAY_DATABASE_URL,
   ...overrides,
 });
 
+const envWithout = (variable: string) =>
+  Object.fromEntries(Object.entries(makeEnv()).filter(([name]) => name !== variable));
+
 describe("loadEnv", () => {
-  it("écoute en HTTP sur le port 3002 et annonce l'ingest local par défaut", () => {
+  it("écoute en HTTP sur le port 3002, annonce l'ingest local et relaie vers l'API locale par défaut", () => {
     expect(loadEnv(makeEnv())).toEqual({
       httpPort: 3002,
       serviceSecret: SERVICE_SECRET,
       ingestUrl: "rtmp://127.0.0.1:1935/live",
       streamKeyEncryptionKey: Uint8Array.from(ENCRYPTION_KEY),
+      webhook: { url: "http://127.0.0.1:3000/v1/webhooks/video", secret: WEBHOOK_SECRET },
+      outboxRelay: { databaseUrl: RELAY_DATABASE_URL, intervalMs: 1000 },
     });
+  });
+
+  it.each(["https://api.example/v1/webhooks/video", "http://api:3000/v1/webhooks/video"])(
+    "lit l'URL des webhooks %s",
+    (url) => {
+      expect(loadEnv(makeEnv({ VIDEO_WEBHOOK_URL: url })).webhook.url).toBe(url);
+    },
+  );
+
+  it.each(["rtmp://api.example/hook", "xhttp://api.example/hook", "httpx://api.example/hook", ""])(
+    "refuse l'URL des webhooks %j en nommant VIDEO_WEBHOOK_URL",
+    (url) => {
+      expect(failureOf(() => loadEnv(makeEnv({ VIDEO_WEBHOOK_URL: url })))).toBe(
+        "Configuration invalide, variables à corriger : VIDEO_WEBHOOK_URL",
+      );
+    },
+  );
+
+  it("accepte un secret de webhook de 32 caractères, refuse 31", () => {
+    expect(loadEnv(makeEnv({ VIDEO_WEBHOOK_SECRET: "x".repeat(32) })).webhook.secret).toBe(
+      "x".repeat(32),
+    );
+    expect(failureOf(() => loadEnv(makeEnv({ VIDEO_WEBHOOK_SECRET: "x".repeat(31) })))).toBe(
+      "Configuration invalide, variables à corriger : VIDEO_WEBHOOK_SECRET",
+    );
+  });
+
+  it.each([
+    "VIDEO_SERVICE_SECRET",
+    "VIDEO_STREAM_KEY_ENCRYPTION_KEY",
+    "VIDEO_WEBHOOK_SECRET",
+    "DATABASE_URL_OUTBOX_RELAY",
+  ])("exige %s", (variable) => {
+    expect(failureOf(() => loadEnv(envWithout(variable)))).toBe(
+      `Configuration invalide, variables à corriger : ${variable}`,
+    );
+  });
+
+  it.each(["postgres://u:p@h/app", "postgresql://u:p@h:5432/app"])(
+    "lit la connexion du relais %s",
+    (url) => {
+      expect(loadEnv(makeEnv({ DATABASE_URL_OUTBOX_RELAY: url })).outboxRelay.databaseUrl).toBe(
+        url,
+      );
+    },
+  );
+
+  it.each(["mysql://u:p@h/app", "xpostgres://u:p@h/app", "postgres://u:p@h/app x"])(
+    "refuse la connexion du relais %j en nommant DATABASE_URL_OUTBOX_RELAY",
+    (url) => {
+      expect(failureOf(() => loadEnv(makeEnv({ DATABASE_URL_OUTBOX_RELAY: url })))).toBe(
+        "Configuration invalide, variables à corriger : DATABASE_URL_OUTBOX_RELAY",
+      );
+    },
+  );
+
+  it("lit l'intervalle du relais, d'au moins 1 ms", () => {
+    expect(loadEnv(makeEnv({ OUTBOX_RELAY_INTERVAL_MS: "1" })).outboxRelay.intervalMs).toBe(1);
+    expect(failureOf(() => loadEnv(makeEnv({ OUTBOX_RELAY_INTERVAL_MS: "0" })))).toBe(
+      "Configuration invalide, variables à corriger : OUTBOX_RELAY_INTERVAL_MS",
+    );
+    expect(failureOf(() => loadEnv(makeEnv({ OUTBOX_RELAY_INTERVAL_MS: "1.5" })))).toBe(
+      "Configuration invalide, variables à corriger : OUTBOX_RELAY_INTERVAL_MS",
+    );
   });
 
   it("lit le port HTTP", () => {
@@ -55,21 +129,7 @@ describe("loadEnv", () => {
 
   it("nomme toutes les variables invalides", () => {
     expect(failureOf(() => loadEnv({ VIDEO_HTTP_PORT: "abc" }))).toBe(
-      "Configuration invalide, variables à corriger : VIDEO_HTTP_PORT, VIDEO_SERVICE_SECRET, VIDEO_STREAM_KEY_ENCRYPTION_KEY",
-    );
-  });
-
-  it("exige le secret de service", () => {
-    expect(
-      failureOf(() =>
-        loadEnv({ VIDEO_STREAM_KEY_ENCRYPTION_KEY: ENCRYPTION_KEY.toString("base64") }),
-      ),
-    ).toBe("Configuration invalide, variables à corriger : VIDEO_SERVICE_SECRET");
-  });
-
-  it("exige la clé de chiffrement des clés de stream", () => {
-    expect(failureOf(() => loadEnv({ VIDEO_SERVICE_SECRET: SERVICE_SECRET }))).toBe(
-      "Configuration invalide, variables à corriger : VIDEO_STREAM_KEY_ENCRYPTION_KEY",
+      "Configuration invalide, variables à corriger : VIDEO_HTTP_PORT, VIDEO_SERVICE_SECRET, VIDEO_STREAM_KEY_ENCRYPTION_KEY, VIDEO_WEBHOOK_SECRET, DATABASE_URL_OUTBOX_RELAY",
     );
   });
 
@@ -115,11 +175,16 @@ describe("loadEnv", () => {
 
   it("ne recopie jamais la valeur d'une variable dans l'erreur", () => {
     const failure = failureOf(() =>
-      loadEnv({ VIDEO_HTTP_PORT: "valeur-confidentielle-42", VIDEO_SERVICE_SECRET: "court" }),
+      loadEnv({
+        VIDEO_HTTP_PORT: "valeur-confidentielle-42",
+        VIDEO_SERVICE_SECRET: "court",
+        DATABASE_URL_OUTBOX_RELAY: "mysql://confidentiel",
+      }),
     );
 
     expect(failure).toContain("VIDEO_HTTP_PORT");
     expect(failure).not.toContain("valeur-confidentielle-42");
     expect(failure).not.toContain("court");
+    expect(failure).not.toContain("mysql");
   });
 });

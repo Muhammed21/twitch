@@ -20,6 +20,9 @@ const BOOT_ENV = {
   VIDEO_SERVICE_SECRET: "s".repeat(32),
   VIDEO_STREAM_KEY_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString("base64"),
   DATABASE_URL_VIDEO: "postgresql://app_video:secret@127.0.0.1:1/app",
+  VIDEO_WEBHOOK_SECRET: "w".repeat(32),
+  DATABASE_URL_OUTBOX_RELAY: "postgresql://app_outbox_relay:secret@127.0.0.1:1/app",
+  OUTBOX_RELAY_INTERVAL_MS: "20",
 };
 
 const startProcess = (env: Record<string, string>, { without }: { without?: string } = {}) => {
@@ -87,6 +90,30 @@ describe("process apps/video", () => {
       const exited = exitOf(child);
       child.kill("SIGTERM");
 
+      expect(await exited).toBe(0);
+    },
+  );
+
+  it(
+    "relaie l'outbox en tâche de fond : une base injoignable est journalisée sans arrêter le service",
+    { timeout: 10_000 },
+    async () => {
+      const port = await freePort();
+      const { child, output } = startProcess({ VIDEO_HTTP_PORT: String(port) });
+
+      expect(await waitForLive(port)).toBe(200);
+      const deadline = Date.now() + 5000;
+      while (
+        !output.stdout.includes("relais de l'outbox vidéo en échec") &&
+        Date.now() < deadline
+      ) {
+        await sleep(50);
+      }
+
+      expect(output.stdout).toContain('"level":"error","msg":"relais de l\'outbox vidéo en échec"');
+      expect(await waitForLive(port)).toBe(200);
+      const exited = exitOf(child);
+      child.kill("SIGTERM");
       expect(await exited).toBe(0);
     },
   );

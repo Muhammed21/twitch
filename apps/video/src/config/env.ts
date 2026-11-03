@@ -2,6 +2,7 @@ import { z } from "zod";
 
 const SERVICE_SECRET_MIN_LENGTH = 32;
 const ENCRYPTION_KEY_BYTES = 32;
+const WEBHOOK_SECRET_MIN_LENGTH = 32;
 
 const envSchema = z.object({
   VIDEO_HTTP_PORT: z.coerce.number().int().min(1).max(65_535).default(3002),
@@ -11,6 +12,12 @@ const envSchema = z.object({
     .base64()
     .transform((value) => Uint8Array.from(Buffer.from(value, "base64")))
     .refine((key) => key.length === ENCRYPTION_KEY_BYTES),
+  VIDEO_WEBHOOK_URL: z
+    .url({ protocol: /^https?$/ })
+    .default("http://127.0.0.1:3000/v1/webhooks/video"),
+  VIDEO_WEBHOOK_SECRET: z.string().min(WEBHOOK_SECRET_MIN_LENGTH),
+  DATABASE_URL_OUTBOX_RELAY: z.string().regex(/^postgres(ql)?:\/\/\S+$/),
+  OUTBOX_RELAY_INTERVAL_MS: z.coerce.number().int().min(1).default(1000),
 });
 
 export type VideoConfig = {
@@ -18,6 +25,8 @@ export type VideoConfig = {
   readonly serviceSecret: string;
   readonly ingestUrl: string;
   readonly streamKeyEncryptionKey: Uint8Array;
+  readonly webhook: { readonly url: string; readonly secret: string };
+  readonly outboxRelay: { readonly databaseUrl: string; readonly intervalMs: number };
 };
 
 export const loadEnv = (env: Readonly<Record<string, string | undefined>>): VideoConfig => {
@@ -31,5 +40,10 @@ export const loadEnv = (env: Readonly<Record<string, string | undefined>>): Vide
     serviceSecret: parsed.data.VIDEO_SERVICE_SECRET,
     ingestUrl: parsed.data.VIDEO_INGEST_URL,
     streamKeyEncryptionKey: parsed.data.VIDEO_STREAM_KEY_ENCRYPTION_KEY,
+    webhook: { url: parsed.data.VIDEO_WEBHOOK_URL, secret: parsed.data.VIDEO_WEBHOOK_SECRET },
+    outboxRelay: {
+      databaseUrl: parsed.data.DATABASE_URL_OUTBOX_RELAY,
+      intervalMs: parsed.data.OUTBOX_RELAY_INTERVAL_MS,
+    },
   };
 };

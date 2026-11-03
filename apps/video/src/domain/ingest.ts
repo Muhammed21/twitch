@@ -30,6 +30,14 @@ export type IngestSession =
 type LiveSession = Extract<IngestSession, { state: "live" }>;
 type EndedSession = Extract<IngestSession, { state: "ended" }>;
 
+export type LifecycleEvent = {
+  readonly id: string;
+  readonly type: "stream.started" | "stream.ended";
+  readonly channelId: string;
+  readonly sessionId: string;
+  readonly occurredAt: string;
+};
+
 export type PublishRefusal = "invalid_key" | "already_live" | "not_idle";
 
 export const streamKeyFrom = (
@@ -91,3 +99,18 @@ export const publish = ({
 
 export const stop = (session: IngestSession, now: Date): Result<EndedSession, "not_live"> =>
   session.state === "live" ? ok({ ...session, state: "ended", endedAt: now }) : err("not_live");
+
+export const lifecycleEvent = ({
+  id,
+  session,
+}: {
+  id: string;
+  session: LiveSession | EndedSession;
+}): LifecycleEvent => ({
+  id,
+  channelId: session.channelId,
+  sessionId: session.id,
+  ...(session.state === "live"
+    ? { type: "stream.started", occurredAt: session.startedAt.toISOString() }
+    : { type: "stream.ended", occurredAt: session.endedAt.toISOString() }),
+});

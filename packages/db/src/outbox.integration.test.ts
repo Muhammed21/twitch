@@ -106,6 +106,8 @@ const brokerDown: OutboxPublisher = async () => {
   throw new Error("broker indisponible");
 };
 
+const tenSecondsPerAttempt = (attempts: number) => attempts * 10_000;
+
 const rejectsWithText: OutboxPublisher = () => Promise.reject("timeout");
 
 const recordingPublisher = () => {
@@ -261,6 +263,26 @@ describe("échec de publication", () => {
       lastError: "timeout",
       published: false,
     });
+  });
+
+  it("reprogramme un échec après le délai rendu par le backoff donné", async () => {
+    const backoff = tenSecondsPerAttempt;
+    const outbox = await freshOutbox();
+    const event = makeEvent();
+    const start = new Date("2026-10-09T12:00:00.000Z");
+    const at = (seconds: number) => () => new Date(start.getTime() + seconds * 1000);
+    const { published, publish } = recordingPublisher();
+
+    await appendAll(outbox, [event]);
+    await relayOutboxBatch({ pool: relayPool, outbox, publish: brokerDown, backoff, now: at(0) });
+
+    expect(
+      await relayOutboxBatch({ pool: relayPool, outbox, publish, backoff, now: at(9) }),
+    ).toEqual({ published: 0, failed: 0 });
+    expect(
+      await relayOutboxBatch({ pool: relayPool, outbox, publish, backoff, now: at(10) }),
+    ).toEqual({ published: 1, failed: 0 });
+    expect(published.map((item) => item.id)).toEqual([event.id]);
   });
 });
 

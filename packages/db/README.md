@@ -57,7 +57,7 @@ await db.$transaction(async (tx) => {
 ```
 
 - `appendToOutbox(tx, …)` s'appelle dans la transaction qui écrit l'état métier : un événement d'une transaction annulée n'est jamais publié.
-- `relayOutboxBatch({ pool, outbox, publish })` publie un lot avec le rôle `app_outbox_relay` : lignes verrouillées en `FOR UPDATE SKIP LOCKED`, dans l'ordre d'occurrence, puis `publishedAt` posé. Un échec garde l'événement, compte la tentative et le reprogramme après 1 s, 2 s, 4 s… jusqu'à 5 minutes. La garantie est _at-least-once_.
+- `relayOutboxBatch({ pool, outbox, publish })` publie un lot avec le rôle `app_outbox_relay` : lignes verrouillées en `FOR UPDATE SKIP LOCKED`, dans l'ordre d'occurrence, puis `publishedAt` posé. Un échec garde l'événement, compte la tentative et le reprogramme après 1 s, 2 s, 4 s… jusqu'à 5 minutes, ou après le délai que rend `backoff(attempts)` quand il est fourni. La garantie est _at-least-once_.
 - `readOutboxHistory({ pool, outboxes, after, take })` rend une page d'events publiés ou non de plusieurs outbox, triés par `occurredAt` puis `id`, après l'event `after` ; chaque outbox est lue par son index `(occurredAt, id)`, avec le rôle `app_projection_rebuild`.
 - `alreadyProcessed(tx, { processedEvents, eventId, handler })` s'appelle dans la transaction du consommateur : `true` si ce handler a déjà traité l'événement.
 
