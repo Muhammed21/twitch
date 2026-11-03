@@ -35,5 +35,5 @@ Les schémas de requête restent en `z.object` strict : refuser un champ inconnu
 | Serveur → client | `chat:rejected`   | `RealtimeChatRejected`   |
 | Serveur → client | `session:revoked` | `RealtimeSessionRevoked` |
 
-- Les charges client sont strictes (`z.strictObject`) ; `clientEventSchema(event)` ne donne aucun schéma à un événement inconnu, que le chat rejette et compte. Le corps d'un message fait de 1 à 500 caractères.
+- Les charges client sont strictes (`z.strictObject`) ; `clientEventSchema(event)` ne donne aucun schéma à un événement inconnu ; son rejet et son comptage arrivent avec les handlers de `apps/chat` (ADR 0022, §6). Le corps d'un message fait de 1 à 500 caractères.
 - Les charges serveur suivent les conventions des réponses. `RealtimeServerMessage` enveloppe `{ event, data }` et se termine par la variante de repli `{ event: string }`.
