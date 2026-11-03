@@ -88,4 +88,27 @@ describe("tâche périodique", () => {
     expect(state.errors).toHaveLength(state.runs);
     expect(state.errors[0]).toBe(failure);
   });
+
+  it("recalcule son attente avant chaque exécution quand l'intervalle est une fonction", async () => {
+    const delays = [INTERVAL_MS, 60_000];
+    const asked: number[] = [];
+    const state = { runs: 0 };
+    const job = startPeriodicJob({
+      intervalMs: () => {
+        const delay = delays[asked.length] ?? 60_000;
+        asked.push(delay);
+        return delay;
+      },
+      run: async () => {
+        state.runs += 1;
+      },
+      onError: () => {},
+    });
+
+    await sleep(INTERVAL_MS * 20);
+    await job.stop();
+
+    expect(state.runs).toBe(1);
+    expect(asked).toEqual([INTERVAL_MS, 60_000]);
+  });
 });

@@ -19,6 +19,7 @@ import { receiveProviderWebhook } from "./application/receive-provider-webhook.t
 import { reconcileStreamSessions } from "./application/reconcile-stream-sessions.ts";
 import { recordPresence } from "./application/record-presence.ts";
 import { recordStreamLifecycle } from "./application/record-stream-lifecycle.ts";
+import { nextSampleDelayMs, sampleViewerCounts } from "./application/sample-viewer-counts.ts";
 import {
   getStreamKey,
   provisionStreamChannel,
@@ -31,6 +32,10 @@ import {
   prismaStreamSessions,
   type StreamPrisma,
 } from "./infrastructure/prisma-stream-sessions.ts";
+import {
+  prismaOpenSessionPages,
+  prismaViewerCountSamples,
+} from "./infrastructure/prisma-viewer-count-samples.ts";
 import { reconciliationEndEventId } from "./infrastructure/reconciliation-end-event-id.ts";
 import { type PresenceRedis, redisPresenceStore } from "./infrastructure/redis-presence-store.ts";
 import { videoServiceProvider } from "./infrastructure/video-service-provider.ts";
@@ -55,6 +60,7 @@ export const createViewerCountReader =
     redisPresenceStore(presenceRedis).count({ channelIds, at: new Date() });
 
 export const RECONCILIATION_INTERVAL_MS = 60_000;
+export const viewerCountSampleDelayMs = (): number => nextSampleDelayMs(new Date());
 
 const STREAM_DEPENDENCIES = Symbol("STREAM_DEPENDENCIES");
 
@@ -72,17 +78,20 @@ type StreamDependencies = {
   presenceRedis: PresenceRedis;
   logSink: LogSink;
   reconciliationIntervalMs?: number;
+  viewerCountSampleIntervalMs?: number | (() => number);
 };
 
 type ModuleState = StreamDependencies & {
   readonly provider: LiveVideoProviderPort;
   readonly reconcile: (now: Date) => Promise<{ readonly closed: readonly string[] }>;
+  readonly sample: (now: Date) => Promise<void>;
 };
 
 @Module({})
 export class StreamModule implements OnModuleInit, OnModuleDestroy {
   #consumer: { stop: () => Promise<void> } | undefined;
   #reconciliation: { stop: () => Promise<void> } | undefined;
+  #sampling: { stop: () => Promise<void> } | undefined;
 
   constructor(@Inject(STREAM_DEPENDENCIES) private readonly dependencies: ModuleState) {}
 
@@ -106,6 +115,11 @@ export class StreamModule implements OnModuleInit, OnModuleDestroy {
       record,
       endEventIdOf: reconciliationEndEventId,
     });
+    const sample = sampleViewerCounts({
+      sessions: prismaOpenSessionPages({ prisma }),
+      presence: redisPresenceStore(presenceRedis),
+      samples: prismaViewerCountSamples(prisma),
+    });
     const streamKeyDependencies = {
       channels: prismaStreamChannels(prisma),
       provider,
@@ -117,7 +131,7 @@ export class StreamModule implements OnModuleInit, OnModuleDestroy {
       providers: [
         {
           provide: STREAM_DEPENDENCIES,
-          useValue: { ...dependencies, provider, reconcile } satisfies ModuleState,
+          useValue: { ...dependencies, provider, reconcile, sample } satisfies ModuleState,
         },
         {
           provide: RECEIVE_PROVIDER_WEBHOOK,
@@ -149,7 +163,9 @@ export class StreamModule implements OnModuleInit, OnModuleDestroy {
       consumerRedis,
       logSink,
       reconcile,
+      sample,
       reconciliationIntervalMs = RECONCILIATION_INTERVAL_MS,
+      viewerCountSampleIntervalMs = viewerCountSampleDelayMs,
     } = this.dependencies;
     this.#consumer = startStreamConsumer({
       redis: consumerRedis,
@@ -193,10 +209,21 @@ export class StreamModule implements OnModuleInit, OnModuleDestroy {
           ...errorDetails(error),
         }),
     });
+    this.#sampling = startPeriodicJob({
+      intervalMs: viewerCountSampleIntervalMs,
+      run: () => sample(new Date()),
+      onError: (error) =>
+        writeLog(logSink, {
+          level: "error",
+          msg: "échantillonnage du compteur de viewers en échec",
+          ...errorDetails(error),
+        }),
+    });
   }
 
   async onModuleDestroy(): Promise<void> {
     const { prisma, consumerRedis, presenceRedis } = this.dependencies;
+    await this.#sampling?.stop();
     await this.#reconciliation?.stop();
     await this.#consumer?.stop();
     await prisma.$disconnect();
