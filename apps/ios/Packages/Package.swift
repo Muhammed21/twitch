@@ -7,7 +7,7 @@ let package = Package(
   platforms: [.iOS(.v17)],
   products: [
     .library(name: "DesignSystem", targets: ["DesignSystem"]),
-    .library(name: "Onboarding", targets: ["Onboarding"]),
+    .library(name: "Onboarding", targets: ["Onboarding", "Home", "Navigation"]),
     .library(name: "Auth", targets: ["Auth"]),
     .library(name: "Domain", targets: ["Domain"]),
     .library(name: "Networking", targets: ["Networking"]),
@@ -45,6 +45,31 @@ let package = Package(
       name: "NetworkingTests",
       dependencies: ["Networking", "Domain"],
       path: "Core/Networking/Tests",
+      swiftSettings: [.swiftLanguageMode(.v6)]
+    ),
+    .target(
+      name: "Navigation",
+      dependencies: ["Domain"],
+      path: "Core/Navigation/Sources",
+      swiftSettings: [.swiftLanguageMode(.v6)]
+    ),
+    .testTarget(
+      name: "NavigationTests",
+      dependencies: ["Navigation", "Domain"],
+      path: "Core/Navigation/Tests",
+      swiftSettings: [.swiftLanguageMode(.v6)]
+    ),
+    .target(
+      name: "Home",
+      dependencies: ["Domain", "Navigation", "DesignSystem"],
+      path: "Features/Home/Sources",
+      resources: [.process("Localizable.xcstrings")],
+      swiftSettings: [.swiftLanguageMode(.v6)]
+    ),
+    .testTarget(
+      name: "HomeTests",
+      dependencies: ["Home", "Domain", "Navigation"],
+      path: "Features/Home/Tests",
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
     .target(

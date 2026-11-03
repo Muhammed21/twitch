@@ -1,18 +1,24 @@
 import Auth
 import DesignSystem
+import Domain
 import Foundation
+import Home
+import Navigation
 import Networking
 import Onboarding
 import SwiftUI
 
 @main
 struct TwitchApp: App {
-  @State private var session = Composition.sessionStore(info: Bundle.main.infoDictionary ?? [:])
+  @State private var stores = Composition.stores(info: Bundle.main.infoDictionary ?? [:])
 
   var body: some Scene {
     WindowGroup {
       RootView()
-        .environment(session)
+        .environment(stores.session)
+        .environment(stores.launch)
+        .environment(stores.home)
+        .environment(stores.router)
     }
   }
 }
@@ -22,10 +28,13 @@ enum RootScreen: Equatable {
   case welcome
   case allSet
   case signedIn
+  case updateRequired
 
-  init(isSplashVisible: Bool, phase: SessionPhase, isGreetingNewAccount: Bool) {
+  init(isSplashVisible: Bool, phase: SessionPhase, isGreetingNewAccount: Bool, isUpdateRequired: Bool) {
     switch (isSplashVisible, phase) {
-    case (true, _), (false, .launching): self = .splash
+    case (true, _): self = .splash
+    case (false, _) where isUpdateRequired: self = .updateRequired
+    case (false, .launching): self = .splash
     case (false, .signedOut), (false, .signingIn): self = .welcome
     case (false, .signedIn): self = isGreetingNewAccount ? .allSet : .signedIn
     }
@@ -43,17 +52,26 @@ extension AuthorizationIntent {
 
 struct RootView: View {
   @Environment(SessionStore.self) private var session
+  @Environment(LaunchStore.self) private var launch
+  @Environment(Router.self) private var router
   @State private var isSplashVisible = true
 
   var body: some View {
     screen
       .signInFailureAlert(session)
       .logOutFailureAlert(session)
+      .onOpenURL { router.open($0) }
+      .task { await launch.run() }
       .task { await session.run() }
   }
 
   @ViewBuilder private var screen: some View {
-    switch RootScreen(isSplashVisible: isSplashVisible, phase: session.phase, isGreetingNewAccount: session.isGreetingNewAccount) {
+    switch RootScreen(
+      isSplashVisible: isSplashVisible,
+      phase: session.phase,
+      isGreetingNewAccount: session.isGreetingNewAccount,
+      isUpdateRequired: launch.isUpdateRequired
+    ) {
     case .splash:
       ZStack {
         ColorRole.accent.color.ignoresSafeArea()
@@ -66,9 +84,46 @@ struct RootView: View {
     case .allSet:
       AllSetScreen()
     case .signedIn:
-      SignedInScreen()
+      SignedInRoot()
+    case .updateRequired:
+      UpdateRequiredScreen()
     }
   }
+}
+
+struct SignedInRoot: View {
+  @Environment(Router.self) private var router
+  @State private var isShowingAccount = false
+
+  var body: some View {
+    @Bindable var router = router
+    NavigationStack(path: $router.path) {
+      HomeScreen()
+        .toolbar {
+          ToolbarItem(placement: .topBarTrailing) {
+            Button { isShowingAccount = true } label: {
+              Label("root.account", systemImage: "person.crop.circle")
+            }
+          }
+        }
+        .navigationDestination(for: Route.self) { route in
+          switch route {
+          case let .channel(slug):
+            Text(slug.rawValue)
+              .font(TextRole.display.font)
+              .navigationTitle(slug.rawValue)
+          }
+        }
+    }
+    .sheet(isPresented: $isShowingAccount) { SignedInScreen() }
+  }
+}
+
+struct Stores {
+  let session: SessionStore
+  let launch: LaunchStore
+  let home: HomeStore
+  let router: Router
 }
 
 @MainActor
@@ -77,15 +132,15 @@ enum Composition {
     info["CFBundleShortVersionString"] as? String
   }
 
-  static func sessionStore(info: [String: Any]) -> SessionStore {
+  static func stores(info: [String: Any]) -> Stores {
     let configuration: OAuthConfiguration
     do {
       configuration = try OAuthConfiguration(infoDictionary: info)
     } catch {
       fatalError("Info.plist : configuration OAuth invalide (\(error)).")
     }
-    guard let version = clientVersion(info: info) else {
-      fatalError("Info.plist : CFBundleShortVersionString manquant.")
+    guard let version = clientVersion(info: info), let currentVersion = try? AppVersion(version) else {
+      fatalError("Info.plist : CFBundleShortVersionString manquant ou mal formé.")
     }
     let transport = ClientVersionTransport(wrapping: URLSessionHTTPTransport(), version: version)
     let session = OAuthSession(
@@ -93,13 +148,21 @@ enum Composition {
       store: KeychainTokenStore(service: Bundle.main.bundleIdentifier ?? "com.muhammedcavus.twitch")
     )
     let now: @Sendable () -> Date = { Date.now }
-    return SessionStore(
-      configuration: configuration,
-      session: session,
-      accounts: AccountClient(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
-      authenticator: SystemWebAuthenticator(),
-      randomBytes: PKCE.systemRandomBytes,
-      now: now
+    return Stores(
+      session: SessionStore(
+        configuration: configuration,
+        session: session,
+        accounts: AccountClient(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
+        authenticator: SystemWebAuthenticator(),
+        randomBytes: PKCE.systemRandomBytes,
+        now: now
+      ),
+      launch: LaunchStore(
+        source: BootstrapClient(apiBaseURL: configuration.apiBaseURL, transport: transport),
+        currentVersion: currentVersion
+      ),
+      home: HomeStore(directory: LiveDirectoryClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
+      router: Router()
     )
   }
 }
