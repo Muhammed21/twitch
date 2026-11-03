@@ -2,7 +2,7 @@ import type { INestApplication } from "@nestjs/common";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { cleanupOpenApiDoc } from "nestjs-zod";
 
-import { responses } from "@repo/contracts";
+import { realtime, responses } from "@repo/contracts";
 
 import { normalizeNullable } from "./normalize-nullable.ts";
 import {
@@ -11,7 +11,10 @@ import {
   stripOutputSuffix,
   withComponent,
   withDefaultProblem,
+  withNamedSchemas,
 } from "./post-process.ts";
+
+const REALTIME_SCHEMAS = [...Object.values(realtime.clientEvents), realtime.RealtimeServerMessage];
 
 export const buildOpenApiDocument = (app: INestApplication): unknown => {
   const config = new DocumentBuilder()
@@ -24,5 +27,6 @@ export const buildOpenApiDocument = (app: INestApplication): unknown => {
     "Problem",
     componentSchema("Problem", responses.Problem),
   );
-  return normalizeNullable(openResponseRoots(stripOutputSuffix(withDefaultProblem(withProblem))));
+  const withRealtime = REALTIME_SCHEMAS.reduce(withNamedSchemas, withProblem);
+  return normalizeNullable(openResponseRoots(stripOutputSuffix(withDefaultProblem(withRealtime))));
 };

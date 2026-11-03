@@ -153,6 +153,49 @@ export const componentSchema = (name: string, schema: z.ZodType): unknown => {
   return definition;
 };
 
+const DEFINITION_REF = "#/$defs/";
+
+const relocateRefs = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    return value.map(relocateRefs);
+  }
+  if (!isObject(value)) {
+    return value;
+  }
+  return Object.fromEntries(
+    Object.entries(value).map(([key, entry]) => [
+      key,
+      key === "$ref" && typeof entry === "string" && entry.startsWith(DEFINITION_REF)
+        ? `${SCHEMA_REF}${entry.slice(DEFINITION_REF.length)}`
+        : relocateRefs(entry),
+    ]),
+  );
+};
+
+const mergeComponent = (schemas: JsonObject, [name, definition]: [string, unknown]): JsonObject => {
+  if (name in schemas && !isDeepStrictEqual(schemas[name], definition)) {
+    throw new Error(`Schémas en collision : ${name} diffère du composant déjà publié sous ce nom`);
+  }
+  return { ...schemas, [name]: definition };
+};
+
+export const withNamedSchemas = (document: JsonObject, schema: z.ZodType): JsonObject => {
+  if (z.globalRegistry.get(schema)?.id === undefined) {
+    throw new Error(
+      "Schéma sans nom : seul un schéma nommé par .meta({ id }) se publie en composant",
+    );
+  }
+  const definitions = entriesOf(relocateRefs(z.toJSONSchema(schema).$defs));
+  const components = objectOr(document["components"]);
+  return {
+    ...document,
+    components: {
+      ...components,
+      schemas: definitions.reduce<JsonObject>(mergeComponent, objectOr(components["schemas"])),
+    },
+  };
+};
+
 export const withComponent = (
   document: JsonObject,
   name: string,

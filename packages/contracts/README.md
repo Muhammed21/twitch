@@ -21,3 +21,19 @@ Un schéma de réponse s'exporte depuis `src/responses/`, nommé par `.meta({ id
 - un type qu'il ne sait pas vérifier (transformation, `z.date()`, `z.any()`…) : le garde descend dans les enveloppes (`readonly`, `default`, `catch`, `lazy`, `pipe`, intersection, `record`, `tuple`), parcourt une seule fois un schéma récursif (`z.lazy` ou getter), et ne laisse passer en silence aucun autre type.
 
 Les schémas de requête restent en `z.object` strict : refuser un champ inconnu est le bon comportement côté serveur.
+
+## Messages temps réel du chat
+
+`realtime` porte les charges utiles socket.io, nommées `Realtime*` et publiées dans `components.schemas` d'`openapi.json` (ADR 0022, ADR 0024 §7). Le nom de l'événement socket.io est le discriminant.
+
+| Sens             | Événement         | Charge utile             |
+| ---------------- | ----------------- | ------------------------ |
+| Client → serveur | `chat:send`       | `RealtimeChatSend`       |
+| Client → serveur | `room:join`       | `RealtimeRoomJoin`       |
+| Client → serveur | `room:leave`      | `RealtimeRoomLeave`      |
+| Serveur → client | `chat:message`    | `RealtimeChatMessage`    |
+| Serveur → client | `chat:rejected`   | `RealtimeChatRejected`   |
+| Serveur → client | `session:revoked` | `RealtimeSessionRevoked` |
+
+- Les charges client sont strictes (`z.strictObject`) ; `clientEventSchema(event)` ne donne aucun schéma à un événement inconnu, que le chat rejette et compte. Le corps d'un message fait de 1 à 500 caractères.
+- Les charges serveur suivent les conventions des réponses. `RealtimeServerMessage` enveloppe `{ event, data }` et se termine par la variante de repli `{ event: string }`.

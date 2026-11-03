@@ -7,6 +7,7 @@ import {
   stripOutputSuffix,
   withComponent,
   withDefaultProblem,
+  withNamedSchemas,
 } from "./post-process.ts";
 import { responseDto } from "./response-dto.ts";
 
@@ -282,6 +283,90 @@ describe("withComponent", () => {
     expect(
       withComponent({ components: { securitySchemes: { bearer: {} } } }, "Problem", {}),
     ).toEqual({ components: { securitySchemes: { bearer: {} }, schemas: { Problem: {} } } });
+  });
+});
+
+describe("withNamedSchemas", () => {
+  const Label = z.string().meta({ id: "Label" });
+  const Badge = z.looseObject({ label: Label }).meta({ id: "Badge" });
+  const Notice = z.looseObject({ label: Label, badges: z.array(Badge) }).meta({ id: "Notice" });
+
+  it("publie un schéma nommé et ceux qu'il nomme, reliés par des références de composants", () => {
+    expect(withNamedSchemas({ openapi: "3.1.0" }, Notice)).toEqual({
+      openapi: "3.1.0",
+      components: {
+        schemas: {
+          Label: { type: "string" },
+          Badge: {
+            type: "object",
+            properties: { label: ref("Label") },
+            required: ["label"],
+            additionalProperties: {},
+          },
+          Notice: {
+            type: "object",
+            properties: { label: ref("Label"), badges: { type: "array", items: ref("Badge") } },
+            required: ["label", "badges"],
+            additionalProperties: {},
+          },
+        },
+      },
+    });
+  });
+
+  it("relie aussi les variantes d'une union, sans toucher un texte qui ressemble à une référence", () => {
+    const Tagged = z
+      .looseObject({
+        tag: z.union([Label, Badge]).meta({ description: "#/$defs/Label" }),
+      })
+      .meta({ id: "Tagged" });
+
+    expect(withNamedSchemas({}, Tagged)).toMatchObject({
+      components: {
+        schemas: {
+          Tagged: {
+            properties: {
+              tag: { anyOf: [ref("Label"), ref("Badge")], description: "#/$defs/Label" },
+            },
+          },
+        },
+      },
+    });
+  });
+
+  it("garde les composants existants et fusionne un homonyme identique", () => {
+    expect(
+      withNamedSchemas(
+        {
+          components: {
+            securitySchemes: { bearer: {} },
+            schemas: { A: {}, Label: { type: "string" } },
+          },
+        },
+        Badge,
+      ),
+    ).toEqual({
+      components: {
+        securitySchemes: { bearer: {} },
+        schemas: {
+          A: {},
+          Label: { type: "string" },
+          Badge: expect.objectContaining({ properties: { label: ref("Label") } }),
+        },
+      },
+    });
+  });
+
+  it("échoue quand un schéma prendrait le nom d'un composant différent", () => {
+    expect(() =>
+      withNamedSchemas({ components: { schemas: { Label: { type: "integer" } } } }, Badge),
+    ).toThrow("Schémas en collision : Label diffère du composant déjà publié sous ce nom");
+  });
+
+  it("refuse un schéma sans nom, qui n'aurait pas de composant", () => {
+    expect(() => withNamedSchemas({}, z.looseObject({ label: Label }))).toThrow(
+      "Schéma sans nom : seul un schéma nommé par .meta({ id }) se publie en composant",
+    );
   });
 });
 
