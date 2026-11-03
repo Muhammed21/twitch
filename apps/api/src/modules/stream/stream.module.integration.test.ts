@@ -26,6 +26,10 @@ const urlOf = (variable: string): string => {
   return url;
 };
 
+const PLAYBACK_BASE_URL = "http://127.0.0.1:3002";
+
+const seededSessions: string[] = [];
+
 const channelDb = createContextClient({ context: "channel", env: process.env });
 const stream = createContextClient({ context: "stream", env: process.env });
 const admin = createAuthzRedis(urlOf("REDIS_URL"));
@@ -61,6 +65,7 @@ const withStreamModule = async (
       StreamModule.register({
         prisma: createContextClient({ context: "stream", env: process.env }),
         webhookSecret: urlOf("VIDEO_WEBHOOK_SECRET"),
+        playbackBaseUrl: PLAYBACK_BASE_URL,
         video,
         authzRedis,
         consumerRedis,
@@ -113,7 +118,27 @@ beforeAll(async () => {
   await admin.connect();
 });
 
+const seedSession = async ({
+  channelId,
+  endedAt = null,
+}: {
+  channelId: string;
+  endedAt?: Date | null;
+}) => {
+  const session = {
+    id: randomUUID(),
+    channelId,
+    providerSessionId: randomUUID(),
+    startedAt: new Date("2026-11-03T20:00:00.000Z"),
+    endedAt,
+  };
+  seededSessions.push(session.id);
+  await stream.streamSession.create({ data: session });
+  return session;
+};
+
 afterAll(async () => {
+  await stream.streamSession.deleteMany({ where: { id: { in: seededSessions } } });
   admin.destroy();
   await stream.$disconnect();
   await channelDb.$disconnect();
@@ -229,6 +254,30 @@ describe("StreamModule branché sur la base et Redis", () => {
       });
 
       expect(response.status).toBe(403);
+    });
+  });
+
+  it("rend l'URL de lecture de la session ouverte de la chaîne", async () => {
+    const channelId = randomUUID();
+    await seedSession({ channelId, endedAt: new Date("2026-11-03T19:00:00.000Z") });
+    const { providerSessionId } = await seedSession({ channelId });
+
+    await withStreamModule(randomUUID(), async (base) => {
+      const response = await fetch(`${base}/channels/${channelId}/playback`);
+
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({
+        playbackUrl: `${PLAYBACK_BASE_URL}/hls/${providerSessionId}/master.m3u8`,
+      });
+    });
+  });
+
+  it("répond 404 à la lecture d'une chaîne dont la session est close", async () => {
+    const channelId = randomUUID();
+    await seedSession({ channelId, endedAt: new Date("2026-11-03T21:00:00.000Z") });
+
+    await withStreamModule(randomUUID(), async (base) => {
+      expect((await fetch(`${base}/channels/${channelId}/playback`)).status).toBe(404);
     });
   });
 

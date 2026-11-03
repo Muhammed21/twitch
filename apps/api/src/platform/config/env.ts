@@ -27,6 +27,7 @@ const baseSchema = z.object({
   BETTER_AUTH_URL: z.url({ protocol: /^https?$/ }),
   REDIS_URL: z.url({ protocol: /^rediss?$/ }),
   VIDEO_WEBHOOK_SECRET: z.string().min(32),
+  VIDEO_PLAYBACK_BASE_URL: z.url({ protocol: /^https?$/ }),
   SMTP_HOST: z.string().min(1),
   SMTP_PORT: z.coerce.number().int().min(1).max(65_535),
   SMTP_FROM: z.string().min(1).default("Twitch <no-reply@twitch.local>"),
@@ -62,6 +63,7 @@ export type AppConfig = {
   readonly authBaseUrl: string;
   readonly redisUrl: string;
   readonly videoWebhookSecret: string;
+  readonly videoPlaybackBaseUrl: string;
   readonly smtp: { readonly host: string; readonly port: number; readonly from: string };
   readonly video: VideoProviderConfig;
   readonly featureFlags: FeatureFlagsConfig;
@@ -77,6 +79,7 @@ export const loadEnv = (env: Readonly<Record<string, string | undefined>>): AppC
     authBaseUrl: variables.BETTER_AUTH_URL,
     redisUrl: variables.REDIS_URL,
     videoWebhookSecret: variables.VIDEO_WEBHOOK_SECRET,
+    videoPlaybackBaseUrl: variables.VIDEO_PLAYBACK_BASE_URL,
     smtp: { host: variables.SMTP_HOST, port: variables.SMTP_PORT, from: variables.SMTP_FROM },
     video:
       variables.VIDEO_PROVIDER === "fake"

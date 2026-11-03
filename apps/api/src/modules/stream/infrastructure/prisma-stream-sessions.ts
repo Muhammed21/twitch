@@ -9,6 +9,7 @@ import {
   type KeysetPage,
 } from "@repo/db";
 
+import type { PlaybackSessions } from "../application/playback.ts";
 import type { OpenStreamSessions } from "../application/reconcile-stream-sessions.ts";
 import type {
   LifecycleTransaction,
@@ -125,4 +126,14 @@ export const prismaOpenStreamSessions = ({
     ).flatMap(({ providerSessionId, providerChannelId, startedAt }) =>
       providerChannelId === undefined ? [] : [{ providerSessionId, providerChannelId, startedAt }],
     ),
+});
+
+export const prismaPlaybackSessions = (prisma: StreamPrisma): PlaybackSessions => ({
+  openProviderSessionOf: async (channelId) =>
+    (
+      await prisma.streamSession.findFirst({
+        where: { channelId, endedAt: null },
+        select: { providerSessionId: true },
+      })
+    )?.providerSessionId ?? null,
 });

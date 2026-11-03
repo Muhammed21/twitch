@@ -41,6 +41,7 @@ const app = configureApp(
           env: { DATABASE_URL_STREAM: "postgresql://openapi@localhost/aucune-connexion" },
         }),
         webhookSecret: "openapi-aucun-webhook-recu-par-ce-document",
+        playbackBaseUrl: "http://openapi.invalid",
         video: { provider: "fake" },
         consumerRedis: createStreamConsumerRedis(),
         presenceRedis: createPresenceRedis(),

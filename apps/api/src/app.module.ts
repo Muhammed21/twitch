@@ -46,6 +46,7 @@ export class AppModule {
     stream: {
       prisma: StreamPrisma;
       webhookSecret: string;
+      playbackBaseUrl: string;
       video: VideoProviderConfig;
       consumerRedis: StreamConsumerRedis;
       presenceRedis: PresenceRedis;
