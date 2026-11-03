@@ -7,7 +7,10 @@ let package = Package(
   platforms: [.iOS(.v17)],
   products: [
     .library(name: "DesignSystem", targets: ["DesignSystem"]),
-    .library(name: "Onboarding", targets: ["Onboarding", "Home", "Navigation", "Player", "Channel"]),
+    .library(
+      name: "Onboarding",
+      targets: ["Onboarding", "Home", "Navigation", "Player", "Channel", "ChatTransport"]
+    ),
     .library(name: "Auth", targets: ["Auth"]),
     .library(name: "Domain", targets: ["Domain"]),
     .library(name: "Networking", targets: ["Networking"]),
@@ -45,6 +48,22 @@ let package = Package(
       name: "NetworkingTests",
       dependencies: ["Networking", "Domain"],
       path: "Core/Networking/Tests",
+      swiftSettings: [.swiftLanguageMode(.v6)]
+    ),
+    .target(
+      name: "ChatTransport",
+      dependencies: [
+        "Domain",
+        .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
+      ],
+      path: "Core/ChatTransport/Sources",
+      swiftSettings: [.swiftLanguageMode(.v6)],
+      plugins: [.plugin(name: "OpenAPIGenerator", package: "swift-openapi-generator")]
+    ),
+    .testTarget(
+      name: "ChatTransportTests",
+      dependencies: ["ChatTransport", "Domain"],
+      path: "Core/ChatTransport/Tests",
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
     .target(

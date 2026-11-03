@@ -2,13 +2,17 @@ import Foundation
 
 public enum ChatRejectionReason: Hashable, Sendable {
   case timedOut
+  case banned
   case rateLimited
+  case notJoined
   case unknown(String)
 
   public init(rawValue: String) {
     switch rawValue {
     case "timed_out": self = .timedOut
+    case "banned": self = .banned
     case "rate_limited": self = .rateLimited
+    case "not_joined": self = .notJoined
     default: self = .unknown(rawValue)
     }
   }
@@ -16,7 +20,31 @@ public enum ChatRejectionReason: Hashable, Sendable {
   public var rawValue: String {
     switch self {
     case .timedOut: "timed_out"
+    case .banned: "banned"
     case .rateLimited: "rate_limited"
+    case .notJoined: "not_joined"
+    case let .unknown(value): value
+    }
+  }
+}
+
+public enum SessionRevocation: Hashable, Sendable {
+  case refreshAndReconnect
+  case stop
+  case unknown(String)
+
+  public init(rawValue: String) {
+    switch rawValue {
+    case "refresh_and_reconnect": self = .refreshAndReconnect
+    case "stop": self = .stop
+    default: self = .unknown(rawValue)
+    }
+  }
+
+  public var rawValue: String {
+    switch self {
+    case .refreshAndReconnect: "refresh_and_reconnect"
+    case .stop: "stop"
     case let .unknown(value): value
     }
   }
@@ -24,24 +52,33 @@ public enum ChatRejectionReason: Hashable, Sendable {
 
 public struct ChatAuthor: Equatable, Sendable {
   public let id: UUID
-  public let name: String
+  public let displayName: String
 
-  public init(id: UUID, name: String) {
+  public init(id: UUID, displayName: String) {
     self.id = id
-    self.name = name
+    self.displayName = displayName
   }
 }
 
 public struct ChatMessage: Equatable, Sendable {
-  public let id: String
+  public let id: UUID
   public let channelID: ChannelID
+  public let sessionID: UUID?
   public let author: ChatAuthor
   public let body: String
   public let sentAt: Date
 
-  public init(id: String, channelID: ChannelID, author: ChatAuthor, body: String, sentAt: Date) {
+  public init(
+    id: UUID,
+    channelID: ChannelID,
+    sessionID: UUID?,
+    author: ChatAuthor,
+    body: String,
+    sentAt: Date
+  ) {
     self.id = id
     self.channelID = channelID
+    self.sessionID = sessionID
     self.author = author
     self.body = body
     self.sentAt = sentAt
@@ -53,7 +90,28 @@ public enum ChatSendOutcome: Equatable, Sendable {
   case rejected(ChatRejectionReason)
 }
 
+public enum ChatEvent: Equatable, Sendable {
+  case message(ChatMessage)
+  case revoked(SessionRevocation)
+}
+
+public enum ChatConnectionError: Error, Equatable, Sendable {
+  case unauthorized
+  case forbidden
+  case unavailable
+  case refused(String)
+  case closed
+  case ackTimedOut
+}
+
 public protocol ChatConnection: Sendable {
-  func messages(in channel: ChannelID) -> AsyncThrowingStream<ChatMessage, any Error>
+  var events: AsyncThrowingStream<ChatEvent, any Error> { get }
+  func join(_ channel: ChannelID) async throws
+  func leave(_ channel: ChannelID) async throws
   func send(_ body: String, in channel: ChannelID) async throws -> ChatSendOutcome
+  func close() async
+}
+
+public protocol ChatConnector: Sendable {
+  func connect(accessToken: String) async throws -> any ChatConnection
 }
