@@ -113,6 +113,32 @@ describe("activeSanction", () => {
     ).toBeDefined();
   });
 
+  it("préfère le ban sans échéance à un timeout sur la même chaîne, dans tout ordre", () => {
+    const timeout = onChannel("banned", { expiresAt: secondsFromNow(600) });
+    const ban = onChannel("banned");
+
+    expect([
+      activeSanction({ chatter: contextOf(timeout, ban), channelId: CHANNEL_A, now: NOW }),
+      activeSanction({ chatter: contextOf(ban, timeout), channelId: CHANNEL_A, now: NOW }),
+    ]).toEqual([
+      { channelId: CHANNEL_A, expiresAt: null },
+      { channelId: CHANNEL_A, expiresAt: null },
+    ]);
+  });
+
+  it("préfère le timeout qui finit le plus tard, dans tout ordre", () => {
+    const short = onChannel("banned", { expiresAt: secondsFromNow(60) });
+    const long = onChannel("banned", { expiresAt: secondsFromNow(600) });
+
+    expect([
+      activeSanction({ chatter: contextOf(short, long), channelId: CHANNEL_A, now: NOW }),
+      activeSanction({ chatter: contextOf(long, short), channelId: CHANNEL_A, now: NOW }),
+    ]).toEqual([
+      { channelId: CHANNEL_A, expiresAt: secondsFromNow(600) },
+      { channelId: CHANNEL_A, expiresAt: secondsFromNow(600) },
+    ]);
+  });
+
   it("ne sanctionne pas l'utilisateur sur une autre chaîne", () => {
     expect(activeSanction({ chatter: timedOut(), channelId: CHANNEL_B, now: NOW })).toBeUndefined();
   });

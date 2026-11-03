@@ -47,6 +47,9 @@ export const chatterContextFor = ({
   };
 };
 
+const endOf = ({ expiresAt }: ChatSanction): number =>
+  expiresAt === null ? Number.POSITIVE_INFINITY : expiresAt.getTime();
+
 export const activeSanction = ({
   chatter,
   channelId,
@@ -55,9 +58,17 @@ export const activeSanction = ({
   chatter: ChatterContext;
   channelId: string;
   now: Date;
-}): ChatSanction | undefined =>
-  chatter.sanctions.find(
-    (sanction) =>
-      sanction.channelId === channelId &&
-      isActive({ expiresAt: sanction.expiresAt, revokedAt: null }, now),
-  );
+}): ChatSanction | undefined => {
+  const ends = chatter.sanctions
+    .filter(
+      (sanction) =>
+        sanction.channelId === channelId &&
+        isActive({ expiresAt: sanction.expiresAt, revokedAt: null }, now),
+    )
+    .map(endOf);
+  if (ends.length === 0) {
+    return undefined;
+  }
+  const end = Math.max(...ends);
+  return { channelId, expiresAt: end === Number.POSITIVE_INFINITY ? null : new Date(end) };
+};

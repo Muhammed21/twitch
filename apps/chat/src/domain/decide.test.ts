@@ -36,7 +36,6 @@ const OFFLINE_ROOM: RoomState = { channelId: CHANNEL_ID, sessionId: null };
 const LIVE_ROOM: RoomState = { channelId: CHANNEL_ID, sessionId: SESSION_ID };
 
 const makeMessage = (overrides: Partial<ChatMessage> = {}): ChatMessage => ({
-  channelId: CHANNEL_ID,
   body: "Bonjour le chat",
   ...overrides,
 });
@@ -116,6 +115,21 @@ describe("decide — sanctions", () => {
     const chatter = makeChatter(banned({ channelId: OTHER_CHANNEL_ID }));
 
     expect(decide(makeInput({ chatter })).ok).toBe(true);
+  });
+
+  it("publie le message accepté dans le salon dont la sanction a été vérifiée", () => {
+    const chatter = makeChatter(banned({ channelId: CHANNEL_ID }));
+    const decision = decide(
+      makeInput({ chatter, room: { channelId: OTHER_CHANNEL_ID, sessionId: null } }),
+    );
+
+    expect(decision.ok && decision.value.message.channelId).toBe(OTHER_CHANNEL_ID);
+  });
+
+  it("donne le motif banned quand un ban sans échéance s'ajoute à un timeout", () => {
+    const chatter = makeChatter(banned(), banned({ expiresAt: null }));
+
+    expect(decide(makeInput({ chatter }))).toEqual(err("banned"));
   });
 
   it("refuse banned le message d'un chatter banni sans échéance", () => {

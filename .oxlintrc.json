@@ -85,7 +85,7 @@
       }
     },
     {
-      "files": ["apps/api/src/modules/*/domain/**"],
+      "files": ["apps/api/src/modules/*/domain/**", "apps/chat/src/domain/**"],
       "rules": {
         "no-restricted-imports": [
           "error",

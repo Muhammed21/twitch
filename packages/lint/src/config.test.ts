@@ -98,6 +98,12 @@ describe("règles d'architecture, avec la vraie configuration", () => {
       "no-restricted-imports",
     ],
     [
+      "un domaine du chat qui importe Zod",
+      "apps/chat/src/domain/bad.ts",
+      'import { z } from "zod";\nexport const a = z;\n',
+      "no-restricted-imports",
+    ],
+    [
       "un import vers un autre module",
       "apps/api/src/modules/channel/domain/bad.ts",
       'import { a } from "../../identity/domain/account-id.ts";\nexport const b = a;\n',

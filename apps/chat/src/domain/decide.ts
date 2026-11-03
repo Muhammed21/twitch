@@ -8,9 +8,10 @@ export type TokenBucket = { readonly tokens: number; readonly refilledAt: Date }
 
 export type RoomState = { readonly channelId: string; readonly sessionId: string | null };
 
-export type ChatMessage = { readonly channelId: string; readonly body: string };
+export type ChatMessage = { readonly body: string };
 
 export type AcceptedMessage = ChatMessage & {
+  readonly channelId: string;
   readonly authorId: string;
   readonly sentAt: Date;
   readonly sessionId?: string;
@@ -43,7 +44,7 @@ const accept = ({
 }): Result<Accepted, Rejection> =>
   ok({
     message: {
-      channelId: message.channelId,
+      channelId: room.channelId,
       authorId: chatter.userId,
       body: message.body,
       sentAt: now,
