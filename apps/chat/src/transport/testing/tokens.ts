@@ -12,10 +12,14 @@ export const makeTokenAuthority = async () => {
   const { privateKey, publicKey } = await generateKeyPair("EdDSA", { crv: "Ed25519" });
   const jwks = { keys: [{ ...(await exportJWK(publicKey)), kid: "test", alg: "EdDSA" }] };
 
-  const sign = ({ sid = "sid-1", expiresIn = "15m" }: { sid?: string; expiresIn?: string } = {}) =>
+  const sign = ({
+    userId = "user-1",
+    sid = "sid-1",
+    expiresIn = "15m",
+  }: { userId?: string; sid?: string; expiresIn?: string } = {}) =>
     new SignJWT({ sid })
       .setProtectedHeader({ alg: "EdDSA", kid: "test", typ: "at+jwt" })
-      .setSubject("user-1")
+      .setSubject(userId)
       .setIssuer(ISSUER)
       .setAudience(AUDIENCE)
       .setIssuedAt()

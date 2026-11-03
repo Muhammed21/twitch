@@ -28,6 +28,20 @@ Le gestionnaire d'upgrade lit `Authorization: Bearer <jeton>` avant toute connex
 
 Chaque handshake est journalisé avec son statut seul, jamais l'en-tête `Authorization`. Un client qui coupe sa connexion pendant la vérification est journalisé (`handshake interrompu`) sans arrêter le process. `GET /health/live` et `GET /health/ready` répondent `200`.
 
+### Salons et diffusion
+
+Après un upgrade accepté, le profil du chatter (`chat:chatter:<userId>`) est lu pendant l'ouverture de la connexion. Un profil inconnu ou illisible refuse la connexion socket.io avec l'erreur `chatter_unavailable` ; une lecture en échec est journalisée (`profil illisible`).
+
+Les événements d'une socket sont traités l'un après l'autre, dans leur ordre d'arrivée : un `chat:send` émis juste après `room:join` trouve le salon rejoint.
+
+| Événement    | Effet                                                                                                                                                                                                                                         |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `room:join`  | Entre dans le salon `room:<channelId>` d'une chaîne connue, une seule fois par socket. Sans réponse ; une chaîne inconnue ou un état illisible laissent la socket hors du salon                                                               |
+| `room:leave` | Sort du salon. Sans réponse                                                                                                                                                                                                                   |
+| `chat:send`  | Exige un ack. Accepté : diffusé en `chat:message` à tout le salon, auteur compris, puis ack sans valeur. Refusé : ack `RealtimeChatRejected` (`timed_out`, `banned`, `rate_limited`, ou `not_joined` hors d'un salon rejoint), sans diffusion |
+
+Un événement inconnu, une charge invalide ou un `chat:send` sans ack sont rejetés sans réponse et comptés (`rejectedEventCount()`). Une déconnexion sort la socket de tous ses salons ; un salon sans connecté est libéré de la mémoire. `main.ts` oublie toutes les 10 s les seaux redevenus pleins.
+
 ## Domaine
 
 `decide({ chatter, room, message, bucket, now })` décide d'un message, sans I/O :
