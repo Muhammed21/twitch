@@ -9,10 +9,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "check-types": "tsc --noEmit",
     "mutation": "stryker run"
   },
   "dependencies": {
+    "@repo/db": "workspace:*",
     "@repo/result": "workspace:*",
     "@repo/video-contract": "workspace:*",
     "zod": "4.6.7"

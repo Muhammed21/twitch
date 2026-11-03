@@ -12,9 +12,11 @@ const failureOf = (load: () => unknown): string => {
 };
 
 const SERVICE_SECRET = "s".repeat(32);
+const ENCRYPTION_KEY = Buffer.alloc(32, 7);
 
 const makeEnv = (overrides: Record<string, string> = {}) => ({
   VIDEO_SERVICE_SECRET: SERVICE_SECRET,
+  VIDEO_STREAM_KEY_ENCRYPTION_KEY: ENCRYPTION_KEY.toString("base64"),
   ...overrides,
 });
 
@@ -24,6 +26,7 @@ describe("loadEnv", () => {
       httpPort: 3002,
       serviceSecret: SERVICE_SECRET,
       ingestUrl: "rtmp://127.0.0.1:1935/live",
+      streamKeyEncryptionKey: Uint8Array.from(ENCRYPTION_KEY),
     });
   });
 
@@ -52,15 +55,38 @@ describe("loadEnv", () => {
 
   it("nomme toutes les variables invalides", () => {
     expect(failureOf(() => loadEnv({ VIDEO_HTTP_PORT: "abc" }))).toBe(
-      "Configuration invalide, variables à corriger : VIDEO_HTTP_PORT, VIDEO_SERVICE_SECRET",
+      "Configuration invalide, variables à corriger : VIDEO_HTTP_PORT, VIDEO_SERVICE_SECRET, VIDEO_STREAM_KEY_ENCRYPTION_KEY",
     );
   });
 
   it("exige le secret de service", () => {
-    expect(failureOf(() => loadEnv({}))).toBe(
-      "Configuration invalide, variables à corriger : VIDEO_SERVICE_SECRET",
+    expect(
+      failureOf(() =>
+        loadEnv({ VIDEO_STREAM_KEY_ENCRYPTION_KEY: ENCRYPTION_KEY.toString("base64") }),
+      ),
+    ).toBe("Configuration invalide, variables à corriger : VIDEO_SERVICE_SECRET");
+  });
+
+  it("exige la clé de chiffrement des clés de stream", () => {
+    expect(failureOf(() => loadEnv({ VIDEO_SERVICE_SECRET: SERVICE_SECRET }))).toBe(
+      "Configuration invalide, variables à corriger : VIDEO_STREAM_KEY_ENCRYPTION_KEY",
     );
   });
+
+  it.each([
+    ["31 octets", Buffer.alloc(31, 7).toString("base64")],
+    ["33 octets", Buffer.alloc(33, 7).toString("base64")],
+    ["de l'hexadécimal de 32 octets", Buffer.alloc(32, 7).toString("hex")],
+    ["du texte qui n'est pas du base64", "pas du base64 !"],
+    ["une valeur vide", ""],
+  ])(
+    "refuse une clé de chiffrement de %s en nommant VIDEO_STREAM_KEY_ENCRYPTION_KEY",
+    (_, value) => {
+      expect(failureOf(() => loadEnv(makeEnv({ VIDEO_STREAM_KEY_ENCRYPTION_KEY: value })))).toBe(
+        "Configuration invalide, variables à corriger : VIDEO_STREAM_KEY_ENCRYPTION_KEY",
+      );
+    },
+  );
 
   it("accepte un secret de service de 32 caractères, refuse 31", () => {
     expect(loadEnv(makeEnv({ VIDEO_SERVICE_SECRET: "x".repeat(32) })).serviceSecret).toBe(
