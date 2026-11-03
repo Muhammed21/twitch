@@ -1,4 +1,18 @@
-import { defineRule } from "@oxlint/plugins";
+import { defineRule, type ESTree } from "@oxlint/plugins";
+
+type Key = ESTree.MemberExpression["property"] | ESTree.PropertyKey;
+
+const VOLATILE = "volatile";
+
+const namesVolatile = (key: Key, computed: boolean): boolean => {
+  if (!computed) {
+    return key.type === "Identifier" && key.name === VOLATILE;
+  }
+  if (key.type === "TemplateLiteral") {
+    return key.expressions.length === 0 && key.quasis[0]?.value.cooked === VOLATILE;
+  }
+  return key.type === "Literal" && key.value === VOLATILE;
+};
 
 export const noVolatile = defineRule({
   meta: {
@@ -14,13 +28,15 @@ export const noVolatile = defineRule({
   create(context) {
     return {
       MemberExpression(node) {
-        const { property } = node;
-        const named = node.computed
-          ? property.type === "Literal" && property.value === "volatile"
-          : property.type === "Identifier" && property.name === "volatile";
-        if (named) {
-          context.report({ node: property, messageId: "volatile" });
+        if (namesVolatile(node.property, node.computed)) {
+          context.report({ node: node.property, messageId: "volatile" });
         }
+      },
+      ObjectPattern(node) {
+        node.properties
+          .filter((property) => property.type === "Property")
+          .filter((property) => namesVolatile(property.key, property.computed))
+          .forEach((property) => context.report({ node: property.key, messageId: "volatile" }));
       },
     };
   },

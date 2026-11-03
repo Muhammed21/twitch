@@ -139,15 +139,16 @@ describe("métriques du chat (ADR 0004, ADR 0027 §3)", () => {
   it("range le délai sanction → exclusion dans les seaux de l'histogramme", async () => {
     const { server } = await startServer(makeRoom());
 
-    server.sanctionApplied(300);
-    server.sanctionApplied(4000);
+    server.sanctionApplied(new Date(Date.now() - 300));
+    server.sanctionApplied(new Date(Date.now() - 4000));
 
     const metrics = await readMetrics(server.port);
     expect(metrics.get(`${SANCTION_DELAY}_bucket{le="0.25"}`)).toBe(0);
     expect(metrics.get(`${SANCTION_DELAY}_bucket{le="0.5"}`)).toBe(1);
     expect(metrics.get(`${SANCTION_DELAY}_bucket{le="5"}`)).toBe(2);
     expect(metrics.get(`${SANCTION_DELAY}_bucket{le="+Inf"}`)).toBe(2);
-    expect(metrics.get(`${SANCTION_DELAY}_sum`)).toBe(4.3);
+    expect(metrics.get(`${SANCTION_DELAY}_sum`)).toBeGreaterThanOrEqual(4.3);
+    expect(metrics.get(`${SANCTION_DELAY}_sum`)).toBeLessThan(4.5);
     expect(metrics.get(`${SANCTION_DELAY}_count`)).toBe(2);
   });
 });

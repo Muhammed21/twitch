@@ -341,8 +341,8 @@ export const startChatServer = async ({
       });
     },
     pendingSanctionCount: () => recentSanctions.size,
-    sanctionApplied: (delayMs: number) => {
-      sanctionDelays.observe(delayMs / 1000);
+    sanctionApplied: (sanctionedAt: Date) => {
+      sanctionDelays.observe((Date.now() - sanctionedAt.getTime()) / 1000);
     },
     revalidateSessions: async () => {
       await Promise.all([...io.sockets.sockets.values()].map(revalidate));

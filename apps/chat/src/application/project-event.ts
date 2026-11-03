@@ -74,7 +74,7 @@ export const chatEventHandlers = ({
         const sanction = { userId, channelId, expiresAt: new Date(expiresAt) };
         await views.sanctionChatter(sanction);
         sockets.sanction(sanction);
-        metrics.sanctionApplied(Date.now() - occurredAt.getTime());
+        metrics.sanctionApplied(occurredAt);
       },
     ),
   };

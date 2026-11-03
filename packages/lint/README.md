@@ -2,12 +2,12 @@
 
 Plugin oxlint local des règles d'architecture (ADR 0029), chargé par `jsPlugins` dans `.oxlintrc.json` sous le nom `twitch`. Toute modification passe en revue `critical`.
 
-| Règle                            | Refuse                                                                                                       |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `twitch/module-boundaries`       | un import d'un module de `apps/api/src/modules/` vers l'intérieur d'un autre, hors de son `contracts/`       |
-| `twitch/layer-dependencies`      | un import qui remonte les couches : `presentation` et `infrastructure` → `application` → `domain`            |
-| `twitch/no-disable-architecture` | un commentaire `oxlint-disable` / `eslint-disable` qui vise une règle d'architecture, ou toutes              |
-| `twitch/no-volatile`             | dans `apps/chat/src`, un accès `.volatile` : le moteur `ws` perd des messages de clients sains (ADR 0027 §1) |
+| Règle                            | Refuse                                                                                                                                |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `twitch/module-boundaries`       | un import d'un module de `apps/api/src/modules/` vers l'intérieur d'un autre, hors de son `contracts/`                                |
+| `twitch/layer-dependencies`      | un import qui remonte les couches : `presentation` et `infrastructure` → `application` → `domain`                                     |
+| `twitch/no-disable-architecture` | un commentaire `oxlint-disable` / `eslint-disable` qui vise une règle d'architecture, ou toutes                                       |
+| `twitch/no-volatile`             | dans `apps/chat/src`, un accès ou une déstructuration de `volatile` : le moteur `ws` perd des messages de clients sains (ADR 0027 §1) |
 
 Dans `.oxlintrc.json`, `no-restricted-imports` interdit à `domain/` NestJS, `nestjs-zod`, Prisma, Zod et `@repo/db` (ADR 0002, ADR 0009). La couche `application` reçoit la même règle avec son premier fichier.
 

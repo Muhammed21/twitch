@@ -69,7 +69,7 @@ const startServer = async (room: RoomState, closeAfterMs: number) => {
     verifier: authority.verifier(),
     log: () => undefined,
     chatters: { displayNameOf: async () => "Alice", sanctionsOf: async () => [] },
-    rooms: createRoomRegistry({ find: async () => room }),
+    rooms: createRoomRegistry({ find: async (channelId) => ({ ...room, channelId }) }),
     messages: UNLIMITED_SENDER,
     saturation: { maxPackets: MAX_PACKETS, closeAfterMs },
   });
@@ -172,11 +172,14 @@ describe("clients lents (ADR 0027, §2)", () => {
     const fast = await connectFast();
     const slow = await connectSlow();
     const atSlow = collectBodies(slow);
+    const elsewhere = crypto.randomUUID();
+    fast.emit("room:join", { channelId: elsewhere });
     proxy.stall();
     const flooded = await floodUntilSaturated(server.port, fast, room.channelId);
     const deliveredBefore = await metricOf(server.port, "chat_deliveries_total");
     await sendBatch(fast, room.channelId);
     await sendBatch(fast, room.channelId);
+    await fast.timeout(2000).emitWithAck("chat:send", { channelId: elsewhere, body: "ailleurs" });
     const deliveredWhileSaturated = await metricOf(server.port, "chat_deliveries_total");
 
     proxy.resume();
@@ -187,7 +190,7 @@ describe("clients lents (ADR 0027, §2)", () => {
     await waitFor(() => atSlow.includes("retour"), 2000);
 
     expect(atSlow.length).toBeLessThan(flooded.count + 2 * BATCH + 1);
-    expect(Number(deliveredWhileSaturated) - Number(deliveredBefore)).toBe(2 * BATCH);
+    expect(Number(deliveredWhileSaturated) - Number(deliveredBefore)).toBe(2 * BATCH + 1);
     expect(server.connectionCount()).toBe(2);
     expect(await metricOf(server.port, "chat_saturation_closures_total")).toBe(0);
   });

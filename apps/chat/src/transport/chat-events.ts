@@ -50,9 +50,9 @@ export const bindChatEvents = ({
   onFailure: (error: unknown) => void;
 }): void => {
   const recipientsOf = (room: string): number => {
-    const saturated = new Set(io.sockets.adapter.rooms.get(SATURATED_ROOM));
-    const members = [...new Set(io.sockets.adapter.rooms.get(room))];
-    return members.filter((id) => !saturated.has(id)).length;
+    const members = io.sockets.adapter.rooms.get(room);
+    const saturated = [...new Set(io.sockets.adapter.rooms.get(SATURATED_ROOM))];
+    return Number(members?.size) - saturated.filter((id) => members?.has(id)).length;
   };
 
   const bindSocket = (socket: ChatSocket) => {
