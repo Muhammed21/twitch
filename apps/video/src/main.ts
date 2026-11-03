@@ -7,6 +7,7 @@ import { createContextClient } from "@repo/db";
 
 import { loadEnv } from "./config/env.ts";
 import { createControlPlane } from "./control-plane/control-plane.ts";
+import { createHlsRegistry } from "./hls/hls-registry.ts";
 import { startHttpServer } from "./http/http-server.ts";
 import { startRelayLoop } from "./outbox/relay-loop.ts";
 import { relayVideoOutbox } from "./outbox/video-outbox-relay.ts";
@@ -17,6 +18,13 @@ import { startRtmpServer } from "./rtmp/rtmp-server.ts";
 const RTMP_HANDSHAKE_TIMEOUT_MS = 5000;
 const RTMP_IDLE_TIMEOUT_MS = 30_000;
 const RTMP_LIMITS = { maxChunkSize: 65_536, maxMessageSize: 2 * 1024 * 1024, maxChunkStreams: 16 };
+const HLS_OPTIONS = {
+  maxBoxSize: 8 * 1024 * 1024,
+  targetSeconds: 2,
+  capacity: 6,
+  maxSegmentBytes: 32 * 1024 * 1024,
+};
+const HLS_FALLBACK_BANDWIDTH = 6_000_000;
 
 const log = (
   msg: string,
@@ -47,6 +55,7 @@ try {
     randomBytes,
     onMessage: () => undefined,
   });
+  const hls = createHlsRegistry(HLS_OPTIONS);
   const server = await startHttpServer({
     port: config.httpPort,
     serviceSecret: config.serviceSecret,
@@ -59,6 +68,7 @@ try {
       newId: randomUUID,
       randomBytes,
     }),
+    hls: { find: hls.find, fallbackBandwidth: HLS_FALLBACK_BANDWIDTH },
   }).catch(async (error: unknown) => {
     await rtmp.close();
     throw error;
