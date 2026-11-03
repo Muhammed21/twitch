@@ -10,8 +10,10 @@ import {
 import type { Pool } from "pg";
 
 import { errorDetails, type LogSink, writeLog } from "../../platform/logging.ts";
+import { startPeriodicJob } from "../../platform/periodic-job.ts";
 import { startStreamConsumer, type StreamConsumerRedis } from "../../platform/stream-consumer.ts";
 import { listLives } from "./application/list-lives.ts";
+import { createLiveStatusHub, type LiveStatusHub } from "./application/live-status-hub.ts";
 import { projectDiscoveryEvent } from "./application/project-discovery-event.ts";
 import {
   type RebuildReport,
@@ -24,7 +26,13 @@ import {
   prismaLiveChannelStore,
 } from "./infrastructure/prisma-live-channel-projection.ts";
 import { prismaLiveReader } from "./infrastructure/prisma-live-reader.ts";
+import { prismaLiveStatusReader } from "./infrastructure/prisma-live-status-reader.ts";
 import { discoveryEventHandlers } from "./presentation/discovery-event-handlers.ts";
+import {
+  LIVE_STATUS_HEARTBEAT_MS,
+  LIVE_STATUS_HUB,
+  LiveStatusController,
+} from "./presentation/live-status.controller.ts";
 import { LIST_LIVES, LivesController } from "./presentation/lives.controller.ts";
 
 export type { DiscoveryPrisma };
@@ -48,6 +56,8 @@ const DISCOVERY_DEPENDENCIES = Symbol("DISCOVERY_DEPENDENCIES");
 const GROUP = "discovery";
 const CLAIM_IDLE_MS = 30_000;
 const BLOCK_MS = 1000;
+const LIVE_STATUS_TICK_MS = 1000;
+const LIVE_STATUS_HEARTBEAT_INTERVAL_MS = 15_000;
 
 type DiscoveryDependencies = {
   prisma: DiscoveryPrisma;
@@ -62,14 +72,20 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     @Inject(DISCOVERY_DEPENDENCIES) private readonly dependencies: DiscoveryDependencies,
+    @Inject(LIVE_STATUS_HUB) private readonly liveStatusHub: LiveStatusHub,
   ) {}
 
   static register(dependencies: DiscoveryDependencies): DynamicModule {
     return {
       module: DiscoveryModule,
-      controllers: [LivesController],
+      controllers: [LivesController, LiveStatusController],
       providers: [
         { provide: DISCOVERY_DEPENDENCIES, useValue: dependencies },
+        {
+          provide: LIVE_STATUS_HUB,
+          useValue: createLiveStatusHub(prismaLiveStatusReader(dependencies.prisma)),
+        },
+        { provide: LIVE_STATUS_HEARTBEAT_MS, useValue: LIVE_STATUS_HEARTBEAT_INTERVAL_MS },
         { provide: LIST_LIVES, useValue: listLives(prismaLiveReader(dependencies.prisma)) },
       ],
     };
@@ -81,28 +97,41 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
       project: projectDiscoveryEvent(prismaLiveChannelProjection(prisma)),
       logSink,
     });
+    const liveStatusTicks = startPeriodicJob({
+      intervalMs: LIVE_STATUS_TICK_MS,
+      run: () => this.liveStatusHub.tick(),
+      onError: (error) =>
+        writeLog(logSink, {
+          level: "error",
+          msg: "tick du statut des lives en échec",
+          ...errorDetails(error),
+        }),
+    });
     this.#consumers = [
-      { redis: channelConsumerRedis, stream: "events.channel" },
-      { redis: streamConsumerRedis, stream: "events.stream" },
-    ].map(({ redis, stream }) =>
-      startStreamConsumer({
-        redis,
-        stream,
-        group: GROUP,
-        consumer: `${hostname()}-${process.pid}`,
-        handlers,
-        claimIdleMs: CLAIM_IDLE_MS,
-        blockMs: BLOCK_MS,
-        onError: ({ stream: failedStream, entryId, error }) =>
-          writeLog(logSink, {
-            level: "error",
-            msg: "consommation de stream en échec",
-            stream: failedStream,
-            entryId,
-            ...errorDetails(error),
-          }),
-      }),
-    );
+      liveStatusTicks,
+      ...[
+        { redis: channelConsumerRedis, stream: "events.channel" },
+        { redis: streamConsumerRedis, stream: "events.stream" },
+      ].map(({ redis, stream }) =>
+        startStreamConsumer({
+          redis,
+          stream,
+          group: GROUP,
+          consumer: `${hostname()}-${process.pid}`,
+          handlers,
+          claimIdleMs: CLAIM_IDLE_MS,
+          blockMs: BLOCK_MS,
+          onError: ({ stream: failedStream, entryId, error }) =>
+            writeLog(logSink, {
+              level: "error",
+              msg: "consommation de stream en échec",
+              stream: failedStream,
+              entryId,
+              ...errorDetails(error),
+            }),
+        }),
+      ),
+    ];
   }
 
   async onModuleDestroy(): Promise<void> {

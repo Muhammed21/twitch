@@ -303,6 +303,46 @@
         ]
       }
     },
+    "/v1/channels/{channelId}/live-status": {
+      "get": {
+        "operationId": "LiveStatusController_stream",
+        "parameters": [
+          {
+            "name": "channelId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveStatus"
+                }
+              }
+            },
+            "description": ""
+          },
+          "default": {
+            "description": "Erreur au format RFC 9457",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "LiveStatus"
+        ]
+      }
+    },
     "/v1/mobile/bootstrap": {
       "get": {
         "operationId": "MobileBootstrapController_read",
@@ -507,6 +547,26 @@
           "items"
         ],
         "additionalProperties": {}
+      },
+      "LiveStatus": {
+        "type": "object",
+        "properties": {
+          "channelId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "live": {
+            "type": "boolean"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "channelId",
+          "live"
+        ]
       },
       "Profile": {
         "type": "object",

@@ -240,3 +240,30 @@ describe("MobileBootstrap", () => {
     expect(responses.MobileBootstrap.safeParse(makeBootstrap(overrides)).success).toBe(false);
   });
 });
+
+describe("LiveStatus", () => {
+  const CHANNEL_ID = "4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b";
+
+  it("décode le statut d'une chaîne en live, avec son démarrage", () => {
+    const status = { channelId: CHANNEL_ID, live: true, startedAt: "2026-11-03T20:00:00.000Z" };
+
+    expect(responses.LiveStatus.parse(status)).toEqual(status);
+  });
+
+  it("décode le statut d'une chaîne hors live, sans démarrage", () => {
+    const status = { channelId: CHANNEL_ID, live: false };
+
+    expect(responses.LiveStatus.parse(status)).toEqual(status);
+  });
+
+  it.each([
+    ["sans identifiant UUID", { channelId: "42", live: false }],
+    ["sans état live", { channelId: CHANNEL_ID }],
+    [
+      "avec un démarrage qui n'est pas une date ISO",
+      { channelId: CHANNEL_ID, live: true, startedAt: "hier" },
+    ],
+  ])("refuse un statut %s", (_name, status) => {
+    expect(responses.LiveStatus.safeParse(status).success).toBe(false);
+  });
+});
