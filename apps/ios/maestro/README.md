@@ -16,7 +16,7 @@ Une API et un service vidéo joignables depuis l'app, puis :
 
 ```sh
 pnpm seed:dev                                   # client OAuth et compte viewer_dev
-VIDEO_SERVICE_SECRET=… apps/ios/maestro/go-live.sh viewer_dev   # mire ffmpeg en direct, rend le PID
+apps/ios/maestro/go-live.sh viewer_dev   # VIDEO_SERVICE_SECRET et DATABASE_URL_STREAM de .env ; rend le PID de ffmpeg
 cd apps/ios && maestro test maestro/
 ```
 

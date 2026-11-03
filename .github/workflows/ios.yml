@@ -122,8 +122,6 @@ jobs:
       - name: Une chaîne en direct
         run: |
           set -a && . ./.env && set +a
-          channel=http://127.0.0.1:3000/v1/channels/viewer_dev
-          for _ in $(seq 120); do curl -fsS "$channel" >/dev/null 2>&1 && break; sleep 1; done
           apps/ios/maestro/go-live.sh viewer_dev
 
       - name: App sur le simulateur
@@ -140,7 +138,7 @@ jobs:
       - name: Maestro
         run: |
           curl -fsSL https://get.maestro.mobile.dev -o "$RUNNER_TEMP/maestro-install.sh"
-          bash "$RUNNER_TEMP/maestro-install.sh"
+          MAESTRO_VERSION=2.12.1 bash "$RUNNER_TEMP/maestro-install.sh"
           "$HOME/.maestro/bin/maestro" --device "$SIMULATOR" test apps/ios/maestro/ \
             --format junit --output "$RUNNER_TEMP/maestro.xml"
 
