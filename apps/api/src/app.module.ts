@@ -11,7 +11,12 @@ import {
 } from "./modules/identity/identity.module.ts";
 import { createFeatureFlags, MobileModule } from "./modules/mobile/mobile.module.ts";
 import { ModerationModule, type ModerationPrisma } from "./modules/moderation/moderation.module.ts";
-import { StreamModule, type StreamPrisma } from "./modules/stream/stream.module.ts";
+import {
+  createViewerCountReader,
+  type PresenceRedis,
+  StreamModule,
+  type StreamPrisma,
+} from "./modules/stream/stream.module.ts";
 import type { AccessTokenVerifier } from "./platform/authentication.ts";
 import type { FeatureFlagsConfig, VideoProviderConfig } from "./platform/config/env.ts";
 import type { LogSink } from "./platform/logging.ts";
@@ -43,6 +48,7 @@ export class AppModule {
       webhookSecret: string;
       video: VideoProviderConfig;
       consumerRedis: StreamConsumerRedis;
+      presenceRedis: PresenceRedis;
     };
     moderation: { prisma: ModerationPrisma };
     discovery: {
@@ -64,7 +70,11 @@ export class AppModule {
           logSink: platform.logSink,
         }),
         ModerationModule.register({ ...moderation, authzRedis: channel.authzRedis }),
-        DiscoveryModule.register({ ...discovery, logSink: platform.logSink }),
+        DiscoveryModule.register({
+          ...discovery,
+          viewerCounts: createViewerCountReader(stream.presenceRedis),
+          logSink: platform.logSink,
+        }),
         MobileModule.register({
           featureFlags: createFeatureFlags(mobile.featureFlags),
           readProfile: createCurrentAccountReader(identity.prisma),

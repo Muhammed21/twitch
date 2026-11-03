@@ -121,6 +121,7 @@ const withDiscoveryModule = async (
         prisma: createContextClient({ context: "discovery", env: process.env }),
         channelConsumerRedis,
         streamConsumerRedis,
+        viewerCounts: async () => new Map(),
         logSink: (line) => logs.push(line),
       }),
     ],

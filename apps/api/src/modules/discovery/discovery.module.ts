@@ -14,6 +14,7 @@ import { startPeriodicJob } from "../../platform/periodic-job.ts";
 import { startStreamConsumer, type StreamConsumerRedis } from "../../platform/stream-consumer.ts";
 import { listLives } from "./application/list-lives.ts";
 import { createLiveStatusHub, type LiveStatusHub } from "./application/live-status-hub.ts";
+import { type ViewerCountReader, withViewerCounts } from "./application/live-status-viewers.ts";
 import { projectDiscoveryEvent } from "./application/project-discovery-event.ts";
 import {
   type RebuildReport,
@@ -63,6 +64,7 @@ type DiscoveryDependencies = {
   prisma: DiscoveryPrisma;
   channelConsumerRedis: StreamConsumerRedis;
   streamConsumerRedis: StreamConsumerRedis;
+  viewerCounts: ViewerCountReader;
   logSink: LogSink;
 };
 
@@ -83,7 +85,12 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
         { provide: DISCOVERY_DEPENDENCIES, useValue: dependencies },
         {
           provide: LIVE_STATUS_HUB,
-          useValue: createLiveStatusHub(prismaLiveStatusReader(dependencies.prisma)),
+          useValue: createLiveStatusHub(
+            withViewerCounts({
+              statuses: prismaLiveStatusReader(dependencies.prisma),
+              viewerCounts: dependencies.viewerCounts,
+            }),
+          ),
         },
         { provide: LIVE_STATUS_HEARTBEAT_MS, useValue: LIVE_STATUS_HEARTBEAT_INTERVAL_MS },
         { provide: LIST_LIVES, useValue: listLives(prismaLiveReader(dependencies.prisma)) },

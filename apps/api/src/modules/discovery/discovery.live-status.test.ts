@@ -196,6 +196,29 @@ describe("GET /v1/channels/{channelId}/live-status (canal 2, ADR 0004 §2)", () 
     });
   });
 
+  it("envoie le nombre de viewers d'une chaîne en live, et son changement au tick", async () => {
+    await withLiveStatus(async ({ url, hub, projection }) => {
+      projection.set({ channelId: LIVE_CHANNEL, startedAt: STARTED_AT, viewerCount: 0 });
+      const stream = await openStream(`${url}/${LIVE_CHANNEL}/live-status`);
+
+      expect((await stream.nextEvent())?.data).toEqual({
+        channelId: LIVE_CHANNEL,
+        live: true,
+        startedAt: STARTED_AT.toISOString(),
+        viewerCount: 0,
+      });
+      projection.set({ channelId: LIVE_CHANNEL, startedAt: STARTED_AT, viewerCount: 12 });
+      await hub.tick();
+      expect((await stream.nextEvent())?.data).toEqual({
+        channelId: LIVE_CHANNEL,
+        live: true,
+        startedAt: STARTED_AT.toISOString(),
+        viewerCount: 12,
+      });
+      stream.abort();
+    });
+  });
+
   it("garde la connexion ouverte par un commentaire SSE périodique", async () => {
     await withLiveStatus(async ({ url }) => {
       const stream = await openStream(`${url}/${LIVE_CHANNEL}/live-status`);

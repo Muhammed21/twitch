@@ -88,6 +88,7 @@ describe("GET /v1/channels/{channelId}/live-status sur l'API assemblée", () => 
         channelId,
         live: true,
         startedAt: STARTED_AT.toISOString(),
+        viewerCount: 0,
       });
 
       await discovery.discoveryLiveChannelView.update({
@@ -112,6 +113,32 @@ describe("GET /v1/channels/{channelId}/live-status sur l'API assemblée", () => 
     const events = await statusEvents(channelId);
     try {
       expect(await events.next()).toEqual({ channelId, live: false });
+    } finally {
+      events.close();
+    }
+  });
+
+  it("compte en moins de deux secondes le viewer qui envoie un heartbeat de présence", async () => {
+    const channelId = await seedChannelView({ live: true });
+    const events = await statusEvents(channelId);
+    try {
+      expect(await events.next()).toMatchObject({ viewerCount: 0 });
+
+      const presence = await fetch(`${state.url}/v1/channels/${channelId}/presence`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ viewerId: randomUUID() }),
+      });
+      const sentAt = performance.now();
+
+      expect(presence.status).toBe(204);
+      expect(await events.next()).toEqual({
+        channelId,
+        live: true,
+        startedAt: STARTED_AT.toISOString(),
+        viewerCount: 1,
+      });
+      expect(performance.now() - sentAt).toBeLessThan(2000);
     } finally {
       events.close();
     }
@@ -172,6 +199,14 @@ describe("GET /v1/channels/{channelId}/live-status sur l'API assemblée", () => 
         },
       },
       components: { schemas: { LiveStatus: expect.any(Object) } },
+    });
+  });
+
+  it("documente dans l'OpenAPI le heartbeat de présence, sans contenu en réponse", () => {
+    expect(buildOpenApiDocument(appOf())).toMatchObject({
+      paths: {
+        "/v1/channels/{channelId}/presence": { post: { responses: { 204: expect.any(Object) } } },
+      },
     });
   });
 });

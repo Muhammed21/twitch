@@ -12,7 +12,7 @@ import { PlatformModule } from "../../platform/platform.module.ts";
 import { createStreamConsumerRedis } from "../../platform/stream-consumer.ts";
 import { recordStreamLifecycle } from "./application/record-stream-lifecycle.ts";
 import { prismaStreamSessions } from "./infrastructure/prisma-stream-sessions.ts";
-import { RECONCILIATION_INTERVAL_MS, StreamModule } from "./stream.module.ts";
+import { createPresenceRedis, RECONCILIATION_INTERVAL_MS, StreamModule } from "./stream.module.ts";
 
 const urlOf = (variable: string): string => {
   const url = process.env[variable];
@@ -68,6 +68,7 @@ const withStreamModule = async (
         video: { provider: "fake" },
         authzRedis,
         consumerRedis,
+        presenceRedis: createPresenceRedis(),
         logSink,
         reconciliationIntervalMs: TEST_INTERVAL_MS,
       }),

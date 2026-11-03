@@ -7,5 +7,6 @@ export const LiveStatus = z
     channelId: Uuid,
     live: z.boolean(),
     startedAt: z.iso.datetime().optional(),
+    viewerCount: z.int().min(0).optional(),
   })
   .meta({ id: "LiveStatus" });

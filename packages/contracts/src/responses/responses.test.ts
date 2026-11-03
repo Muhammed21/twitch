@@ -250,6 +250,23 @@ describe("LiveStatus", () => {
     expect(responses.LiveStatus.parse(status)).toEqual(status);
   });
 
+  it("décode le nombre de viewers d'une chaîne en live", () => {
+    const status = {
+      channelId: CHANNEL_ID,
+      live: true,
+      startedAt: "2026-11-03T20:00:00.000Z",
+      viewerCount: 42,
+    };
+
+    expect(responses.LiveStatus.parse(status)).toEqual(status);
+  });
+
+  it("décode un live sans aucun viewer", () => {
+    expect(
+      responses.LiveStatus.parse({ channelId: CHANNEL_ID, live: true, viewerCount: 0 }).viewerCount,
+    ).toBe(0);
+  });
+
   it("décode le statut d'une chaîne hors live, sans démarrage", () => {
     const status = { channelId: CHANNEL_ID, live: false };
 
@@ -259,6 +276,11 @@ describe("LiveStatus", () => {
   it.each([
     ["sans identifiant UUID", { channelId: "42", live: false }],
     ["sans état live", { channelId: CHANNEL_ID }],
+    ["avec un nombre de viewers négatif", { channelId: CHANNEL_ID, live: true, viewerCount: -1 }],
+    [
+      "avec un nombre de viewers fractionnaire",
+      { channelId: CHANNEL_ID, live: true, viewerCount: 1.5 },
+    ],
     [
       "avec un démarrage qui n'est pas une date ISO",
       { channelId: CHANNEL_ID, live: true, startedAt: "hier" },
