@@ -2,13 +2,13 @@
 
 Service de chat temps réel, process Node séparé (ADR 0004, ADR 0022). Découpage : [plan du chat](../../plans/chat.md).
 
-| Commande                | Effet                                                                       |
-| ----------------------- | --------------------------------------------------------------------------- |
-| `pnpm start`            | Lance `src/main.ts` avec le `.env` racine                                   |
-| `pnpm test`             | Tests unitaires, serveur sur un port libre, process complet                 |
-| `pnpm test:coverage`    | Tests et couverture 100 %                                                   |
-| `pnpm test:integration` | Révocation, vues locales, consommateur et jalon C1 dans le Redis de Compose |
-| `pnpm mutation`         | Stryker sur `src/`, hors `main.ts` et `testing/`                            |
+| Commande                | Effet                                                                              |
+| ----------------------- | ---------------------------------------------------------------------------------- |
+| `pnpm start`            | Lance `src/main.ts` avec le `.env` racine                                          |
+| `pnpm test`             | Tests unitaires, serveur sur un port libre, process complet                        |
+| `pnpm test:coverage`    | Tests et couverture 100 %                                                          |
+| `pnpm test:integration` | Révocation, vues locales, consommateur, fan-out et jalons dans le Redis de Compose |
+| `pnpm mutation`         | Stryker sur `src/`, hors `main.ts` et `testing/`                                   |
 
 | Variable                         | Rôle                                                                           |
 | -------------------------------- | ------------------------------------------------------------------------------ |
@@ -41,6 +41,15 @@ Chaque handshake est journalisé avec son statut seul, jamais l'en-tête `Author
 
 Garde de l'ADR 0027 §2 : toutes les 10 ms, une socket dont le tampon d'écriture d'engine.io dépasse 100 paquets rejoint le salon interne `saturated`, et la diffusion d'un message de chat l'exclut (`io.to(room).except("saturated")`). Elle en sort dès que son tampon repasse sous le seuil ; restée saturée 10 s d'affilée, elle est fermée sans vider son tampon, et le client se reconnecte. `transport/write-buffer.ts` est le seul module qui lit `writeBuffer`, détail interne d'engine.io ; `slow-clients.test.ts` le couvre avec un client réel qui ne lit plus. `volatile` est refusé par `twitch/no-volatile` dans `apps/chat` (ADR 0027 §1).
 
+### Fan-out entre instances
+
+Les instances partagent salons et diffusion par `@socket.io/redis-adapter` (ADR 0022), sur deux clients Redis dédiés (`chat-fan-out`, `chat-fan-out-subscriber`) et la clé `chat`. Le fan-out est best-effort : une commande Redis en échec est journalisée (`commande de fan-out en échec`) sans arrêter le process, et la diffusion locale continue pendant une panne de Redis. Le client `chat-fan-out` n'a pas de file hors ligne : pendant une panne, ses publications sont refusées sur-le-champ, sans journal par message, la panne étant journalisée par sa connexion.
+
+- Un message posté sur une instance est diffusé aux salons de toutes les instances ; chaque instance exclut ses propres sockets saturées.
+- Une sanction ne passe jamais par le Pub/Sub de l'adapter (ADR 0006, ADR 0022). Le groupe `chat` livre chaque event à une seule instance, qui l'enregistre dans la vue locale ; en parallèle, chaque instance lit elle-même `events.moderation` en queue (`XREAD`, client `sanctions`), à partir du dernier event présent à son démarrage, et applique chaque timeout aux sockets qu'elle porte. Une application en échec est journalisée (`application de sanction en échec`) et la lecture continue ; une sanction antérieure au démarrage s'applique par la vue locale à la connexion.
+- Révocation, revalidation, garde des clients lents et arrêt ne touchent que les sockets de l'instance : chaque instance reçoit elle-même le Pub/Sub de révocation.
+- Le seau de rate limit d'un utilisateur reste propre à chaque instance ; son partage est suivi dans https://github.com/Muhammed21/twitch/issues/159.
+
 ### Métriques
 
 `GET /metrics` répond au format texte de Prometheus, pendant l'arrêt compris :
@@ -51,7 +60,7 @@ Garde de l'ADR 0027 §2 : toutes les 10 ms, une socket dont le tampon d'écritur
 | `chat_rooms_loaded`                     | gauge     | salons chargés en mémoire                                               |
 | `chat_saturated_sockets`                | gauge     | sockets exclues de la diffusion                                         |
 | `chat_messages_total`                   | counter   | messages de chat diffusés                                               |
-| `chat_deliveries_total`                 | counter   | livraisons : chaque message compte une fois par destinataire non saturé |
+| `chat_deliveries_total`                 | counter   | livraisons : chaque `chat:message` écrit à une socket de cette instance |
 | `chat_rejected_events_total`            | counter   | trames rejetées par la validation                                       |
 | `chat_saturation_closures_total`        | counter   | sockets fermées après 10 s de saturation                                |
 | `chat_sanction_exclusion_delay_seconds` | histogram | délai entre l'`occurredAt` d'un timeout et son application aux sockets  |
@@ -100,7 +109,7 @@ Un seau remonté à 5 jetons vaut l'absence de seau (`isBucketFull`). Le `Chatte
 ## Application
 
 - `createRoomRegistry(directory)` tient les salons chargés en mémoire (ADR 0032, §3) : l'état d'un salon est lu à la première entrée, une seule fois pour des entrées simultanées, et libéré à la dernière sortie. Une chaîne inconnue ou une lecture en échec ne laisse aucun salon chargé ; une entrée dont le salon est libéré pendant la lecture repart sans état et ne touche pas au salon relu ensuite. `loadedCount()` donne le nombre de salons chargés.
-- `createMessageSender()` applique `decide` avec un seau par utilisateur, en mémoire du process : la lecture, la décision et l'écriture du seau sont synchrones, donc sans course entre deux sockets du même utilisateur. `sweep(now)` oublie les seaux redevenus pleins. Le partage des seaux entre instances arrive avec le fan-out (PR 7 du plan).
+- `createMessageSender()` applique `decide` avec un seau par utilisateur, en mémoire du process : la lecture, la décision et l'écriture du seau sont synchrones, donc sans course entre deux sockets du même utilisateur. `sweep(now)` oublie les seaux redevenus pleins. Le partage des seaux entre instances est suivi dans https://github.com/Muhammed21/twitch/issues/159.
 
 - `chatEventHandlers({ views, rooms, sockets, metrics, log })` projette les events dans les vues locales et rafraîchit l'état d'un salon chargé, même pendant sa lecture. Un payload hors contrat est journalisé puis écarté ; une version non gérée fait échouer le handler, et l'event reste à traiter.
 
@@ -131,4 +140,4 @@ Chaque écriture est idempotente et supporte le désordre : un event rejoué, un
 
 La connexion Redis ne journalise que ses transitions : `redis injoignable` à la première erreur d'une panne, `redis rétabli` au retour, et rien pour les tentatives de reconnexion entre les deux. Le consommateur se tait pendant une panne de sa connexion, qui a son propre journal de transitions (`client: "events"`).
 
-`event-consumer.ts` et `redis-local-view-writer.ts` sont couverts par `pnpm test:integration`, hors couverture unitaire et hors Stryker. `chat-milestone.integration.test.ts` démontre le jalon C1 : une chaîne créée et deux comptes enregistrés par events, deux clients authentifiés qui échangent dans le salon, puis un message rattaché au live démarré. Il démontre aussi le jalon C2 : un timeout publié refuse `timed_out` le message suivant de l'auteur en moins d'une seconde, sans toucher les autres, compte son délai sous la seconde dans l'histogramme, et s'applique à une reconnexion ultérieure. Le jalon C3 est démontré par `slow-clients.test.ts` et `metrics.test.ts`.
+`event-consumer.ts`, `stream-tail.ts` et `redis-local-view-writer.ts` sont couverts par `pnpm test:integration`, hors couverture unitaire et hors Stryker. `fan-out.integration.test.ts` fait tourner deux instances sur le Redis de Compose : message posté sur A reçu sur B, sanction lue par chaque instance dans le stream et appliquée à ses sockets, révocation limitée aux sockets de chaque instance. `chat-milestone.integration.test.ts` démontre le jalon C1 : une chaîne créée et deux comptes enregistrés par events, deux clients authentifiés qui échangent dans le salon, puis un message rattaché au live démarré. Il démontre aussi le jalon C2 : un timeout publié refuse `timed_out` le message suivant de l'auteur en moins d'une seconde, sans toucher les autres, compte son délai sous la seconde dans l'histogramme, et s'applique à une reconnexion ultérieure. Le jalon C3 est démontré par `slow-clients.test.ts` et `metrics.test.ts`.
