@@ -1,10 +1,14 @@
 import type { VideoStore } from "../control-plane/control-plane.ts";
 import { lifecycleEvent, openSession, publish, stop } from "../domain/ingest.ts";
-import type { Publication } from "../rtmp/rtmp-server.ts";
+
+export type IngestPublication = {
+  readonly sessionId: string;
+  readonly end: () => Promise<void>;
+};
 
 export const createPublishGate =
   ({ store, newId, now }: { store: VideoStore; newId: () => string; now: () => Date }) =>
-  async (streamKey: string): Promise<Publication | undefined> => {
+  async (streamKey: string): Promise<IngestPublication | undefined> => {
     const channel = await store.findChannelByStreamKey(streamKey);
     if (channel === undefined) {
       return undefined;
@@ -23,6 +27,7 @@ export const createPublishGate =
     }
     await store.saveSession(live.value, [lifecycleEvent({ id: newId(), session: live.value })]);
     return {
+      sessionId: live.value.id,
       end: async () => {
         const current = await store.liveSessionOf(live.value.channelId);
         const ended = current?.id === live.value.id ? stop(current, now()) : undefined;

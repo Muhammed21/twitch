@@ -131,6 +131,8 @@ jobs:
       - run: cp .env.example .env
       - run: ./docker/up.sh
       - run: pnpm migrate
+      - name: Install ffmpeg and ffprobe for apps/video integration tests
+        run: command -v ffprobe || (sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg)
       - run: pnpm test:integration
       - if: always()
         run: docker compose down -v

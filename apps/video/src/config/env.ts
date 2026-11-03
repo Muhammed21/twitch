@@ -19,6 +19,8 @@ const envSchema = z.object({
   VIDEO_WEBHOOK_SECRET: z.string().min(WEBHOOK_SECRET_MIN_LENGTH),
   DATABASE_URL_OUTBOX_RELAY: z.string().regex(/^postgres(ql)?:\/\/\S+$/),
   OUTBOX_RELAY_INTERVAL_MS: z.coerce.number().int().min(1).default(1000),
+  VIDEO_FFMPEG_PATH: z.string().min(1).default("ffmpeg"),
+  VIDEO_MAX_SESSIONS: z.coerce.number().int().min(1).default(4),
 });
 
 export type VideoConfig = {
@@ -29,6 +31,7 @@ export type VideoConfig = {
   readonly streamKeyEncryptionKey: Uint8Array;
   readonly webhook: { readonly url: string; readonly secret: string };
   readonly outboxRelay: { readonly databaseUrl: string; readonly intervalMs: number };
+  readonly media: { readonly ffmpegPath: string; readonly maxSessions: number };
 };
 
 export const loadEnv = (env: Readonly<Record<string, string | undefined>>): VideoConfig => {
@@ -47,6 +50,10 @@ export const loadEnv = (env: Readonly<Record<string, string | undefined>>): Vide
     outboxRelay: {
       databaseUrl: parsed.data.DATABASE_URL_OUTBOX_RELAY,
       intervalMs: parsed.data.OUTBOX_RELAY_INTERVAL_MS,
+    },
+    media: {
+      ffmpegPath: parsed.data.VIDEO_FFMPEG_PATH,
+      maxSessions: parsed.data.VIDEO_MAX_SESSIONS,
     },
   };
 };

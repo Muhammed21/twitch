@@ -2,13 +2,13 @@
 
 Service vidéo maison, à la manière d'Amazon IVS (ADR 0031). Process Node séparé, sans NestJS. Découpage : [plan du service vidéo](../../plans/service-video.md).
 
-| Commande                | Effet                                                                    |
-| ----------------------- | ------------------------------------------------------------------------ |
-| `pnpm build`            | Compile `src/` vers `dist/` avec `tsc`                                   |
-| `pnpm start`            | Lance `dist/main.js` avec le `.env` racine                               |
-| `pnpm test`             | Tests unitaires, serveur HTTP sur un port libre, process de bout en bout |
-| `pnpm test:integration` | Dépôt Prisma et relais de l'outbox contre le PostgreSQL de Compose       |
-| `pnpm mutation`         | Stryker sur `src/`, hors `main.ts`                                       |
+| Commande                | Effet                                                                                       |
+| ----------------------- | ------------------------------------------------------------------------------------------- |
+| `pnpm build`            | Compile `src/` vers `dist/` avec `tsc`                                                      |
+| `pnpm start`            | Lance `dist/main.js` avec le `.env` racine                                                  |
+| `pnpm test`             | Tests unitaires, serveur HTTP sur un port libre, process de bout en bout                    |
+| `pnpm test:integration` | Dépôt Prisma et relais de l'outbox contre le PostgreSQL de Compose, ffmpeg et ffprobe réels |
+| `pnpm mutation`         | Stryker sur `src/`, hors `main.ts`                                                          |
 
 | Variable                          | Rôle                                                               |
 | --------------------------------- | ------------------------------------------------------------------ |
@@ -21,6 +21,8 @@ Service vidéo maison, à la manière d'Amazon IVS (ADR 0031). Process Node sép
 | `VIDEO_WEBHOOK_SECRET`            | Secret HMAC des webhooks, partagé avec l'API, 32 caractères min.   |
 | `DATABASE_URL_OUTBOX_RELAY`       | Connexion du rôle `app_outbox_relay`, qui lit `VideoOutbox`        |
 | `OUTBOX_RELAY_INTERVAL_MS`        | Intervalle du relais, 1000 ms par défaut                           |
+| `VIDEO_FFMPEG_PATH`               | ffmpeg lancé par session, `ffmpeg` du `PATH` par défaut            |
+| `VIDEO_MAX_SESSIONS`              | Sessions de publication simultanées, 4 par défaut                  |
 
 Une variable invalide arrête le démarrage en code 1, avec le nom de la variable, jamais sa valeur.
 
@@ -47,6 +49,13 @@ Une variable invalide arrête le démarrage en code 1, avec le nom de la variabl
 - `publish` soumet la clé à `publish(streamKey)`, avant tout process : une publication accordée reçoit `NetStream.Publish.Start` ; une clé refusée, un second `publish` sur la même connexion ou une commande mal formée ferme la connexion et compte le rejet ; une vérification qui échoue ferme la connexion, compte le rejet et part vers `onError`. `deleteStream` ou la fin de la connexion, même brutale, termine la publication. Les messages d'une connexion sont traités un par un : rien ne passe avant la réponse à `publish`, et la connexion n'est plus lue tant que cette réponse n'est pas arrivée.
 - Dans `main.ts`, `publish` est `createPublishGate` (`src/ingest/publish-gate.ts`) : le canal est retrouvé par l'empreinte de la clé, la clé déchiffrée est comparée en temps constant à la clé présentée, puis la session passe `live` et `stream.started` part dans l'outbox, dans la même transaction. Une clé inconnue, une ancienne clé après rotation ou un canal déjà en direct est refusé. La fin de la publication passe la session en `ended` avec `stream.ended`, sauf si la session a déjà été arrêtée par le plan de contrôle.
 - À l'arrêt, le serveur ferme les connexions et attend la fin de leurs publications avant de rendre la main : les sessions sont terminées avant la fermeture de la base.
+
+## ffmpeg par session (`src/media/`)
+
+- `createLivePipeline` enveloppe la vérification de clé : au-delà de `VIDEO_MAX_SESSIONS` publications ouvertes ou en cours de vérification, `publish` est refusé avant toute lecture de la clé. Une session accordée lance son ffmpeg (`startPackaging`) ; la fin de la publication tue ce process (`SIGTERM`, puis `SIGKILL` après 2 s), puis clôt la session.
+- Les messages audio et vidéo de la publication deviennent un flux FLV maison (`flv-mux.ts` : en-tête audio et vidéo, un tag par message, horodatage sur 32 bits) écrit sur l'entrée standard de `ffmpeg -analyzeduration 500000 -f flv -i pipe:0 -c copy -f mp4 -movflags frag_keyframe+empty_moov+default_base_moof pipe:1`. Les autres messages ne partent pas vers ffmpeg.
+- Un ffmpeg qui meurt, ou qui laisse plus de 8 Mio en attente sur son entrée, ferme la connexion RTMP : la session passe en `ended` avec `stream.ended`.
+- Sortie fMP4 : un port par session, `FragmentSink` de `packager.ts`. `onFragmentBytes(sessionId, chunk)` reçoit les octets de la sortie standard de ffmpeg dans l'ordre, sans découpage en boîtes : `ftyp` et `moov` d'abord, puis des paires `moof`/`mdat` ouvertes sur image clé. `onFragmentsEnd(sessionId)` suit le dernier octet, à la fin de la publication comme à la mort du process. Dans `main.ts`, `FRAGMENT_SINK` attend le segmenteur ISO BMFF (PR 9).
 
 ## Événements sortants (`src/outbox/`, `src/webhooks/`)
 

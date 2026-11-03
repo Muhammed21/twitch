@@ -29,7 +29,7 @@ const envWithout = (variable: string) =>
   Object.fromEntries(Object.entries(makeEnv()).filter(([name]) => name !== variable));
 
 describe("loadEnv", () => {
-  it("écoute en HTTP sur 3002 et en RTMP sur 1935, annonce l'ingest local et relaie vers l'API locale par défaut", () => {
+  it("écoute en HTTP sur 3002 et en RTMP sur 1935, annonce l'ingest local, relaie vers l'API locale et lance ffmpeg du PATH pour 4 sessions par défaut", () => {
     expect(loadEnv(makeEnv())).toEqual({
       httpPort: 3002,
       rtmpPort: 1935,
@@ -38,7 +38,24 @@ describe("loadEnv", () => {
       streamKeyEncryptionKey: Uint8Array.from(ENCRYPTION_KEY),
       webhook: { url: "http://127.0.0.1:3000/v1/webhooks/video", secret: WEBHOOK_SECRET },
       outboxRelay: { databaseUrl: RELAY_DATABASE_URL, intervalMs: 1000 },
+      media: { ffmpegPath: "ffmpeg", maxSessions: 4 },
     });
+  });
+
+  it("lit le chemin de ffmpeg et le nombre maximal de sessions, d'au moins 1", () => {
+    expect(
+      loadEnv(makeEnv({ VIDEO_FFMPEG_PATH: "/opt/ffmpeg", VIDEO_MAX_SESSIONS: "1" })).media,
+    ).toEqual({ ffmpegPath: "/opt/ffmpeg", maxSessions: 1 });
+  });
+
+  it.each([
+    ["VIDEO_MAX_SESSIONS", "0"],
+    ["VIDEO_MAX_SESSIONS", "2.5"],
+    ["VIDEO_FFMPEG_PATH", ""],
+  ])("refuse %s=%j en la nommant", (variable, value) => {
+    expect(failureOf(() => loadEnv(makeEnv({ [variable]: value })))).toBe(
+      `Configuration invalide, variables à corriger : ${variable}`,
+    );
   });
 
   it.each(["https://api.example/v1/webhooks/video", "http://api:3000/v1/webhooks/video"])(
