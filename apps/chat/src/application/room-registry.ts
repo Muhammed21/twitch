@@ -39,14 +39,20 @@ export const createRoomRegistry = (directory: RoomDirectory) => {
       leave(channelId);
       return undefined;
     }
-    states.set(channelId, state);
-    return state;
+    const current = states.get(channelId) ?? state;
+    states.set(channelId, current);
+    return current;
   };
 
   return {
     enter,
     leave,
     state: (channelId: string): RoomState | undefined => states.get(channelId),
+    refresh: (state: RoomState): void => {
+      if (loaded.has(state.channelId)) {
+        states.set(state.channelId, state);
+      }
+    },
     loadedCount: (): number => loaded.size,
   };
 };
