@@ -1,6 +1,8 @@
 # Test sur iPhone réel (ADR 0028, ADR 0031) : republie sur toutes les interfaces les ports
 # que l'app joint, et seulement eux, le temps du test.
 # docker compose -f compose.yaml -f compose.lan.yaml --profile full up -d --build --wait api chat video
+# VIDEO_PLAYBACK_BASE_URL, dans .env, prend alors l'adresse de la machine sur le réseau local
+# (http://<adresse>:3002) : c'est l'URL que l'iPhone joint pour lire le live.
 
 services:
   api:
