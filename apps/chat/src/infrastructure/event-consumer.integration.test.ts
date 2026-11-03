@@ -11,7 +11,11 @@ const GROUP = "chat";
 const connect = async () => {
   const redis = createConsumerRedis(REDIS_URL);
   await redis.connect();
-  onTestFinished(() => redis.destroy());
+  onTestFinished(() => {
+    if (redis.isOpen) {
+      redis.destroy();
+    }
+  });
   return redis;
 };
 
@@ -45,7 +49,7 @@ const setup = async (handler: (event: StreamEvent) => Promise<void>) => {
   });
   onTestFinished(() => consumer.stop());
   const pendingCount = async () => (await publisher.xPending(stream, GROUP)).pending;
-  return { publisher, stream, failures, pendingCount };
+  return { publisher, consumerRedis, stream, failures, pendingCount };
 };
 
 describe("consommateur d'events du chat, contre le Redis de Compose", () => {
@@ -96,5 +100,29 @@ describe("consommateur d'events du chat, contre le Redis de Compose", () => {
     );
     await vi.waitFor(async () => expect(await pendingCount()).toBe(0));
     expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("recrée son groupe supprimé pendant qu'il tourne, puis reprend la lecture", async () => {
+    const handler = vi.fn<(event: StreamEvent) => Promise<void>>(async () => {});
+    const { publisher, stream } = await setup(handler);
+    await vi.waitFor(async () => expect(await publisher.xInfoGroups(stream)).toHaveLength(1));
+
+    await publisher.xGroupDestroy(stream, GROUP);
+    await vi.waitFor(async () => expect(await publisher.xInfoGroups(stream)).toHaveLength(1));
+    await publisher.xAdd(stream, "*", makeEntry("channel.created", {}));
+
+    await vi.waitFor(() => expect(handler).toHaveBeenCalledTimes(1));
+  });
+
+  it("se tait tant que sa connexion est coupée", async () => {
+    const handler = vi.fn<(event: StreamEvent) => Promise<void>>(async () => {});
+    const { consumerRedis, failures } = await setup(handler);
+
+    consumerRedis.destroy();
+    await new Promise((resolve) => {
+      setTimeout(resolve, 300);
+    });
+
+    expect(failures).toEqual([]);
   });
 });
