@@ -1,6 +1,7 @@
 import { once } from "node:events";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { Duplex } from "node:stream";
+import { setTimeout as sleep } from "node:timers/promises";
 
 import { Server as EngineServer, type ServerOptions, type Socket as EngineSocket } from "engine.io";
 import { Server as SocketServer } from "socket.io";
@@ -26,7 +27,14 @@ const ENGINE_OPTIONS: Partial<ServerOptions> = {
   pingTimeout: 60_000,
 };
 
-const REFUSALS = { 401: "Unauthorized", 403: "Forbidden", 404: "Not Found" } as const;
+const REFUSALS = {
+  401: "Unauthorized",
+  403: "Forbidden",
+  404: "Not Found",
+  503: "Service Unavailable",
+} as const;
+
+const SHUTDOWN_BATCHES = 10;
 
 type Refusal = keyof typeof REFUSALS;
 
@@ -76,14 +84,20 @@ const refuse = (socket: Duplex, status: Refusal): void => {
   );
 };
 
-const answerProbe = (request: IncomingMessage, response: ServerResponse): void => {
-  const body = PROBES.get(String(request.url));
-  if (body === undefined) {
-    response.writeHead(404).end();
-    return;
-  }
-  response.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify(body));
-};
+const answerProbe =
+  (isDraining: () => boolean) =>
+  (request: IncomingMessage, response: ServerResponse): void => {
+    const body = PROBES.get(String(request.url));
+    if (body === undefined) {
+      response.writeHead(404).end();
+      return;
+    }
+    if (request.url === "/health/ready" && isDraining()) {
+      response.writeHead(503).end();
+      return;
+    }
+    response.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify(body));
+  };
 
 export const startChatServer = async ({
   port,
@@ -162,12 +176,17 @@ export const startChatServer = async ({
     },
   });
 
-  const server = createServer(answerProbe);
+  const state = { draining: false };
+  const server = createServer(answerProbe(() => state.draining));
   const handleUpgrade = async (request: IncomingMessage, socket: Duplex, head: Buffer) => {
     const logInterruption = (error: Error) => {
       log({ msg: "handshake interrompu", error: error.message });
     };
     socket.on("error", logInterruption);
+    if (state.draining) {
+      refuse(socket, 503);
+      return;
+    }
     const outcome = await handshake(verifier, request);
     log({ msg: "handshake", status: outcome.status });
     if (outcome.status === 101) {
@@ -229,7 +248,16 @@ export const startChatServer = async ({
     },
     connectionCount: () => engine.clientsCount,
     rejectedEventCount: () => counters.rejectedEvents,
-    close: async () => {
+    close: async ({ spreadMs }: { spreadMs: number } = { spreadMs: 0 }) => {
+      state.draining = true;
+      const sockets = [...io.sockets.sockets.values()];
+      await Promise.all(
+        sockets.map(async (socket, index) => {
+          const batch = Math.floor((index * SHUTDOWN_BATCHES) / sockets.length);
+          await sleep((batch * spreadMs) / SHUTDOWN_BATCHES);
+          socket.conn.close();
+        }),
+      );
       engine.close();
       server.close();
       await once(server, "close");
