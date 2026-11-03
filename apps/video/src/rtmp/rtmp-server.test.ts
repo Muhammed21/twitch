@@ -447,6 +447,25 @@ describe("serveur RTMP, commandes et publish (ADR 0031, §3)", () => {
     expect(server.stats().rejections).toEqual({ ...NO_REJECTION, publish_failed: 1 });
   });
 
+  it("à l'arrêt, attend la fin des publications ouvertes avant de rendre la main", async () => {
+    const ended: string[] = [];
+    const server = await startServer({
+      ...PUBLISH_TIMEOUTS,
+      publish: async (streamKey) => ({
+        end: async () => {
+          await sleep(50);
+          ended.push(streamKey);
+        },
+      }),
+    });
+    const client = await publishThrough("publish", server);
+    await waitFor(() => repliesIn(client.received()).length === 5);
+
+    await server.close();
+
+    expect(ended).toEqual([FFMPEG_STREAM_KEY]);
+  });
+
   it("signale l'erreur d'une fin de publication qui échoue", async () => {
     const failure = new Error("base injoignable");
     const server = await startServer({

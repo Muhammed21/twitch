@@ -33,6 +33,7 @@ Une variable invalide arrête le démarrage en code 1, avec le nom de la variabl
 
 - Schéma `video` (ADR 0025) : `VideoChannel`, `VideoStreamKey`, `VideoIngestSession`, `VideoOutbox`. Une seule session `live` par canal, garantie par un index unique partiel.
 - La clé de stream est chiffrée en AES-256-GCM, IV aléatoire de 12 octets ; la ligne garde la version de la clé de chiffrement (`1`). Une clé illisible avec la clé courante, ou d'une version inconnue, lève une erreur au lieu d'être rendue.
+- La ligne garde aussi l'empreinte de la clé, HMAC-SHA256 par une clé dérivée en HKDF de la clé de chiffrement, sous un index unique : `findChannelByStreamKey` retrouve le canal au `publish` sans déchiffrer toutes les clés. Une clé enregistrée avant l'ajout de l'empreinte n'en a pas et ne publie qu'après une rotation.
 - Le dépôt Prisma et le dépôt en mémoire passent la même suite de contrat (`src/control-plane/testing/video-store.contract.ts`).
 
 ## Ingest RTMP (`src/rtmp/`)
@@ -44,7 +45,8 @@ Une variable invalide arrête le démarrage en code 1, avec le nom de la variabl
 - Plafonds, vérifiés avant d'allouer : taille de chunk de 128 octets (celle du départ) à 64 Kio, message de 2 Mio, 16 flux de chunks par connexion. Le tampon d'un message grandit avec les octets reçus (il double, jusqu'à la taille annoncée) et n'est jamais plus grand que le double de ce qui est arrivé : un en-tête seul ne réserve rien, et le réassemblage reste linéaire. Un dépassement, un chunk sur un flux jamais ouvert ou une taille de chunk invalide ferme la connexion et compte le rejet.
 - Commandes (`readCommand`, sur le décodeur AMF0 de `amf0.ts` : nombres, booléens, chaînes, objets jusqu'à 32 niveaux, `null`, `undefined`) : `connect` reçoit la taille de fenêtre, la bande passante et un `_result` de succès ; `createStream` reçoit le flux de message 1 ; `releaseStream`, `FCPublish`, `FCUnpublish` et les autres commandes sont acceptées sans réponse. Les réponses partent en chunks de 128 octets (`muxMessages`).
 - `publish` soumet la clé à `publish(streamKey)`, avant tout process : une publication accordée reçoit `NetStream.Publish.Start` ; une clé refusée, un second `publish` sur la même connexion ou une commande mal formée ferme la connexion et compte le rejet ; une vérification qui échoue ferme la connexion, compte le rejet et part vers `onError`. `deleteStream` ou la fin de la connexion, même brutale, termine la publication. Les messages d'une connexion sont traités un par un : rien ne passe avant la réponse à `publish`, et la connexion n'est plus lue tant que cette réponse n'est pas arrivée.
-- Dans `main.ts`, `publish` refuse encore toute clé : la vérification par le dépôt arrive avec la PR 7b.
+- Dans `main.ts`, `publish` est `createPublishGate` (`src/ingest/publish-gate.ts`) : le canal est retrouvé par l'empreinte de la clé, la clé déchiffrée est comparée en temps constant à la clé présentée, puis la session passe `live` et `stream.started` part dans l'outbox, dans la même transaction. Une clé inconnue, une ancienne clé après rotation ou un canal déjà en direct est refusé. La fin de la publication passe la session en `ended` avec `stream.ended`, sauf si la session a déjà été arrêtée par le plan de contrôle.
+- À l'arrêt, le serveur ferme les connexions et attend la fin de leurs publications avant de rendre la main : les sessions sont terminées avant la fermeture de la base.
 
 ## Événements sortants (`src/outbox/`, `src/webhooks/`)
 

@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { createHmac, hkdfSync, randomBytes } from "node:crypto";
 
 import { describe, expect, it } from "vitest";
 
@@ -67,5 +67,36 @@ describe("chiffrement des clés de stream (AES-256-GCM)", () => {
     expect(() => cipher.decrypt({ ...encrypted, encryptionKeyVersion: 2 })).toThrow(
       /version de clé de chiffrement inconnue : 2/,
     );
+  });
+});
+
+describe("empreinte des clés de stream (HMAC-SHA256)", () => {
+  it("rend une empreinte stable de 32 octets, HMAC de la clé par une clé dérivée en HKDF", () => {
+    const key = randomBytes(32);
+    const derived = Buffer.from(
+      hkdfSync("sha256", key, Buffer.alloc(0), "video:stream-key-fingerprint:v1", 32),
+    );
+
+    const fingerprint = streamKeyCipher({ key }).fingerprint(STREAM_KEY);
+
+    expect(fingerprint).toHaveLength(32);
+    expect(Buffer.from(fingerprint)).toEqual(
+      createHmac("sha256", derived).update(STREAM_KEY).digest(),
+    );
+    expect(Buffer.from(fingerprint)).not.toEqual(
+      createHmac("sha256", key).update(STREAM_KEY).digest(),
+    );
+  });
+
+  it("distingue deux clés de stream, et deux clés de chiffrement", () => {
+    const cipher = makeCipher();
+
+    const fingerprints = [
+      cipher.fingerprint(STREAM_KEY),
+      cipher.fingerprint(`${STREAM_KEY.slice(0, -1)}c`),
+      makeCipher().fingerprint(STREAM_KEY),
+    ].map((fingerprint) => Buffer.from(fingerprint).toString("hex"));
+
+    expect(new Set(fingerprints).size).toBe(3);
   });
 });

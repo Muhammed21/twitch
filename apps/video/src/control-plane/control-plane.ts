@@ -15,6 +15,7 @@ type LiveSession = Extract<IngestSession, { state: "live" }>;
 export interface VideoStore {
   findChannel(id: string): Promise<VideoChannel | undefined>;
   findChannelByExternalId(externalId: string): Promise<VideoChannel | undefined>;
+  findChannelByStreamKey(streamKey: string): Promise<VideoChannel | undefined>;
   saveChannel(channel: VideoChannel): Promise<void>;
   liveSessions(): Promise<readonly LiveSession[]>;
   saveSession(session: IngestSession, events: readonly LifecycleEvent[]): Promise<void>;

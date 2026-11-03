@@ -19,7 +19,8 @@ model VideoChannel {
 }
 
 /// Clé de stream courante d'un canal, chiffrée en AES-256-GCM ; une rotation la remplace.
-/// encryptionKeyVersion nomme la clé de chiffrement qui l'a chiffrée.
+/// encryptionKeyVersion nomme la clé de chiffrement qui l'a chiffrée. fingerprint, HMAC-SHA256 de la clé,
+/// retrouve le canal au publish RTMP ; une clé enregistrée avant son ajout l'obtient à sa rotation.
 model VideoStreamKey {
   channelId            String       @id @db.Uuid
   channel              VideoChannel @relation(fields: [channelId], references: [id])
@@ -27,6 +28,7 @@ model VideoStreamKey {
   iv                   Bytes
   authTag              Bytes
   encryptionKeyVersion Int
+  fingerprint          Bytes?       @unique
 
   @@schema("video")
 }

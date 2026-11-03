@@ -18,6 +18,8 @@ export const inMemoryVideoStore = (): InMemoryVideoStore => {
     findChannel: async (id) => channels.get(id),
     findChannelByExternalId: async (externalId) =>
       [...channels.values()].find((channel) => channel.externalId === externalId),
+    findChannelByStreamKey: async (streamKey) =>
+      [...channels.values()].find((channel) => channel.streamKey === streamKey),
     saveChannel: async (channel) => {
       channels.set(channel.id, channel);
     },

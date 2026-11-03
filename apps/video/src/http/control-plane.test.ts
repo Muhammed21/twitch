@@ -448,6 +448,7 @@ describe("panne du dépôt", () => {
       store: {
         findChannel: failing,
         findChannelByExternalId: failing,
+        findChannelByStreamKey: failing,
         saveChannel: failing,
         liveSessions: failing,
         saveSession: failing,

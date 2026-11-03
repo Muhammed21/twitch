@@ -71,6 +71,30 @@ export const describeVideoStoreContract = ({
       expect(await videoStore.findChannelByExternalId(channel.externalId)).toEqual(channel);
     });
 
+    it("retrouve un canal par sa clé de stream courante, et plus par l'ancienne après rotation", async () => {
+      const videoStore = store();
+      const channel = makeVideoChannel();
+      await videoStore.saveChannel(channel);
+      const rotated = { ...channel, streamKey: newStreamKey() };
+
+      expect(await videoStore.findChannelByStreamKey(channel.streamKey)).toEqual(channel);
+      await videoStore.saveChannel(rotated);
+      expect(await videoStore.findChannelByStreamKey(channel.streamKey)).toBeUndefined();
+      expect(await videoStore.findChannelByStreamKey(rotated.streamKey)).toEqual(rotated);
+    });
+
+    it("ne retrouve aucun canal par une clé inconnue, ni par un préfixe de clé", async () => {
+      const videoStore = store();
+      const channel = makeVideoChannel();
+      await videoStore.saveChannel(channel);
+
+      expect(await videoStore.findChannelByStreamKey(newStreamKey())).toBeUndefined();
+      expect(
+        await videoStore.findChannelByStreamKey(channel.streamKey.slice(0, -1)),
+      ).toBeUndefined();
+      expect(await videoStore.findChannelByStreamKey("")).toBeUndefined();
+    });
+
     it("ne retrouve aucun canal inconnu, même à un identifiant qui n'est pas un UUID", async () => {
       const videoStore = store();
 

@@ -79,6 +79,7 @@ export const startRtmpServer = async ({
   onError: (error: unknown) => void;
 }): Promise<RtmpServer> => {
   const sockets = new Set<Socket>();
+  const endings = new Set<Promise<unknown>>();
   const counters = {
     handshakes: 0,
     rejections: {
@@ -187,7 +188,9 @@ export const startRtmpServer = async ({
     };
 
     socket.on("close", () => {
-      connection.work = connection.work.then(() => endQuietly(connection.publication));
+      const ending = connection.work.then(() => endQuietly(connection.publication));
+      endings.add(ending);
+      void ending.then(() => endings.delete(ending));
     });
 
     const demux = (input: Uint8Array) => {
@@ -241,10 +244,14 @@ export const startRtmpServer = async ({
       rejections: { ...counters.rejections },
     }),
     close: async () => {
-      const closed = server.listening ? once(server, "close") : Promise.resolve();
+      const closed = [
+        server.listening ? once(server, "close") : Promise.resolve(),
+        ...[...sockets].map((socket) => once(socket, "close")),
+      ];
       server.close();
       sockets.forEach((socket) => socket.destroy());
-      await closed;
+      await Promise.all(closed);
+      await Promise.all(endings);
     },
   };
 };
