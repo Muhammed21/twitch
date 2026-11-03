@@ -84,6 +84,8 @@ services:
         condition: service_healthy
       video:
         condition: service_healthy
+      outbox-relay:
+        condition: service_started
     environment:
       API_PORT: "3000"
       DATABASE_URL_IDENTITY: postgresql://app_identity:${PG_PASSWORD_APP_IDENTITY}@postgres:5432/app

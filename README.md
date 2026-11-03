@@ -27,12 +27,32 @@ Node est épinglé dans `.node-version`.
 ```sh
 pnpm install
 pnpm infra:up       # services locaux
-docker compose --profile full up -d --build --wait api outbox-relay chat   # video, API, relais et chat en conteneurs, après migrate
+docker compose --profile full up -d --build --wait api chat   # video, relais de l'outbox, API et chat en conteneurs, après migrate
 pnpm lint           # oxlint typé (ADR 0029), puis lint des import Swift
 pnpm check-types
 pnpm test
 pnpm generate       # artefacts générés : design tokens, catalogue de la documentation
 ```
+
+## Démo du live (jalon J2)
+
+```sh
+pnpm infra:up
+docker compose --profile full up -d --build --wait api   # migrate, puis video, outbox-relay et l'API
+pnpm seed:dev                                            # client iOS et compte viewer_dev
+```
+
+- `api` dépend d'`outbox-relay` : le relais publie `identity.account.registered`, qui crée la chaîne puis son canal vidéo.
+- `seed:dev` est à relancer quand `API_PORT` change : le client OAuth est lié à `BETTER_AUTH_URL`.
+- Le canal vidéo se crée avec la chaîne, chez le fournisseur que l'API utilise à ce moment : un compte de démo s'enregistre une fois le profil `full` démarré (`VIDEO_PROVIDER=video`).
+- Clé de stream : `GET /v1/channels/{id}/stream-key` avec le jeton du propriétaire. Publication, avec la clé rendue :
+
+  ```sh
+  ffmpeg -re -f lavfi -i testsrc2=size=1280x720:rate=30 -f lavfi -i sine \
+    -c:v libx264 -g 60 -c:a aac -f flv "rtmp://127.0.0.1:${VIDEO_RTMP_PORT:-1935}/live/<streamKey>"
+  ```
+
+- Lecture : `GET /v1/channels/{id}/playback` rend la playlist maître ; le statut du live arrive par `GET /v1/channels/{id}/live-status` (SSE). À l'arrêt de la publication, la playlist se clôt par `#EXT-X-ENDLIST`, puis répond 404.
 
 ## iOS
 
