@@ -54,19 +54,54 @@ private struct ChannelScreen {
   }
 }
 
+private struct TimedOut: Error {}
+
+@MainActor
+private func waitUntil(_ condition: () -> Bool) async throws {
+  let deadline = ContinuousClock.now + .seconds(2)
+  while !condition() {
+    guard ContinuousClock.now < deadline else { throw TimedOut() }
+    try await Task.sleep(for: .milliseconds(5))
+  }
+}
+
 @MainActor
 @Suite("ChannelPlayback : lecture du live à l'ouverture de l'écran de chaîne")
 struct ChannelPlaybackTests {
-  @Test("une chaîne en live charge l'URL de lecture de son identifiant")
+  @Test("une chaîne en live charge l'URL de lecture de son identifiant, jusqu'à ce que l'écran parte")
   func live() async throws {
     let source = FakePlayback(url: liveURL)
     let screen = ChannelScreen(playback: source)
+    let slug = try jeanDupont()
 
-    try await screen.playback.open(jeanDupont())
+    let opening = Task { await screen.playback.open(slug) }
+    try await waitUntil { screen.player.calls.count == 2 }
 
     #expect(await source.requested == [channelID])
     #expect(screen.controller.state == .loading)
     #expect(screen.player.calls == ["load \(liveURL.absoluteString)", "play"])
+    opening.cancel()
+    await opening.value
+    #expect(screen.controller.state == .idle)
+    #expect(screen.player.calls.last == "stop")
+  }
+
+  @Test("l'écran d'une autre chaîne ouvert entre-temps garde son live quand le précédent part")
+  func newerScreenKeepsPlaying() async throws {
+    let screen = ChannelScreen(playback: FakePlayback(url: liveURL))
+    let slug = try jeanDupont()
+    let previous = Task { await screen.playback.open(slug) }
+    try await waitUntil { screen.player.calls.count == 2 }
+
+    let next = Task { await screen.playback.open(slug) }
+    try await waitUntil { screen.player.calls.count == 4 }
+    previous.cancel()
+    await previous.value
+
+    #expect(screen.controller.state == .loading)
+    #expect(!screen.player.calls.contains("stop"))
+    next.cancel()
+    await next.value
   }
 
   @Test("une chaîne hors live arrête le live d'avant et laisse le player au repos")

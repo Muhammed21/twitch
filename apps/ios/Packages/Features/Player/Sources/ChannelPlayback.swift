@@ -8,6 +8,7 @@ public final class ChannelPlayback {
   private let channels: any ChannelRepository
   private let playback: any PlaybackSource
   private let controller: PlayerController
+  @ObservationIgnored private var opened = 0
 
   public init(channels: any ChannelRepository, playback: any PlaybackSource, controller: PlayerController) {
     self.channels = channels
@@ -28,6 +29,17 @@ public final class ChannelPlayback {
       controller.stop()
       return
     }
+    opened += 1
+    let screen = opened
     controller.load(url)
+    await Self.untilCancelled()
+    guard opened == screen else { return }
+    controller.stop()
+  }
+
+  private static func untilCancelled() async {
+    while !Task.isCancelled {
+      try? await Task.sleep(for: .seconds(3600))
+    }
   }
 }
