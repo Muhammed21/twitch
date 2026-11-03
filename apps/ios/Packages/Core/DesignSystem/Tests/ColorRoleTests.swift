@@ -40,6 +40,8 @@ struct ColorRoleTests {
       (ColorRole.textPrimary, ColorScheme.dark, "EFEFF1"),
       (ColorRole.textSecondary, ColorScheme.light, "53535F"),
       (ColorRole.textSecondary, ColorScheme.dark, "ADADB8"),
+      (ColorRole.link, ColorScheme.light, "5C16C5"),
+      (ColorRole.link, ColorScheme.dark, "BF94FF"),
       (ColorRole.danger, ColorScheme.light, "FE504D"),
       (ColorRole.danger, ColorScheme.dark, "FE504D"),
       (ColorRole.onDanger, ColorScheme.light, "000000"),

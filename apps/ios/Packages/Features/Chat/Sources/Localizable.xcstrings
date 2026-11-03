@@ -1,0 +1,126 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "chat.composer.placeholder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send chat"
+          }
+        }
+      }
+    },
+    "chat.composer.send" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send"
+          }
+        }
+      }
+    },
+    "chat.rejection.banned" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're banned from this chat."
+          }
+        }
+      }
+    },
+    "chat.rejection.notJoined" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're not in this chat room yet."
+          }
+        }
+      }
+    },
+    "chat.rejection.rateLimited" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're sending messages too quickly."
+          }
+        }
+      }
+    },
+    "chat.rejection.timedOut" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're timed out in this chat."
+          }
+        }
+      }
+    },
+    "chat.rejection.unsent" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your message wasn't sent."
+          }
+        }
+      }
+    },
+    "chat.status.connecting" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecting to chat…"
+          }
+        }
+      }
+    },
+    "chat.status.denied" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can't access this chat."
+          }
+        }
+      }
+    },
+    "chat.status.halted" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat stopped."
+          }
+        }
+      }
+    },
+    "chat.status.reconnecting" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reconnecting to chat…"
+          }
+        }
+      }
+    },
+    "chat.status.signedOut" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Log in to chat."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

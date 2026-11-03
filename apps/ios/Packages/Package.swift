@@ -119,13 +119,14 @@ let package = Package(
     ),
     .target(
       name: "Chat",
-      dependencies: ["Domain"],
+      dependencies: ["Domain", "DesignSystem"],
       path: "Features/Chat/Sources",
+      resources: [.process("Localizable.xcstrings")],
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
     .testTarget(
       name: "ChatTests",
-      dependencies: ["Chat", "Domain"],
+      dependencies: ["Chat", "Domain", "DesignSystem"],
       path: "Features/Chat/Tests",
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
