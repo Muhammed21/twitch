@@ -5,3 +5,4 @@ export { StreamKey } from "./stream-key.ts";
 export { Timeout } from "./timeout.ts";
 export { Live, LivePage } from "./live-page.ts";
 export { MobileBootstrap, Profile } from "./mobile-bootstrap.ts";
+export { LiveStatus } from "./live-status.ts";

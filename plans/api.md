@@ -203,8 +203,17 @@ _Critères d'acceptation_ :
 - le BFF ne contient aucune règle métier : il ne dépend que des lectures exposées par `identity` et du port `FeatureFlags`, ce que vérifient les règles d'architecture ;
 - `/v1/mobile/bootstrap` figure dans l'OpenAPI généré, avec `MobileBootstrap`.
 
-**PR 12b — Canal 2 : statut des lives en SSE.** SSE public du statut live ou terminé d'une chaîne, agrégé à un tick par seconde au plus (ADR 0004, §2). Le compteur de viewers arrive avec la présence (heartbeat du lecteur, HyperLogLog Redis, ADR 0004 §3), dans une PR suivante.
-_Tests d'abord_ : un client SSE reçoit un seul tick par seconde quel que soit le nombre de changements ; un live qui démarre ou se termine est vu au tick suivant.
+**PR 12b — Canal 2 : statut des lives en SSE.** `GET /v1/channels/{channelId}/live-status`, public, en `text/event-stream` (ADR 0004 §2, ADR 0011 `LiveStatusChannel`), servi par `discovery` depuis `DiscoveryLiveChannelView`. Un tick par seconde et par instance lit en une requête l'état de toutes les chaînes qui ont au moins un abonné, quel que soit le nombre d'abonnés, et chaque instance voit le même état puisqu'elle lit la projection et non le groupe de consommateurs. Event `status`, contrat `LiveStatus` dans `packages/contracts` : `{ channelId, live, startedAt? }`. Le compteur de viewers arrive avec la présence (heartbeat du lecteur, HyperLogLog Redis, ADR 0004 §3), dans une PR suivante.
+_Critères d'acceptation_ :
+
+- à la connexion, le client reçoit aussitôt l'état courant de la chaîne : `live: true` avec `startedAt`, ou `live: false` sans `startedAt` (ADR 0024 §5) ;
+- un live qui démarre ou se termine est vu au tick suivant, en une seconde au plus ;
+- plusieurs changements dans la même seconde donnent un seul event, qui porte le dernier état ; aucun event n'est envoyé quand l'état n'a pas changé ;
+- la lecture de la projection par tick est une seule requête, quel que soit le nombre d'abonnés et de chaînes suivies ; aucune lecture quand personne n'est abonné ;
+- un commentaire SSE toutes les 15 secondes garde la connexion ouverte à travers les proxies ;
+- chaîne inconnue de `discovery` → `404` RFC 9457, identifiant qui n'est pas un UUID → `400`, avant toute ouverture du flux ;
+- la route répond sans jeton d'accès ; un client qui se déconnecte n'est plus lu au tick suivant ; l'arrêt de l'API ferme les flux ouverts ;
+- `/v1/channels/{channelId}/live-status` figure dans l'OpenAPI, avec `LiveStatus`.
 
 **PR 13 — `moderation` minimal (jalon A4).** Un use-case : le propriétaire met un utilisateur en timeout sur sa chaîne. Attribution `banned` avec `expiresAt` dans `authz`, entrée d'audit et `moderation.user.timed_out` dans la **même transaction**, publiée sur Redis Streams pour le chat.
 _Tests d'abord_ : un non-propriétaire ne peut pas mettre en timeout ; le timeout expire seul ; l'event est publié même si le relais redémarre entre le commit et l'envoi ; audit écrit avec l'acteur humain.
