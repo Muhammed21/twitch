@@ -2,7 +2,13 @@ import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
 import { concatBytes } from "./bytes.ts";
-import { type Fmp4Fragment, type Fmp4Init, readFmp4, startFmp4Reader } from "./fmp4-reader.ts";
+import {
+  type Fmp4Fragment,
+  type Fmp4Init,
+  type Fmp4Reader,
+  readFmp4,
+  startFmp4Reader,
+} from "./fmp4-reader.ts";
 import {
   appendFragment,
   closeSegmenter,
@@ -64,7 +70,54 @@ const segmentFixture = (options: SegmenterOptions = OPTIONS) => {
   return closeSegmenter(appendAll(startSegmenter({ init, ...options }), fragments));
 };
 
+const slices = (bytes: Uint8Array, cuts: readonly number[]): readonly Uint8Array[] => {
+  const points = [...new Set(cuts.map((cut) => cut % bytes.length))].toSorted((a, b) => a - b);
+  return [0, ...points].map((start, index) =>
+    bytes.subarray(start, [...points, bytes.length][index]),
+  );
+};
+
+const segmentPieces = (pieces: readonly Uint8Array[]): Segmenter | undefined => {
+  const last = pieces.reduce<{
+    reader: Fmp4Reader;
+    buffered: Uint8Array;
+    segmenter: Segmenter | undefined;
+  }>(
+    (state, piece) => {
+      const input = concatBytes(state.buffered, piece);
+      const step = readFmp4({ reader: state.reader, input });
+      if (!step.ok) {
+        throw new Error(step.error);
+      }
+      return {
+        reader: step.value.reader,
+        buffered: input.subarray(step.value.consumed),
+        segmenter: step.value.events.reduce<Segmenter | undefined>(
+          (segmenter, event) =>
+            event.kind === "init"
+              ? startSegmenter({ init: event.init, ...OPTIONS })
+              : segmenter && appendFragment(segmenter, event.fragment),
+          state.segmenter,
+        ),
+      };
+    },
+    { reader: startFmp4Reader(LIMITS), buffered: new Uint8Array(0), segmenter: undefined },
+  );
+  return last.segmenter && closeSegmenter(last.segmenter);
+};
+
 describe("segmentation du fMP4 de ffmpeg", () => {
+  it("rend les mêmes segments quel que soit le découpage des octets sortis de ffmpeg", () => {
+    const expected = segmentFixture().segments;
+
+    fc.assert(
+      fc.property(fc.array(fc.nat(), { maxLength: 40 }), (cuts) => {
+        expect(segmentPieces(slices(FFMPEG_FRAGMENTED_MP4, cuts))?.segments).toEqual(expected);
+      }),
+      { numRuns: 50 },
+    );
+  });
+
   it("coupe des segments d'au moins 2 secondes, à la première image clé qui suit", () => {
     const { segments } = segmentFixture();
 
