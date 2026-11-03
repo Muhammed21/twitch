@@ -289,3 +289,37 @@ describe("LiveStatus", () => {
     expect(responses.LiveStatus.safeParse(status).success).toBe(false);
   });
 });
+
+describe("Playback", () => {
+  const makePlayback = (overrides: Record<string, unknown> = {}) => ({
+    playbackUrl: "https://video.example.test/hls/0c9f3b2e-4d5a-4b6c-8d7e-9f0a1b2c3d4e/master.m3u8",
+    ...overrides,
+  });
+
+  it("décode l'URL de lecture d'une chaîne en live", () => {
+    expect(responses.Playback.parse(makePlayback())).toEqual(makePlayback());
+  });
+
+  it("décode une URL de lecture en http, celle du service vidéo local", () => {
+    const playbackUrl =
+      "http://127.0.0.1:3002/hls/0c9f3b2e-4d5a-4b6c-8d7e-9f0a1b2c3d4e/master.m3u8";
+
+    expect(responses.Playback.parse(makePlayback({ playbackUrl })).playbackUrl).toBe(playbackUrl);
+  });
+
+  it("garde un champ ajouté plus tard par le serveur", () => {
+    expect(responses.Playback.parse(makePlayback({ expiresAt: "demain" }))).toMatchObject({
+      expiresAt: "demain",
+    });
+  });
+
+  it.each([
+    ["sans URL", { playbackUrl: undefined }],
+    ["avec une URL qui n'en est pas une", { playbackUrl: "pas une url" }],
+    ["avec une URL hors HTTP", { playbackUrl: "rtmp://video.example.test/live" }],
+    ["avec un schéma qui finit par http", { playbackUrl: "xhttp://video.example.test/live" }],
+    ["avec un schéma qui commence par https", { playbackUrl: "https2://video.example.test/live" }],
+  ])("refuse une lecture %s", (_name, overrides) => {
+    expect(responses.Playback.safeParse(makePlayback(overrides)).success).toBe(false);
+  });
+});
