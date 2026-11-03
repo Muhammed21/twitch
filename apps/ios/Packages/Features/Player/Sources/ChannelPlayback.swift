@@ -24,7 +24,7 @@ public final class ChannelPlayback {
     live = signal
     var loaded = await play(slug)
     for await _ in lives {
-      loaded = await play(slug)
+      loaded = await play(slug) || loaded
     }
     guard loaded, opened == screen else { return }
     controller.stop()

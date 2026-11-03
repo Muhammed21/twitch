@@ -28,17 +28,17 @@ private actor FakePlayback: PlaybackSource {
   private var urls: [URL?]
   private let fails: Bool
   private var held: CheckedContinuation<Void, Never>?
-  private var holdsFirst: Bool
+  private let holding: Int?
   private(set) var requested: [ChannelID] = []
 
   init(url: URL?, fails: Bool = false) {
     self.init(urls: [url], fails: fails)
   }
 
-  init(urls: [URL?], fails: Bool = false, holdsFirst: Bool = false) {
+  init(urls: [URL?], fails: Bool = false, holding: Int? = nil) {
     self.urls = urls
     self.fails = fails
-    self.holdsFirst = holdsFirst
+    self.holding = holding
   }
 
   func release() {
@@ -48,8 +48,7 @@ private actor FakePlayback: PlaybackSource {
 
   func playbackURL(for channel: ChannelID) async throws -> URL? {
     requested.append(channel)
-    if holdsFirst {
-      holdsFirst = false
+    if requested.count == holding {
       await withCheckedContinuation { held = $0 }
     }
     if fails { throw Unreachable() }
@@ -155,7 +154,7 @@ struct ChannelPlaybackTests {
 
   @Test("un passage en live reçu pendant la demande de l'URL n'est pas perdu")
   func liveDuringRequest() async throws {
-    let source = FakePlayback(urls: [nil, liveURL], holdsFirst: true)
+    let source = FakePlayback(urls: [nil, liveURL], holding: 1)
     let screen = ChannelScreen(playback: source)
     let slug = try jeanDupont()
     let opening = Task { await screen.playback.open(slug) }
@@ -187,6 +186,27 @@ struct ChannelPlaybackTests {
     #expect(screen.player.calls.suffix(2) == ["load \(liveURL.absoluteString)", "play"])
     opening.cancel()
     await opening.value
+  }
+
+  @Test("quitter l'écran pendant la relance d'un live terminé arrête le player")
+  func leavesDuringRestart() async throws {
+    let source = FakePlayback(urls: [liveURL], holding: 2)
+    let screen = ChannelScreen(playback: source)
+    let slug = try jeanDupont()
+    let opening = Task { await screen.playback.open(slug) }
+    try await waitUntil { screen.player.calls.count == 2 }
+    screen.controller.end()
+    screen.playback.channelWentLive()
+    while await source.requested.count < 2 {
+      try await Task.sleep(for: .milliseconds(5))
+    }
+
+    opening.cancel()
+    await source.release()
+    await opening.value
+
+    #expect(screen.controller.state == .idle)
+    #expect(screen.player.calls == ["load \(liveURL.absoluteString)", "play", "stop", "stop"])
   }
 
   @Test("un passage en live sans écran ouvert ne lance rien")
