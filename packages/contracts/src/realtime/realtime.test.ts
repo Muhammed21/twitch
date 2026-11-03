@@ -133,7 +133,12 @@ describe("contrat publié pour le client Swift", () => {
   it("publie les motifs de refus connus, en plus d'un motif libre", () => {
     expect(definitionOf(realtime.RealtimeChatRejected, "RealtimeChatRejected")).toMatchObject({
       properties: {
-        reason: { anyOf: [{ enum: ["timed_out", "rate_limited"] }, { type: "string" }] },
+        reason: {
+          anyOf: [
+            { enum: ["timed_out", "banned", "rate_limited", "not_joined"] },
+            { type: "string" },
+          ],
+        },
       },
     });
   });
@@ -197,9 +202,12 @@ describe("chat:message", () => {
 });
 
 describe("chat:rejected", () => {
-  it.each(["timed_out", "rate_limited", "slow_mode"])("décode le motif %s", (reason) => {
-    expect(realtime.RealtimeChatRejected.parse({ reason })).toEqual({ reason });
-  });
+  it.each(["timed_out", "banned", "rate_limited", "not_joined", "slow_mode"])(
+    "décode le motif %s",
+    (reason) => {
+      expect(realtime.RealtimeChatRejected.parse({ reason })).toEqual({ reason });
+    },
+  );
 
   it("refuse un refus sans motif", () => {
     expect(parses(realtime.RealtimeChatRejected, {})).toBe(false);

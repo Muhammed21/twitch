@@ -890,7 +890,9 @@
                 "type": "string",
                 "enum": [
                   "timed_out",
-                  "rate_limited"
+                  "banned",
+                  "rate_limited",
+                  "not_joined"
                 ]
               },
               {

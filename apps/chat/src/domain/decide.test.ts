@@ -3,7 +3,13 @@ import { describe, expect, it } from "vitest";
 import { type ChatterContext, chatterContextFor, type RoleAssignment } from "@repo/authorization";
 import { err, ok } from "@repo/result";
 
-import { type ChatMessage, decide, type RoomState, type TokenBucket } from "./decide.ts";
+import {
+  type ChatMessage,
+  decide,
+  isBucketFull,
+  type RoomState,
+  type TokenBucket,
+} from "./decide.ts";
 
 const NOW = new Date("2026-11-03T20:00:00.000Z");
 const CHANNEL_ID = "channel-a";
@@ -202,5 +208,19 @@ describe("decide — rate limit global (1 message par seconde, rafale de 5)", ()
     expect(decide(makeInput({ bucket: { tokens: 0.5, refilledAt: NOW } }))).toEqual(
       err("rate_limited"),
     );
+  });
+});
+
+describe("isBucketFull — un seau plein vaut l'absence de seau", () => {
+  it("voit plein un seau remonté à 5 jetons par le temps écoulé", () => {
+    const bucket: TokenBucket = { tokens: 3, refilledAt: NOW };
+
+    expect(isBucketFull({ bucket, now: secondsFromNow(2) })).toBe(true);
+  });
+
+  it("voit entamé un seau à qui il manque encore une fraction de jeton", () => {
+    const bucket: TokenBucket = { tokens: 3, refilledAt: NOW };
+
+    expect(isBucketFull({ bucket, now: secondsFromNow(1.999) })).toBe(false);
   });
 });
