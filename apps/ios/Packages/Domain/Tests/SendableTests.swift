@@ -23,6 +23,7 @@ struct SendableTests {
     requireSendable(ChatSendOutcome.self)
     requireSendable((any ChannelRepository).self)
     requireSendable((any LiveDirectory).self)
+    requireSendable((any PlaybackSource).self)
     requireSendable((any ChatConnection).self)
     requireSendable(AppVersion.self)
     requireSendable(AppVersionError.self)

@@ -8,6 +8,8 @@ filter:
     - MeController_read
     - MobileBootstrapController_read
     - LivesController_list
+    - ChannelsController_read
+    - PlaybackController_read
 additionalImports:
   - Foundation
 typeOverrides:
