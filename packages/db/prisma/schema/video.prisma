@@ -1,0 +1,44 @@
+// Contexte video (ADR 0031) : canaux, clés de stream chiffrées et sessions d'ingest d'apps/video.
+
+enum VideoSessionState {
+  idle
+  live
+  ended
+
+  @@schema("video")
+}
+
+/// Canal vidéo d'apps/video, rattaché à une chaîne de l'API par son identifiant externe.
+model VideoChannel {
+  id         String               @id @db.Uuid
+  externalId String               @unique
+  streamKey  VideoStreamKey?
+  sessions   VideoIngestSession[]
+
+  @@schema("video")
+}
+
+/// Clé de stream courante d'un canal, chiffrée en AES-256-GCM ; une rotation la remplace.
+/// encryptionKeyVersion nomme la clé de chiffrement qui l'a chiffrée.
+model VideoStreamKey {
+  channelId            String       @id @db.Uuid
+  channel              VideoChannel @relation(fields: [channelId], references: [id])
+  ciphertext           Bytes
+  iv                   Bytes
+  authTag              Bytes
+  encryptionKeyVersion Int
+
+  @@schema("video")
+}
+
+/// Session d'ingest d'un canal. Une seule session live par canal : index unique partiel de la migration.
+model VideoIngestSession {
+  id        String            @id @db.Uuid
+  channelId String            @db.Uuid
+  channel   VideoChannel      @relation(fields: [channelId], references: [id])
+  state     VideoSessionState
+  startedAt DateTime?
+  endedAt   DateTime?
+
+  @@schema("video")
+}

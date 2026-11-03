@@ -3,10 +3,16 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     include: ["src/**/*.test.ts"],
+    exclude: ["src/**/*.integration.test.ts"],
     coverage: {
       provider: "v8",
       include: ["src/**/*.ts"],
-      exclude: ["src/**/*.test.ts", "src/main.ts"],
+      exclude: [
+        "src/**/*.test.ts",
+        "src/main.ts",
+        "src/control-plane/testing/**",
+        "src/persistence/prisma-video-store.ts",
+      ],
       reporter: ["text"],
       thresholds: {
         statements: 100,

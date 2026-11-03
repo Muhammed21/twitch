@@ -2,16 +2,20 @@
 
 Service vidéo maison, à la manière d'Amazon IVS (ADR 0031). Process Node séparé, sans NestJS. Découpage : [plan du service vidéo](../../plans/service-video.md).
 
-| Commande        | Effet                                                                    |
-| --------------- | ------------------------------------------------------------------------ |
-| `pnpm build`    | Compile `src/` vers `dist/` avec `tsc`                                   |
-| `pnpm start`    | Lance `dist/main.js` avec le `.env` racine                               |
-| `pnpm test`     | Tests unitaires, serveur HTTP sur un port libre, process de bout en bout |
-| `pnpm mutation` | Stryker sur `src/`, hors `main.ts`                                       |
+| Commande                | Effet                                                                    |
+| ----------------------- | ------------------------------------------------------------------------ |
+| `pnpm build`            | Compile `src/` vers `dist/` avec `tsc`                                   |
+| `pnpm start`            | Lance `dist/main.js` avec le `.env` racine                               |
+| `pnpm test`             | Tests unitaires, serveur HTTP sur un port libre, process de bout en bout |
+| `pnpm test:integration` | Dépôt Prisma contre le PostgreSQL de Compose                             |
+| `pnpm mutation`         | Stryker sur `src/`, hors `main.ts`                                       |
 
-| Variable          | Rôle                                |
-| ----------------- | ----------------------------------- |
-| `VIDEO_HTTP_PORT` | Port d'écoute HTTP, 3002 par défaut |
+| Variable                          | Rôle                                                               |
+| --------------------------------- | ------------------------------------------------------------------ |
+| `VIDEO_HTTP_PORT`                 | Port d'écoute HTTP, 3002 par défaut                                |
+| `VIDEO_SERVICE_SECRET`            | Secret du plan de contrôle, partagé avec l'API, 32 caractères min. |
+| `VIDEO_STREAM_KEY_ENCRYPTION_KEY` | Clé AES-256-GCM des clés de stream, 32 octets en base64            |
+| `DATABASE_URL_VIDEO`              | Connexion du rôle `app_video` au schéma `video`                    |
 
 Une variable invalide arrête le démarrage en code 1, avec le nom de la variable, jamais sa valeur.
 
@@ -19,6 +23,12 @@ Une variable invalide arrête le démarrage en code 1, avec le nom de la variabl
 - Sondes `/health/live` et `/health/ready` (ADR 0028 §8). Sur `SIGTERM` ou `SIGINT`, `/health/ready` passe en 503, les requêtes en cours se terminent, puis le port se ferme et le process sort en code 0.
 - Erreurs en `application/problem+json` (RFC 9457), au format `Problem` de [`@repo/video-contract`](../../packages/video-contract/README.md).
 - Une requête dont la cible ne se lit pas comme une URL reçoit 400 ; une route se reconnaît à son chemin, sans la query string.
+
+## Persistance (`src/persistence/`)
+
+- Schéma `video` (ADR 0025) : `VideoChannel`, `VideoStreamKey`, `VideoIngestSession`. Une seule session `live` par canal, garantie par un index unique partiel.
+- La clé de stream est chiffrée en AES-256-GCM, IV aléatoire de 12 octets ; la ligne garde la version de la clé de chiffrement (`1`). Une clé illisible avec la clé courante, ou d'une version inconnue, lève une erreur au lieu d'être rendue.
+- Le dépôt Prisma et le dépôt en mémoire passent la même suite de contrat (`src/control-plane/testing/video-store.contract.ts`).
 
 ## Domaine (`src/domain/ingest.ts`)
 

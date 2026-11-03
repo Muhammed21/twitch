@@ -160,6 +160,9 @@ importers:
 
   apps/video:
     dependencies:
+      '@repo/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@repo/result':
         specifier: workspace:*
         version: link:../../packages/result

@@ -3,7 +3,18 @@
   "extends": ["//"],
   "tasks": {
     "build": {
+      "dependsOn": ["^generate"],
       "outputs": ["dist/**"]
+    },
+    "check-types": {
+      "dependsOn": ["^generate", "^check-types"]
+    },
+    "test": {
+      "dependsOn": ["^generate"]
+    },
+    "test:integration": {
+      "dependsOn": ["^generate"],
+      "cache": false
     }
   }
 }

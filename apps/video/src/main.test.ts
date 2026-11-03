@@ -16,9 +16,16 @@ const freePort = async (): Promise<number> => {
   return typeof address === "object" && address !== null ? address.port : 0;
 };
 
-const startProcess = (env: Record<string, string>) => {
+const BOOT_ENV = {
+  VIDEO_SERVICE_SECRET: "s".repeat(32),
+  VIDEO_STREAM_KEY_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString("base64"),
+  DATABASE_URL_VIDEO: "postgresql://app_video:secret@127.0.0.1:1/app",
+};
+
+const startProcess = (env: Record<string, string>, { without }: { without?: string } = {}) => {
+  const bootEnv = Object.fromEntries(Object.entries(BOOT_ENV).filter(([name]) => name !== without));
   const child = spawn(process.execPath, [MAIN], {
-    env: { PATH: process.env.PATH ?? "", VIDEO_SERVICE_SECRET: "s".repeat(32), ...env },
+    env: { PATH: process.env.PATH ?? "", ...bootEnv, ...env },
     stdio: ["ignore", "pipe", "pipe"],
   });
   onTestFinished(() => {
@@ -60,6 +67,13 @@ describe("process apps/video", () => {
 
     expect(await exitOf(child)).toBe(1);
     expect(output.stderr).toContain("VIDEO_HTTP_PORT");
+  });
+
+  it("s'arrête au démarrage en code 1 et nomme DATABASE_URL_VIDEO quand elle manque", async () => {
+    const { child, output } = startProcess({}, { without: "DATABASE_URL_VIDEO" });
+
+    expect(await exitOf(child)).toBe(1);
+    expect(output.stderr).toContain("DATABASE_URL_VIDEO");
   });
 
   it(

@@ -1,17 +1,23 @@
 import { z } from "zod";
 
 const SERVICE_SECRET_MIN_LENGTH = 32;
+const ENCRYPTION_KEY_BYTES = 32;
 
 const envSchema = z.object({
   VIDEO_HTTP_PORT: z.coerce.number().int().min(1).max(65_535).default(3002),
   VIDEO_SERVICE_SECRET: z.string().min(SERVICE_SECRET_MIN_LENGTH),
   VIDEO_INGEST_URL: z.url({ protocol: /^rtmps?$/ }).default("rtmp://127.0.0.1:1935/live"),
+  VIDEO_STREAM_KEY_ENCRYPTION_KEY: z
+    .base64()
+    .transform((value) => Uint8Array.from(Buffer.from(value, "base64")))
+    .refine((key) => key.length === ENCRYPTION_KEY_BYTES),
 });
 
 export type VideoConfig = {
   readonly httpPort: number;
   readonly serviceSecret: string;
   readonly ingestUrl: string;
+  readonly streamKeyEncryptionKey: Uint8Array;
 };
 
 export const loadEnv = (env: Readonly<Record<string, string | undefined>>): VideoConfig => {
@@ -24,5 +30,6 @@ export const loadEnv = (env: Readonly<Record<string, string | undefined>>): Vide
     httpPort: parsed.data.VIDEO_HTTP_PORT,
     serviceSecret: parsed.data.VIDEO_SERVICE_SECRET,
     ingestUrl: parsed.data.VIDEO_INGEST_URL,
+    streamKeyEncryptionKey: parsed.data.VIDEO_STREAM_KEY_ENCRYPTION_KEY,
   };
 };

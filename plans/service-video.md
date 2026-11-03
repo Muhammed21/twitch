@@ -50,7 +50,15 @@ Décision de référence : [ADR 0031](../docs/adr/0031-service-video-maison-a-la
 - Modèles du schéma `video` : `VideoChannel`, `VideoStreamKey` (chiffrée en AES-256-GCM, clé de chiffrement par variable d'environnement), `VideoIngestSession`. Noms et enums préfixés (`VideoSessionState`), conformes au lint du socle.
 - Client obtenu par `createContextClient({ context: "video" })`, injecté dans l'adapter.
 - Adapter Prisma du dépôt de la PR 3, qui passe les mêmes tests de contrat que l'adapter en mémoire.
-- **Tests d'abord** (intégration, contre Compose) : une clé est illisible en base sans la clé de chiffrement ; mêmes tests de contrat de dépôt pour les deux adapters ; le lint de schéma passe.
+- La clé de chiffrement vient de `VIDEO_STREAM_KEY_ENCRYPTION_KEY` (32 octets en base64), refusée au démarrage sinon. Chaque clé chiffrée garde le numéro de version de la clé de chiffrement (`1`), pour qu'une rotation ajoute une seconde clé sans changer le format. L'empreinte HMAC qui retrouve un canal par sa clé au `publish` arrive avec la PR 7.
+- Une seule session `live` par canal, garantie aussi par la base : index unique partiel sur `channelId` des sessions `live`.
+- `apps/video` démarre sur l'adapter Prisma : `DATABASE_URL_VIDEO` et la clé de chiffrement sont obligatoires et figurent dans `.env.example`. Le dépôt en mémoire reste pour les tests unitaires.
+- **Tests d'abord** (intégration, contre Compose) :
+  - les deux adapters passent la même suite de contrat du dépôt : canal retrouvé par identifiant et par identifiant externe, rotation qui remplace la clé, sessions `live` seules listées, session qui passe de `idle` à `live` puis `ended` ;
+  - une clé est illisible en base : ni le texte de la clé ni son hexadécimal n'apparaissent dans la ligne, et un adapter avec une autre clé de chiffrement ne la relit pas ;
+  - une seconde session `live` sur un canal est refusée par la base ;
+  - une clé de chiffrement absente ou qui ne fait pas 32 octets est refusée au démarrage, en nommant la variable ;
+  - le lint de schéma passe, et les tests de l'API qui lancent `apps/video` restent verts.
 
 ### PR 5 — Événements sortants : outbox et webhooks signés
 
