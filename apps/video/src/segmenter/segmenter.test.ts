@@ -12,6 +12,7 @@ import {
 import {
   appendFragment,
   closeSegmenter,
+  type Segment,
   type Segmenter,
   type SegmenterOptions,
   startSegmenter,
@@ -77,6 +78,12 @@ const slices = (bytes: Uint8Array, cuts: readonly number[]): readonly Uint8Array
   );
 };
 
+const fingerprint = (segments: readonly Segment[]) =>
+  segments.map((segment) => ({
+    ...segment,
+    bytes: Buffer.from(segment.bytes).toString("base64"),
+  }));
+
 const segmentPieces = (pieces: readonly Uint8Array[]): Segmenter | undefined => {
   const last = pieces.reduce<{
     reader: Fmp4Reader;
@@ -108,11 +115,12 @@ const segmentPieces = (pieces: readonly Uint8Array[]): Segmenter | undefined => 
 
 describe("segmentation du fMP4 de ffmpeg", () => {
   it("rend les mêmes segments quel que soit le découpage des octets sortis de ffmpeg", () => {
-    const expected = segmentFixture().segments;
+    const expected = fingerprint(segmentFixture().segments);
 
     fc.assert(
       fc.property(fc.array(fc.nat(), { maxLength: 40 }), (cuts) => {
-        expect(segmentPieces(slices(FFMPEG_FRAGMENTED_MP4, cuts))?.segments).toEqual(expected);
+        const segments = segmentPieces(slices(FFMPEG_FRAGMENTED_MP4, cuts))?.segments ?? [];
+        expect(fingerprint(segments)).toEqual(expected);
       }),
       { numRuns: 50 },
     );
