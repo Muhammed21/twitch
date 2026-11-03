@@ -50,6 +50,7 @@ export class AppModule {
       video: VideoProviderConfig;
       consumerRedis: StreamConsumerRedis;
       presenceRedis: PresenceRedis;
+      trustedProxyCount: number;
     };
     moderation: { prisma: ModerationPrisma };
     discovery: {

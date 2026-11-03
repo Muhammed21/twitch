@@ -28,10 +28,12 @@ const HLS_OPTIONS = {
   maxBoxSize: 8 * 1024 * 1024,
   targetSeconds: 2,
   targetDuration: 6,
+  partTarget: 0.334,
   capacity: 6,
   maxSegmentBytes: 32 * 1024 * 1024,
 };
 const HLS_FALLBACK_BANDWIDTH = 6_000_000;
+const HLS_BLOCKING_TIMEOUT_MS = 3 * HLS_OPTIONS.targetDuration * 1000;
 const HLS_ENDED_RETENTION_MS = 30_000;
 
 const log = (
@@ -113,6 +115,8 @@ try {
     hls: {
       find: hls.find,
       liveSessionOf: async (channelId) => (await store.liveSessionOf(channelId))?.id,
+      waitFor: hls.waitFor,
+      blockingTimeoutMs: HLS_BLOCKING_TIMEOUT_MS,
       fallbackBandwidth: HLS_FALLBACK_BANDWIDTH,
     },
   }).catch(async (error: unknown) => {

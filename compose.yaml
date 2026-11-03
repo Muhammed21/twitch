@@ -2,7 +2,7 @@ name: twitch
 
 # Environnement local (ADR 0028). Profil par défaut : infrastructure seulement,
 # les applications tournent sur l'hôte avec `pnpm dev`. Le profil `full` ajoute
-# les images des applications : migrate, puis video, api, outbox-relay et chat (§5).
+# les images des applications : migrate, puis video et outbox-relay, puis api, puis chat (§5).
 
 x-postgres-client-env: &postgres-client-env
   PGHOST: postgres
@@ -84,6 +84,8 @@ services:
         condition: service_healthy
       video:
         condition: service_healthy
+      outbox-relay:
+        condition: service_started
     environment:
       API_PORT: "3000"
       DATABASE_URL_IDENTITY: postgresql://app_identity:${PG_PASSWORD_APP_IDENTITY}@postgres:5432/app
@@ -101,6 +103,7 @@ services:
       VIDEO_SERVICE_SECRET: ${VIDEO_SERVICE_SECRET}
       VIDEO_PLAYBACK_BASE_URL: ${VIDEO_PLAYBACK_BASE_URL}
       FEATURE_FLAGS_PROVIDER: defaults
+      API_TRUSTED_PROXY_COUNT: "0"
       MOBILE_MIN_SUPPORTED_VERSION: ${MOBILE_MIN_SUPPORTED_VERSION}
       SMTP_HOST: mailpit
       SMTP_PORT: "1025"

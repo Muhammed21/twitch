@@ -3,6 +3,7 @@ import { z } from "zod";
 export type StreamEvent = {
   readonly name: string;
   readonly version: number;
+  readonly occurredAt: Date;
   readonly payload: unknown;
 };
 
@@ -12,6 +13,7 @@ const StreamEntry = z.looseObject({
     .string()
     .regex(/^[1-9][0-9]*$/)
     .transform(Number),
+  occurredAt: z.iso.datetime().transform((value) => new Date(value)),
   payload: z.string(),
 });
 
@@ -33,5 +35,6 @@ export const parseStreamEntry = (message: Readonly<Record<string, string>>): Str
   if (payload === null) {
     return null;
   }
-  return { name: entry.data.name, version: entry.data.version, payload: payload.value };
+  const { name, version, occurredAt } = entry.data;
+  return { name, version, occurredAt, payload: payload.value };
 };

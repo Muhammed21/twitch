@@ -9,6 +9,8 @@ import { SESSION_REVOKED_CHANNEL } from "@repo/auth-verifier";
 import { createMessageSender } from "../application/message-sender.ts";
 import { createRoomRegistry } from "../application/room-registry.ts";
 import { startChatServer } from "../transport/chat-server.ts";
+import { LocalAdapter } from "../transport/testing/local-adapter.ts";
+import { SATURATION_LIMITS } from "../transport/testing/saturation.ts";
 import { makeTokenAuthority } from "../transport/testing/tokens.ts";
 import { subscribeToSessionRevocations } from "./session-revocation-subscriber.ts";
 
@@ -31,6 +33,8 @@ describe("révocation de session par le Pub/Sub de Compose", () => {
       chatters: { displayNameOf: async () => "Alice", sanctionsOf: async () => [] },
       rooms: createRoomRegistry({ find: async () => undefined }),
       messages: createMessageSender(),
+      saturation: SATURATION_LIMITS,
+      adapter: LocalAdapter,
     });
     onTestFinished(() => server.close());
     await subscribeToSessionRevocations({

@@ -116,6 +116,12 @@ describe("règles d'architecture, avec la vraie configuration", () => {
       "twitch(layer-dependencies)",
     ],
     [
+      "une diffusion volatile dans le chat",
+      "apps/chat/src/transport/bad.ts",
+      'export const broadcast = (io) => io.to("room:a").volatile.emit("chat:message", 1);\n',
+      "twitch(no-volatile)",
+    ],
+    [
       "un commentaire de désactivation",
       `${IDENTITY}/domain/bad.ts`,
       "// oxlint-disable-next-line twitch/layer-dependencies\nexport const a = 1;\n",
@@ -126,6 +132,14 @@ describe("règles d'architecture, avec la vraie configuration", () => {
 
     expect(exitCode).toBe(1);
     expect(output).toContain(rule);
+  });
+
+  it("laisse volatile hors du chat", async () => {
+    const { output } = await lintTree({
+      "apps/api/src/bad.ts": "export const quiet = (socket) => socket.volatile;\n",
+    });
+
+    expect(output).not.toContain("twitch(no-volatile)");
   });
 
   it("accepte un module conforme", async () => {

@@ -6,7 +6,11 @@ import { events } from "@repo/contracts";
 
 import type { RoomState } from "../domain/decide.ts";
 import type { LiveSession, LocalViewWriter } from "./ports.ts";
-import { chatEventHandlers } from "./project-event.ts";
+import {
+  type ChatEventHandler,
+  chatEventHandlers,
+  socketSanctionHandlers,
+} from "./project-event.ts";
 import { createRoomRegistry } from "./room-registry.ts";
 
 const makeViews = () => {
@@ -40,26 +44,52 @@ const setup = (rooms: readonly RoomState[] = []) => {
   });
   const logs: Readonly<Record<string, unknown>>[] = [];
   const applied: unknown[] = [];
-  const handlers = chatEventHandlers({
-    views,
-    rooms: registry,
+  const sanctionedAt: Date[] = [];
+  const log = (entry: Readonly<Record<string, unknown>>) => {
+    logs.push(entry);
+  };
+  const handlers = chatEventHandlers({ views, rooms: registry, log });
+  const socketHandlers = socketSanctionHandlers({
     sockets: {
       sanction: (sanction) => {
         applied.push(sanction);
       },
     },
-    log: (entry) => {
-      logs.push(entry);
+    metrics: {
+      sanctionApplied: (instant) => {
+        sanctionedAt.push(instant);
+      },
     },
+    log,
   });
-  const handle = (event: { name: string; version: number; payload: unknown }) => {
-    const handler = handlers[event.name];
-    if (handler === undefined) {
-      throw new Error(`aucun handler pour ${event.name}`);
-    }
-    return handler(event);
+  const dispatch =
+    (table: Readonly<Record<string, ChatEventHandler>>) =>
+    ({
+      occurredAt = new Date(),
+      ...event
+    }: {
+      name: string;
+      version: number;
+      payload: unknown;
+      occurredAt?: Date;
+    }) => {
+      const handler = table[event.name];
+      if (handler === undefined) {
+        throw new Error(`aucun handler pour ${event.name}`);
+      }
+      return handler({ ...event, occurredAt });
+    };
+  return {
+    handlers,
+    socketHandlers,
+    handle: dispatch(handlers),
+    applyToSockets: dispatch(socketHandlers),
+    writes,
+    applied,
+    sanctionedAt,
+    registry,
+    logs,
   };
-  return { handlers, handle, writes, applied, registry, logs };
 };
 
 const { channelCreated } = events.channel;
@@ -78,8 +108,8 @@ describe("projection des events dans les vues locales du chat", () => {
     ]);
   });
 
-  it("enregistre le timeout d'un chatter, puis l'applique à ses sockets ouvertes", async () => {
-    const { handle, writes, applied } = setup();
+  it("enregistre le timeout d'un chatter dans la vue locale, sans toucher aux sockets", async () => {
+    const { handle, writes, applied, sanctionedAt } = setup();
     const sanction = {
       userId: randomUUID(),
       channelId: randomUUID(),
@@ -93,7 +123,41 @@ describe("projection des events dans les vues locales du chat", () => {
     });
 
     expect(writes).toEqual([{ sanctionChatter: sanction }]);
+    expect(applied).toEqual([]);
+    expect(sanctionedAt).toEqual([]);
+  });
+
+  it("applique aux sockets ouvertes un timeout lu par l'instance, puis mesure son délai", async () => {
+    const { socketHandlers, applyToSockets, writes, applied, sanctionedAt } = setup();
+    const occurredAt = new Date("2026-11-03T20:00:00.000Z");
+    const sanction = {
+      userId: randomUUID(),
+      channelId: randomUUID(),
+      expiresAt: new Date("2026-11-03T20:10:00.000Z"),
+    };
+
+    await applyToSockets({
+      name: userTimedOut.name,
+      version: 1,
+      occurredAt,
+      payload: { ...sanction, expiresAt: sanction.expiresAt.toISOString() },
+    });
+
+    expect(Object.keys(socketHandlers)).toEqual(["moderation.user.timed_out"]);
     expect(applied).toEqual([sanction]);
+    expect(sanctionedAt).toEqual([occurredAt]);
+    expect(writes).toEqual([]);
+  });
+
+  it("écarte un timeout hors contrat sans toucher aux sockets", async () => {
+    const { applyToSockets, applied, logs } = setup();
+
+    await applyToSockets({ name: userTimedOut.name, version: 1, payload: { userId: 1 } });
+
+    expect(applied).toEqual([]);
+    expect(logs).toEqual([
+      { level: "error", msg: "event écarté : payload hors contrat", event: userTimedOut.name },
+    ]);
   });
 
   it("ouvre le salon d'une chaîne créée", async () => {

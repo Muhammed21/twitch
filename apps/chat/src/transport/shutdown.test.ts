@@ -6,6 +6,8 @@ import { describe, expect, it, onTestFinished } from "vitest";
 import { createMessageSender } from "../application/message-sender.ts";
 import { createRoomRegistry } from "../application/room-registry.ts";
 import { startChatServer, type TokenVerifier } from "./chat-server.ts";
+import { LocalAdapter } from "./testing/local-adapter.ts";
+import { SATURATION_LIMITS } from "./testing/saturation.ts";
 import { makeTokenAuthority } from "./testing/tokens.ts";
 
 const SPREAD_MS = 600;
@@ -21,6 +23,8 @@ const startServer = async (
     chatters: { displayNameOf: async () => "Alice", sanctionsOf: async () => [] },
     rooms: createRoomRegistry({ find: async () => undefined }),
     messages: createMessageSender(),
+    saturation: SATURATION_LIMITS,
+    adapter: LocalAdapter,
   });
 
   const connect = async () => {

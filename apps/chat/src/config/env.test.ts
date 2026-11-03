@@ -17,7 +17,16 @@ describe("loadEnv", () => {
         issuer: "http://127.0.0.1:3000/auth",
         audience: "http://127.0.0.1:3000/v1",
       },
+      saturation: { maxPackets: 100, closeAfterMs: 10_000 },
     });
+  });
+
+  it("lit les seuils de saturation des clients lents", () => {
+    expect(
+      loadEnv(
+        makeEnv({ CHAT_SATURATION_MAX_PACKETS: "250", CHAT_SATURATION_CLOSE_AFTER_MS: "5000" }),
+      ).saturation,
+    ).toEqual({ maxPackets: 250, closeAfterMs: 5000 });
   });
 
   it("dérive émetteur, audience et JWKS de l'URL de l'API", () => {
@@ -78,6 +87,26 @@ describe("loadEnv", () => {
     ["avec un Redis qui n'est pas une URL redis", makeEnv({ REDIS_URL: "http://x" }), "REDIS_URL"],
     ["avec un port hors plage", makeEnv({ CHAT_HTTP_PORT: "70000" }), "CHAT_HTTP_PORT"],
     ["avec un port nul", makeEnv({ CHAT_HTTP_PORT: "0" }), "CHAT_HTTP_PORT"],
+    [
+      "avec un seuil de paquets nul",
+      makeEnv({ CHAT_SATURATION_MAX_PACKETS: "0" }),
+      "CHAT_SATURATION_MAX_PACKETS",
+    ],
+    [
+      "avec un seuil de paquets fractionnaire",
+      makeEnv({ CHAT_SATURATION_MAX_PACKETS: "1.5" }),
+      "CHAT_SATURATION_MAX_PACKETS",
+    ],
+    [
+      "avec une durée de saturation nulle",
+      makeEnv({ CHAT_SATURATION_CLOSE_AFTER_MS: "0" }),
+      "CHAT_SATURATION_CLOSE_AFTER_MS",
+    ],
+    [
+      "avec une durée de saturation fractionnaire",
+      makeEnv({ CHAT_SATURATION_CLOSE_AFTER_MS: "1.5" }),
+      "CHAT_SATURATION_CLOSE_AFTER_MS",
+    ],
     [
       "avec un JWKS qui n'est pas une URL http",
       makeEnv({ CHAT_API_JWKS_URL: "ftp://api/auth/jwks" }),

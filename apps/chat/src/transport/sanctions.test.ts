@@ -9,6 +9,8 @@ import { createMessageSender } from "../application/message-sender.ts";
 import { createRoomRegistry } from "../application/room-registry.ts";
 import type { RoomState } from "../domain/decide.ts";
 import { startChatServer } from "./chat-server.ts";
+import { LocalAdapter } from "./testing/local-adapter.ts";
+import { SATURATION_LIMITS } from "./testing/saturation.ts";
 import { makeTokenAuthority } from "./testing/tokens.ts";
 
 const ALICE = randomUUID();
@@ -61,6 +63,8 @@ const startServer = async ({
       find: async (channelId) => rooms.find((room) => room.channelId === channelId),
     }),
     messages: createMessageSender(),
+    saturation: SATURATION_LIMITS,
+    adapter: LocalAdapter,
   });
   onTestFinished(() => server.close());
 

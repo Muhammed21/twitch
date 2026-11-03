@@ -22,16 +22,12 @@ public struct ChannelHeader: View {
   @Environment(LiveStatusChannel.self) private var channel
   @Environment(\.locale) private var locale
 
-  private let slug: ChannelSlug
-
-  public init(slug: ChannelSlug) {
-    self.slug = slug
-  }
+  public init() {}
 
   public var body: some View {
     let line = HeaderLine(status: channel.status, locale: locale)
     HStack(spacing: LayoutRole.dialogActionGap.points) {
-      Text(slug.rawValue)
+      Text(channel.title ?? "")
         .font(TextRole.dialogTitle.font)
         .foregroundStyle(ColorRole.textPrimary.color)
       if line.isLive {
