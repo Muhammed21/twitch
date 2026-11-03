@@ -78,6 +78,25 @@ describe("registre des salons chargés", () => {
 
     expect(registry.loadedCount()).toBe(0);
   });
+
+  it("remplace l'état d'un salon chargé par l'état rafraîchi", async () => {
+    const registry = createRoomRegistry(makeDirectory());
+    await registry.enter(CHANNEL_ID);
+    const live: RoomState = { channelId: CHANNEL_ID, sessionId: "session-1" };
+
+    registry.refresh(live);
+
+    expect(registry.state(CHANNEL_ID)).toEqual(live);
+  });
+
+  it("ne charge pas un salon que personne n'a rejoint quand son état est rafraîchi", () => {
+    const registry = createRoomRegistry(makeDirectory());
+
+    registry.refresh({ channelId: CHANNEL_ID, sessionId: "session-1" });
+
+    expect(registry.state(CHANNEL_ID)).toBeUndefined();
+    expect(registry.loadedCount()).toBe(0);
+  });
 });
 
 describe("registre des salons chargés, lectures concurrentes", () => {
@@ -136,5 +155,18 @@ describe("registre des salons chargés, lectures concurrentes", () => {
 
     expect(await second).toEqual(OFFLINE_ROOM);
     expect(registry.loadedCount()).toBe(1);
+  });
+
+  it("garde l'état rafraîchi pendant la lecture plutôt que l'état lu", async () => {
+    const { directory, reads } = makePendingDirectory();
+    const registry = createRoomRegistry(directory);
+    const entering = registry.enter(CHANNEL_ID);
+    const live: RoomState = { channelId: CHANNEL_ID, sessionId: "session-1" };
+
+    registry.refresh(live);
+    reads[0]?.resolve(OFFLINE_ROOM);
+
+    expect(await entering).toEqual(live);
+    expect(registry.state(CHANNEL_ID)).toEqual(live);
   });
 });

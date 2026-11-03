@@ -2,13 +2,13 @@
 
 Service de chat temps réel, process Node séparé (ADR 0004, ADR 0022). Découpage : [plan du chat](../../plans/chat.md).
 
-| Commande                | Effet                                                        |
-| ----------------------- | ------------------------------------------------------------ |
-| `pnpm start`            | Lance `src/main.ts` avec le `.env` racine                    |
-| `pnpm test`             | Tests unitaires, serveur sur un port libre, process complet  |
-| `pnpm test:coverage`    | Tests et couverture 100 %                                    |
-| `pnpm test:integration` | Liste de révocation et vues locales dans le Redis de Compose |
-| `pnpm mutation`         | Stryker sur `src/`, hors `main.ts` et `testing/`             |
+| Commande                | Effet                                                                       |
+| ----------------------- | --------------------------------------------------------------------------- |
+| `pnpm start`            | Lance `src/main.ts` avec le `.env` racine                                   |
+| `pnpm test`             | Tests unitaires, serveur sur un port libre, process complet                 |
+| `pnpm test:coverage`    | Tests et couverture 100 %                                                   |
+| `pnpm test:integration` | Révocation, vues locales, consommateur et jalon C1 dans le Redis de Compose |
+| `pnpm mutation`         | Stryker sur `src/`, hors `main.ts` et `testing/`                            |
 
 | Variable            | Rôle                                                                           |
 | ------------------- | ------------------------------------------------------------------------------ |
@@ -57,19 +57,31 @@ Un seau remonté à 5 jetons vaut l'absence de seau (`isBucketFull`). Le `Chatte
 - `createRoomRegistry(directory)` tient les salons chargés en mémoire (ADR 0032, §3) : l'état d'un salon est lu à la première entrée, une seule fois pour des entrées simultanées, et libéré à la dernière sortie. Une chaîne inconnue ou une lecture en échec ne laisse aucun salon chargé ; une entrée dont le salon est libéré pendant la lecture repart sans état et ne touche pas au salon relu ensuite. `loadedCount()` donne le nombre de salons chargés.
 - `createMessageSender()` applique `decide` avec un seau par utilisateur, en mémoire du process : la lecture, la décision et l'écriture du seau sont synchrones, donc sans course entre deux sockets du même utilisateur. `sweep(now)` oublie les seaux redevenus pleins. Le partage des seaux entre instances arrive avec le fan-out (PR 7 du plan).
 
-Les ports `RoomDirectory` et `ChatterProfiles` sont dans `application/ports.ts`.
+- `chatEventHandlers({ views, rooms, log })` projette les events dans les vues locales et rafraîchit l'état d'un salon chargé, même pendant sa lecture. Un payload hors contrat est journalisé puis écarté ; une version non gérée fait échouer le handler, et l'event reste à traiter.
+
+Les ports `RoomDirectory`, `ChatterProfiles` et `LocalViewWriter` sont dans `application/ports.ts`.
 
 ## Infrastructure
 
 Vues locales dans Redis, lues sans appel à l'API (ADR 0004) :
 
-| Clé                     | Hash                                                   |
-| ----------------------- | ------------------------------------------------------ |
-| `chat:room:<channelId>` | `sessionId` : session du live en cours, vide hors live |
-| `chat:chatter:<userId>` | `displayName` : nom affiché de l'auteur                |
+| Clé                           | Contenu                                                                  |
+| ----------------------------- | ------------------------------------------------------------------------ |
+| `chat:room:<channelId>`       | `sessionId` : session du live en cours, vide hors live                   |
+| `chat:room:<channelId>:ended` | set des sessions terminées, expiré 7 jours après la dernière fin de live |
+| `chat:chatter:<userId>`       | `displayName` : nom affiché de l'auteur                                  |
 
-Une chaîne sans hash n'a pas de salon. Les handlers qui écrivent ces hashes à partir des events `channel.created`, `stream.started`, `stream.ended` et `identity.account.registered` arrivent avec la dernière partie de TWI-15.
+Une chaîne sans hash n'a pas de salon. Le groupe de consommateurs `chat` lit `events.channel`, `events.stream` et `events.identity`, écrits par le relais d'outbox de l'API :
 
-`startEventConsumer` lit les streams écrits par le relais d'outbox de l'API, dans un groupe de consommateurs. Un seul `XREADGROUP` bloquant couvre tous les streams, sur une connexion Redis à part (`createConsumerRedis`) ; à chaque tour, `XAUTOCLAIM` reprend sur chaque stream les entrées en attente depuis `claimIdleMs`. Une entrée est acquittée après son traitement, ou si elle est illisible (`parseStreamEntry`) ou sans handler ; un handler en échec la laisse en attente. Un groupe absent est recréé ; une erreur est signalée à `onError`, sauf pendant une panne de la connexion. `event-consumer.ts` est couvert par `pnpm test:integration`, hors couverture unitaire et hors Stryker.
+| Event                         | Écriture                                                                                            |
+| ----------------------------- | --------------------------------------------------------------------------------------------------- |
+| `channel.created`             | `HSETNX sessionId ""` : ouvre le salon hors live, sans fermer un live déjà enregistré               |
+| `stream.started`              | pose `sessionId`, sauf pour une session terminée (script Lua)                                       |
+| `stream.ended`                | vide `sessionId` s'il porte cette session, puis ajoute la session au set des terminées (script Lua) |
+| `identity.account.registered` | `HSET displayName`                                                                                  |
 
-La connexion Redis ne journalise que ses transitions : `redis injoignable` à la première erreur d'une panne, `redis rétabli` au retour, et rien pour les tentatives de reconnexion entre les deux.
+Chaque écriture est idempotente et supporte le désordre : un event rejoué, un début de live repris après sa fin, ou une fin de live arrivée après le live suivant, laisse la vue juste. Un seul `XREADGROUP` bloquant lit les trois streams, sur une connexion Redis à part ; à chaque tour, `XAUTOCLAIM` reprend les entrées en attente depuis plus de 30 s. Une entrée est acquittée après son traitement, ou si elle est illisible ou sans handler ; un handler en échec la laisse en attente.
+
+La connexion Redis ne journalise que ses transitions : `redis injoignable` à la première erreur d'une panne, `redis rétabli` au retour, et rien pour les tentatives de reconnexion entre les deux. Le consommateur se tait pendant une panne de sa connexion, qui a son propre journal de transitions (`client: "events"`).
+
+`event-consumer.ts` et `redis-local-view-writer.ts` sont couverts par `pnpm test:integration`, hors couverture unitaire et hors Stryker. `chat-milestone.integration.test.ts` démontre le jalon C1 : une chaîne créée et deux comptes enregistrés par events, deux clients authentifiés qui échangent dans le salon, puis un message rattaché au live démarré.
