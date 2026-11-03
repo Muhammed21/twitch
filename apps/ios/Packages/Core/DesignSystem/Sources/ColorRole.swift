@@ -13,6 +13,7 @@ public enum ColorRole: Sendable {
   case surfaceTertiary
   case textPrimary
   case textSecondary
+  case link
   case danger
   case onDanger
   case scrim
@@ -30,6 +31,7 @@ public enum ColorRole: Sendable {
     case .surfaceTertiary: .surfaceTertiary
     case .textPrimary: .textPrimary
     case .textSecondary: .textSecondary
+    case .link: .textLink
     case .danger: .dangerDefault
     case .onDanger: .dangerOnDanger
     case .scrim: .overlayScrim
