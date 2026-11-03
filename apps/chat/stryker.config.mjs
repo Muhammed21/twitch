@@ -5,7 +5,7 @@ export default {
   coverageAnalysis: "perTest",
   reporters: ["clear-text", "progress", "html"],
   htmlReporter: { fileName: "reports/mutation/index.html" },
-  mutate: ["src/**/*.ts", "!src/**/*.test.ts"],
+  mutate: ["src/**/*.ts", "!src/**/*.test.ts", "!src/main.ts", "!src/**/testing/**"],
   tsconfigFile: "stryker-skips-tsconfig-rewrite.json",
   thresholds: { high: 100, low: 90, break: null },
 };

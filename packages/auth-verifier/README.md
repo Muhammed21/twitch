@@ -8,6 +8,8 @@ Vérification des jetons d'accès émis par l'API (ADR 0005, ADR 0026 §5, ADR 0
 - `err("invalid_token")` : signature, émetteur, audience, expiration, type `at+jwt`, algorithme `EdDSA` ou claims (`sub`, `sid`) invalides.
 - `err("revoked")` : le `sid` est sur la liste de révocation (`RevokedSessions`).
 
+`revokedSidKey(sid)` nomme la clé Redis d'une session révoquée (`identity:revoked-sid:<sid>`), écrite par l'API et lue par l'API et le chat.
+
 Si la liste de révocation est injoignable, le jeton est accepté avec `revocation: "unavailable"` : un use-case sensible refuse sur cette valeur, le reste continue (ADR 0005, « Panne Redis »).
 
 Le JWKS est gardé en cache 10 minutes ; un `kid` inconnu le recharge, au plus une fois par minute (`jose`). `fetchJwks` remplace `fetch`, par exemple pour lire le JWKS en interne.
