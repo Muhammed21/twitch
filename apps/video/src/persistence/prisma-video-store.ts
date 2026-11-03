@@ -49,10 +49,12 @@ export const prismaVideoStore = ({
   liveSessionsPageSize?: number;
 }): VideoStore => {
   const findChannelWhere = async (
-    where: { id: string } | { externalId: string },
+    where:
+      | { channel: { id: string } | { externalId: string } }
+      | { fingerprint: Uint8Array<ArrayBuffer> },
   ): Promise<VideoChannel | undefined> => {
     const stored = await prisma.videoStreamKey.findFirst({
-      where: { channel: where },
+      where,
       include: CHANNEL_WITH_KEY,
     });
     return stored === null ? undefined : { ...stored.channel, streamKey: cipher.decrypt(stored) };
@@ -72,8 +74,10 @@ export const prismaVideoStore = ({
 
   return {
     findChannel: async (id) =>
-      ChannelId.safeParse(id).success ? findChannelWhere({ id }) : undefined,
-    findChannelByExternalId: (externalId) => findChannelWhere({ externalId }),
+      ChannelId.safeParse(id).success ? findChannelWhere({ channel: { id } }) : undefined,
+    findChannelByExternalId: (externalId) => findChannelWhere({ channel: { externalId } }),
+    findChannelByStreamKey: (streamKey) =>
+      findChannelWhere({ fingerprint: cipher.fingerprint(streamKey) }),
     saveChannel: async ({ id, externalId, streamKey }) => {
       const encrypted = cipher.encrypt(streamKey);
       const key = {
@@ -81,6 +85,7 @@ export const prismaVideoStore = ({
         iv: Buffer.from(encrypted.iv),
         authTag: Buffer.from(encrypted.authTag),
         encryptionKeyVersion: encrypted.encryptionKeyVersion,
+        fingerprint: cipher.fingerprint(streamKey),
       };
       await prisma.$transaction([
         prisma.videoChannel.upsert({
@@ -101,6 +106,17 @@ export const prismaVideoStore = ({
         fetchPage: liveSessionsPage,
         keyOf: ({ id }) => id,
       }),
+    liveSessionOf: async (channelId) => {
+      const live = ChannelId.safeParse(channelId).success
+        ? await prisma.videoIngestSession.findFirst({
+            where: { channelId, state: "live" },
+            select: { id: true, channelId: true, startedAt: true },
+          })
+        : null;
+      return live?.startedAt == null
+        ? undefined
+        : { state: "live", id: live.id, channelId: live.channelId, startedAt: live.startedAt };
+    },
     saveSession: async (session, events) => {
       const data = { state: session.state, ...sessionTimes(session) };
       await prisma.$transaction(async (tx) => {

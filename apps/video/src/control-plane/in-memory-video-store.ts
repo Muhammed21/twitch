@@ -18,10 +18,14 @@ export const inMemoryVideoStore = (): InMemoryVideoStore => {
     findChannel: async (id) => channels.get(id),
     findChannelByExternalId: async (externalId) =>
       [...channels.values()].find((channel) => channel.externalId === externalId),
+    findChannelByStreamKey: async (streamKey) =>
+      [...channels.values()].find((channel) => channel.streamKey === streamKey),
     saveChannel: async (channel) => {
       channels.set(channel.id, channel);
     },
     liveSessions: async () => [...sessionsById.values()].filter(isLive),
+    liveSessionOf: async (channelId) =>
+      [...sessionsById.values()].filter(isLive).find((session) => session.channelId === channelId),
     saveSession: async (session, events) => {
       sessionsById.set(session.id, session);
       outbox.push(...events);

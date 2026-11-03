@@ -8,6 +8,7 @@ import { createContextClient } from "@repo/db";
 import { loadEnv } from "./config/env.ts";
 import { createControlPlane } from "./control-plane/control-plane.ts";
 import { startHttpServer } from "./http/http-server.ts";
+import { createPublishGate } from "./ingest/publish-gate.ts";
 import { startRelayLoop } from "./outbox/relay-loop.ts";
 import { relayVideoOutbox } from "./outbox/video-outbox-relay.ts";
 import { prismaVideoStore } from "./persistence/prisma-video-store.ts";
@@ -39,6 +40,10 @@ const logRelayFailure = (error: unknown): void => {
 try {
   const config = loadEnv(process.env);
   const prisma = createContextClient({ context: "video", env: process.env });
+  const store = prismaVideoStore({
+    prisma,
+    cipher: streamKeyCipher({ key: config.streamKeyEncryptionKey }),
+  });
   const rtmp = await startRtmpServer({
     port: config.rtmpPort,
     handshakeTimeoutMs: RTMP_HANDSHAKE_TIMEOUT_MS,
@@ -46,7 +51,7 @@ try {
     limits: RTMP_LIMITS,
     randomBytes,
     onMessage: () => undefined,
-    publish: async () => undefined,
+    publish: createPublishGate({ store, newId: randomUUID, now: () => new Date() }),
     onError: (error) => {
       log(
         "publication RTMP en échec",
@@ -59,10 +64,7 @@ try {
     port: config.httpPort,
     serviceSecret: config.serviceSecret,
     controlPlane: createControlPlane({
-      store: prismaVideoStore({
-        prisma,
-        cipher: streamKeyCipher({ key: config.streamKeyEncryptionKey }),
-      }),
+      store,
       ingestUrl: config.ingestUrl,
       newId: randomUUID,
       randomBytes,

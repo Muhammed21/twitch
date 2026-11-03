@@ -71,6 +71,30 @@ export const describeVideoStoreContract = ({
       expect(await videoStore.findChannelByExternalId(channel.externalId)).toEqual(channel);
     });
 
+    it("retrouve un canal par sa clé de stream courante, et plus par l'ancienne après rotation", async () => {
+      const videoStore = store();
+      const channel = makeVideoChannel();
+      await videoStore.saveChannel(channel);
+      const rotated = { ...channel, streamKey: newStreamKey() };
+
+      expect(await videoStore.findChannelByStreamKey(channel.streamKey)).toEqual(channel);
+      await videoStore.saveChannel(rotated);
+      expect(await videoStore.findChannelByStreamKey(channel.streamKey)).toBeUndefined();
+      expect(await videoStore.findChannelByStreamKey(rotated.streamKey)).toEqual(rotated);
+    });
+
+    it("ne retrouve aucun canal par une clé inconnue, ni par un préfixe de clé", async () => {
+      const videoStore = store();
+      const channel = makeVideoChannel();
+      await videoStore.saveChannel(channel);
+
+      expect(await videoStore.findChannelByStreamKey(newStreamKey())).toBeUndefined();
+      expect(
+        await videoStore.findChannelByStreamKey(channel.streamKey.slice(0, -1)),
+      ).toBeUndefined();
+      expect(await videoStore.findChannelByStreamKey("")).toBeUndefined();
+    });
+
     it("ne retrouve aucun canal inconnu, même à un identifiant qui n'est pas un UUID", async () => {
       const videoStore = store();
 
@@ -107,6 +131,27 @@ export const describeVideoStoreContract = ({
       );
 
       expect(ours).toEqual([liveSession(live)]);
+    });
+
+    it("rend la session live d'un canal, et aucune pour un canal sans session live", async () => {
+      const videoStore = store();
+      const [channel, idleChannel, endedChannel] = [
+        makeVideoChannel(),
+        makeVideoChannel(),
+        makeVideoChannel(),
+      ];
+      await Promise.all(
+        [channel, idleChannel, endedChannel].map((each) => videoStore.saveChannel(each)),
+      );
+      const live = liveSession(idleSession(channel.id));
+      await videoStore.saveSession(live, []);
+      await videoStore.saveSession(idleSession(idleChannel.id), []);
+      await videoStore.saveSession(endedSession(idleSession(endedChannel.id)), []);
+
+      expect(await videoStore.liveSessionOf(channel.id)).toEqual(live);
+      expect(await videoStore.liveSessionOf(idleChannel.id)).toBeUndefined();
+      expect(await videoStore.liveSessionOf(endedChannel.id)).toBeUndefined();
+      expect(await videoStore.liveSessionOf(randomUUID())).toBeUndefined();
     });
 
     it("suit une session de idle à live puis ended", async () => {
