@@ -1,4 +1,5 @@
 import Auth
+import Channel
 import DesignSystem
 import Domain
 import Foundation
@@ -22,6 +23,7 @@ struct TwitchApp: App {
         .environment(stores.router)
         .environment(stores.player)
         .environment(stores.channelPlayback)
+        .environment(stores.liveStatus)
     }
   }
 }
@@ -108,6 +110,7 @@ struct RootView: View {
 struct SignedInRoot: View {
   @Environment(Router.self) private var router
   @Environment(ChannelPlayback.self) private var channelPlayback
+  @Environment(LiveStatusChannel.self) private var liveStatus
   @State private var isShowingAccount = false
 
   var body: some View {
@@ -124,12 +127,15 @@ struct SignedInRoot: View {
         .navigationDestination(for: Route.self) { route in
           switch route {
           case let .channel(slug):
-            VStack(alignment: .leading) {
+            VStack(alignment: .leading, spacing: 0) {
               PlayerSurface()
+              ChannelHeader(slug: slug)
               Spacer(minLength: 0)
             }
             .navigationTitle(slug.rawValue)
+            .navigationBarTitleDisplayMode(.inline)
             .task(id: slug) { await channelPlayback.open(slug) }
+            .task(id: slug) { await liveStatus.run(slug) }
           }
         }
     }
@@ -144,6 +150,7 @@ struct Stores {
   let router: Router
   let player: PlayerController
   let channelPlayback: ChannelPlayback
+  let liveStatus: LiveStatusChannel
 }
 
 @MainActor
@@ -169,6 +176,7 @@ enum Composition {
     )
     let now: @Sendable () -> Date = { Date.now }
     let player = PlayerController(player: AVMediaPlayer(), startupRetry: .every(.seconds(2), attempts: 15))
+    let channels = ChannelClient(apiBaseURL: configuration.apiBaseURL, transport: transport)
     return Stores(
       session: SessionStore(
         configuration: configuration,
@@ -186,9 +194,14 @@ enum Composition {
       router: Router(),
       player: player,
       channelPlayback: ChannelPlayback(
-        channels: ChannelClient(apiBaseURL: configuration.apiBaseURL, transport: transport),
+        channels: channels,
         playback: PlaybackClient(apiBaseURL: configuration.apiBaseURL, transport: transport),
         controller: player
+      ),
+      liveStatus: LiveStatusChannel(
+        channels: channels,
+        source: LiveStatusClient(apiBaseURL: configuration.apiBaseURL, transport: URLSessionLineTransport()),
+        onEnded: { player.end() }
       )
     )
   }
