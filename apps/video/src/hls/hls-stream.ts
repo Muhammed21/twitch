@@ -12,16 +12,19 @@ import {
 import {
   appendFragment,
   closeSegmenter,
+  openParts,
+  type Part,
   type Segment,
   type Segmenter,
   type SegmenterOptions,
   startSegmenter,
 } from "../segmenter/segmenter.ts";
-import { targetDurationFor } from "./playlist.ts";
+import { partTargetFor, targetDurationFor } from "./playlist.ts";
 
 export type HlsStreamOptions = SegmenterOptions & {
   readonly maxBoxSize: number;
   readonly targetDuration: number;
+  readonly partTarget: number;
 };
 
 export type HlsStreamRefusal = Fmp4Refusal | "init_changed";
@@ -34,6 +37,7 @@ export type HlsStream = {
   readonly init: Fmp4Init | undefined;
   readonly segments: readonly Segment[];
   readonly targetDuration: number;
+  readonly partTarget: number;
   readonly ended: boolean;
 };
 
@@ -47,7 +51,15 @@ export const startHlsStream = (options: HlsStreamOptions): HlsStream => ({
   init: undefined,
   segments: [],
   targetDuration: options.targetDuration,
+  partTarget: options.partTarget,
   ended: false,
+});
+
+export const openSegmentOf = (
+  stream: HlsStream,
+): { readonly sequence: number; readonly parts: readonly Part[] } => ({
+  sequence: stream.segmenter.nextSequence,
+  parts: openParts(stream.segmenter),
 });
 
 const withSegmenter = (stream: HlsStream, segmenter: Segmenter): HlsStream => ({
@@ -57,6 +69,10 @@ const withSegmenter = (stream: HlsStream, segmenter: Segmenter): HlsStream => ({
   targetDuration: targetDurationFor({
     previous: stream.targetDuration,
     segments: segmenter.segments,
+  }),
+  partTarget: partTargetFor({
+    previous: stream.partTarget,
+    parts: [...segmenter.segments.flatMap((segment) => segment.parts), ...openParts(segmenter)],
   }),
 });
 

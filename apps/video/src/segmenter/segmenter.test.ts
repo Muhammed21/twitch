@@ -12,6 +12,7 @@ import {
 import {
   appendFragment,
   closeSegmenter,
+  openParts,
   type Segment,
   type Segmenter,
   type SegmenterOptions,
@@ -82,6 +83,10 @@ const fingerprint = (segments: readonly Segment[]) =>
   segments.map((segment) => ({
     ...segment,
     bytes: Buffer.from(segment.bytes).toString("base64"),
+    parts: segment.parts.map((part) => ({
+      ...part,
+      bytes: Buffer.from(part.bytes).toString("base64"),
+    })),
   }));
 
 const segmentPieces = (pieces: readonly Uint8Array[]): Segmenter | undefined => {
@@ -172,7 +177,13 @@ describe("découpe", () => {
       makeFmp4Fragment({ decodeTime: 1000 }),
     ]);
 
-    expect(closeSegmenter(segmenter).segments).toEqual([
+    expect(
+      closeSegmenter(segmenter).segments.map(({ sequence, seconds, bytes }) => ({
+        sequence,
+        seconds,
+        bytes,
+      })),
+    ).toEqual([
       {
         sequence: 0,
         seconds: 1,
@@ -227,9 +238,54 @@ describe("découpe", () => {
       ],
     );
 
+    const { bytes } = makeFmp4Fragment({ decodeTime: 2500, size: 10 });
     expect(closeSegmenter(segmenter).segments).toEqual([
-      { sequence: 0, seconds: 0.5, bytes: makeFmp4Fragment({ decodeTime: 2500, size: 10 }).bytes },
+      { sequence: 0, seconds: 0.5, bytes, parts: [{ seconds: 0.5, bytes, independent: true }] },
     ]);
+  });
+});
+
+describe("parts du LL-HLS", () => {
+  it("garde chaque fragment comme une part : durée, octets, et indépendance sur une image clé", () => {
+    const fragments = [
+      makeFmp4Fragment({ decodeTime: 0, duration: 1000, size: 3, ...KEYFRAME }),
+      makeFmp4Fragment({ decodeTime: 1000, duration: 1000, size: 2 }),
+      makeFmp4Fragment({ decodeTime: 2000, duration: 250, ...KEYFRAME }),
+    ];
+
+    const [segment] = appendAll(
+      startSegmenter({ init: MILLISECONDS, ...OPTIONS }),
+      fragments,
+    ).segments;
+
+    expect(segment?.parts).toEqual([
+      { seconds: 1, bytes: fragments[0]?.bytes, independent: true },
+      { seconds: 1, bytes: fragments[1]?.bytes, independent: false },
+    ]);
+  });
+
+  it("rend les parts du segment encore ouvert, et aucune hors segment ouvert", () => {
+    const opening = startSegmenter({ init: MILLISECONDS, ...OPTIONS });
+    const segmenter = appendAll(opening, [
+      makeFmp4Fragment({ decodeTime: 0, duration: 2000, ...KEYFRAME }),
+      makeFmp4Fragment({ decodeTime: 2000, duration: 330, ...KEYFRAME }),
+      makeFmp4Fragment({ decodeTime: 2330, duration: 330 }),
+    ]);
+
+    expect(
+      openParts(segmenter).map(({ seconds, independent }) => ({ seconds, independent })),
+    ).toEqual([
+      { seconds: 0.33, independent: true },
+      { seconds: 0.33, independent: false },
+    ]);
+    expect(openParts(opening)).toEqual([]);
+    expect(openParts(closeSegmenter(segmenter))).toEqual([]);
+  });
+
+  it("forme chaque segment de ses parts mises bout à bout", () => {
+    for (const segment of segmentFixture().segments) {
+      expect(segment.bytes).toEqual(concatBytes(...segment.parts.map((part) => part.bytes)));
+    }
   });
 });
 

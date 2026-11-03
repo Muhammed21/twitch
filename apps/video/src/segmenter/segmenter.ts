@@ -7,10 +7,17 @@ export type SegmenterOptions = {
   readonly maxSegmentBytes: number;
 };
 
+export type Part = {
+  readonly seconds: number;
+  readonly bytes: Uint8Array;
+  readonly independent: boolean;
+};
+
 export type Segment = {
   readonly sequence: number;
   readonly seconds: number;
   readonly bytes: Uint8Array;
+  readonly parts: readonly Part[];
 };
 
 type OpenSegment = {
@@ -46,6 +53,16 @@ const withFragment = (open: OpenSegment, fragment: Fmp4Fragment): OpenSegment =>
 
 const EMPTY: OpenSegment = { fragments: [], size: 0, duration: 0 };
 
+const partsOf = (open: OpenSegment, init: Fmp4Init): readonly Part[] =>
+  open.fragments.map((fragment) => ({
+    seconds: fragment.duration / init.timescale,
+    bytes: fragment.bytes,
+    independent: fragment.keyframe,
+  }));
+
+export const openParts = (segmenter: Segmenter): readonly Part[] =>
+  segmenter.open === undefined ? [] : partsOf(segmenter.open, segmenter.init);
+
 const sealed = (segmenter: Segmenter): Segmenter => {
   const { open, options, init, nextSequence } = segmenter;
   if (open === undefined) {
@@ -55,6 +72,7 @@ const sealed = (segmenter: Segmenter): Segmenter => {
     sequence: nextSequence,
     seconds: open.duration / init.timescale,
     bytes: concatBytes(...open.fragments.map((fragment) => fragment.bytes)),
+    parts: partsOf(open, init),
   };
   return {
     ...segmenter,

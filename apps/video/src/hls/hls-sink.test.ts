@@ -8,6 +8,7 @@ const OPTIONS = {
   maxBoxSize: 1 << 20,
   targetSeconds: 2,
   targetDuration: 4,
+  partTarget: 0.334,
   capacity: 6,
   maxSegmentBytes: 1 << 20,
 };

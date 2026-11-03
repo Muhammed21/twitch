@@ -1,4 +1,12 @@
-import type { HlsStream } from "../hls/hls-stream.ts";
+import {
+  type BlockingRequest,
+  blockingRequestOf,
+  isTooFarAhead,
+  partOf,
+  type PartsView,
+  satisfies,
+} from "../hls/blocking.ts";
+import { type HlsStream, openSegmentOf } from "../hls/hls-stream.ts";
 import {
   INIT_URI,
   MEDIA_URI,
@@ -9,6 +17,12 @@ import {
 
 export type HlsPlayback = {
   readonly find: (sessionId: string) => HlsStream | undefined;
+  readonly waitFor: (
+    sessionId: string,
+    ready: (stream: HlsStream) => boolean,
+    timeoutMs: number,
+  ) => Promise<HlsStream | undefined>;
+  readonly blockingTimeoutMs: number;
   readonly liveSessionOf: (channelId: string) => Promise<string | undefined>;
   readonly fallbackBandwidth: number;
 };
@@ -23,6 +37,7 @@ const UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 const CHANNEL_MASTER_PATH = new RegExp(`^/hls/channels/(${UUID})/master\\.m3u8$`);
 const HLS_PATH = new RegExp(`^/hls/(${UUID})/([^/]+)$`);
 const SEGMENT_FILE = /^(\d{1,15})\.m4s$/;
+const PART_FILE = /^(\d{1,15})\.(\d{1,6})\.m4s$/;
 
 const PLAYLIST_HEADERS = {
   "content-type": "application/vnd.apple.mpegurl",
@@ -34,14 +49,23 @@ const MEDIA_HEADERS = {
   "cache-control": "public, max-age=31536000, immutable",
 };
 
-const NOT_FOUND: HlsReply = {
-  status: 404,
+const problem = (status: number, title: string): HlsReply => ({
+  status,
   headers: { "content-type": "application/problem+json" },
-  body: JSON.stringify({ type: "about:blank", title: "Ressource introuvable", status: 404 }),
-};
+  body: JSON.stringify({ type: "about:blank", title, status }),
+});
+
+const NOT_FOUND = problem(404, "Ressource introuvable");
+const BAD_BLOCKING_REQUEST = problem(400, "Rechargement bloquant invalide");
+const NOT_YET_AVAILABLE = problem(503, "Segment pas encore disponible");
 
 const media = (bytes: Uint8Array | undefined): HlsReply =>
   bytes === undefined ? NOT_FOUND : { status: 200, headers: MEDIA_HEADERS, body: bytes };
+
+const viewOf = (stream: HlsStream): PartsView => ({
+  segments: stream.segments,
+  open: openSegmentOf(stream),
+});
 
 const masterOf = (stream: HlsStream, mediaUri: string, fallbackBandwidth: number): HlsReply => {
   const bandwidth = peakBandwidth({ segments: stream.segments, fallback: fallbackBandwidth });
@@ -52,15 +76,83 @@ const masterOf = (stream: HlsStream, mediaUri: string, fallbackBandwidth: number
   };
 };
 
-const fileOf = (stream: HlsStream, file: string, fallbackBandwidth: number): HlsReply => {
+const mediaPlaylistOf = (stream: HlsStream): HlsReply => ({
+  status: 200,
+  headers: PLAYLIST_HEADERS,
+  body: renderMediaPlaylist({ ...stream, open: openSegmentOf(stream) }),
+});
+
+const blockingPlaylist = async (
+  playback: HlsPlayback,
+  sessionId: string,
+  stream: HlsStream,
+  request: BlockingRequest,
+): Promise<HlsReply> => {
+  if (isTooFarAhead(viewOf(stream), request)) {
+    return BAD_BLOCKING_REQUEST;
+  }
+  const ready = await playback.waitFor(
+    sessionId,
+    (next) => satisfies(viewOf(next), request),
+    playback.blockingTimeoutMs,
+  );
+  return ready === undefined ? NOT_YET_AVAILABLE : mediaPlaylistOf(ready);
+};
+
+const mediaPlaylist = async (
+  playback: HlsPlayback,
+  sessionId: string,
+  stream: HlsStream,
+  query: URLSearchParams,
+): Promise<HlsReply> => {
+  const request = blockingRequestOf(query);
+  if (!request.ok) {
+    return BAD_BLOCKING_REQUEST;
+  }
+  return request.value === undefined
+    ? mediaPlaylistOf(stream)
+    : await blockingPlaylist(playback, sessionId, stream, request.value);
+};
+
+const part = async (
+  playback: HlsPlayback,
+  sessionId: string,
+  stream: HlsStream,
+  [sequence, index]: readonly [number, number],
+): Promise<HlsReply> => {
+  const view = viewOf(stream);
+  const hinted = sequence === view.open.sequence && index === view.open.parts.length;
+  if (!hinted) {
+    return media(partOf(view, sequence, index)?.bytes);
+  }
+  const ready = await playback.waitFor(
+    sessionId,
+    (next) =>
+      partOf(viewOf(next), sequence, index) !== undefined || next.segmenter.nextSequence > sequence,
+    playback.blockingTimeoutMs,
+  );
+  return media(ready === undefined ? undefined : partOf(viewOf(ready), sequence, index)?.bytes);
+};
+
+const fileOf = async (
+  playback: HlsPlayback,
+  sessionId: string,
+  stream: HlsStream,
+  file: string,
+  query: URLSearchParams,
+): Promise<HlsReply> => {
   if (file === "master.m3u8") {
-    return masterOf(stream, MEDIA_URI, fallbackBandwidth);
+    return masterOf(stream, MEDIA_URI, playback.fallbackBandwidth);
   }
   if (file === MEDIA_URI) {
-    return { status: 200, headers: PLAYLIST_HEADERS, body: renderMediaPlaylist(stream) };
+    return await mediaPlaylist(playback, sessionId, stream, query);
   }
   if (file === INIT_URI) {
     return media(stream.init?.bytes);
+  }
+  const partFile = PART_FILE.exec(file);
+  if (partFile !== null) {
+    return await part(playback, sessionId, stream, [Number(partFile[1]), Number(partFile[2])]);
   }
   const sequence = SEGMENT_FILE.exec(file)?.[1];
   return media(stream.segments.find((segment) => String(segment.sequence) === sequence)?.bytes);
@@ -80,9 +172,11 @@ const channelMaster = async (playback: HlsPlayback, channelId: string): Promise<
 export const routeHls = async ({
   playback,
   pathname,
+  query,
 }: {
   readonly playback: HlsPlayback;
   readonly pathname: string;
+  readonly query: URLSearchParams;
 }): Promise<HlsReply> => {
   const channel = CHANNEL_MASTER_PATH.exec(pathname);
   if (channel !== null) {
@@ -92,8 +186,9 @@ export const routeHls = async ({
   if (match === null) {
     return NOT_FOUND;
   }
-  const stream = playback.find(String(match[1]));
+  const sessionId = String(match[1]);
+  const stream = playback.find(sessionId);
   return stream === undefined
     ? NOT_FOUND
-    : fileOf(stream, String(match[2]), playback.fallbackBandwidth);
+    : await fileOf(playback, sessionId, stream, String(match[2]), query);
 };
