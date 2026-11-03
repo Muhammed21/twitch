@@ -79,10 +79,10 @@ const tagsFrom = (flv: Buffer, offset: number): readonly FlvTag[] => {
   ];
 };
 
-export const FFMPEG_PUBLISH_FLV_TAGS: readonly FlvTag[] = tagsFrom(
-  fixture("ffmpeg-publish.flv"),
-  FLV_HEADER_SIZE + PREVIOUS_TAG_SIZE,
-);
+export const flvTagsOf = (flv: Buffer): readonly FlvTag[] =>
+  tagsFrom(flv, FLV_HEADER_SIZE + PREVIOUS_TAG_SIZE);
+
+export const FFMPEG_PUBLISH_FLV_TAGS: readonly FlvTag[] = flvTagsOf(fixture("ffmpeg-publish.flv"));
 
 export const makeChunk = ({
   fmt,

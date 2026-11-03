@@ -1,7 +1,4 @@
 import { randomBytes, randomUUID } from "node:crypto";
-import { once } from "node:events";
-import { connect } from "node:net";
-import { setTimeout as sleep } from "node:timers/promises";
 
 import { afterAll, describe, expect, it, onTestFinished } from "vitest";
 import { z } from "zod";
@@ -12,10 +9,8 @@ import { StreamEnded, StreamStarted } from "@repo/video-contract";
 import { makeVideoChannel } from "../control-plane/testing/video-store.contract.ts";
 import { prismaVideoStore } from "../persistence/prisma-video-store.ts";
 import { streamKeyCipher } from "../persistence/stream-key-cipher.ts";
-import { type Amf0Value, encodeAmf0 } from "../rtmp/amf0.ts";
-import { muxMessages } from "../rtmp/chunk-mux.ts";
 import { startRtmpServer } from "../rtmp/rtmp-server.ts";
-import { waitFor } from "../rtmp/testing/rtmp-client.ts";
+import { publishWith, waitFor } from "../rtmp/testing/rtmp-client.ts";
 import { createPublishGate } from "./publish-gate.ts";
 
 const prisma = createContextClient({ context: "video", env: process.env });
@@ -48,14 +43,6 @@ const outboxTypesOf = async (channelId: string) =>
     })
   ).map(({ payload }) => LifecycleEvent.parse(payload).type);
 
-const command = (streamId: number, values: readonly Amf0Value[]) => ({
-  chunkStreamId: 3,
-  typeId: 20,
-  streamId,
-  timestamp: 0,
-  payload: encodeAmf0(values),
-});
-
 const startIngest = async () => {
   const server = await startRtmpServer({
     port: 0,
@@ -69,31 +56,6 @@ const startIngest = async () => {
   });
   onTestFinished(() => server.close());
   return server;
-};
-
-const publishWith = async (port: number, streamKey: string) => {
-  const socket = connect(port, "127.0.0.1");
-  socket.on("error", () => undefined);
-  onTestFinished(() => {
-    socket.destroy();
-  });
-  const closed = new Promise<true>((resolve) => {
-    socket.once("close", () => resolve(true));
-  });
-  await once(socket, "connect");
-  const received: Buffer[] = [];
-  socket.on("data", (chunk: Buffer) => received.push(chunk));
-  socket.write(Uint8Array.of(3, ...new Uint8Array(1536)));
-  await waitFor(() => Buffer.concat(received).length >= 3073);
-  socket.write(new Uint8Array(1536));
-  socket.write(
-    muxMessages([
-      command(0, ["connect", 1, { app: "live" }]),
-      command(0, ["createStream", 2, null]),
-      command(1, ["publish", 3, null, streamKey, "live"]),
-    ]),
-  );
-  return { socket, closed, isClosed: () => Promise.race([closed, sleep(50).then(() => false)]) };
 };
 
 describe("ingest RTMP sur le dépôt Prisma (ADR 0031, §3)", () => {

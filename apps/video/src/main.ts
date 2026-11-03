@@ -9,6 +9,8 @@ import { loadEnv } from "./config/env.ts";
 import { createControlPlane } from "./control-plane/control-plane.ts";
 import { startHttpServer } from "./http/http-server.ts";
 import { createPublishGate } from "./ingest/publish-gate.ts";
+import { createLivePipeline } from "./media/live-pipeline.ts";
+import { FFMPEG_FMP4_ARGS, type FragmentSink, startPackaging } from "./media/packager.ts";
 import { startRelayLoop } from "./outbox/relay-loop.ts";
 import { relayVideoOutbox } from "./outbox/video-outbox-relay.ts";
 import { prismaVideoStore } from "./persistence/prisma-video-store.ts";
@@ -17,6 +19,12 @@ import { startRtmpServer } from "./rtmp/rtmp-server.ts";
 
 const RTMP_HANDSHAKE_TIMEOUT_MS = 5000;
 const RTMP_IDLE_TIMEOUT_MS = 30_000;
+const FFMPEG_MAX_PENDING_BYTES = 8 * 1024 * 1024;
+const FFMPEG_KILL_GRACE_MS = 2000;
+const FRAGMENT_SINK: FragmentSink = {
+  onFragmentBytes: () => undefined,
+  onFragmentsEnd: () => undefined,
+};
 const RTMP_LIMITS = { maxChunkSize: 65_536, maxMessageSize: 2 * 1024 * 1024, maxChunkStreams: 16 };
 
 const log = (
@@ -51,7 +59,22 @@ try {
     limits: RTMP_LIMITS,
     randomBytes,
     onMessage: () => undefined,
-    publish: createPublishGate({ store, newId: randomUUID, now: () => new Date() }),
+    publish: createLivePipeline({
+      gate: createPublishGate({ store, newId: randomUUID, now: () => new Date() }),
+      maxSessions: config.media.maxSessions,
+      startPackaging: ({ sessionId, onExit }) =>
+        startPackaging({
+          sessionId,
+          command: { file: config.media.ffmpegPath, args: FFMPEG_FMP4_ARGS },
+          maxPendingBytes: FFMPEG_MAX_PENDING_BYTES,
+          killGraceMs: FFMPEG_KILL_GRACE_MS,
+          ...FRAGMENT_SINK,
+          onExit: () => {
+            log("ffmpeg de la session arrêté de lui-même", { sessionId }, "error");
+            onExit();
+          },
+        }),
+    }),
     onError: (error) => {
       log(
         "publication RTMP en échec",

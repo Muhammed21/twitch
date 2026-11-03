@@ -25,11 +25,14 @@ const HANDSHAKE_TIMEOUT_MS = 150;
 const IDLE_TIMEOUT_MS = 150;
 const PUBLISH_TIMEOUTS = { handshakeTimeoutMs: 2000, idleTimeoutMs: 2000 };
 
-type PublishGate = (streamKey: string) => Promise<Publication | undefined>;
+type PublishGate = (
+  streamKey: string,
+  controls: { close: () => void },
+) => Promise<Publication | undefined>;
 
 const makePublishLog = () => {
   const entries: string[] = [];
-  const accepting: PublishGate = async (streamKey) => {
+  const accepting = async (streamKey: string): Promise<Publication> => {
     entries.push(`publish ${streamKey}`);
     return {
       end: async () => {
@@ -398,6 +401,50 @@ describe("serveur RTMP, commandes et publish (ADR 0031, §3)", () => {
     expect(whileAsking).toEqual(NO_REJECTION);
     expect(await client.closed).toBe(true);
     expect(server.stats().rejections).toEqual({ ...NO_REJECTION, message_too_large: 1 });
+  });
+
+  it("transmet à la publication les messages qui suivent son accord, sans les commandes", async () => {
+    const received: number[] = [];
+    const server = await startServer({
+      ...PUBLISH_TIMEOUTS,
+      publish: async () => ({
+        receive: ({ typeId }) => received.push(typeId),
+        end: async () => undefined,
+      }),
+    });
+
+    const client = await publishThrough("deleteStream", server);
+    await waitFor(() => repliesIn(client.received()).length === 5);
+    await sleep(20);
+
+    expect(received.filter((typeId) => typeId === 8 || typeId === 9)).toHaveLength(
+      FFMPEG_PUBLISH_FLV_TAGS.filter(isMedia).length,
+    );
+    expect(new Set(received)).toEqual(new Set([8, 9, 18]));
+  });
+
+  it("ferme la connexion quand la publication le demande, puis la termine", async () => {
+    const publications = makePublishLog();
+    const controls: Array<{ close: () => void }> = [];
+    const server = await startServer({
+      ...PUBLISH_TIMEOUTS,
+      publish: async (streamKey, control) => {
+        controls.push(control);
+        return publications.accepting(streamKey);
+      },
+    });
+    const client = await publishThrough("publish", server);
+    await waitFor(() => controls.length === 1);
+
+    controls.forEach(({ close }) => close());
+
+    expect(await client.closed).toBe(true);
+    await waitFor(() => publications.entries.length === 2);
+    expect(publications.entries).toEqual([
+      `publish ${FFMPEG_STREAM_KEY}`,
+      `end ${FFMPEG_STREAM_KEY}`,
+    ]);
+    expect(server.stats().rejections).toEqual(NO_REJECTION);
   });
 
   it("refuse un second publish sur la même connexion", async () => {

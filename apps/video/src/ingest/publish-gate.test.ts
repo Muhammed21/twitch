@@ -26,7 +26,7 @@ describe("publish RTMP : la clé ouvre la session live du canal (ADR 0031, §3)"
     const publication = await gate(channel.streamKey);
 
     const [live] = await store.liveSessions();
-    expect(publication).toBeDefined();
+    expect(publication?.sessionId).toBe(live?.id);
     expect(live).toMatchObject({ state: "live", channelId: channel.id, startedAt: STARTED_AT });
     expect(await store.eventsOf(live?.id ?? "")).toEqual([
       expect.objectContaining({

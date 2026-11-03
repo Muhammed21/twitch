@@ -36,7 +36,12 @@ export type RtmpRejection =
   | "publish_refused"
   | "publish_failed";
 
-export type Publication = { readonly end: () => Promise<void> };
+export type Publication = {
+  readonly receive?: (message: RtmpMessage) => void;
+  readonly end: () => Promise<void>;
+};
+
+export type PublicationControls = { readonly close: () => void };
 
 export type RtmpServerStats = {
   readonly connections: number;
@@ -75,7 +80,7 @@ export const startRtmpServer = async ({
   limits: ChunkLimits;
   randomBytes: (size: number) => Uint8Array;
   onMessage: (message: RtmpMessage) => void;
-  publish: (streamKey: string) => Promise<Publication | undefined>;
+  publish: (streamKey: string, controls: PublicationControls) => Promise<Publication | undefined>;
   onError: (error: unknown) => void;
 }): Promise<RtmpServer> => {
   const sockets = new Set<Socket>();
@@ -136,7 +141,7 @@ export const startRtmpServer = async ({
         return;
       }
       socket.pause();
-      const asked = await publish(streamKey).then(
+      const asked = await publish(streamKey, { close: () => socket.destroy() }).then(
         (publication) => ok(publication),
         (error: unknown) => err(error),
       );
@@ -177,6 +182,7 @@ export const startRtmpServer = async ({
       }
       onMessage(message);
       if (message.typeId !== COMMAND) {
+        connection.publication?.receive?.(message);
         return;
       }
       const command = readCommand(message);
