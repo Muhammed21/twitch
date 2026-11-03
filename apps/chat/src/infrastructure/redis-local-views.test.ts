@@ -7,6 +7,7 @@ import {
   redisChatterProfiles,
   redisRoomDirectory,
   roomKey,
+  sanctionsKey,
 } from "./redis-local-views.ts";
 
 const makeHashes = (hashes: Readonly<Record<string, Record<string, string>>>) => ({
@@ -52,5 +53,53 @@ describe("vue locale des profils", () => {
 
   it("range le profil sous chat:chatter:<userId>", () => {
     expect(chatterKey("u1")).toBe("chat:chatter:u1");
+  });
+});
+
+describe("vue locale des sanctions", () => {
+  it("lit la fin de chaque timeout d'un chatter, par salon", async () => {
+    const userId = randomUUID();
+    const first = randomUUID();
+    const second = randomUUID();
+    const profiles = redisChatterProfiles(
+      makeHashes({
+        [sanctionsKey(userId)]: {
+          [first]: String(Date.parse("2026-11-03T20:10:00.000Z")),
+          [second]: String(Date.parse("2026-11-03T21:00:00.000Z")),
+        },
+      }),
+    );
+
+    expect(await profiles.sanctionsOf(userId)).toEqual([
+      { channelId: first, expiresAt: new Date("2026-11-03T20:10:00.000Z") },
+      { channelId: second, expiresAt: new Date("2026-11-03T21:00:00.000Z") },
+    ]);
+  });
+
+  it("ne lit aucune sanction pour un chatter jamais sanctionné", async () => {
+    expect(await redisChatterProfiles(makeHashes({})).sanctionsOf(randomUUID())).toEqual([]);
+  });
+
+  it("écarte une fin de timeout illisible", async () => {
+    const userId = randomUUID();
+    const kept = randomUUID();
+    const profiles = redisChatterProfiles(
+      makeHashes({
+        [sanctionsKey(userId)]: {
+          [randomUUID()]: "demain",
+          [randomUUID()]: "x1000",
+          [randomUUID()]: "1000x",
+          [kept]: "1000",
+        },
+      }),
+    );
+
+    expect(await profiles.sanctionsOf(userId)).toEqual([
+      { channelId: kept, expiresAt: new Date(1000) },
+    ]);
+  });
+
+  it("range les sanctions sous chat:chatter:<userId>:sanctions", () => {
+    expect(sanctionsKey("u1")).toBe("chat:chatter:u1:sanctions");
   });
 });

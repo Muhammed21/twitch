@@ -32,6 +32,7 @@ const listDirectory = (rooms: readonly RoomState[]): RoomDirectory => ({
 
 const KNOWN_CHATTERS: ChatterProfiles = {
   displayNameOf: async (userId) => DISPLAY_NAMES.get(userId) ?? null,
+  sanctionsOf: async () => [],
 };
 
 const startServer = async ({
@@ -381,6 +382,7 @@ describe("profil du chatter", () => {
         displayNameOf: async () => {
           throw new Error("Redis injoignable");
         },
+        sanctionsOf: async () => [],
       },
     });
     const alice = await open(ALICE);

@@ -2,7 +2,7 @@ import type { z } from "zod";
 
 import { events } from "@repo/contracts";
 
-import type { LocalViewWriter } from "./ports.ts";
+import type { LocalViewWriter, SanctionedSockets } from "./ports.ts";
 import type { RoomRegistry } from "./room-registry.ts";
 
 export type ChatEvent = {
@@ -24,14 +24,17 @@ type EventContract<T> = {
 const { channelCreated } = events.channel;
 const { streamStarted, streamEnded } = events.stream;
 const { accountRegistered } = events.identity;
+const { userTimedOut } = events.moderation;
 
 export const chatEventHandlers = ({
   views,
   rooms,
+  sockets,
   log,
 }: {
   views: LocalViewWriter;
   rooms: Pick<RoomRegistry, "refresh">;
+  sockets: SanctionedSockets;
   log: ChatLog;
 }): Readonly<Record<string, ChatEventHandler>> => {
   const handle =
@@ -59,5 +62,10 @@ export const chatEventHandlers = ({
     [accountRegistered.name]: handle(accountRegistered, ({ accountId, displayName }) =>
       views.registerChatter({ userId: accountId, displayName }),
     ),
+    [userTimedOut.name]: handle(userTimedOut, async ({ userId, channelId, expiresAt }) => {
+      const sanction = { userId, channelId, expiresAt: new Date(expiresAt) };
+      await views.sanctionChatter(sanction);
+      sockets.sanction(sanction);
+    }),
   };
 };

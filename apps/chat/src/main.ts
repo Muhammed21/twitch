@@ -19,7 +19,7 @@ import { type ChatLog, startChatServer } from "./transport/chat-server.ts";
 
 const BUCKET_SWEEP_INTERVAL_MS = 10_000;
 const REVALIDATION_INTERVAL_MS = 5 * 60_000;
-const EVENT_STREAMS = ["events.channel", "events.stream", "events.identity"];
+const EVENT_STREAMS = ["events.channel", "events.stream", "events.identity", "events.moderation"];
 const CONSUMER_GROUP = "chat";
 const CLAIM_IDLE_MS = 30_000;
 const BLOCK_MS = 1000;
@@ -76,7 +76,12 @@ try {
     streams: EVENT_STREAMS,
     group: CONSUMER_GROUP,
     consumer: `${hostname()}-${process.pid}`,
-    handlers: chatEventHandlers({ views: redisLocalViewWriter(redis), rooms, log }),
+    handlers: chatEventHandlers({
+      views: redisLocalViewWriter(redis),
+      rooms,
+      sockets: server,
+      log,
+    }),
     claimIdleMs: CLAIM_IDLE_MS,
     blockMs: BLOCK_MS,
     onError: ({ stream, entryId, error }) =>

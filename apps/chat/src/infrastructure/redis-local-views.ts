@@ -14,6 +14,10 @@ export const roomKey = (channelId: string): string => `chat:room:${channelId}`;
 
 export const chatterKey = (userId: string): string => `chat:chatter:${userId}`;
 
+export const sanctionsKey = (userId: string): string => `${chatterKey(userId)}:sanctions`;
+
+const SanctionEnd = z.string().regex(/^\d+$/).transform(Number);
+
 export const toRoomState = (channelId: string, sessionId: string): RoomState => ({
   channelId,
   sessionId: sessionId === "" ? null : sessionId,
@@ -31,4 +35,9 @@ export const redisRoomDirectory = (redis: HashReader): RoomDirectory => ({
 
 export const redisChatterProfiles = (redis: HashReader): ChatterProfiles => ({
   displayNameOf: (userId) => redis.hGet(chatterKey(userId), "displayName"),
+  sanctionsOf: async (userId) =>
+    Object.entries(await redis.hGetAll(sanctionsKey(userId))).flatMap(([channelId, end]) => {
+      const parsed = SanctionEnd.safeParse(end);
+      return parsed.success ? [{ channelId, expiresAt: new Date(parsed.data) }] : [];
+    }),
 });
