@@ -23,6 +23,7 @@ const MAX_MESSAGE_SIZE = 8192;
 
 const HANDSHAKE_TIMEOUT_MS = 150;
 const IDLE_TIMEOUT_MS = 150;
+const PUBLISH_TIMEOUTS = { handshakeTimeoutMs: 2000, idleTimeoutMs: 2000 };
 
 type PublishGate = (streamKey: string) => Promise<Publication | undefined>;
 
@@ -41,14 +42,15 @@ const makePublishLog = () => {
 
 const startServer = async ({
   handshakeTimeoutMs = HANDSHAKE_TIMEOUT_MS,
+  idleTimeoutMs = IDLE_TIMEOUT_MS,
   publish = makePublishLog().accepting,
-}: { handshakeTimeoutMs?: number; publish?: PublishGate } = {}) => {
+}: { handshakeTimeoutMs?: number; idleTimeoutMs?: number; publish?: PublishGate } = {}) => {
   const messages: RtmpMessage[] = [];
   const errors: unknown[] = [];
   const server = await startRtmpServer({
     port: 0,
     handshakeTimeoutMs,
-    idleTimeoutMs: IDLE_TIMEOUT_MS,
+    idleTimeoutMs,
     limits: { maxChunkSize: 65_536, maxMessageSize: MAX_MESSAGE_SIZE, maxChunkStreams: 8 },
     randomBytes: (size) => new Uint8Array(size).fill(7),
     onMessage: (message) => messages.push(message),
@@ -295,10 +297,12 @@ describe("serveur RTMP, poignée de main (ADR 0031, §3)", () => {
 describe("serveur RTMP, commandes et publish (ADR 0031, §3)", () => {
   it("répond à la publication de ffmpeg, la soumet avec sa clé, et la termine à deleteStream", async () => {
     const publications = makePublishLog();
-    const server = await startServer({ publish: publications.accepting });
+    const server = await startServer({ ...PUBLISH_TIMEOUTS, publish: publications.accepting });
     const client = await publishThrough("deleteStream", server);
 
-    await waitFor(() => publications.entries.length === 2);
+    await waitFor(
+      () => publications.entries.length === 2 && repliesIn(client.received()).length === 5,
+    );
 
     expect(publications.entries).toEqual([
       `publish ${FFMPEG_STREAM_KEY}`,
@@ -321,7 +325,7 @@ describe("serveur RTMP, commandes et publish (ADR 0031, §3)", () => {
   });
 
   it("ferme la connexion d'une clé refusée, sans annoncer de publication, et compte le rejet", async () => {
-    const server = await startServer({ publish: async () => undefined });
+    const server = await startServer({ ...PUBLISH_TIMEOUTS, publish: async () => undefined });
     const client = await publishThrough("publish", server);
 
     expect(await client.closed).toBe(true);
@@ -331,7 +335,7 @@ describe("serveur RTMP, commandes et publish (ADR 0031, §3)", () => {
 
   it("termine la publication d'un client qui coupe brutalement la connexion", async () => {
     const publications = makePublishLog();
-    const server = await startServer({ publish: publications.accepting });
+    const server = await startServer({ ...PUBLISH_TIMEOUTS, publish: publications.accepting });
     const client = await publishThrough("publish", server);
     await waitFor(() => publications.entries.length === 1);
 
@@ -348,6 +352,7 @@ describe("serveur RTMP, commandes et publish (ADR 0031, §3)", () => {
     const publications = makePublishLog();
     const asked: Array<() => void> = [];
     const server = await startServer({
+      ...PUBLISH_TIMEOUTS,
       publish: async (streamKey) => {
         await new Promise<void>((resolve) => {
           asked.push(resolve);
@@ -369,9 +374,35 @@ describe("serveur RTMP, commandes et publish (ADR 0031, §3)", () => {
     ]);
   });
 
+  it("ne lit plus la connexion tant que la clé n'a pas de réponse", async () => {
+    const asked: Array<() => void> = [];
+    const server = await startServer({
+      ...PUBLISH_TIMEOUTS,
+      publish: async (streamKey) => {
+        await new Promise<void>((resolve) => {
+          asked.push(resolve);
+        });
+        return makePublishLog().accepting(streamKey);
+      },
+    });
+    const client = await publishThrough("publish", server);
+    await waitFor(() => asked.length === 1);
+
+    client.socket.write(
+      makeChunk({ fmt: 0, chunkStreamId: 9, length: MAX_MESSAGE_SIZE + 1, typeId: 9, streamId: 1 }),
+    );
+    await sleep(50);
+    const whileAsking = server.stats().rejections;
+    asked.forEach((grant) => grant());
+
+    expect(whileAsking).toEqual(NO_REJECTION);
+    expect(await client.closed).toBe(true);
+    expect(server.stats().rejections).toEqual({ ...NO_REJECTION, message_too_large: 1 });
+  });
+
   it("refuse un second publish sur la même connexion", async () => {
     const publications = makePublishLog();
-    const server = await startServer({ publish: publications.accepting });
+    const server = await startServer({ ...PUBLISH_TIMEOUTS, publish: publications.accepting });
     const client = await publishThrough("publish", server);
     await waitFor(() => publications.entries.length === 1);
 
@@ -386,7 +417,7 @@ describe("serveur RTMP, commandes et publish (ADR 0031, §3)", () => {
   });
 
   it("ferme la connexion sur une commande mal formée et compte le rejet", async () => {
-    const server = await startServer();
+    const server = await startServer(PUBLISH_TIMEOUTS);
     const client = await publishThrough("connect", server);
 
     await waitFor(() => repliesIn(client.received()).length === 3);
@@ -404,6 +435,7 @@ describe("serveur RTMP, commandes et publish (ADR 0031, §3)", () => {
   it("ferme la connexion et signale l'erreur quand la vérification de la clé échoue", async () => {
     const failure = new Error("base injoignable");
     const server = await startServer({
+      ...PUBLISH_TIMEOUTS,
       publish: async () => {
         throw failure;
       },
@@ -418,6 +450,7 @@ describe("serveur RTMP, commandes et publish (ADR 0031, §3)", () => {
   it("signale l'erreur d'une fin de publication qui échoue", async () => {
     const failure = new Error("base injoignable");
     const server = await startServer({
+      ...PUBLISH_TIMEOUTS,
       publish: async () => ({
         end: async () => {
           throw failure;

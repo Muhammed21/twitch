@@ -134,10 +134,12 @@ export const startRtmpServer = async ({
         reject(socket, "publish_refused");
         return;
       }
+      socket.pause();
       const asked = await publish(streamKey).then(
         (publication) => ok(publication),
         (error: unknown) => err(error),
       );
+      socket.resume();
       if (!asked.ok) {
         onError(asked.error);
         reject(socket, "publish_failed");
