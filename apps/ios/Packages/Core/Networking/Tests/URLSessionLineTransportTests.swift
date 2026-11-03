@@ -33,7 +33,7 @@ private func streamingSession() -> URLSession {
 
 @Suite("Transport HTTP ligne à ligne sur URLSession")
 struct URLSessionLineTransportTests {
-  @Test("rend le statut puis les lignes reçues, vides comprises, sans fin de ligne ; une ligne illisible est vide")
+  @Test("rend le statut puis les lignes reçues, vides comprises, sans fin de ligne ; un octet illisible devient U+FFFD")
   func streamsLines() async throws {
     let transport = URLSessionLineTransport(session: streamingSession())
 
@@ -46,6 +46,6 @@ struct URLSessionLineTransportTests {
     let lines = try await response.lines.reduce(into: [String]()) { $0.append($1) }
 
     #expect(response.status == 200)
-    #expect(lines == ["accept: text/event-stream", "event: status", "data: x", "", "", "data: fin"])
+    #expect(lines == ["accept: text/event-stream", "event: status", "data: x", "", "\u{FFFD}", "data: fin"])
   }
 }

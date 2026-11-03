@@ -17,6 +17,7 @@ public protocol HTTPLineTransport: Sendable {
 public struct URLSessionLineTransport: HTTPLineTransport {
   private static let newline = UInt8(ascii: "\n")
   private static let carriageReturn = UInt8(ascii: "\r")
+  private static let replacement: Unicode.Scalar = "\u{FFFD}"
 
   private let session: URLSession
 
@@ -57,6 +58,11 @@ public struct URLSessionLineTransport: HTTPLineTransport {
   }
 
   private static func text(of line: [UInt8]) -> String {
-    String(bytes: line.last == carriageReturn ? line.dropLast() : line[...], encoding: .utf8) ?? ""
+    let bytes = line.last == carriageReturn ? line.dropLast() : line[...]
+    var scalars = String.UnicodeScalarView()
+    _ = transcode(bytes.makeIterator(), from: UTF8.self, to: UTF32.self, stoppingOnError: false) { unit in
+      scalars.append(Unicode.Scalar(unit) ?? replacement)
+    }
+    return String(scalars)
   }
 }
