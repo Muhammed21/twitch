@@ -4,11 +4,22 @@ import { describe, expect, it, onTestFinished } from "vitest";
 import { err } from "@repo/result";
 
 import { createMessageSender } from "../application/message-sender.ts";
+import type { ChatterProfiles } from "../application/ports.ts";
 import { createRoomRegistry } from "../application/room-registry.ts";
 import { startChatServer, type TokenVerifier } from "./chat-server.ts";
 import { makeTokenAuthority } from "./testing/tokens.ts";
 
-const startServer = async () => {
+const deferred = <T>() => {
+  const settle: { resolve: (value: T) => void } = { resolve: () => undefined };
+  const promise = new Promise<T>((resolve) => {
+    settle.resolve = resolve;
+  });
+  return { promise, resolve: (value: T) => settle.resolve(value) };
+};
+
+const ALICE: ChatterProfiles = { displayNameOf: async () => "Alice" };
+
+const startServer = async ({ chatters = ALICE }: { chatters?: ChatterProfiles } = {}) => {
   const authority = await makeTokenAuthority();
   const verifier = authority.verifier();
   const expired = new Set<string>();
@@ -28,7 +39,7 @@ const startServer = async () => {
     port: 0,
     verifier: controlled,
     log: () => undefined,
-    chatters: { displayNameOf: async () => "Alice" },
+    chatters,
     rooms: createRoomRegistry({ find: async () => undefined }),
     messages: createMessageSender(),
   });
@@ -60,6 +71,8 @@ const startServer = async () => {
 
   return {
     server,
+    sign: authority.sign,
+    connectWith,
     connectAs,
     connectWithToken,
     expire: (token: string) => expired.add(token),
@@ -130,6 +143,30 @@ describe("révocation de session", () => {
     server.revokeSessions(["sid-a", "sid-b"]);
 
     expect(await Promise.all(ends)).toEqual([STOPPED, STOPPED]);
+  });
+});
+
+describe("révocation pendant le handshake", () => {
+  it("refuse la connexion d'une session révoquée pendant la lecture de son profil", async () => {
+    const reading = deferred<void>();
+    const profile = deferred<string>();
+    const { server, sign, connectWith, revoke } = await startServer({
+      chatters: {
+        displayNameOf: () => {
+          reading.resolve();
+          return profile.promise;
+        },
+      },
+    });
+    const token = await sign({ sid: "sid-racing" });
+    const connecting = connectWith(token);
+    await reading.promise;
+
+    revoke(token);
+    server.revokeSessions(["sid-racing"]);
+    profile.resolve("Alice");
+
+    await expect(connecting).rejects.toThrow("session_revoked");
   });
 });
 

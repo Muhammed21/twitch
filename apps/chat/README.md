@@ -37,7 +37,7 @@ Chaque handshake est journalisé avec son statut seul, jamais l'en-tête `Author
 
 ### Révocation et revalidation
 
-Une socket acceptée garde le `sid` et le jeton de son handshake, et rejoint le salon interne `sid:<sid>`.
+Une socket acceptée garde le `sid` et le jeton de son handshake, et rejoint le salon interne `sid:<sid>`. Une fois dans ce salon, son jeton est vérifié une seconde fois : une session révoquée pendant la lecture du profil est refusée avec l'erreur `session_revoked`.
 
 - **Révocation** (ADR 0026 §3) : le chat s'abonne au canal Pub/Sub `identity.session.revoked` par un client Redis dédié. Pour chaque `sid` publié par l'API, toutes ses sockets reçoivent `session:revoked { action: "stop" }`, puis sont fermées. Les sockets des autres `sid` ne sont pas touchées. Un message hors contrat est journalisé (`révocation hors contrat`) et ignoré.
 - **Revalidation** toutes les 5 minutes (ADR 0004 §4) : le jeton de chaque socket est vérifié de nouveau. Expiré ou invalide → `session:revoked { action: "refresh_and_reconnect" }` ; `sid` révoqué → `{ action: "stop" }`. Dans les deux cas, la socket est ensuite fermée. Ce filet rattrape une révocation publiée pendant une coupure du Pub/Sub. Le refus d'un compte suspendu arrive avec la suspension de compte.

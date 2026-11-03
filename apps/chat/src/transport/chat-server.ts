@@ -131,6 +131,11 @@ export const startChatServer = async ({
     }
     socket.data = session;
     await socket.join(sessionRoomOf(session.credentials.sid));
+    const stillValid = await verifier.verify(session.credentials.token);
+    if (!stillValid.ok) {
+      next(new Error("session_revoked"));
+      return;
+    }
     next();
   };
   io.use((socket, next) => {
