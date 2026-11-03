@@ -24,6 +24,12 @@ let package = Package(
       path: "Domain/Sources",
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
+    .testTarget(
+      name: "DomainTests",
+      dependencies: ["Domain"],
+      path: "Domain/Tests",
+      swiftSettings: [.swiftLanguageMode(.v6)]
+    ),
     .target(
       name: "Networking",
       dependencies: [
