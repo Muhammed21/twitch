@@ -237,6 +237,15 @@ Critères :
 - un échec de Redis ou de la base est journalisé, et l'échantillonnage suivant repart normalement ; l'arrêt de l'API arrête l'échantillonnage ;
 - aucun event n'est publié et l'outbox de `stream` ne reçoit rien.
 
+**PR 12e — Limite de débit du heartbeat de présence.** `POST /v1/channels/{channelId}/presence` est limité dans Redis, par fenêtre fixe d'une minute : 4 heartbeats par couple (IP, chaîne), soit un toutes les 15 s, et 60 par IP toutes chaînes confondues (ADR 0042). L'IP du client est l'adresse de la connexion, ou le saut de `X-Forwarded-For` qu'ajoute le plus lointain des `API_TRUSTED_PROXY_COUNT` proxys de confiance. Le limiteur de `platform/` est générique : les autres routes publiques y prennent leur limite, avec leur plafond et leur fenêtre.
+
+Critères :
+
+- le cinquième heartbeat d'une IP sur une chaîne dans la minute, ou le soixante et unième d'une IP, répond `429` RFC 9457 avec `Retry-After` jusqu'à la fin de la fenêtre, et n'enregistre rien ; un viewer connecté est limité de même ;
+- `X-Forwarded-For` est ignoré quand `API_TRUSTED_PROXY_COUNT` vaut `0` ; un saut forgé par le client n'est jamais lu ;
+- `API_TRUSTED_PROXY_COUNT` absente ou invalide → arrêt au démarrage en nommant la variable ;
+- le compteur s'incrémente et expire en une commande Redis atomique, partagée par toutes les instances.
+
 **PR 13 — `moderation` minimal (jalon A4).** Un use-case : le propriétaire met un utilisateur en timeout sur sa chaîne. Attribution `banned` avec `expiresAt` dans `authz`, entrée d'audit et `moderation.user.timed_out` dans la **même transaction**, publiée sur Redis Streams pour le chat.
 _Tests d'abord_ : un non-propriétaire ne peut pas mettre en timeout ; le timeout expire seul ; l'event est publié même si le relais redémarre entre le commit et l'envoi ; audit écrit avec l'acteur humain.
 

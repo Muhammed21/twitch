@@ -53,6 +53,7 @@ Chaque page de `docs/`, une ligne chacune : titre, [mode](README.md#carte), stat
 - [0039 — Les pages d'authentification sont servies par l'API, en HTML sans JavaScript](adr/0039-pages-d-authentification-servies-par-l-api-en-html-sans-javascript.md) — _explanation · Proposé_ — Comment les écrans d'authentification des captures s'affichent-ils, et que demandent-ils à l'API ?
 - [0040 — L'illustration de « You're All Set! » est reprise telle quelle](adr/0040-illustration-inscription-terminee-reprise-telle-quelle.md) — _explanation · Proposé_ — L'écran « You're All Set! » montre-t-il l'illustration de Twitch, et d'où vient-elle ?
 - [0041 — Les outbox de `channel` et `stream` sont un historique lisible pour reconstruire une projection](adr/0041-les-outbox-historique-lisible-pour-reconstruire-une-projection.md) — _explanation · Accepté_ — Une projection peut-elle se reconstruire depuis les outbox d'autres contextes, avec quel rôle, et où vit le code qui les lit ?
+- [0042 — L'IP du client se lit par un nombre de proxys de confiance, et la limite de débit HTTP compte dans Redis par fenêtre fixe](adr/0042-ip-du-client-par-un-nombre-de-proxys-de-confiance-et-limite-de-debit-redis.md) — _explanation · Accepté_ — Comment l'API lit-elle l'IP du client sans croire un en-tête forgé, et comment compte-t-elle les requêtes d'une IP ?
 - [Décisions d'architecture (ADR)](adr/README.md) — _reference_ — Registre des décisions structurantes du projet. Format MADR.
 
 ## Spikes — recherche bornée

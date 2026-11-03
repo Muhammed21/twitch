@@ -45,6 +45,7 @@ const app = configureApp(
         video: { provider: "fake" },
         consumerRedis: createStreamConsumerRedis(),
         presenceRedis: createPresenceRedis(),
+        trustedProxyCount: 0,
       },
       moderation: {
         prisma: createContextClient({
