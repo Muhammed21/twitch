@@ -2,8 +2,18 @@ import { randomBytes, randomUUID } from "node:crypto";
 
 import { describe, expect, it } from "vitest";
 
-import { type IngestSession, streamKeyFrom, type VideoChannel } from "../../domain/ingest.ts";
+import {
+  type IngestSession,
+  type LifecycleEvent,
+  lifecycleEvent,
+  streamKeyFrom,
+  type VideoChannel,
+} from "../../domain/ingest.ts";
 import type { VideoStore } from "../control-plane.ts";
+
+export type InspectableVideoStore = VideoStore & {
+  readonly eventsOf: (sessionId: string) => Promise<readonly LifecycleEvent[]>;
+};
 
 const STARTED_AT = new Date("2026-11-03T20:00:00.000Z");
 const ENDED_AT = new Date("2026-11-03T21:00:00.000Z");
@@ -28,15 +38,15 @@ const idleSession = (channelId: string): IngestSession => ({
   channelId,
 });
 
-const liveSession = (session: IngestSession): IngestSession => ({
-  state: "live",
+const liveSession = (session: IngestSession) => ({
+  state: "live" as const,
   id: session.id,
   channelId: session.channelId,
   startedAt: STARTED_AT,
 });
 
-const endedSession = (session: IngestSession): IngestSession => ({
-  state: "ended",
+const endedSession = (session: IngestSession) => ({
+  state: "ended" as const,
   id: session.id,
   channelId: session.channelId,
   startedAt: STARTED_AT,
@@ -48,7 +58,7 @@ export const describeVideoStoreContract = ({
   store,
 }: {
   name: string;
-  store: () => VideoStore;
+  store: () => InspectableVideoStore;
 }) => {
   describe(`dépôt du plan de contrôle vidéo : ${name}`, () => {
     it("retrouve un canal enregistré par son identifiant et par son identifiant externe", async () => {
@@ -88,9 +98,9 @@ export const describeVideoStoreContract = ({
       if (idle === undefined || live === undefined || ended === undefined) {
         throw new Error("sessions manquantes");
       }
-      await videoStore.saveSession(idle);
-      await videoStore.saveSession(liveSession(live));
-      await videoStore.saveSession(endedSession(ended));
+      await videoStore.saveSession(idle, []);
+      await videoStore.saveSession(liveSession(live), []);
+      await videoStore.saveSession(endedSession(ended), []);
 
       const ours = (await videoStore.liveSessions()).filter(({ channelId }) =>
         channels.some(({ id }) => id === channelId),
@@ -107,12 +117,31 @@ export const describeVideoStoreContract = ({
       const liveOf = async () =>
         (await videoStore.liveSessions()).filter(({ id }) => id === session.id);
 
-      await videoStore.saveSession(session);
+      await videoStore.saveSession(session, []);
       expect(await liveOf()).toEqual([]);
-      await videoStore.saveSession(liveSession(session));
+      await videoStore.saveSession(liveSession(session), []);
       expect(await liveOf()).toEqual([liveSession(session)]);
-      await videoStore.saveSession(endedSession(session));
+      await videoStore.saveSession(endedSession(session), []);
       expect(await liveOf()).toEqual([]);
+    });
+
+    it("enregistre les événements d'une session avec elle, et rien pour une session sans événement", async () => {
+      const videoStore = store();
+      const [channel, otherChannel] = [makeVideoChannel(), makeVideoChannel()];
+      await videoStore.saveChannel(channel);
+      await videoStore.saveChannel(otherChannel);
+      const session = idleSession(channel.id);
+      const other = liveSession(idleSession(otherChannel.id));
+      const started = lifecycleEvent({ id: randomUUID(), session: liveSession(session) });
+      const ended = lifecycleEvent({ id: randomUUID(), session: endedSession(session) });
+
+      await videoStore.saveSession(session, []);
+      expect(await videoStore.eventsOf(session.id)).toEqual([]);
+      await videoStore.saveSession(other, [lifecycleEvent({ id: randomUUID(), session: other })]);
+      await videoStore.saveSession(liveSession(session), [started]);
+      await videoStore.saveSession(endedSession(session), [ended]);
+
+      expect(await videoStore.eventsOf(session.id)).toEqual([started, ended]);
     });
   });
 };

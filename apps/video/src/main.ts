@@ -1,17 +1,33 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import { once } from "node:events";
 
+import { Pool } from "pg";
+
 import { createContextClient } from "@repo/db";
 
 import { loadEnv } from "./config/env.ts";
 import { createControlPlane } from "./control-plane/control-plane.ts";
 import { startHttpServer } from "./http/http-server.ts";
+import { startRelayLoop } from "./outbox/relay-loop.ts";
+import { relayVideoOutbox } from "./outbox/video-outbox-relay.ts";
 import { prismaVideoStore } from "./persistence/prisma-video-store.ts";
 import { streamKeyCipher } from "./persistence/stream-key-cipher.ts";
 
-const log = (msg: string, fields: Readonly<Record<string, unknown>> = {}): void => {
+const log = (
+  msg: string,
+  fields: Readonly<Record<string, unknown>> = {},
+  level: "info" | "error" = "info",
+): void => {
   process.stdout.write(
-    `${JSON.stringify({ time: new Date().toISOString(), level: "info", msg, ...fields })}\n`,
+    `${JSON.stringify({ time: new Date().toISOString(), level, msg, ...fields })}\n`,
+  );
+};
+
+const logRelayFailure = (error: unknown): void => {
+  log(
+    "relais de l'outbox vidéo en échec",
+    { error: error instanceof Error ? error.message : String(error) },
+    "error",
   );
 };
 
@@ -31,11 +47,25 @@ try {
       randomBytes,
     }),
   });
+  const relayPool = new Pool({ connectionString: config.outboxRelay.databaseUrl });
+  relayPool.on("error", logRelayFailure);
+  const relay = startRelayLoop({
+    intervalMs: config.outboxRelay.intervalMs,
+    relay: relayVideoOutbox({
+      pool: relayPool,
+      webhook: config.webhook,
+      now: () => new Date(),
+      random: Math.random,
+    }),
+    onError: logRelayFailure,
+  });
   log("service vidéo démarré", { httpPort: server.port });
 
   await Promise.race([once(process, "SIGTERM"), once(process, "SIGINT")]);
   server.startDraining();
   await server.close();
+  await relay.stop();
+  await relayPool.end();
   await prisma.$disconnect();
   log("service vidéo arrêté");
 } catch (error) {

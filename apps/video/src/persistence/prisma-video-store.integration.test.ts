@@ -1,14 +1,17 @@
 import { randomBytes, randomUUID } from "node:crypto";
 
 import { afterAll, describe, expect, it } from "vitest";
+import { z } from "zod";
 
 import { createContextClient } from "@repo/db";
+import { StreamEnded, StreamStarted } from "@repo/video-contract";
 
-import type { VideoStore } from "../control-plane/control-plane.ts";
 import {
-  makeVideoChannel,
   describeVideoStoreContract,
+  type InspectableVideoStore,
+  makeVideoChannel,
 } from "../control-plane/testing/video-store.contract.ts";
+import { lifecycleEvent } from "../domain/ingest.ts";
 import { prismaVideoStore } from "./prisma-video-store.ts";
 import { streamKeyCipher } from "./stream-key-cipher.ts";
 
@@ -18,7 +21,17 @@ const cipher = streamKeyCipher({ key: randomBytes(32) });
 
 const savedChannels: string[] = [];
 
-const store = (): VideoStore => {
+const StoredEvent = z.union([StreamStarted, StreamEnded]);
+
+const eventsOf = async (sessionId: string) =>
+  (
+    await prisma.videoOutbox.findMany({
+      where: { payload: { path: ["sessionId"], equals: sessionId } },
+      orderBy: { occurredAt: "asc" },
+    })
+  ).map(({ payload }) => StoredEvent.parse(payload));
+
+const store = (): InspectableVideoStore => {
   const prismaStore = prismaVideoStore({ prisma, cipher });
   return {
     ...prismaStore,
@@ -26,11 +39,14 @@ const store = (): VideoStore => {
       savedChannels.push(channel.id);
       await prismaStore.saveChannel(channel);
     },
+    eventsOf,
   };
 };
 
 afterAll(async () => {
   const ofSavedChannels = { where: { channelId: { in: savedChannels } } };
+  await prisma.$executeRaw`
+    DELETE FROM video."VideoOutbox" WHERE "payload"->>'channelId' = ANY(${savedChannels})`;
   await prisma.videoIngestSession.deleteMany(ofSavedChannels);
   await prisma.videoStreamKey.deleteMany(ofSavedChannels);
   await prisma.videoChannel.deleteMany({ where: { id: { in: savedChannels } } });
@@ -75,15 +91,15 @@ describe("sessions d'ingest dans le schéma video", () => {
     const channel = makeVideoChannel();
     await store().saveChannel(channel);
     const id = randomUUID();
-    await store().saveSession({ state: "live", id, channelId: channel.id, startedAt: STARTED_AT });
+    await store().saveSession(
+      { state: "live", id, channelId: channel.id, startedAt: STARTED_AT },
+      [],
+    );
 
-    await store().saveSession({
-      state: "ended",
-      id,
-      channelId: channel.id,
-      startedAt: STARTED_AT,
-      endedAt: ENDED_AT,
-    });
+    await store().saveSession(
+      { state: "ended", id, channelId: channel.id, startedAt: STARTED_AT, endedAt: ENDED_AT },
+      [],
+    );
 
     expect(
       await prisma.videoIngestSession.findUnique({
@@ -117,7 +133,7 @@ describe("sessions d'ingest dans le schéma video", () => {
       channelId: id,
       startedAt: STARTED_AT,
     }));
-    await Promise.all(sessions.map((session) => store().saveSession(session)));
+    await Promise.all(sessions.map((session) => store().saveSession(session, [])));
 
     const listed = await prismaVideoStore({
       prisma,
@@ -129,23 +145,36 @@ describe("sessions d'ingest dans le schéma video", () => {
     expect(new Set(listed.map(({ id }) => id)).size).toBe(listed.length);
   });
 
-  it("refuse une seconde session live sur un même canal", async () => {
+  it("refuse une seconde session live sur un même canal, sans écrire son événement", async () => {
     const channel = makeVideoChannel();
     await store().saveChannel(channel);
-    await store().saveSession({
-      state: "live",
-      id: randomUUID(),
+    const liveOn = (id: string) => ({
+      state: "live" as const,
+      id,
       channelId: channel.id,
       startedAt: STARTED_AT,
     });
+    await store().saveSession(liveOn(randomUUID()), []);
+    const second = liveOn(randomUUID());
 
     await expect(
-      store().saveSession({
-        state: "live",
-        id: randomUUID(),
-        channelId: channel.id,
-        startedAt: STARTED_AT,
-      }),
+      store().saveSession(second, [lifecycleEvent({ id: randomUUID(), session: second })]),
     ).rejects.toThrow(/Unique constraint|unique/i);
+    expect(await eventsOf(second.id)).toEqual([]);
+  });
+
+  it("n'écrit pas la session quand son événement est refusé par la base", async () => {
+    const channel = makeVideoChannel();
+    await store().saveChannel(channel);
+    const first = { state: "idle" as const, id: randomUUID(), channelId: channel.id };
+    const event = lifecycleEvent({
+      id: randomUUID(),
+      session: { ...first, state: "live", startedAt: STARTED_AT },
+    });
+    await store().saveSession(first, [event]);
+    const second = { state: "idle" as const, id: randomUUID(), channelId: channel.id };
+
+    await expect(store().saveSession(second, [event])).rejects.toThrow(/VideoOutbox_pkey|unique/i);
+    expect(await prisma.videoIngestSession.findUnique({ where: { id: second.id } })).toBeNull();
   });
 });

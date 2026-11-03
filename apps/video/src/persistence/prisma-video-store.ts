@@ -1,9 +1,15 @@
 import { z } from "zod";
 
-import { collectByKeyset, type createContextClient, type KeysetPage } from "@repo/db";
+import {
+  appendToOutbox,
+  collectByKeyset,
+  type createContextClient,
+  type KeysetPage,
+  type TableRef,
+} from "@repo/db";
 
 import type { VideoStore } from "../control-plane/control-plane.ts";
-import type { IngestSession, VideoChannel } from "../domain/ingest.ts";
+import type { IngestSession, LifecycleEvent, VideoChannel } from "../domain/ingest.ts";
 import type { StreamKeyCipher } from "./stream-key-cipher.ts";
 
 export type VideoPrisma = ReturnType<typeof createContextClient>;
@@ -11,6 +17,18 @@ export type VideoPrisma = ReturnType<typeof createContextClient>;
 type LiveSession = Extract<IngestSession, { state: "live" }>;
 
 const LIVE_SESSIONS_PAGE_SIZE = 100;
+
+const EVENT_VERSION = 1;
+
+export const VIDEO_OUTBOX: TableRef = { schema: "video", table: "VideoOutbox" };
+
+const outboxEventOf = (event: LifecycleEvent) => ({
+  id: event.id,
+  name: event.type,
+  version: EVENT_VERSION,
+  payload: event,
+  occurredAt: new Date(event.occurredAt),
+});
 
 const ChannelId = z.uuid();
 
@@ -83,12 +101,17 @@ export const prismaVideoStore = ({
         fetchPage: liveSessionsPage,
         keyOf: ({ id }) => id,
       }),
-    saveSession: async (session) => {
+    saveSession: async (session, events) => {
       const data = { state: session.state, ...sessionTimes(session) };
-      await prisma.videoIngestSession.upsert({
-        where: { id: session.id },
-        create: { id: session.id, channelId: session.channelId, ...data },
-        update: data,
+      await prisma.$transaction(async (tx) => {
+        await tx.videoIngestSession.upsert({
+          where: { id: session.id },
+          create: { id: session.id, channelId: session.channelId, ...data },
+          update: data,
+        });
+        for (const event of events) {
+          await appendToOutbox(tx, { outbox: VIDEO_OUTBOX, event: outboxEventOf(event) });
+        }
       });
     },
   };

@@ -2,6 +2,8 @@ import { err, ok, type Result } from "@repo/result";
 
 import {
   type IngestSession,
+  type LifecycleEvent,
+  lifecycleEvent,
   rotateStreamKey as withStreamKey,
   stop,
   streamKeyFrom,
@@ -15,7 +17,7 @@ export interface VideoStore {
   findChannelByExternalId(externalId: string): Promise<VideoChannel | undefined>;
   saveChannel(channel: VideoChannel): Promise<void>;
   liveSessions(): Promise<readonly LiveSession[]>;
-  saveSession(session: IngestSession): Promise<void>;
+  saveSession(session: IngestSession, events: readonly LifecycleEvent[]): Promise<void>;
 }
 
 export type StreamCredentials = { readonly streamKey: string; readonly ingestUrl: string };
@@ -96,7 +98,7 @@ export const createControlPlane = ({
       if (!ended.ok) {
         return ended;
       }
-      await store.saveSession(ended.value);
+      await store.saveSession(ended.value, [lifecycleEvent({ id: newId(), session: ended.value })]);
       return ok(undefined);
     },
 

@@ -99,12 +99,14 @@ const settle = async ({
   table,
   row,
   publish,
+  backoff,
   at,
 }: {
   client: PoolClient;
   table: string;
   row: OutboxRow;
   publish: OutboxPublisher;
+  backoff: (attempts: number) => number;
   at: Date;
 }): Promise<string | undefined> => {
   const failure = await failureOf(publish, toEvent(row));
@@ -119,7 +121,7 @@ const settle = async ({
                 "nextAttemptAt" = ($2::timestamptz AT TIME ZONE 'UTC'),
                 "lastError" = $3
           WHERE "id" = $1`,
-        [row.id, new Date(at.getTime() + backoffDelay(row.attempts + 1)).toISOString(), failure],
+        [row.id, new Date(at.getTime() + backoff(row.attempts + 1)).toISOString(), failure],
       ));
   return failure;
 };
@@ -128,12 +130,14 @@ export const relayOutboxBatch = async ({
   pool,
   outbox,
   publish,
+  backoff = backoffDelay,
   batchSize = 100,
   now = () => new Date(),
 }: {
   pool: Pool;
   outbox: TableRef;
   publish: OutboxPublisher;
+  backoff?: (attempts: number) => number;
   batchSize?: number;
   now?: () => Date;
 }): Promise<{ published: number; failed: number }> => {
@@ -155,7 +159,7 @@ export const relayOutboxBatch = async ({
     );
     const failures: (string | undefined)[] = [];
     for (const row of rows) {
-      failures.push(await settle({ client, table, row, publish, at }));
+      failures.push(await settle({ client, table, row, publish, backoff, at }));
     }
     await client.query("COMMIT");
     const failed = failures.filter((failure) => failure !== undefined).length;
