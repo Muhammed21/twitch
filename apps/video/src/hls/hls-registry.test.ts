@@ -3,7 +3,13 @@ import { describe, expect, it } from "vitest";
 import { FFMPEG_FRAGMENTED_MP4, makeFragment } from "../segmenter/testing/fmp4-fixtures.ts";
 import { createHlsRegistry } from "./hls-registry.ts";
 
-const OPTIONS = { maxBoxSize: 1 << 20, targetSeconds: 2, capacity: 6, maxSegmentBytes: 1 << 20 };
+const OPTIONS = {
+  maxBoxSize: 1 << 20,
+  targetSeconds: 2,
+  targetDuration: 4,
+  capacity: 6,
+  maxSegmentBytes: 1 << 20,
+};
 
 describe("registre des flux HLS", () => {
   it("suit le flux d'une session ouverte, nourri par morceaux, jusqu'à sa fin", () => {

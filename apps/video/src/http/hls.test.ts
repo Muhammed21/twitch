@@ -16,6 +16,7 @@ const SESSION_ID = "0b6b8e8e-3c39-4c4f-9a8e-2f1f7f6a9d10";
 const HLS_OPTIONS = {
   maxBoxSize: 1 << 20,
   targetSeconds: 2,
+  targetDuration: 4,
   capacity: 6,
   maxSegmentBytes: 1 << 20,
 };
@@ -67,7 +68,7 @@ describe("lecture HLS d'une session", () => {
       [
         "#EXTM3U",
         "#EXT-X-VERSION:7",
-        "#EXT-X-TARGETDURATION:3",
+        "#EXT-X-TARGETDURATION:4",
         "#EXT-X-MEDIA-SEQUENCE:0",
         "#EXT-X-INDEPENDENT-SEGMENTS",
         '#EXT-X-MAP:URI="init.mp4"',

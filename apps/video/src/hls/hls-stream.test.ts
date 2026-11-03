@@ -19,6 +19,7 @@ import {
 const OPTIONS: HlsStreamOptions = {
   maxBoxSize: 1 << 20,
   targetSeconds: 2,
+  targetDuration: 4,
   capacity: 6,
   maxSegmentBytes: 1 << 20,
 };
@@ -45,12 +46,16 @@ describe("flux HLS d'une session", () => {
     expect(endHlsStream(stream)).toMatchObject({ init: undefined, segments: [], ended: true });
   });
 
-  it("rend le segment d'init de ffmpeg et ses segments fermés, avec une durée cible de 3 s", () => {
+  it("rend le segment d'init de ffmpeg et ses segments fermés", () => {
     const stream = feedAll([FFMPEG_FRAGMENTED_MP4]);
 
     expect(stream.init?.bytes).toEqual(FFMPEG_FRAGMENTED_MP4.subarray(0, 1269));
     expect(stream.segments.map((segment) => segment.sequence)).toEqual([0, 1]);
-    expect(stream.targetDuration).toBe(3);
+  });
+
+  it("annonce dès l'ouverture la durée cible fixée, et la garde pour des segments plus courts", () => {
+    expect(startHlsStream(OPTIONS).targetDuration).toBe(4);
+    expect(endHlsStream(feedAll([FFMPEG_FRAGMENTED_MP4])).targetDuration).toBe(4);
   });
 
   it("ferme le dernier segment et marque la fin du live", () => {
@@ -84,7 +89,7 @@ describe("flux HLS d'une session", () => {
     expect(stream.pending).toHaveLength(10);
   });
 
-  it("garde la durée cible acquise quand le segment long sort du tampon", () => {
+  it("relève la durée cible pour un segment plus long, et la garde quand il sort du tampon", () => {
     const fragments = [3000, 2000, 2000, 2000].map((duration, index, all) =>
       makeFragment({
         trackId: 1,
@@ -95,7 +100,11 @@ describe("flux HLS d'une session", () => {
     );
 
     const stream = endHlsStream(
-      feedAll([makeInit({ tracks: [VIDEO_TRACK] }), ...fragments], { ...OPTIONS, capacity: 1 }),
+      feedAll([makeInit({ tracks: [VIDEO_TRACK] }), ...fragments], {
+        ...OPTIONS,
+        targetDuration: 2,
+        capacity: 1,
+      }),
     );
 
     expect(stream.segments.map((segment) => segment.seconds)).toEqual([2]);

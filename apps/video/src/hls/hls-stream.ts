@@ -19,7 +19,10 @@ import {
 } from "../segmenter/segmenter.ts";
 import { targetDurationFor } from "./playlist.ts";
 
-export type HlsStreamOptions = SegmenterOptions & { readonly maxBoxSize: number };
+export type HlsStreamOptions = SegmenterOptions & {
+  readonly maxBoxSize: number;
+  readonly targetDuration: number;
+};
 
 export type HlsStreamRefusal = Fmp4Refusal | "init_changed";
 
@@ -43,7 +46,7 @@ export const startHlsStream = (options: HlsStreamOptions): HlsStream => ({
   segmenter: startSegmenter({ init: BEFORE_INIT, ...options }),
   init: undefined,
   segments: [],
-  targetDuration: Math.ceil(options.targetSeconds),
+  targetDuration: options.targetDuration,
   ended: false,
 });
 

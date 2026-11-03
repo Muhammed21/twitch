@@ -30,6 +30,7 @@ const RTMP_LIMITS = { maxChunkSize: 65_536, maxMessageSize: 2 * 1024 * 1024, max
 const HLS_OPTIONS = {
   maxBoxSize: 8 * 1024 * 1024,
   targetSeconds: 2,
+  targetDuration: 6,
   capacity: 6,
   maxSegmentBytes: 32 * 1024 * 1024,
 };
