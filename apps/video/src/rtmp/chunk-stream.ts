@@ -1,6 +1,6 @@
 import { err, ok, type Result } from "@repo/result";
 
-const DEFAULT_CHUNK_SIZE = 128;
+const MIN_CHUNK_SIZE = 128;
 const SET_CHUNK_SIZE = 1;
 const EXTENDED_TIMESTAMP = 0xff_ff_ff;
 
@@ -31,7 +31,7 @@ type ChunkStream = {
   readonly typeId: number;
   readonly streamId: number;
   readonly extended: boolean;
-  readonly parts: readonly Uint8Array[];
+  readonly payload: Uint8Array;
   readonly received: number;
 };
 
@@ -49,7 +49,7 @@ type ChunkRead = {
 
 export const startDemuxer = (limits: ChunkLimits): Demuxer => ({
   limits,
-  chunkSize: DEFAULT_CHUNK_SIZE,
+  chunkSize: MIN_CHUNK_SIZE,
   streams: new Map(),
 });
 
@@ -82,7 +82,7 @@ const EMPTY_STREAM: ChunkStream = {
   typeId: 0,
   streamId: 0,
   extended: false,
-  parts: [],
+  payload: new Uint8Array(0),
   received: 0,
 };
 
@@ -107,18 +107,9 @@ const startedMessage = ({
   typeId: fmt < 2 ? view.getUint8(at + 6) : previous.typeId,
   streamId: fmt === 0 ? view.getUint32(at + 7, true) : previous.streamId,
   extended,
-  parts: [],
+  payload: new Uint8Array(0),
   received: 0,
 });
-
-const joined = (parts: readonly Uint8Array[], length: number): Uint8Array => {
-  const payload = new Uint8Array(length);
-  parts.reduce((offset, part) => {
-    payload.set(part, offset);
-    return offset + part.length;
-  }, 0);
-  return payload;
-};
 
 const chunkSizeAfter = (demuxer: Demuxer, message: RtmpMessage | undefined) => {
   if (message?.typeId !== SET_CHUNK_SIZE) {
@@ -127,7 +118,7 @@ const chunkSizeAfter = (demuxer: Demuxer, message: RtmpMessage | undefined) => {
   const padded = new Uint8Array(4);
   padded.set(message.payload.subarray(0, 4));
   const value = new DataView(padded.buffer).getUint32(0) & 0x7f_ff_ff_ff;
-  return value < 1 || value > demuxer.limits.maxChunkSize
+  return value < MIN_CHUNK_SIZE || value > demuxer.limits.maxChunkSize
     ? err<ChunkRefusal>("invalid_chunk_size")
     : ok(value);
 };
@@ -163,18 +154,20 @@ const readChunk = (
     return ok(undefined);
   }
   const timestamp = extended ? view.getUint32(headerEnd) : field;
-  const stream =
+  const started =
     fmt === 3 && previous.received > 0
       ? previous
       : startedMessage({ fmt, view, at, previous, extended, field: timestamp });
-  if (stream.length > demuxer.limits.maxMessageSize) {
+  if (started.length > demuxer.limits.maxMessageSize) {
     return err("message_too_large");
   }
+  const stream =
+    started.received === 0 ? { ...started, payload: new Uint8Array(started.length) } : started;
   const size = Math.min(demuxer.chunkSize, stream.length - stream.received);
   if (dataStart + size > input.length) {
     return ok(undefined);
   }
-  const parts = [...stream.parts, input.slice(dataStart, dataStart + size)];
+  stream.payload.set(input.subarray(dataStart, dataStart + size), stream.received);
   const received = stream.received + size;
   const message =
     received === stream.length
@@ -183,7 +176,7 @@ const readChunk = (
           typeId: stream.typeId,
           streamId: stream.streamId,
           timestamp: stream.timestamp,
-          payload: joined(parts, stream.length),
+          payload: stream.payload,
         }
       : undefined;
   const chunkSize = chunkSizeAfter(demuxer, message);
@@ -192,7 +185,9 @@ const readChunk = (
   }
   const streams = new Map(demuxer.streams).set(
     chunkStreamId,
-    message === undefined ? { ...stream, parts, received } : { ...stream, parts: [], received: 0 },
+    message === undefined
+      ? { ...stream, received }
+      : { ...stream, payload: new Uint8Array(0), received: 0 },
   );
   return ok({
     demuxer: { ...demuxer, chunkSize: chunkSize.value, streams },
@@ -215,20 +210,19 @@ export const demuxChunks = ({
   },
   ChunkRefusal
 > => {
-  let state = { demuxer, consumed: 0, messages: [] as readonly RtmpMessage[] };
+  const messages: RtmpMessage[] = [];
+  let state = { demuxer, consumed: 0 };
   for (;;) {
     const read = readChunk(state.demuxer, input, state.consumed);
     if (!read.ok) {
       return read;
     }
     if (read.value === undefined) {
-      return ok(state);
+      return ok({ ...state, messages });
     }
-    const { message } = read.value;
-    state = {
-      demuxer: read.value.demuxer,
-      consumed: read.value.next,
-      messages: message === undefined ? state.messages : [...state.messages, message],
-    };
+    if (read.value.message !== undefined) {
+      messages.push(read.value.message);
+    }
+    state = { demuxer: read.value.demuxer, consumed: read.value.next };
   }
 };

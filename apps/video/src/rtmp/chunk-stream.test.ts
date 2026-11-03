@@ -298,6 +298,7 @@ describe("plafonds du démultiplexeur (ADR 0031, §3)", () => {
 
   it.each([
     ["nulle", [0, 0, 0, 0]],
+    ["sous les 128 octets du départ", [0, 0, 0, 127]],
     ["au-delà du plafond", [0, 1, 0, 1]],
   ])("refuse une taille de chunk %s", (_, value) => {
     const chunk = makeChunk({
@@ -313,7 +314,7 @@ describe("plafonds du démultiplexeur (ADR 0031, §3)", () => {
 
   it.each([
     ["plafond, en ignorant le bit de poids fort", [0x80, 1, 0, 0]],
-    ["d'un octet", [0, 0, 0, 1]],
+    ["de 128 octets", [0, 0, 0, 128]],
   ])("accepte une taille de chunk %s", (_, value) => {
     const chunk = makeChunk({
       fmt: 0,
@@ -324,6 +325,23 @@ describe("plafonds du démultiplexeur (ADR 0031, §3)", () => {
     });
 
     expect(demuxOnce(chunk).ok).toBe(true);
+  });
+
+  it("réassemble en temps linéaire un message de 2 Mio en chunks de 128 octets", () => {
+    const length = 2 * 1024 * 1024;
+    const data = bytes(128, 9);
+    const continuation = makeChunk({ fmt: 3, chunkStreamId: 6, data });
+    const input = concatBytes(
+      makeChunk({ fmt: 0, chunkStreamId: 6, length, typeId: VIDEO, data }),
+      ...Array.from<Uint8Array>({ length: length / 128 - 1 }).fill(continuation),
+    );
+    const startedAt = performance.now();
+
+    const step = demuxOnce(input, { ...LIMITS, maxMessageSize: length });
+
+    expect(performance.now() - startedAt).toBeLessThan(500);
+    const [message] = step.ok ? step.value.messages : [];
+    expect(Buffer.from(message?.payload ?? []).equals(Buffer.alloc(length, 9))).toBe(true);
   });
 
   it("refuse un flux de chunks de trop, mais réutilise un flux déjà ouvert", () => {
