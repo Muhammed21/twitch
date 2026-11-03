@@ -5,6 +5,8 @@ const envSchema = z.object({
   CHAT_API_BASE_URL: z.url({ protocol: /^https?$/ }).default("http://127.0.0.1:3000"),
   CHAT_API_JWKS_URL: z.url({ protocol: /^https?$/ }).optional(),
   REDIS_URL: z.url({ protocol: /^rediss?$/ }),
+  CHAT_SATURATION_MAX_PACKETS: z.coerce.number().int().min(1).default(100),
+  CHAT_SATURATION_CLOSE_AFTER_MS: z.coerce.number().int().min(1).default(10_000),
 });
 
 export type ChatConfig = {
@@ -15,6 +17,7 @@ export type ChatConfig = {
     readonly issuer: string;
     readonly audience: string;
   };
+  readonly saturation: { readonly maxPackets: number; readonly closeAfterMs: number };
 };
 
 export const loadEnv = (env: Readonly<Record<string, string | undefined>>): ChatConfig => {
@@ -31,6 +34,10 @@ export const loadEnv = (env: Readonly<Record<string, string | undefined>>): Chat
       jwksUrl: parsed.data.CHAT_API_JWKS_URL ?? apiUrl("/auth/jwks"),
       issuer: apiUrl("/auth"),
       audience: apiUrl("/v1"),
+    },
+    saturation: {
+      maxPackets: parsed.data.CHAT_SATURATION_MAX_PACKETS,
+      closeAfterMs: parsed.data.CHAT_SATURATION_CLOSE_AFTER_MS,
     },
   };
 };

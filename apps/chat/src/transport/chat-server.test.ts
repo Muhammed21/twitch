@@ -12,6 +12,7 @@ import { createMessageSender } from "../application/message-sender.ts";
 import { createRoomRegistry } from "../application/room-registry.ts";
 import { redisRevokedSessions } from "../infrastructure/redis-revoked-sessions.ts";
 import { startChatServer } from "./chat-server.ts";
+import { SATURATION_LIMITS } from "./testing/saturation.ts";
 import { makeTokenAuthority } from "./testing/tokens.ts";
 
 const SOCKET_PATH = "/socket.io/?EIO=4&transport=websocket";
@@ -38,6 +39,7 @@ const startServer = async (
     chatters: { displayNameOf: async () => "Alice", sanctionsOf: async () => [] },
     rooms: createRoomRegistry({ find: async () => undefined }),
     messages: createMessageSender(),
+    saturation: SATURATION_LIMITS,
   });
   if (closeAfterTest) {
     onTestFinished(() => server.close());

@@ -2,12 +2,13 @@ import type { z } from "zod";
 
 import { events } from "@repo/contracts";
 
-import type { LocalViewWriter, SanctionedSockets } from "./ports.ts";
+import type { LocalViewWriter, SanctionedSockets, SanctionMetrics } from "./ports.ts";
 import type { RoomRegistry } from "./room-registry.ts";
 
 export type ChatEvent = {
   readonly name: string;
   readonly version: number;
+  readonly occurredAt: Date;
   readonly payload: unknown;
 };
 
@@ -30,16 +31,21 @@ export const chatEventHandlers = ({
   views,
   rooms,
   sockets,
+  metrics,
   log,
 }: {
   views: LocalViewWriter;
   rooms: Pick<RoomRegistry, "refresh">;
   sockets: SanctionedSockets;
+  metrics: SanctionMetrics;
   log: ChatLog;
 }): Readonly<Record<string, ChatEventHandler>> => {
   const handle =
-    <T>(contract: EventContract<T>, apply: (payload: T) => Promise<void>): ChatEventHandler =>
-    async ({ name, version, payload }) => {
+    <T>(
+      contract: EventContract<T>,
+      apply: (payload: T, occurredAt: Date) => Promise<void>,
+    ): ChatEventHandler =>
+    async ({ name, version, occurredAt, payload }) => {
       if (version !== contract.version) {
         throw new Error(`${name} version ${version} non gérée`);
       }
@@ -48,7 +54,7 @@ export const chatEventHandlers = ({
         log({ level: "error", msg: "event écarté : payload hors contrat", event: name });
         return;
       }
-      await apply(parsed.data);
+      await apply(parsed.data, occurredAt);
     };
 
   return {
@@ -62,10 +68,14 @@ export const chatEventHandlers = ({
     [accountRegistered.name]: handle(accountRegistered, ({ accountId, displayName }) =>
       views.registerChatter({ userId: accountId, displayName }),
     ),
-    [userTimedOut.name]: handle(userTimedOut, async ({ userId, channelId, expiresAt }) => {
-      const sanction = { userId, channelId, expiresAt: new Date(expiresAt) };
-      await views.sanctionChatter(sanction);
-      sockets.sanction(sanction);
-    }),
+    [userTimedOut.name]: handle(
+      userTimedOut,
+      async ({ userId, channelId, expiresAt }, occurredAt) => {
+        const sanction = { userId, channelId, expiresAt: new Date(expiresAt) };
+        await views.sanctionChatter(sanction);
+        sockets.sanction(sanction);
+        metrics.sanctionApplied(Date.now() - occurredAt.getTime());
+      },
+    ),
   };
 };

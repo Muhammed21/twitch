@@ -40,6 +40,7 @@ const setup = (rooms: readonly RoomState[] = []) => {
   });
   const logs: Readonly<Record<string, unknown>>[] = [];
   const applied: unknown[] = [];
+  const delays: number[] = [];
   const handlers = chatEventHandlers({
     views,
     rooms: registry,
@@ -48,18 +49,31 @@ const setup = (rooms: readonly RoomState[] = []) => {
         applied.push(sanction);
       },
     },
+    metrics: {
+      sanctionApplied: (delayMs) => {
+        delays.push(delayMs);
+      },
+    },
     log: (entry) => {
       logs.push(entry);
     },
   });
-  const handle = (event: { name: string; version: number; payload: unknown }) => {
+  const handle = ({
+    occurredAt = new Date(),
+    ...event
+  }: {
+    name: string;
+    version: number;
+    payload: unknown;
+    occurredAt?: Date;
+  }) => {
     const handler = handlers[event.name];
     if (handler === undefined) {
       throw new Error(`aucun handler pour ${event.name}`);
     }
-    return handler(event);
+    return handler({ ...event, occurredAt });
   };
-  return { handlers, handle, writes, applied, registry, logs };
+  return { handlers, handle, writes, applied, delays, registry, logs };
 };
 
 const { channelCreated } = events.channel;
@@ -79,7 +93,7 @@ describe("projection des events dans les vues locales du chat", () => {
   });
 
   it("enregistre le timeout d'un chatter, puis l'applique à ses sockets ouvertes", async () => {
-    const { handle, writes, applied } = setup();
+    const { handle, writes, applied, delays } = setup();
     const sanction = {
       userId: randomUUID(),
       channelId: randomUUID(),
@@ -94,6 +108,25 @@ describe("projection des events dans les vues locales du chat", () => {
 
     expect(writes).toEqual([{ sanctionChatter: sanction }]);
     expect(applied).toEqual([sanction]);
+    expect(delays).toHaveLength(1);
+  });
+
+  it("mesure le délai entre la sanction et son application aux sockets", async () => {
+    const { handle, delays } = setup();
+
+    await handle({
+      name: userTimedOut.name,
+      version: 1,
+      occurredAt: new Date(Date.now() - 300),
+      payload: {
+        userId: randomUUID(),
+        channelId: randomUUID(),
+        expiresAt: "2026-11-03T20:10:00.000Z",
+      },
+    });
+
+    expect(delays[0]).toBeGreaterThanOrEqual(300);
+    expect(delays[0]).toBeLessThan(1000);
   });
 
   it("ouvre le salon d'une chaîne créée", async () => {

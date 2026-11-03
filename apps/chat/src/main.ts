@@ -68,6 +68,7 @@ try {
     chatters: redisChatterProfiles(redis),
     rooms,
     messages,
+    saturation: config.saturation,
   }).catch((error: unknown) => {
     destroyRedis();
     throw error;
@@ -81,6 +82,7 @@ try {
       views: redisLocalViewWriter(redis),
       rooms,
       sockets: server,
+      metrics: server,
       log,
     }),
     claimIdleMs: CLAIM_IDLE_MS,

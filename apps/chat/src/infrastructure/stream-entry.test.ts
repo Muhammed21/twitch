@@ -12,10 +12,11 @@ const makeEntry = (overrides: Record<string, string> = {}): Record<string, strin
 });
 
 describe("lecture d'une entrée écrite par le relais d'outbox de l'API", () => {
-  it("rend le nom, la version et le payload décodé", () => {
+  it("rend le nom, la version, l'instant de l'event et le payload décodé", () => {
     expect(parseStreamEntry(makeEntry())).toEqual({
       name: "identity.account.registered",
       version: 1,
+      occurredAt: new Date("2026-10-15T09:30:00.000Z"),
       payload: { accountId: "0b6e1f2a-0000-4000-8000-000000000002", displayName: "Streamer" },
     });
   });
@@ -30,12 +31,19 @@ describe("lecture d'une entrée écrite par le relais d'outbox de l'API", () => 
     ["avec une version nulle", { version: "0" }],
     ["avec une version suivie de texte", { version: "1a" }],
     ["avec un payload qui n'est pas du JSON", { payload: "{" }],
+    ["avec un instant qui n'est pas une date ISO", { occurredAt: "hier" }],
   ])("refuse une entrée %s", (_name, overrides) => {
     expect(parseStreamEntry(makeEntry(overrides))).toBeNull();
   });
 
   it("refuse une entrée sans payload", () => {
     const { payload: _payload, ...entry } = makeEntry();
+
+    expect(parseStreamEntry(entry)).toBeNull();
+  });
+
+  it("refuse une entrée sans instant", () => {
+    const { occurredAt: _occurredAt, ...entry } = makeEntry();
 
     expect(parseStreamEntry(entry)).toBeNull();
   });
