@@ -1,6 +1,6 @@
 # 0042 — L'IP du client se lit par un nombre de proxys de confiance, et la limite de débit HTTP compte dans Redis par fenêtre fixe
 
-- Statut : Proposé
+- Statut : Accepté
 - Date : 2026-11-03
 - Décideurs : Muhammed Cavus
 

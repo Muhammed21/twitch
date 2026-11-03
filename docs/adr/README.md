@@ -51,7 +51,7 @@ Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes
 | [0039](0039-pages-d-authentification-servies-par-l-api-en-html-sans-javascript.md)         | Les pages d'authentification sont servies par l'API, en HTML sans JavaScript                                   | Proposé                                                            | Auth         |
 | [0040](0040-illustration-inscription-terminee-reprise-telle-quelle.md)                     | L'illustration de « You're All Set! » est reprise telle quelle                                                 | Proposé                                                            | Design       |
 | [0041](0041-les-outbox-historique-lisible-pour-reconstruire-une-projection.md)             | Les outbox de `channel` et `stream` sont un historique lisible pour reconstruire une projection                | Accepté                                                            | Données      |
-| [0042](0042-ip-du-client-par-un-nombre-de-proxys-de-confiance-et-limite-de-debit-redis.md) | L'IP du client se lit par un nombre de proxys de confiance, et la limite de débit HTTP compte dans Redis       | Proposé                                                            | API          |
+| [0042](0042-ip-du-client-par-un-nombre-de-proxys-de-confiance-et-limite-de-debit-redis.md) | L'IP du client se lit par un nombre de proxys de confiance, et la limite de débit HTTP compte dans Redis       | Accepté                                                            | API          |
 
 ## Dépendances principales
 
