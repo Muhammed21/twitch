@@ -1,4 +1,4 @@
-import { presenceWindowStart } from "../domain/presence-window.ts";
+import { PRESENCE_WINDOW_MS, presenceWindowStart } from "../domain/presence-window.ts";
 import type { PresenceStore } from "./presence.ts";
 
 export type OpenSessionToSample = { readonly sessionId: string; readonly channelId: string };
@@ -16,6 +16,11 @@ export type ViewerCountSample = {
 export interface ViewerCountSamples {
   record(samples: readonly ViewerCountSample[]): Promise<void>;
 }
+
+const SAMPLE_MARGIN_MS = 1000;
+
+export const nextSampleDelayMs = (now: Date): number =>
+  presenceWindowStart(now).getTime() + PRESENCE_WINDOW_MS - now.getTime() + SAMPLE_MARGIN_MS;
 
 export const sampleViewerCounts =
   ({

@@ -16,11 +16,7 @@ import {
   prismaViewerCountSamples,
 } from "./infrastructure/prisma-viewer-count-samples.ts";
 import { redisPresenceStore } from "./infrastructure/redis-presence-store.ts";
-import {
-  createPresenceRedis,
-  StreamModule,
-  VIEWER_COUNT_SAMPLE_INTERVAL_MS,
-} from "./stream.module.ts";
+import { createPresenceRedis, StreamModule, viewerCountSampleDelayMs } from "./stream.module.ts";
 
 const urlOf = (variable: string): string => {
   const url = process.env[variable];
@@ -208,8 +204,15 @@ const withStreamModule = async (
 };
 
 describe("échantillonnage périodique du module stream", () => {
-  it("se répète toutes les 30 secondes", () => {
-    expect(VIEWER_COUNT_SAMPLE_INTERVAL_MS).toBe(30_000);
+  it("attend le début de la fenêtre de 30 s suivante, plus une seconde, sans dériver", () => {
+    const before = Date.now();
+    const delay = viewerCountSampleDelayMs();
+    const after = Date.now();
+
+    expect(delay).toBeGreaterThan(1000);
+    expect(delay).toBeLessThanOrEqual(31_000);
+    const offset = (before + delay - 1000) % WINDOW_MS;
+    expect(Math.min(offset, WINDOW_MS - offset)).toBeLessThanOrEqual(after - before);
   });
 
   it("échantillonne les sessions ouvertes au rythme du module, puis s'arrête avec lui", async () => {

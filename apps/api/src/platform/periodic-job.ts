@@ -5,14 +5,16 @@ export const startPeriodicJob = ({
   run,
   onError,
 }: {
-  intervalMs: number;
+  intervalMs: number | (() => number);
   run: () => Promise<void>;
   onError: (error: unknown) => void;
 }): { stop: () => Promise<void> } => {
   const stopping = new AbortController();
   const running = (async () => {
     while (!stopping.signal.aborted) {
-      await sleep(intervalMs, undefined, { signal: stopping.signal }).catch(() => undefined);
+      await sleep(typeof intervalMs === "number" ? intervalMs : intervalMs(), undefined, {
+        signal: stopping.signal,
+      }).catch(() => undefined);
       if (!stopping.signal.aborted) {
         await run().catch(onError);
       }

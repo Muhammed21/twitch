@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { PresenceStore } from "./presence.ts";
 import {
+  nextSampleDelayMs,
   type OpenSessionPages,
   sampleViewerCounts,
   type ViewerCountSample,
@@ -89,4 +90,17 @@ describe("échantillon du compteur de viewers (ADR 0004 §3)", () => {
       second.map(({ sessionId }) => sessionId),
     ]);
   });
+
+  it.each([
+    ["au milieu d'une fenêtre", 17_250, 13_750],
+    ["au tout début d'une fenêtre", 0, 31_000],
+    ["à la dernière milliseconde d'une fenêtre", 29_999, 1001],
+  ])(
+    "attend %s le début de la fenêtre suivante, plus une seconde",
+    (_, intoWindowMs, expectedDelayMs) => {
+      expect(nextSampleDelayMs(new Date(WINDOW_START.getTime() + intoWindowMs))).toBe(
+        expectedDelayMs,
+      );
+    },
+  );
 });

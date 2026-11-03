@@ -226,11 +226,12 @@ _Critères d'acceptation_ :
 - le heartbeat n'écrit ni ne lit PostgreSQL ;
 - `/v1/channels/{channelId}/presence` figure dans l'OpenAPI, et `LiveStatus` y porte `viewerCount`.
 
-**PR 12d — Échantillon du compteur de viewers.** Toutes les 30 s, chaque instance de l'API lance dans `stream` un échantillonnage qui persiste `(sessionId, sampledAt, viewerCount)` pour chaque session ouverte, dans `StreamViewerCountSample` (ADR 0004 §3). `sampledAt` est le début de la fenêtre de présence de 30 s (PR 12c), et la clé `(sessionId, sampledAt)` rend l'écriture idempotente : plusieurs instances, ou un redémarrage dans la même fenêtre, ne donnent qu'un échantillon. L'event `stream.viewer_count.sampled` (ADR 0003) arrive avec son premier consommateur, le tri des lives par viewers, qui choisira aussi son canal : l'outbox de `stream` n'est pas purgée (ADR 0041). La rétention des échantillons arrive avec les statistiques qui lisent la série.
+**PR 12d — Échantillon du compteur de viewers.** Au début de chaque fenêtre de présence de 30 s, plus une seconde de marge, chaque instance de l'API lance dans `stream` un échantillonnage qui persiste `(sessionId, sampledAt, viewerCount)` pour chaque session ouverte, dans `StreamViewerCountSample` (ADR 0004 §3). `sampledAt` est le début de la fenêtre de présence de 30 s (PR 12c), et la clé `(sessionId, sampledAt)` rend l'écriture idempotente : plusieurs instances, ou un redémarrage dans la même fenêtre, ne donnent qu'un échantillon. L'event `stream.viewer_count.sampled` (ADR 0003) arrive avec son premier consommateur, le tri des lives par viewers, qui choisira aussi son canal : l'outbox de `stream` n'est pas purgée (ADR 0041). La rétention des échantillons arrive avec les statistiques qui lisent la série.
 
 Critères :
 
-- chaque session ouverte reçoit un échantillon par fenêtre de 30 s, avec le compteur que le SSE annonce au même instant, `0` compris ; une session terminée n'en reçoit plus ;
+- chaque session ouverte reçoit un échantillon par fenêtre de 30 s, même avec une seule instance : l'attente vise le début de la fenêtre suivante et ne dérive pas avec la durée de l'échantillonnage ;
+- l'échantillon porte le compteur que le SSE annonce au même instant, `0` compris ; une session terminée n'en reçoit plus ;
 - deux échantillonnages dans la même fenêtre, d'une instance ou de deux, laissent un seul échantillon par session, le premier ;
 - les sessions ouvertes se lisent par pages de 100, avec une lecture Redis et une écriture en base par page ;
 - un échec de Redis ou de la base est journalisé, et l'échantillonnage suivant repart normalement ; l'arrêt de l'API arrête l'échantillonnage ;

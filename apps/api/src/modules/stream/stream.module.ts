@@ -19,7 +19,7 @@ import { receiveProviderWebhook } from "./application/receive-provider-webhook.t
 import { reconcileStreamSessions } from "./application/reconcile-stream-sessions.ts";
 import { recordPresence } from "./application/record-presence.ts";
 import { recordStreamLifecycle } from "./application/record-stream-lifecycle.ts";
-import { sampleViewerCounts } from "./application/sample-viewer-counts.ts";
+import { nextSampleDelayMs, sampleViewerCounts } from "./application/sample-viewer-counts.ts";
 import {
   getStreamKey,
   provisionStreamChannel,
@@ -60,7 +60,7 @@ export const createViewerCountReader =
     redisPresenceStore(presenceRedis).count({ channelIds, at: new Date() });
 
 export const RECONCILIATION_INTERVAL_MS = 60_000;
-export const VIEWER_COUNT_SAMPLE_INTERVAL_MS = 30_000;
+export const viewerCountSampleDelayMs = (): number => nextSampleDelayMs(new Date());
 
 const STREAM_DEPENDENCIES = Symbol("STREAM_DEPENDENCIES");
 
@@ -78,7 +78,7 @@ type StreamDependencies = {
   presenceRedis: PresenceRedis;
   logSink: LogSink;
   reconciliationIntervalMs?: number;
-  viewerCountSampleIntervalMs?: number;
+  viewerCountSampleIntervalMs?: number | (() => number);
 };
 
 type ModuleState = StreamDependencies & {
@@ -165,7 +165,7 @@ export class StreamModule implements OnModuleInit, OnModuleDestroy {
       reconcile,
       sample,
       reconciliationIntervalMs = RECONCILIATION_INTERVAL_MS,
-      viewerCountSampleIntervalMs = VIEWER_COUNT_SAMPLE_INTERVAL_MS,
+      viewerCountSampleIntervalMs = viewerCountSampleDelayMs,
     } = this.dependencies;
     this.#consumer = startStreamConsumer({
       redis: consumerRedis,
