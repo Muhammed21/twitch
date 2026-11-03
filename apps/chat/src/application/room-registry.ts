@@ -25,10 +25,16 @@ export const createRoomRegistry = (directory: RoomDirectory) => {
   const enter = async (channelId: string): Promise<RoomState | undefined> => {
     const room = loaded.get(channelId) ?? { loading: directory.find(channelId), members: 0 };
     loaded.set(channelId, { ...room, members: room.members + 1 });
+    const stillCounted = () => loaded.get(channelId)?.loading === room.loading;
     const state = await room.loading.catch((error: unknown) => {
-      leave(channelId);
+      if (stillCounted()) {
+        leave(channelId);
+      }
       throw error;
     });
+    if (!stillCounted()) {
+      return undefined;
+    }
     if (state === undefined) {
       leave(channelId);
       return undefined;

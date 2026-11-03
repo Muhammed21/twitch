@@ -79,3 +79,62 @@ describe("registre des salons chargés", () => {
     expect(registry.loadedCount()).toBe(0);
   });
 });
+
+describe("registre des salons chargés, lectures concurrentes", () => {
+  const makePendingDirectory = () => {
+    const reads: {
+      resolve: (state: RoomState | undefined) => void;
+      reject: (error: Error) => void;
+    }[] = [];
+    const directory: RoomDirectory = {
+      find: () =>
+        new Promise((resolve, reject) => {
+          reads.push({ resolve, reject });
+        }),
+    };
+    return { directory, reads };
+  };
+
+  it("ne garde pas l'état d'un salon libéré pendant sa lecture", async () => {
+    const { directory, reads } = makePendingDirectory();
+    const registry = createRoomRegistry(directory);
+    const entering = registry.enter(CHANNEL_ID);
+
+    registry.leave(CHANNEL_ID);
+    reads[0]?.resolve(OFFLINE_ROOM);
+
+    expect(await entering).toBeUndefined();
+    expect(registry.state(CHANNEL_ID)).toBeUndefined();
+    expect(registry.loadedCount()).toBe(0);
+  });
+
+  it("garde le salon relu quand la lecture d'une entrée précédente échoue", async () => {
+    const { directory, reads } = makePendingDirectory();
+    const registry = createRoomRegistry(directory);
+    const first = registry.enter(CHANNEL_ID);
+    registry.leave(CHANNEL_ID);
+    const second = registry.enter(CHANNEL_ID);
+
+    reads[0]?.reject(new Error("Redis injoignable"));
+    await expect(first).rejects.toThrow("Redis injoignable");
+    reads[1]?.resolve(OFFLINE_ROOM);
+
+    expect(await second).toEqual(OFFLINE_ROOM);
+    expect(registry.loadedCount()).toBe(1);
+  });
+
+  it("garde le salon relu quand une entrée précédente trouve une chaîne inconnue", async () => {
+    const { directory, reads } = makePendingDirectory();
+    const registry = createRoomRegistry(directory);
+    const first = registry.enter(CHANNEL_ID);
+    registry.leave(CHANNEL_ID);
+    const second = registry.enter(CHANNEL_ID);
+
+    reads[0]?.resolve(undefined);
+    expect(await first).toBeUndefined();
+    reads[1]?.resolve(OFFLINE_ROOM);
+
+    expect(await second).toEqual(OFFLINE_ROOM);
+    expect(registry.loadedCount()).toBe(1);
+  });
+});
