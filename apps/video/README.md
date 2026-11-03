@@ -51,6 +51,23 @@ Une variable invalide arrête le démarrage en code 1, avec le nom de la variabl
 - Seul un `2xx` marque l'événement publié. Tout autre statut, un délai dépassé ou une API injoignable le reprogramme : 1 s, 2 s, 4 s… jusqu'à 5 minutes, moins une gigue tirée jusqu'à la moitié du délai. La garantie est _at-least-once_ ; un redémarrage reprend les événements non publiés.
 - Le récepteur de test (`src/webhooks/testing/webhook-receiver.ts`) vérifie la signature comme l'API.
 
+## Segmentation (`src/segmenter/`)
+
+Fonctions pures sur des `Uint8Array`, qui lisent le fMP4 fragmenté écrit par ffmpeg sans décoder la vidéo.
+
+- `readFmp4` lit les boîtes ISO BMFF à mesure qu'elles arrivent et rend le reste à rappeler avec les octets suivants. Le segment d'init est le dernier `ftyp` suivi du `moov` ; la piste vidéo est celle dont le `hdlr` vaut `vide`. Chaque `moof` suivi de son `mdat` forme un fragment : instant de décodage du `tfdt`, durée des `trun`, et image clé si le premier échantillon n'est pas marqué _non-sync_ (flags du `trun`, sinon du `tfhd`, sinon du `trex`). Les autres boîtes (`styp`, `free`, `mfra`…) sont ignorées.
+- Refus, sans jamais lever d'exception : boîte de taille invalide ou au-delà de `maxBoxSize` (vérifié dès l'en-tête), fragment avant le `moov`, `mdat` sans `moof`, `moov` sans piste vidéo, fragment sans traf vidéo lisible ou dont un `trun` déborde de sa boîte.
+- `appendFragment` ouvre un segment sur une image clé, écarte les fragments qui précèdent la première, et coupe à la première image clé qui suit `targetSeconds` (2 s) : un segment dure au moins la cible et s'étend jusqu'à la fin du GOP. Un segment qui dépasse `maxSegmentBytes` est abandonné jusqu'à l'image clé suivante ; `closeSegmenter` ferme le dernier à la fin du flux.
+- Les segments fermés vivent dans un tampon circulaire de `capacity` segments par session : le plus ancien sort, et la numérotation (`sequence`) continue.
+- Le test rejoue `src/segmenter/testing/ffmpeg-fragmented.mp4`, 7 s de mire et de sinusoïde avec une image clé toutes les 0,8 s :
+
+  ```sh
+  ffmpeg -f lavfi -i testsrc2=size=96x54:rate=30 -f lavfi -i sine=frequency=440:sample_rate=8000 -t 7 \
+    -c:v libx264 -preset ultrafast -tune zerolatency -g 24 -keyint_min 24 -sc_threshold 0 -b:v 30k \
+    -c:a aac -b:a 8k -ac 1 -f mp4 -movflags frag_keyframe+empty_moov+default_base_moof \
+    -frag_duration 400000 ffmpeg-fragmented.mp4
+  ```
+
 ## Domaine (`src/domain/ingest.ts`)
 
 Fonctions pures, sans I/O ; l'instant arrive en paramètre.
