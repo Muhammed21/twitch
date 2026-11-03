@@ -5,16 +5,18 @@ import { describe, expect, it, onTestFinished } from "vitest";
 
 import { createMessageSender } from "../application/message-sender.ts";
 import { createRoomRegistry } from "../application/room-registry.ts";
-import { startChatServer } from "./chat-server.ts";
+import { startChatServer, type TokenVerifier } from "./chat-server.ts";
 import { makeTokenAuthority } from "./testing/tokens.ts";
 
 const SPREAD_MS = 600;
 
-const startServer = async () => {
+const startServer = async (
+  verifierOf: (verifier: TokenVerifier) => TokenVerifier = (verifier) => verifier,
+) => {
   const authority = await makeTokenAuthority();
   const server = await startChatServer({
     port: 0,
-    verifier: authority.verifier(),
+    verifier: verifierOf(authority.verifier()),
     log: () => undefined,
     chatters: { displayNameOf: async () => "Alice", sanctionsOf: async () => [] },
     rooms: createRoomRegistry({ find: async () => undefined }),
@@ -104,6 +106,39 @@ describe("arrêt étalé du chat (ADR 0028, §8)", () => {
     expect(ready.status).toBe(503);
     expect(live.status).toBe(200);
     expect(status).toBe(503);
+  });
+
+  it("refuse en 503 l'upgrade dont le jeton était en cours de vérification quand l'arrêt a commencé", async () => {
+    const gate: { open: () => void; entered: () => void } = {
+      open: () => undefined,
+      entered: () => undefined,
+    };
+    const entered = new Promise<void>((resolve) => {
+      gate.entered = resolve;
+    });
+    const opened = new Promise<void>((resolve) => {
+      gate.open = resolve;
+    });
+    const late = { token: "" };
+    const { server, authority, connect } = await startServer((verifier) => ({
+      verify: async (token) => {
+        if (token === late.token) {
+          gate.entered();
+          await opened;
+        }
+        return verifier.verify(token);
+      },
+    }));
+    await Promise.all([connect(), connect()]);
+    late.token = await authority.sign({ userId: "late" });
+
+    const status = upgradeStatus(server.port, late.token);
+    await entered;
+    const closing = server.close({ spreadMs: SPREAD_MS });
+    gate.open();
+
+    expect(await status).toBe(503);
+    await closing;
   });
 
   it("s'arrête sans attendre quand aucune socket n'est ouverte", async () => {

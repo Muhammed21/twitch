@@ -183,11 +183,11 @@ export const startChatServer = async ({
       log({ msg: "handshake interrompu", error: error.message });
     };
     socket.on("error", logInterruption);
+    const outcome = await handshake(verifier, request);
     if (state.draining) {
       refuse(socket, 503);
       return;
     }
-    const outcome = await handshake(verifier, request);
     log({ msg: "handshake", status: outcome.status });
     if (outcome.status === 101) {
       sessions.set(
