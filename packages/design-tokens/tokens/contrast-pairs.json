@@ -101,6 +101,48 @@
       "background": "color.surface.tertiary",
       "min": 4.5,
       "note": "Libellé du bouton Cancel de la modale de déconnexion"
+    },
+    {
+      "foreground": "color.chat.name.blue",
+      "background": "color.background.primary",
+      "min": 4.5,
+      "note": "Pseudo d'un auteur dans le chat"
+    },
+    {
+      "foreground": "color.chat.name.green",
+      "background": "color.background.primary",
+      "min": 4.5,
+      "note": "Pseudo d'un auteur dans le chat"
+    },
+    {
+      "foreground": "color.chat.name.purple",
+      "background": "color.background.primary",
+      "min": 4.5,
+      "note": "Pseudo d'un auteur dans le chat"
+    },
+    {
+      "foreground": "color.chat.name.red",
+      "background": "color.background.primary",
+      "min": 4.5,
+      "note": "Pseudo d'un auteur dans le chat"
+    },
+    {
+      "foreground": "color.chat.name.maroon",
+      "background": "color.background.primary",
+      "min": 4.5,
+      "note": "Pseudo d'un auteur dans le chat"
+    },
+    {
+      "foreground": "color.chat.name.teal",
+      "background": "color.background.primary",
+      "min": 4.5,
+      "note": "Pseudo d'un auteur dans le chat"
+    },
+    {
+      "foreground": "color.chat.name.indigo",
+      "background": "color.background.primary",
+      "min": 4.5,
+      "note": "Pseudo d'un auteur dans le chat"
     }
   ]
 }

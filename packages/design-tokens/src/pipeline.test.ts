@@ -1,5 +1,8 @@
+import { readFile } from "node:fs/promises";
+
 import { describe, expect, it } from "vitest";
 
+import { checkContrast, parseContrastPairs } from "./contrast/contrast.ts";
 import { resolveColorThemes, resolveSharedTokens } from "./resolve-themes.ts";
 
 const paths = (tokens: readonly { readonly path: readonly string[] }[]) =>
@@ -50,6 +53,40 @@ describe("resolveColorThemes, on the real token files", () => {
     expect(
       [...light, ...dark].filter(({ comment }) => comment === undefined || comment === ""),
     ).toEqual([]);
+  });
+});
+
+describe("chat name palette, on the real token files", () => {
+  const chatNames = (tokens: readonly { readonly path: readonly string[] }[]) =>
+    paths(tokens).filter((path) => path.startsWith("color.chat.name."));
+
+  it("offers several distinct name colours in each theme", async () => {
+    const { light, dark } = await resolveColorThemes();
+    const values = (tokens: typeof light) =>
+      new Set(
+        tokens
+          .filter(({ path }) => path.join(".").startsWith("color.chat.name."))
+          .map(({ value }) => value),
+      );
+
+    expect(chatNames(light).length).toBeGreaterThanOrEqual(6);
+    expect(values(light).size).toBe(chatNames(light).length);
+    expect(values(dark).size).toBe(chatNames(dark).length);
+  });
+
+  it("reaches AA on the chat background, in light and in dark", async () => {
+    const themes = await resolveColorThemes();
+    const pairs = parseContrastPairs(
+      JSON.parse(await readFile("tokens/contrast-pairs.json", "utf8")),
+    ).filter(({ foreground }) => foreground.startsWith("color.chat.name."));
+
+    expect(pairs.map(({ foreground }) => foreground)).toEqual(chatNames(themes.light));
+    expect(
+      pairs.every(
+        ({ background, min }) => background === "color.background.primary" && min === 4.5,
+      ),
+    ).toBe(true);
+    expect(checkContrast({ pairs, themes }).filter(({ passes }) => !passes)).toEqual([]);
   });
 });
 

@@ -64,6 +64,11 @@
           "$value": "#5c16c5",
           "$description": "Charte relevée sur twitch.tv (accent / text-muted)."
         },
+        "50": {
+          "$type": "color",
+          "$value": "#872ddf",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : pseudo bellabignuts (chat/chat-lecteur--toast-abonne), thème clair."
+        },
         "60": {
           "$type": "color",
           "$value": "#9147ff",
@@ -74,6 +79,11 @@
           "$value": "#a05fff",
           "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : fond du bouton Log In de l'accueil, posé sur l'accent (onboarding/accueil-bienvenue--defaut)."
         },
+        "75": {
+          "$type": "color",
+          "$value": "#b57bff",
+          "$description": "Convention : teinte de core.color.purple.50, éclaircie pour le contraste AA sur le fond sombre (aucune capture du chat en thème sombre)."
+        },
         "80": {
           "$type": "color",
           "$value": "#bf94ff",
@@ -81,10 +91,30 @@
         }
       },
       "red": {
+        "35": {
+          "$type": "color",
+          "$value": "#a72b2d",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : pseudo yahway_810 (chat/chat-chaine--saisie), thème clair."
+        },
+        "45": {
+          "$type": "color",
+          "$value": "#c92309",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : pseudo NecroAamon (chat/chat-lecteur--toast-abonne), thème clair."
+        },
         "60": {
           "$type": "color",
           "$value": "#fe504d",
           "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : bouton Logout de la modale de déconnexion (parametres/menu-parametres--modale-deconnexion)."
+        },
+        "70": {
+          "$type": "color",
+          "$value": "#ff6b5a",
+          "$description": "Convention : teinte de core.color.red.45, éclaircie pour le contraste AA sur le fond sombre (aucune capture du chat en thème sombre)."
+        },
+        "75": {
+          "$type": "color",
+          "$value": "#f08c8c",
+          "$description": "Convention : teinte de core.color.red.35, éclaircie pour le contraste AA sur le fond sombre (aucune capture du chat en thème sombre)."
         }
       },
       "scrim": {
@@ -92,6 +122,54 @@
           "$type": "color",
           "$value": "#00000099",
           "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : voile noir à 60 % sous la modale de déconnexion : les lignes blanches passent à #666666 et le fond #f7f7f8 à #636363 (parametres/menu-parametres--modale-deconnexion)."
+        }
+      },
+      "blue": {
+        "45": {
+          "$type": "color",
+          "$value": "#006bd2",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : pseudo TrueWagon (chat/chat-chaine--saisie), thème clair."
+        },
+        "70": {
+          "$type": "color",
+          "$value": "#4da3ff",
+          "$description": "Convention : teinte de core.color.blue.45, éclaircie pour le contraste AA sur le fond sombre (aucune capture du chat en thème sombre)."
+        }
+      },
+      "green": {
+        "40": {
+          "$type": "color",
+          "$value": "#007d00",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : pseudo sidd14d (chat/chat-lecteur--toast-abonne), thème clair."
+        },
+        "70": {
+          "$type": "color",
+          "$value": "#3cc23c",
+          "$description": "Convention : teinte de core.color.green.40, éclaircie pour le contraste AA sur le fond sombre (aucune capture du chat en thème sombre)."
+        }
+      },
+      "teal": {
+        "40": {
+          "$type": "color",
+          "$value": "#347274",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : pseudo ogreswamparse (live/lecteur--controles-visibles), thème clair."
+        },
+        "70": {
+          "$type": "color",
+          "$value": "#5fb8ba",
+          "$description": "Convention : teinte de core.color.teal.40, éclaircie pour le contraste AA sur le fond sombre (aucune capture du chat en thème sombre)."
+        }
+      },
+      "indigo": {
+        "50": {
+          "$type": "color",
+          "$value": "#615ec8",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : pseudo Nightbot (chat/chat-chaine--saisie), thème clair."
+        },
+        "75": {
+          "$type": "color",
+          "$value": "#9c9aff",
+          "$description": "Convention : teinte de core.color.indigo.50, éclaircie pour le contraste AA sur le fond sombre (aucune capture du chat en thème sombre)."
         }
       }
     }
