@@ -5,6 +5,7 @@ import { createClient } from "redis";
 import { createAccessTokenVerifier } from "@repo/auth-verifier";
 
 import { loadEnv } from "./config/env.ts";
+import { redisConnectionLog } from "./infrastructure/redis-connection-log.ts";
 import { redisRevokedSessions } from "./infrastructure/redis-revoked-sessions.ts";
 import { type ChatLog, startChatServer } from "./transport/chat-server.ts";
 
@@ -18,9 +19,9 @@ const messageOf = (error: unknown): string =>
 try {
   const config = loadEnv(process.env);
   const redis = createClient({ url: config.redisUrl, name: "chat", disableOfflineQueue: true });
-  redis.on("error", (error: unknown) => {
-    log({ level: "error", msg: "redis injoignable", error: messageOf(error) });
-  });
+  const connection = redisConnectionLog(log);
+  redis.on("error", connection.onError);
+  redis.on("ready", connection.onReady);
   redis.connect().catch(() => {});
   const server = await startChatServer({
     port: config.httpPort,

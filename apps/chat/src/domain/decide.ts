@@ -29,6 +29,9 @@ const refill = (bucket: TokenBucket | undefined, now: Date): number =>
         bucket.tokens + (now.getTime() - bucket.refilledAt.getTime()) / MILLISECONDS_PER_TOKEN,
       );
 
+export const isBucketFull = ({ bucket, now }: { bucket: TokenBucket; now: Date }): boolean =>
+  refill(bucket, now) >= BURST;
+
 const accept = ({
   chatter,
   room,
