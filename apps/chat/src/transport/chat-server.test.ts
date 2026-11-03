@@ -8,6 +8,8 @@ import { WebSocket } from "ws";
 
 import type { RevokedSessions } from "@repo/auth-verifier";
 
+import { createMessageSender } from "../application/message-sender.ts";
+import { createRoomRegistry } from "../application/room-registry.ts";
 import { redisRevokedSessions } from "../infrastructure/redis-revoked-sessions.ts";
 import { startChatServer } from "./chat-server.ts";
 import { makeTokenAuthority } from "./testing/tokens.ts";
@@ -33,6 +35,9 @@ const startServer = async (
     log: (entry) => {
       logs.push(entry);
     },
+    chatters: { displayNameOf: async () => "Alice" },
+    rooms: createRoomRegistry({ find: async () => undefined }),
+    messages: createMessageSender(),
   });
   if (closeAfterTest) {
     onTestFinished(() => server.close());

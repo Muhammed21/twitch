@@ -7,7 +7,13 @@ import { Server as SocketServer } from "socket.io";
 import { z } from "zod";
 
 import type { AccessTokenIdentity, VerificationFailure } from "@repo/auth-verifier";
+import { chatterContextFor } from "@repo/authorization";
 import type { Result } from "@repo/result";
+
+import type { MessageSender } from "../application/message-sender.ts";
+import type { ChatterProfiles } from "../application/ports.ts";
+import type { RoomRegistry } from "../application/room-registry.ts";
+import { bindChatEvents, type ChatIo, type ChatSession, type ChatSocket } from "./chat-events.ts";
 
 const SOCKET_IO_PATH = "/socket.io/";
 
@@ -38,22 +44,23 @@ export type ChatLog = (entry: Readonly<Record<string, unknown>>) => void;
 const bearerToken = (header: string | undefined): string | undefined =>
   /^Bearer (\S+)$/i.exec(String(header))?.[1];
 
-const handshakeStatus = async (
-  verifier: TokenVerifier,
-  request: IncomingMessage,
-): Promise<101 | Refusal> => {
+type Handshake =
+  | { readonly status: 101; readonly identity: AccessTokenIdentity }
+  | { readonly status: Refusal };
+
+const handshake = async (verifier: TokenVerifier, request: IncomingMessage): Promise<Handshake> => {
   if (!String(request.url).startsWith(SOCKET_IO_PATH)) {
-    return 404;
+    return { status: 404 };
   }
   const token = bearerToken(request.headers.authorization);
   if (token === undefined) {
-    return 401;
+    return { status: 401 };
   }
   const verified = await verifier.verify(token);
   if (verified.ok) {
-    return 101;
+    return { status: 101, identity: verified.value };
   }
-  return verified.error === "revoked" ? 403 : 401;
+  return { status: verified.error === "revoked" ? 403 : 401 };
 };
 
 const refuse = (socket: Duplex, status: Refusal): void => {
@@ -75,13 +82,19 @@ export const startChatServer = async ({
   port,
   verifier,
   log,
+  chatters,
+  rooms,
+  messages,
 }: {
   port: number;
   verifier: TokenVerifier;
   log: ChatLog;
+  chatters: ChatterProfiles;
+  rooms: RoomRegistry;
+  messages: MessageSender;
 }) => {
   const engine = new EngineServer(ENGINE_OPTIONS);
-  const io = new SocketServer();
+  const io: ChatIo = new SocketServer();
   io.bind(engine);
   engine.on("connection", (socket: EngineSocket) => {
     socket.on("message", (data: unknown) => {
@@ -91,20 +104,63 @@ export const startChatServer = async ({
     });
   });
 
+  const sessions = new WeakMap<IncomingMessage, Promise<ChatSession | undefined>>();
+  const openSession = async ({ userId }: AccessTokenIdentity) => {
+    const displayName = await chatters.displayNameOf(userId);
+    if (displayName === null) {
+      return undefined;
+    }
+    return {
+      chatter: chatterContextFor({ userId, assignments: [], now: new Date() }),
+      author: { id: userId, displayName },
+    };
+  };
+  const attachSession = async (socket: ChatSocket, next: (error?: Error) => void) => {
+    const session = await sessions.get(socket.request);
+    if (session === undefined) {
+      next(new Error("chatter_unavailable"));
+      return;
+    }
+    socket.data = session;
+    next();
+  };
+  io.use((socket, next) => {
+    void attachSession(socket, next);
+  });
+  const counters = { rejectedEvents: 0 };
+  bindChatEvents({
+    io,
+    rooms,
+    messages,
+    onRejectedEvent: () => {
+      counters.rejectedEvents += 1;
+    },
+    onFailure: (error) => {
+      log({ msg: "événement en échec", error: String(error) });
+    },
+  });
+
   const server = createServer(answerProbe);
   const handleUpgrade = async (request: IncomingMessage, socket: Duplex, head: Buffer) => {
     const logInterruption = (error: Error) => {
       log({ msg: "handshake interrompu", error: error.message });
     };
     socket.on("error", logInterruption);
-    const status = await handshakeStatus(verifier, request);
-    log({ msg: "handshake", status });
-    if (status === 101) {
+    const outcome = await handshake(verifier, request);
+    log({ msg: "handshake", status: outcome.status });
+    if (outcome.status === 101) {
+      sessions.set(
+        request,
+        openSession(outcome.identity).catch((error: unknown) => {
+          log({ msg: "profil illisible", error: String(error) });
+          return undefined;
+        }),
+      );
       socket.off("error", logInterruption);
       engine.handleUpgrade(request, socket, head);
       return;
     }
-    refuse(socket, status);
+    refuse(socket, outcome.status);
   };
   server.on("upgrade", (request: IncomingMessage, socket: Duplex, head: Buffer) => {
     void handleUpgrade(request, socket, head);
@@ -115,6 +171,7 @@ export const startChatServer = async ({
   return {
     port: BoundAddress.parse(server.address()).port,
     connectionCount: () => engine.clientsCount,
+    rejectedEventCount: () => counters.rejectedEvents,
     close: async () => {
       engine.close();
       server.close();

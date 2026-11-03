@@ -15,6 +15,7 @@
   "dependencies": {
     "@repo/auth-verifier": "workspace:*",
     "@repo/authorization": "workspace:*",
+    "@repo/contracts": "workspace:*",
     "@repo/result": "workspace:*",
     "engine.io": "6.6.11",
     "redis": "6.2.1",
@@ -29,6 +30,7 @@
     "@types/ws": "8.18.2",
     "@vitest/coverage-v8": "4.1.12",
     "jose": "6.2.12",
+    "socket.io-client": "4.8.4",
     "typescript": "7.0.2",
     "vitest": "4.1.12",
     "ws": "8.21.3"
