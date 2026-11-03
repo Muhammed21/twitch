@@ -6,6 +6,8 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it, onTestFinished } from "vitest";
 
+import { makeChunk } from "./rtmp/testing/rtmp-fixtures.ts";
+
 const MAIN = fileURLToPath(new URL("./main.ts", import.meta.url));
 
 const freePort = async (): Promise<number> => {
@@ -65,6 +67,32 @@ const waitForLive = async (port: number): Promise<number> => {
   return 0;
 };
 
+const rtmpPublisher = async (port: number) => {
+  const socket = connect(port, "127.0.0.1");
+  socket.on("error", () => undefined);
+  onTestFinished(() => {
+    socket.destroy();
+  });
+  const closed = new Promise<true>((resolve) => {
+    socket.once("close", () => resolve(true));
+  });
+  await once(socket, "connect");
+  const received: Buffer[] = [];
+  socket.on("data", (chunk: Buffer) => received.push(chunk));
+  socket.write(Uint8Array.of(3, ...new Uint8Array(1536)));
+  while (Buffer.concat(received).length < 3073) {
+    await sleep(10);
+  }
+  expect(Buffer.concat(received)[0]).toBe(3);
+  socket.write(new Uint8Array(1536));
+  return {
+    closed,
+    announce: (length: number) => {
+      socket.write(makeChunk({ fmt: 0, chunkStreamId: 6, length, typeId: 9, streamId: 1 }));
+    },
+  };
+};
+
 describe("process apps/video", () => {
   it("s'arrête au démarrage en code 1 et nomme la variable invalide", async () => {
     const { child, output } = startProcess({ VIDEO_HTTP_PORT: "abc" });
@@ -119,21 +147,23 @@ describe("process apps/video", () => {
     },
   );
 
-  it("répond à la poignée de main RTMP sur VIDEO_RTMP_PORT", { timeout: 10_000 }, async () => {
-    const [httpPort, rtmpPort] = [await freePort(), await freePort()];
-    startProcess({ VIDEO_HTTP_PORT: String(httpPort), VIDEO_RTMP_PORT: String(rtmpPort) });
-    expect(await waitForLive(httpPort)).toBe(200);
-    const socket = connect(rtmpPort, "127.0.0.1");
-    onTestFinished(() => {
-      socket.destroy();
-    });
-    await once(socket, "connect");
+  it(
+    "sert l'ingest RTMP sur VIDEO_RTMP_PORT, avec des messages plafonnés à 2 Mio",
+    { timeout: 10_000 },
+    async () => {
+      const [httpPort, rtmpPort] = [await freePort(), await freePort()];
+      startProcess({ VIDEO_HTTP_PORT: String(httpPort), VIDEO_RTMP_PORT: String(rtmpPort) });
+      expect(await waitForLive(httpPort)).toBe(200);
+      const atLimit = await rtmpPublisher(rtmpPort);
+      const overLimit = await rtmpPublisher(rtmpPort);
 
-    socket.write(Uint8Array.of(3, ...new Uint8Array(1536)));
-    const [reply]: unknown[] = await once(socket, "data");
+      atLimit.announce(2 * 1024 * 1024);
+      overLimit.announce(2 * 1024 * 1024 + 1);
 
-    expect(Buffer.isBuffer(reply) && reply[0]).toBe(3);
-  });
+      expect(await overLimit.closed).toBe(true);
+      expect(await Promise.race([atLimit.closed, sleep(100).then(() => false)])).toBe(false);
+    },
+  );
 
   it("s'arrête en code 1 quand le port RTMP est déjà pris", { timeout: 10_000 }, async () => {
     const taken = createServer().listen(0);

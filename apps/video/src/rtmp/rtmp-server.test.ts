@@ -1,31 +1,33 @@
 import { once } from "node:events";
-import { readFileSync } from "node:fs";
 import { connect, type Socket } from "node:net";
 import { setTimeout as sleep } from "node:timers/promises";
 
 import { describe, expect, it, onTestFinished } from "vitest";
 
+import type { RtmpMessage } from "./chunk-stream.ts";
 import { type RtmpServerStats, startRtmpServer } from "./rtmp-server.ts";
+import { FFMPEG_PUBLISH, FFMPEG_PUBLISH_FLV_TAGS, makeChunk } from "./testing/rtmp-fixtures.ts";
 
-const FFMPEG_PUBLISH = new Uint8Array(
-  readFileSync(new URL("./testing/ffmpeg-publish-handshake.bin", import.meta.url)),
-);
 const C0C1 = FFMPEG_PUBLISH.subarray(0, 1537);
 const C1 = FFMPEG_PUBLISH.subarray(1, 1537);
-const C2_AND_CONNECT = FFMPEG_PUBLISH.subarray(1537);
+const C2_AND_CHUNKS = FFMPEG_PUBLISH.subarray(1537);
+const MAX_MESSAGE_SIZE = 8192;
 
 const HANDSHAKE_TIMEOUT_MS = 150;
 const IDLE_TIMEOUT_MS = 150;
 
 const startServer = async ({ handshakeTimeoutMs = HANDSHAKE_TIMEOUT_MS } = {}) => {
+  const messages: RtmpMessage[] = [];
   const server = await startRtmpServer({
     port: 0,
     handshakeTimeoutMs,
     idleTimeoutMs: IDLE_TIMEOUT_MS,
+    limits: { maxChunkSize: 65_536, maxMessageSize: MAX_MESSAGE_SIZE, maxChunkStreams: 8 },
     randomBytes: (size) => new Uint8Array(size).fill(7),
+    onMessage: (message) => messages.push(message),
   });
   onTestFinished(() => server.close());
-  return server;
+  return { ...server, messages };
 };
 
 const openClient = async (port: number) => {
@@ -62,11 +64,21 @@ const handshakeWith = async (
 ) => {
   socket.write(C0C1);
   await waitFor(() => received().length >= 3073);
-  socket.write(C2_AND_CONNECT);
+  socket.write(C2_AND_CHUNKS);
   await waitFor(() => stats().handshakes === 1);
 };
 
-const NO_REJECTION = { unsupported_version: 0, handshake_timeout: 0, idle_timeout: 0 };
+const NO_REJECTION = {
+  unsupported_version: 0,
+  handshake_timeout: 0,
+  idle_timeout: 0,
+  unknown_chunk_stream: 0,
+  message_too_large: 0,
+  invalid_chunk_size: 0,
+  too_many_chunk_streams: 0,
+};
+
+const isMedia = ({ typeId }: { typeId: number }) => typeId === 8 || typeId === 9;
 
 describe("serveur RTMP, poignée de main (ADR 0031, §3)", () => {
   it("rejoue la poignée de main de ffmpeg : S0, S1 aléatoire, S2 en écho de C1", async () => {
@@ -82,6 +94,35 @@ describe("serveur RTMP, poignée de main (ADR 0031, §3)", () => {
     expect(reply.subarray(9, 1537)).toEqual(Buffer.alloc(1528, 7));
     expect(reply.subarray(1537)).toEqual(Buffer.from(C1));
     expect(server.stats()).toEqual({ connections: 1, handshakes: 1, rejections: NO_REJECTION });
+  });
+
+  it("démultiplexe la publication ffmpeg en messages identiques aux tags de son FLV", async () => {
+    const server = await startServer();
+    const client = await openClient(server.port);
+
+    await handshakeWith(client.socket, client.received, server.stats);
+    const expected = FFMPEG_PUBLISH_FLV_TAGS.filter(isMedia);
+    await waitFor(() => server.messages.filter(isMedia).length === expected.length);
+
+    expect(
+      server.messages
+        .filter(isMedia)
+        .map(({ typeId, timestamp, payload }) => ({ typeId, timestamp, payload })),
+    ).toEqual(expected);
+    expect(server.stats().handshakes).toBe(1);
+  });
+
+  it("ferme une connexion qui annonce un message trop grand et compte le rejet", async () => {
+    const server = await startServer();
+    const client = await openClient(server.port);
+    await handshakeWith(client.socket, client.received, server.stats);
+
+    client.socket.write(
+      makeChunk({ fmt: 0, chunkStreamId: 9, length: MAX_MESSAGE_SIZE + 1, typeId: 9, streamId: 1 }),
+    );
+
+    expect(await client.closed).toBe(true);
+    expect(server.stats().rejections).toEqual({ ...NO_REJECTION, message_too_large: 1 });
   });
 
   it("ferme une connexion d'une autre version que 3 et compte le rejet", async () => {
@@ -123,18 +164,29 @@ describe("serveur RTMP, poignée de main (ADR 0031, §3)", () => {
     expect(server.stats().rejections).toEqual({ ...NO_REJECTION, idle_timeout: 1 });
   });
 
-  it("garde ouverte une connexion qui envoie des données après la poignée de main", async () => {
+  it("garde ouverte une connexion qui envoie des chunks après la poignée de main, et les démultiplexe", async () => {
     const server = await startServer();
     const client = await openClient(server.port);
     await handshakeWith(client.socket, client.received, server.stats);
+    const before = server.messages.length;
 
     for (const _ of Array.from({ length: 6 })) {
-      client.socket.write(Uint8Array.of(0));
+      client.socket.write(
+        makeChunk({
+          fmt: 0,
+          chunkStreamId: 4,
+          length: 1,
+          typeId: 8,
+          streamId: 1,
+          data: Uint8Array.of(0),
+        }),
+      );
       await sleep(IDLE_TIMEOUT_MS / 3);
     }
 
     expect(await client.isClosed()).toBe(false);
-    expect(server.stats().rejections).toEqual(NO_REJECTION);
+    expect(server.messages.slice(before)).toHaveLength(6);
+    expect(server.stats()).toMatchObject({ handshakes: 1, rejections: NO_REJECTION });
   });
 
   it("survit à un client qui coupe brutalement la connexion", async () => {

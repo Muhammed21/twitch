@@ -3,11 +3,23 @@ import { createServer, type Socket } from "node:net";
 
 import { z } from "zod";
 
+import {
+  type ChunkLimits,
+  type ChunkRefusal,
+  type Demuxer,
+  demuxChunks,
+  type RtmpMessage,
+  startDemuxer,
+} from "./chunk-stream.ts";
 import { advanceHandshake, type Handshake, startHandshake } from "./handshake.ts";
 
 const BoundAddress = z.object({ port: z.int() });
 
-export type RtmpRejection = "unsupported_version" | "handshake_timeout" | "idle_timeout";
+export type RtmpRejection =
+  | "unsupported_version"
+  | "handshake_timeout"
+  | "idle_timeout"
+  | ChunkRefusal;
 
 export type RtmpServerStats = {
   readonly connections: number;
@@ -34,17 +46,29 @@ export const startRtmpServer = async ({
   port,
   handshakeTimeoutMs,
   idleTimeoutMs,
+  limits,
   randomBytes,
+  onMessage,
 }: {
   port: number;
   handshakeTimeoutMs: number;
   idleTimeoutMs: number;
+  limits: ChunkLimits;
   randomBytes: (size: number) => Uint8Array;
+  onMessage: (message: RtmpMessage) => void;
 }): Promise<RtmpServer> => {
   const sockets = new Set<Socket>();
   const counters = {
     handshakes: 0,
-    rejections: { unsupported_version: 0, handshake_timeout: 0, idle_timeout: 0 },
+    rejections: {
+      unsupported_version: 0,
+      handshake_timeout: 0,
+      idle_timeout: 0,
+      unknown_chunk_stream: 0,
+      message_too_large: 0,
+      invalid_chunk_size: 0,
+      too_many_chunk_streams: 0,
+    },
   };
 
   const reject = (socket: Socket, reason: RtmpRejection) => {
@@ -58,13 +82,24 @@ export const startRtmpServer = async ({
     socket.on("error", ignoreSocketError);
     const deadline = setTimeout(() => reject(socket, "handshake_timeout"), handshakeTimeoutMs);
     socket.on("close", () => clearTimeout(deadline));
-    const connection: { handshake: Handshake; buffered: Uint8Array } = {
+    const connection: { handshake: Handshake; demuxer: Demuxer; buffered: Uint8Array } = {
       handshake: startHandshake(),
+      demuxer: startDemuxer(limits),
       buffered: new Uint8Array(0),
     };
 
-    const onHandshakeData = (chunk: Buffer) => {
-      const input = joined(connection.buffered, chunk);
+    const demux = (input: Uint8Array) => {
+      const step = demuxChunks({ demuxer: connection.demuxer, input });
+      if (!step.ok) {
+        reject(socket, step.error);
+        return;
+      }
+      connection.demuxer = step.value.demuxer;
+      connection.buffered = input.subarray(step.value.consumed);
+      step.value.messages.forEach(onMessage);
+    };
+
+    const shake = (input: Uint8Array) => {
       const step = advanceHandshake({ handshake: connection.handshake, input, randomBytes });
       if (!step.ok) {
         reject(socket, step.error);
@@ -76,11 +111,19 @@ export const startRtmpServer = async ({
       if (step.value.handshake.phase === "done") {
         clearTimeout(deadline);
         counters.handshakes += 1;
-        socket.off("data", onHandshakeData);
         socket.setTimeout(idleTimeoutMs, () => reject(socket, "idle_timeout"));
+        demux(connection.buffered);
       }
     };
-    socket.on("data", onHandshakeData);
+
+    socket.on("data", (chunk: Buffer) => {
+      const input = joined(connection.buffered, chunk);
+      if (connection.handshake.phase === "done") {
+        demux(input);
+        return;
+      }
+      shake(input);
+    });
   };
 
   const server = createServer(accept).listen(port);
