@@ -12,6 +12,10 @@ import { startRelayLoop } from "./outbox/relay-loop.ts";
 import { relayVideoOutbox } from "./outbox/video-outbox-relay.ts";
 import { prismaVideoStore } from "./persistence/prisma-video-store.ts";
 import { streamKeyCipher } from "./persistence/stream-key-cipher.ts";
+import { startRtmpServer } from "./rtmp/rtmp-server.ts";
+
+const RTMP_HANDSHAKE_TIMEOUT_MS = 5000;
+const RTMP_IDLE_TIMEOUT_MS = 30_000;
 
 const log = (
   msg: string,
@@ -34,6 +38,12 @@ const logRelayFailure = (error: unknown): void => {
 try {
   const config = loadEnv(process.env);
   const prisma = createContextClient({ context: "video", env: process.env });
+  const rtmp = await startRtmpServer({
+    port: config.rtmpPort,
+    handshakeTimeoutMs: RTMP_HANDSHAKE_TIMEOUT_MS,
+    idleTimeoutMs: RTMP_IDLE_TIMEOUT_MS,
+    randomBytes,
+  });
   const server = await startHttpServer({
     port: config.httpPort,
     serviceSecret: config.serviceSecret,
@@ -46,6 +56,9 @@ try {
       newId: randomUUID,
       randomBytes,
     }),
+  }).catch(async (error: unknown) => {
+    await rtmp.close();
+    throw error;
   });
   const relayPool = new Pool({ connectionString: config.outboxRelay.databaseUrl });
   relayPool.on("error", logRelayFailure);
@@ -59,10 +72,11 @@ try {
     }),
     onError: logRelayFailure,
   });
-  log("service vidéo démarré", { httpPort: server.port });
+  log("service vidéo démarré", { httpPort: server.port, rtmpPort: rtmp.port });
 
   await Promise.race([once(process, "SIGTERM"), once(process, "SIGINT")]);
   server.startDraining();
+  await rtmp.close();
   await server.close();
   await relay.stop();
   await relayPool.end();

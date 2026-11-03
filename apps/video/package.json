@@ -27,6 +27,7 @@
     "@types/node": "^26.6.2",
     "@types/pg": "8.23.1",
     "@vitest/coverage-v8": "4.1.12",
+    "fast-check": "3.23.2",
     "typescript": "7.0.2",
     "vitest": "4.1.12"
   }

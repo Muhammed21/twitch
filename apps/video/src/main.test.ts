@@ -1,6 +1,6 @@
 import { type ChildProcess, spawn } from "node:child_process";
 import { once } from "node:events";
-import { createServer } from "node:net";
+import { connect, createServer } from "node:net";
 import { setTimeout as sleep } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 
@@ -23,6 +23,7 @@ const BOOT_ENV = {
   VIDEO_WEBHOOK_SECRET: "w".repeat(32),
   DATABASE_URL_OUTBOX_RELAY: "postgresql://app_outbox_relay:secret@127.0.0.1:1/app",
   OUTBOX_RELAY_INTERVAL_MS: "20",
+  VIDEO_RTMP_PORT: "0",
 };
 
 const startProcess = (env: Record<string, string>, { without }: { without?: string } = {}) => {
@@ -117,4 +118,38 @@ describe("process apps/video", () => {
       expect(await exited).toBe(0);
     },
   );
+
+  it("répond à la poignée de main RTMP sur VIDEO_RTMP_PORT", { timeout: 10_000 }, async () => {
+    const [httpPort, rtmpPort] = [await freePort(), await freePort()];
+    startProcess({ VIDEO_HTTP_PORT: String(httpPort), VIDEO_RTMP_PORT: String(rtmpPort) });
+    expect(await waitForLive(httpPort)).toBe(200);
+    const socket = connect(rtmpPort, "127.0.0.1");
+    onTestFinished(() => {
+      socket.destroy();
+    });
+    await once(socket, "connect");
+
+    socket.write(Uint8Array.of(3, ...new Uint8Array(1536)));
+    const [reply]: unknown[] = await once(socket, "data");
+
+    expect(Buffer.isBuffer(reply) && reply[0]).toBe(3);
+  });
+
+  it("s'arrête en code 1 quand le port RTMP est déjà pris", { timeout: 10_000 }, async () => {
+    const taken = createServer().listen(0);
+    await once(taken, "listening");
+    onTestFinished(() => {
+      taken.close();
+    });
+    const address = taken.address();
+    const rtmpPort = typeof address === "object" && address !== null ? address.port : 0;
+
+    const { child, output } = startProcess({
+      VIDEO_HTTP_PORT: String(await freePort()),
+      VIDEO_RTMP_PORT: String(rtmpPort),
+    });
+
+    expect(await exitOf(child)).toBe(1);
+    expect(output.stderr).toContain("EADDRINUSE");
+  });
 });

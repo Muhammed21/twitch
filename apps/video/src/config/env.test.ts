@@ -29,9 +29,10 @@ const envWithout = (variable: string) =>
   Object.fromEntries(Object.entries(makeEnv()).filter(([name]) => name !== variable));
 
 describe("loadEnv", () => {
-  it("écoute en HTTP sur le port 3002, annonce l'ingest local et relaie vers l'API locale par défaut", () => {
+  it("écoute en HTTP sur 3002 et en RTMP sur 1935, annonce l'ingest local et relaie vers l'API locale par défaut", () => {
     expect(loadEnv(makeEnv())).toEqual({
       httpPort: 3002,
+      rtmpPort: 1935,
       serviceSecret: SERVICE_SECRET,
       ingestUrl: "rtmp://127.0.0.1:1935/live",
       streamKeyEncryptionKey: Uint8Array.from(ENCRYPTION_KEY),
@@ -103,6 +104,23 @@ describe("loadEnv", () => {
       "Configuration invalide, variables à corriger : OUTBOX_RELAY_INTERVAL_MS",
     );
   });
+
+  it.each([
+    ["0", 0],
+    ["1936", 1936],
+    ["65535", 65_535],
+  ])("lit le port RTMP %s", (port, expected) => {
+    expect(loadEnv(makeEnv({ VIDEO_RTMP_PORT: port })).rtmpPort).toBe(expected);
+  });
+
+  it.each(["-1", "65536", "19.5", "abc"])(
+    "refuse le port RTMP %j en nommant VIDEO_RTMP_PORT",
+    (port) => {
+      expect(failureOf(() => loadEnv(makeEnv({ VIDEO_RTMP_PORT: port })))).toBe(
+        "Configuration invalide, variables à corriger : VIDEO_RTMP_PORT",
+      );
+    },
+  );
 
   it("lit le port HTTP", () => {
     expect(loadEnv(makeEnv({ VIDEO_HTTP_PORT: "8080" })).httpPort).toBe(8080);
