@@ -2,7 +2,7 @@ name: twitch
 
 # Environnement local (ADR 0028). Profil par défaut : infrastructure seulement,
 # les applications tournent sur l'hôte avec `pnpm dev`. Le profil `full` ajoute
-# les images des applications : migrate, puis api et outbox-relay (§5).
+# les images des applications : migrate, puis video, api et outbox-relay (§5).
 
 x-postgres-client-env: &postgres-client-env
   PGHOST: postgres
@@ -82,6 +82,8 @@ services:
         condition: service_healthy
       mailpit:
         condition: service_healthy
+      video:
+        condition: service_healthy
     environment:
       API_PORT: "3000"
       DATABASE_URL_IDENTITY: postgresql://app_identity:${PG_PASSWORD_APP_IDENTITY}@postgres:5432/app
@@ -94,7 +96,9 @@ services:
       BETTER_AUTH_URL: http://127.0.0.1:${API_PORT:-3000}
       REDIS_URL: redis://redis:6379
       VIDEO_WEBHOOK_SECRET: ${VIDEO_WEBHOOK_SECRET}
-      VIDEO_PROVIDER: fake
+      VIDEO_PROVIDER: video
+      VIDEO_SERVICE_URL: http://video:3002
+      VIDEO_SERVICE_SECRET: ${VIDEO_SERVICE_SECRET}
       FEATURE_FLAGS_PROVIDER: defaults
       MOBILE_MIN_SUPPORTED_VERSION: ${MOBILE_MIN_SUPPORTED_VERSION}
       SMTP_HOST: mailpit
@@ -123,6 +127,41 @@ services:
     environment:
       DATABASE_URL_OUTBOX_RELAY: postgresql://app_outbox_relay:${PG_PASSWORD_APP_OUTBOX_RELAY}@postgres:5432/app
       REDIS_URL: redis://redis:6379
+
+  video:
+    profiles: [full]
+    build:
+      context: .
+      dockerfile: apps/video/Dockerfile
+      target: video
+    image: twitch-video:local
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      VIDEO_HTTP_PORT: "3002"
+      VIDEO_RTMP_PORT: "1935"
+      VIDEO_INGEST_URL: rtmp://127.0.0.1:${VIDEO_RTMP_PORT:-1935}/live
+      VIDEO_SERVICE_SECRET: ${VIDEO_SERVICE_SECRET}
+      VIDEO_STREAM_KEY_ENCRYPTION_KEY: ${VIDEO_STREAM_KEY_ENCRYPTION_KEY}
+      DATABASE_URL_VIDEO: postgresql://app_video:${PG_PASSWORD_APP_VIDEO}@postgres:5432/app
+      VIDEO_WEBHOOK_URL: http://api:3000/v1/webhooks/video
+      VIDEO_WEBHOOK_SECRET: ${VIDEO_WEBHOOK_SECRET}
+      DATABASE_URL_OUTBOX_RELAY: postgresql://app_outbox_relay:${PG_PASSWORD_APP_OUTBOX_RELAY}@postgres:5432/app
+      VIDEO_FFMPEG_PATH: ffmpeg
+      VIDEO_MAX_SESSIONS: ${VIDEO_MAX_SESSIONS:-4}
+    ports:
+      - "127.0.0.1:${VIDEO_RTMP_PORT:-1935}:1935"
+      - "127.0.0.1:${VIDEO_HTTP_PORT:-3002}:3002"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3002/health/ready').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 2s
+      timeout: 3s
+      retries: 30
 
   redis:
     image: redis:8.8.3-alpine

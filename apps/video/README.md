@@ -31,6 +31,19 @@ Une variable invalide arrête le démarrage en code 1, avec le nom de la variabl
 - Erreurs en `application/problem+json` (RFC 9457), au format `Problem` de [`@repo/video-contract`](../../packages/video-contract/README.md).
 - Une requête dont la cible ne se lit pas comme une URL reçoit 400 ; une route se reconnaît à son chemin, sans la query string.
 
+## Image et Compose
+
+- `Dockerfile` : élagage `turbo prune @repo/video`, `dist/` compilé, dépendances de production, ffmpeg de Debian. Ni migrations ni CLI Prisma ; le process tourne sous `node`.
+- Service `video` du profil `full` (ADR 0028), démarré après `migrate`. Ports publiés sur `127.0.0.1` : `VIDEO_RTMP_PORT` (1935) et `VIDEO_HTTP_PORT` (3002). L'API du profil `full` joint son plan de contrôle à `http://video:3002`, et video ses webhooks à `http://api:3000`.
+
+```sh
+docker compose --profile full up -d --build --wait video api
+ffmpeg -re -i <fichier> -c:v libx264 -g 60 -c:a aac -f flv rtmp://127.0.0.1:1935/live/<clé de stream>
+```
+
+- iPhone réel : `compose.lan.yaml` republie les ports de l'API et de video sur toutes les interfaces, le temps du test : `docker compose -f compose.yaml -f compose.lan.yaml --profile full up -d --wait api video`.
+- `docker/tests/infra.test.sh` démarre le service, sonde `/health/ready`, crée un canal par le plan de contrôle et publie avec le ffmpeg de l'hôte jusqu'à la playlist HLS du canal.
+
 ## Persistance (`src/persistence/`)
 
 - Schéma `video` (ADR 0025) : `VideoChannel`, `VideoStreamKey`, `VideoIngestSession`, `VideoOutbox`. Une seule session `live` par canal, garantie par un index unique partiel.

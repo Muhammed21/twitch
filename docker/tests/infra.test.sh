@@ -124,6 +124,7 @@ up_with_failing_migrate() {
 check "api et outbox-relay démarrent, l'API devient saine" full up -d --build --wait --wait-timeout 600 api outbox-relay
 check "/health/ready de l'API répond 200 depuis l'hôte" curl -sf "http://127.0.0.1:${API_PORT:-3000}/health/ready"
 check "l'API démarre après la fin de migrate" started_after_migrate api
+check "l'API joint le plan de contrôle de video à VIDEO_SERVICE_URL" in_api node -e 'fetch(process.env.VIDEO_SERVICE_URL + "/health/ready").then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))'
 check "le relais démarre après la fin de migrate" started_after_migrate outbox-relay
 check "le relais tourne" test "$(state_of outbox-relay Running)" = "true"
 check "l'API tourne sous l'utilisateur node" test "$(in_api id -un)" = "node"
@@ -135,6 +136,60 @@ check "le relais s'est arrêté de lui-même, sans SIGKILL" stopped_by_itself ou
 full rm -sf api outbox-relay >/dev/null 2>&1
 check_not "l'API ne démarre pas si migrate échoue" up_with_failing_migrate
 check "l'API a été créée mais jamais démarrée" test "$(state_of api Status)" = "created"
+
+echo "Service vidéo (profil full)"
+VIDEO_HTTP="http://127.0.0.1:${VIDEO_HTTP_PORT}"
+VIDEO_AUTH="authorization: Bearer ${VIDEO_SERVICE_SECRET}"
+EXTERNAL_ID="0b6f3c2e-5d1a-4e8b-9f4c-2a7d6e1b3c90"
+in_video() { full exec -T video "$@"; }
+video_api() { curl -sf -H "$VIDEO_AUTH" -H "content-type: application/json" "$@"; }
+until_ok() {
+  for _ in $(seq 1 60); do
+    if "$@" >/dev/null 2>&1; then return 0; fi
+    sleep 0.5
+  done
+  return 1
+}
+hls_path() { curl -sf "$VIDEO_HTTP/hls/channels/$1/master.m3u8" | grep 'm3u8$'; }
+has_segments() { curl -sf "$VIDEO_HTTP$(hls_path "$1")" | grep -q '^#EXTINF'; }
+publish_from_host() {
+  ffmpeg -hide_banner -loglevel error -re \
+    -f lavfi -i "testsrc2=size=320x180:rate=30" -f lavfi -i "sine=frequency=440:sample_rate=44100" \
+    -t 8 -c:v libx264 -preset ultrafast -tune zerolatency -g 60 -keyint_min 60 -sc_threshold 0 \
+    -c:a aac -f flv "rtmp://127.0.0.1:${VIDEO_RTMP_PORT}/live/$1"
+}
+full rm -sf video >/dev/null 2>&1
+check "video démarre et devient sain" full up -d --build --wait --wait-timeout 600 video
+check "/health/ready de video répond 200 depuis l'hôte" curl -sf "$VIDEO_HTTP/health/ready"
+check "video démarre après la fin de migrate" started_after_migrate video
+check "video tourne sous l'utilisateur node" test "$(in_video id -un)" = "node"
+check "l'image de video contient ffmpeg" in_video ffmpeg -version
+check "l'image de video ne contient pas les migrations" in_video sh -c '! test -e /repo/packages/db/prisma/migrations'
+channel_id="$(video_api -X POST -d "{\"externalId\":\"$EXTERNAL_ID\"}" "$VIDEO_HTTP/channels" | jq -r .id)"
+stream_key="$(video_api "$VIDEO_HTTP/channels/$channel_id/stream-key" | jq -r .streamKey)"
+check "le plan de contrôle crée un canal et sa clé de stream" test -n "$stream_key" -a "$stream_key" != null
+publish_from_host "$stream_key" >/dev/null 2>&1 &
+publisher=$!
+check "une publication ffmpeg depuis l'hôte ouvre la playlist maître du canal" until_ok hls_path "$channel_id"
+check "la playlist de média du canal annonce des segments" until_ok has_segments "$channel_id"
+check "ffmpeg publie jusqu'au bout sans erreur" wait "$publisher"
+check "SIGTERM arrête video dans le délai de grâce" full stop video
+check "video s'est arrêté de lui-même, sans SIGKILL" stopped_by_itself video
+full rm -sf video >/dev/null 2>&1
+
+echo "Exposition sur le réseau local (compose.lan.yaml)"
+host_ips() {
+  local service="$1"
+  shift
+  compose "$@" --profile full config --format json |
+    jq -r --arg service "$service" '.services[$service].ports[] | "\(.host_ip // "*"):\(.published)"' |
+    sort | tr '\n' ' '
+}
+lan_host_ips() { host_ips "$1" -f "$ROOT/compose.yaml" -f "$ROOT/compose.lan.yaml"; }
+check "sans compose.lan.yaml, video publie RTMP et HLS sur 127.0.0.1" test "$(host_ips video)" = "127.0.0.1:${VIDEO_RTMP_PORT} 127.0.0.1:${VIDEO_HTTP_PORT} "
+check "compose.lan.yaml republie l'API sur toutes les interfaces" test "$(lan_host_ips api)" = "*:${API_PORT} "
+check "compose.lan.yaml republie RTMP et HLS de video sur toutes les interfaces" test "$(lan_host_ips video)" = "*:${VIDEO_RTMP_PORT} *:${VIDEO_HTTP_PORT} "
+check "compose.lan.yaml laisse PostgreSQL sur 127.0.0.1" test "$(lan_host_ips postgres)" = "127.0.0.1:${POSTGRES_PORT} "
 
 echo "Ports publiés sur 127.0.0.1 uniquement"
 published="$(docker ps --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME" --format '{{.Ports}}' | tr ',' '\n' | grep -- '->' || true)"
