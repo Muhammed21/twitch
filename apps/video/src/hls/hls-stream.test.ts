@@ -13,6 +13,7 @@ import {
   feedHlsStream,
   type HlsStream,
   type HlsStreamOptions,
+  openSegmentOf,
   startHlsStream,
 } from "./hls-stream.ts";
 
@@ -20,6 +21,7 @@ const OPTIONS: HlsStreamOptions = {
   maxBoxSize: 1 << 20,
   targetSeconds: 2,
   targetDuration: 4,
+  partTarget: 0.334,
   capacity: 6,
   maxSegmentBytes: 1 << 20,
 };
@@ -34,7 +36,14 @@ const feedAll = (pieces: readonly Uint8Array[], options: HlsStreamOptions = OPTI
   }, startHlsStream(options));
 
 const fingerprint = (segments: HlsStream["segments"]) =>
-  segments.map((segment) => ({ ...segment, bytes: Buffer.from(segment.bytes).toString("base64") }));
+  segments.map((segment) => ({
+    ...segment,
+    bytes: Buffer.from(segment.bytes).toString("base64"),
+    parts: segment.parts.map((part) => ({
+      ...part,
+      bytes: Buffer.from(part.bytes).toString("base64"),
+    })),
+  }));
 
 const VIDEO_TRACK = { id: 1, handler: "vide", timescale: 1000 };
 
@@ -109,6 +118,40 @@ describe("flux HLS d'une session", () => {
 
     expect(stream.segments.map((segment) => segment.seconds)).toEqual([2]);
     expect(stream.targetDuration).toBe(3);
+  });
+});
+
+const keyframeFragments = (durations: readonly number[]) =>
+  durations.map((duration, index) =>
+    makeFragment({
+      trackId: 1,
+      decodeTime: durations.slice(0, index).reduce((total, value) => total + value, 0),
+      defaultFlags: 0x0200_0000,
+      samples: [{ duration }],
+    }),
+  );
+
+describe("parts du LL-HLS", () => {
+  it("rend les parts du segment ouvert sous le numéro du prochain segment", () => {
+    const stream = feedAll([
+      makeInit({ tracks: [VIDEO_TRACK] }),
+      ...keyframeFragments([2000, 300, 200]),
+    ]);
+
+    expect(openSegmentOf(stream).sequence).toBe(1);
+    expect(openSegmentOf(stream).parts.map(({ seconds }) => seconds)).toEqual([0.3, 0.2]);
+    expect(openSegmentOf(startHlsStream(OPTIONS))).toEqual({ sequence: 0, parts: [] });
+  });
+
+  it("annonce la durée cible des parts fixée, et la relève pour une part plus longue, même ouverte", () => {
+    expect(startHlsStream(OPTIONS).partTarget).toBe(0.334);
+    expect(
+      feedAll([makeInit({ tracks: [VIDEO_TRACK] }), ...keyframeFragments([300, 450])]).partTarget,
+    ).toBe(0.45);
+    expect(
+      feedAll([makeInit({ tracks: [VIDEO_TRACK] }), ...keyframeFragments([2500, 300, 300])])
+        .partTarget,
+    ).toBe(2.5);
   });
 });
 

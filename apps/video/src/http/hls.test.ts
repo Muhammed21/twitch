@@ -17,15 +17,19 @@ const HLS_OPTIONS = {
   maxBoxSize: 1 << 20,
   targetSeconds: 2,
   targetDuration: 4,
+  partTarget: 0.334,
   capacity: 6,
   maxSegmentBytes: 1 << 20,
 };
 const FALLBACK_BANDWIDTH = 2_000_000;
+const BLOCKING_TIMEOUT_MS = 200;
 
 const startPlayback = async ({
   liveSessionOf,
+  blockingTimeoutMs = BLOCKING_TIMEOUT_MS,
 }: {
   readonly liveSessionOf?: (channelId: string) => Promise<string | undefined>;
+  readonly blockingTimeoutMs?: number;
 } = {}) => {
   const registry = createHlsRegistry(HLS_OPTIONS);
   const liveSessions = new Map<string, string>();
@@ -40,6 +44,8 @@ const startPlayback = async ({
     }),
     hls: {
       find: registry.find,
+      waitFor: registry.waitFor,
+      blockingTimeoutMs,
       liveSessionOf: liveSessionOf ?? (async (channelId) => liveSessions.get(channelId)),
       fallbackBandwidth: FALLBACK_BANDWIDTH,
     },
@@ -59,6 +65,8 @@ const MEDIA_HEADERS = {
   "content-type": "video/mp4",
   "cache-control": "public, max-age=31536000, immutable",
 };
+
+const OPEN_PART_HEADERS = { "content-type": "video/mp4", "cache-control": "no-cache" };
 
 const headersOf = (response: Response, names: readonly string[]) =>
   Object.fromEntries(names.map((name) => [name, response.headers.get(name)]));
@@ -128,7 +136,7 @@ describe("playlist maître d'un canal", () => {
 });
 
 describe("lecture HLS d'une session", () => {
-  it("sert la playlist de média des segments fermés, en cache court", async () => {
+  it("sert la playlist LL-HLS des segments fermés et des parts du segment ouvert, en cache court", async () => {
     const { registry, get } = await startPlayback();
     registry.open(SESSION_ID);
     registry.feed(SESSION_ID, FFMPEG_FRAGMENTED_MP4);
@@ -142,13 +150,35 @@ describe("lecture HLS d'une session", () => {
         "#EXTM3U",
         "#EXT-X-VERSION:7",
         "#EXT-X-TARGETDURATION:4",
+        "#EXT-X-SERVER-CONTROL:CAN-BLOCK-RELOAD=YES,PART-HOLD-BACK=1.287",
+        "#EXT-X-PART-INF:PART-TARGET=0.429",
         "#EXT-X-MEDIA-SEQUENCE:0",
         "#EXT-X-INDEPENDENT-SEGMENTS",
         '#EXT-X-MAP:URI="init.mp4"',
+        '#EXT-X-PART:DURATION=0.428,URI="0.0.m4s",INDEPENDENT=YES',
+        '#EXT-X-PART:DURATION=0.400,URI="0.1.m4s"',
+        '#EXT-X-PART:DURATION=0.100,URI="0.2.m4s"',
+        '#EXT-X-PART:DURATION=0.400,URI="0.3.m4s",INDEPENDENT=YES',
+        '#EXT-X-PART:DURATION=0.400,URI="0.4.m4s"',
+        '#EXT-X-PART:DURATION=0.400,URI="0.5.m4s",INDEPENDENT=YES',
+        '#EXT-X-PART:DURATION=0.400,URI="0.6.m4s"',
         "#EXTINF:2.528,",
         "0.m4s",
+        '#EXT-X-PART:DURATION=0.400,URI="1.0.m4s",INDEPENDENT=YES',
+        '#EXT-X-PART:DURATION=0.400,URI="1.1.m4s"',
+        '#EXT-X-PART:DURATION=0.400,URI="1.2.m4s",INDEPENDENT=YES',
+        '#EXT-X-PART:DURATION=0.400,URI="1.3.m4s"',
+        '#EXT-X-PART:DURATION=0.400,URI="1.4.m4s",INDEPENDENT=YES',
+        '#EXT-X-PART:DURATION=0.400,URI="1.5.m4s"',
         "#EXTINF:2.400,",
         "1.m4s",
+        '#EXT-X-PART:DURATION=0.400,URI="2.0.m4s",INDEPENDENT=YES',
+        '#EXT-X-PART:DURATION=0.400,URI="2.1.m4s"',
+        '#EXT-X-PART:DURATION=0.400,URI="2.2.m4s",INDEPENDENT=YES',
+        '#EXT-X-PART:DURATION=0.400,URI="2.3.m4s"',
+        '#EXT-X-PART:DURATION=0.400,URI="2.4.m4s",INDEPENDENT=YES',
+        '#EXT-X-PART:DURATION=0.200,URI="2.5.m4s"',
+        '#EXT-X-PRELOAD-HINT:TYPE=PART,URI="2.6.m4s"',
         "",
       ].join("\n"),
     );
@@ -271,5 +301,194 @@ describe("lecture HLS d'une session", () => {
     const response = await get(path);
 
     expect(response.status).toBe(404);
+  });
+});
+
+const VIDEO_TRACK = { id: 1, handler: "vide", timescale: 1000 };
+
+const makeKeyframe = (decodeTime: number, duration: number) =>
+  makeFragment({ trackId: 1, decodeTime, defaultFlags: 0x0200_0000, samples: [{ duration }] });
+
+const untilWaiting = async (registry: { readonly waiting: () => number }) => {
+  while (registry.waiting() === 0) {
+    await new Promise((resolve) => {
+      setTimeout(resolve, 5);
+    });
+  }
+};
+
+const LONG_BLOCKING_MS = 30_000;
+
+const makeFollowing = (decodeTime: number, duration: number) =>
+  makeFragment({ trackId: 1, decodeTime, defaultFlags: 0x0101_0000, samples: [{ duration }] });
+
+const openWithOnePart = async ({
+  firstPartMs = 300,
+  blockingTimeoutMs = BLOCKING_TIMEOUT_MS,
+}: { readonly firstPartMs?: number; readonly blockingTimeoutMs?: number } = {}) => {
+  const playback = await startPlayback({ blockingTimeoutMs });
+  playback.registry.open(SESSION_ID);
+  playback.registry.feed(SESSION_ID, makeInit({ tracks: [VIDEO_TRACK] }));
+  const first = makeKeyframe(0, firstPartMs);
+  playback.registry.feed(SESSION_ID, first);
+  return { ...playback, first };
+};
+
+describe("parts du LL-HLS", () => {
+  it("sert une part du segment ouvert sans la laisser en cache : un segment abandonné rend son numéro", async () => {
+    const { get, first } = await openWithOnePart();
+
+    const response = await get(`${SESSION_ID}/0.0.m4s`);
+
+    expect(response.status).toBe(200);
+    expect(headersOf(response, Object.keys(OPEN_PART_HEADERS))).toEqual(OPEN_PART_HEADERS);
+    expect(new Uint8Array(await response.arrayBuffer())).toEqual(first);
+  });
+
+  it("sert une part d'un segment fermé, immuable", async () => {
+    const { registry, get } = await startPlayback();
+    registry.open(SESSION_ID);
+    registry.feed(SESSION_ID, FFMPEG_FRAGMENTED_MP4);
+
+    const response = await get(`${SESSION_ID}/1.1.m4s`);
+
+    expect(response.status).toBe(200);
+    expect(headersOf(response, Object.keys(MEDIA_HEADERS))).toEqual(MEDIA_HEADERS);
+    expect(new Uint8Array(await response.arrayBuffer())).toEqual(
+      registry.find(SESSION_ID)?.segments[1]?.parts[1]?.bytes,
+    );
+  });
+
+  it("répond 404 sans attendre pour une part qui n'est pas la prochaine", async () => {
+    const { get } = await openWithOnePart({ blockingTimeoutMs: LONG_BLOCKING_MS });
+
+    expect((await get(`${SESSION_ID}/0.2.m4s`)).status).toBe(404);
+    expect((await get(`${SESSION_ID}/1.1.m4s`)).status).toBe(404);
+    expect((await get(`${SESSION_ID}/7.0.m4s`)).status).toBe(404);
+  });
+
+  it.each(["x0.0.m4s", "0.0.m4sx", "0.0.mp4"])("répond 404 pour le fichier %s", async (file) => {
+    const { get } = await openWithOnePart();
+
+    expect((await get(`${SESSION_ID}/${file}`)).status).toBe(404);
+  });
+
+  it("sert les parts aux numéros à plusieurs chiffres", async () => {
+    const { registry, get } = await startPlayback();
+    registry.open(SESSION_ID);
+    registry.feed(SESSION_ID, makeInit({ tracks: [VIDEO_TRACK] }));
+    for (const fragment of Array.from({ length: 11 }, (_, index) =>
+      makeKeyframe(index * 2000, 2000),
+    )) {
+      registry.feed(SESSION_ID, fragment);
+    }
+    const following = Array.from({ length: 10 }, (_, index) =>
+      makeFollowing(22_000 + index * 10, 10),
+    );
+    for (const fragment of following) {
+      registry.feed(SESSION_ID, fragment);
+    }
+
+    const response = await get(`${SESSION_ID}/10.10.m4s`);
+
+    expect(response.status).toBe(200);
+    expect(new Uint8Array(await response.arrayBuffer())).toEqual(following[9]);
+  });
+
+  it("répond 404 dès que le segment de la part annoncée se ferme sans elle", async () => {
+    const { registry, get } = await openWithOnePart({
+      firstPartMs: 2000,
+      blockingTimeoutMs: LONG_BLOCKING_MS,
+    });
+    const pending = get(`${SESSION_ID}/0.1.m4s`);
+
+    await untilWaiting(registry);
+    registry.feed(SESSION_ID, makeKeyframe(2000, 300));
+
+    expect((await pending).status).toBe(404);
+  });
+
+  it("retient la demande de la part annoncée jusqu'à son arrivée", async () => {
+    const { registry, get } = await openWithOnePart();
+    const pending = get(`${SESSION_ID}/0.1.m4s`);
+    const next = makeFollowing(300, 300);
+
+    await untilWaiting(registry);
+    registry.feed(SESSION_ID, next);
+    const response = await pending;
+
+    expect(response.status).toBe(200);
+    expect(new Uint8Array(await response.arrayBuffer())).toEqual(next);
+  });
+
+  it("répond 404 quand la part annoncée n'arrive pas dans le délai", async () => {
+    const { get } = await openWithOnePart();
+
+    expect((await get(`${SESSION_ID}/0.1.m4s`)).status).toBe(404);
+  });
+});
+
+describe("rechargement bloquant de la playlist de média", () => {
+  it("répond dès que la part demandée existe", async () => {
+    const { registry, get } = await openWithOnePart();
+    const pending = get(`${SESSION_ID}/media.m3u8?_HLS_msn=0&_HLS_part=1`);
+
+    await untilWaiting(registry);
+    registry.feed(SESSION_ID, makeKeyframe(300, 300));
+    const response = await pending;
+
+    expect(response.status).toBe(200);
+    expect(headersOf(response, Object.keys(PLAYLIST_HEADERS))).toEqual(PLAYLIST_HEADERS);
+    expect(await response.text()).toContain('URI="0.1.m4s"');
+  });
+
+  it("répond aussitôt pour une part déjà là", async () => {
+    const { get } = await openWithOnePart();
+
+    const response = await get(`${SESSION_ID}/media.m3u8?_HLS_msn=0&_HLS_part=0`);
+
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain('URI="0.0.m4s"');
+  });
+
+  it("répond 503 quand la part demandée n'arrive pas dans le délai", async () => {
+    const { get } = await openWithOnePart();
+
+    const response = await get(`${SESSION_ID}/media.m3u8?_HLS_msn=0&_HLS_part=1`);
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toMatchObject({
+      status: 503,
+      title: "Segment pas encore disponible",
+    });
+  });
+
+  it.each(["_HLS_part=1", "_HLS_msn=x", "_HLS_msn=3"])("répond 400 à %s", async (query) => {
+    const { get } = await openWithOnePart();
+
+    const response = await get(`${SESSION_ID}/media.m3u8?${query}`);
+
+    expect(response.status).toBe(400);
+    expect(response.headers.get("content-type")).toBe("application/problem+json");
+    expect(await response.json()).toMatchObject({
+      status: 400,
+      title: "Rechargement bloquant invalide",
+    });
+  });
+
+  it("répond 404 pour une session inconnue", async () => {
+    const { get } = await startPlayback();
+
+    expect((await get(`${SESSION_ID}/media.m3u8?_HLS_msn=0`)).status).toBe(404);
+  });
+
+  it("répond 404 pour une session retirée pendant l'attente", async () => {
+    const { registry, get } = await openWithOnePart({ blockingTimeoutMs: LONG_BLOCKING_MS });
+    const pending = get(`${SESSION_ID}/media.m3u8?_HLS_msn=0&_HLS_part=1`);
+
+    await untilWaiting(registry);
+    registry.remove(SESSION_ID);
+
+    expect((await pending).status).toBe(404);
   });
 });

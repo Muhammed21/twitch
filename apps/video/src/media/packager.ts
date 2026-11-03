@@ -19,6 +19,8 @@ export const FFMPEG_FMP4_ARGS: readonly string[] = [
   "mp4",
   "-movflags",
   "frag_keyframe+empty_moov+default_base_moof",
+  "-frag_duration",
+  "330000",
   "pipe:1",
 ];
 

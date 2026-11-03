@@ -97,7 +97,7 @@ describe("ffmpeg supervisé par session (ADR 0031, §4)", () => {
     expect(output().toString()).toBe("ready");
   });
 
-  it("lance ffmpeg en copie, du FLV de l'entrée standard au fMP4 fragmenté de la sortie standard", () => {
+  it("lance ffmpeg en copie, du FLV de l'entrée standard au fMP4 fragmenté en parts de 330 ms de la sortie standard", () => {
     expect(FFMPEG_FMP4_ARGS).toEqual([
       "-hide_banner",
       "-loglevel",
@@ -114,6 +114,8 @@ describe("ffmpeg supervisé par session (ADR 0031, §4)", () => {
       "mp4",
       "-movflags",
       "frag_keyframe+empty_moov+default_base_moof",
+      "-frag_duration",
+      "330000",
       "pipe:1",
     ]);
   });
