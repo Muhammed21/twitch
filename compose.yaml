@@ -2,7 +2,7 @@ name: twitch
 
 # Environnement local (ADR 0028). Profil par défaut : infrastructure seulement,
 # les applications tournent sur l'hôte avec `pnpm dev`. Le profil `full` ajoute
-# les images des applications : migrate, puis video, api et outbox-relay (§5).
+# les images des applications : migrate, puis video, api, outbox-relay et chat (§5).
 
 x-postgres-client-env: &postgres-client-env
   PGHOST: postgres
@@ -127,6 +127,36 @@ services:
     environment:
       DATABASE_URL_OUTBOX_RELAY: postgresql://app_outbox_relay:${PG_PASSWORD_APP_OUTBOX_RELAY}@postgres:5432/app
       REDIS_URL: redis://redis:6379
+
+  chat:
+    profiles: [full]
+    build:
+      context: .
+      dockerfile: apps/chat/Dockerfile
+      target: chat
+    image: twitch-chat:local
+    stop_grace_period: 45s
+    depends_on:
+      api:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      CHAT_HTTP_PORT: "3001"
+      CHAT_API_BASE_URL: http://127.0.0.1:${API_PORT:-3000}
+      CHAT_API_JWKS_URL: http://api:3000/auth/jwks
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "127.0.0.1:${CHAT_HTTP_PORT:-3001}:3001"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3001/health/ready').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 2s
+      timeout: 3s
+      retries: 30
 
   video:
     profiles: [full]
