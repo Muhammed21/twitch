@@ -18,7 +18,7 @@ export const RealtimeChatMessage = z
   .meta({ id: "RealtimeChatMessage" });
 
 export const RealtimeChatRejected = z
-  .looseObject({ reason: openEnum(["timed_out", "rate_limited"]) })
+  .looseObject({ reason: openEnum(["timed_out", "banned", "rate_limited", "not_joined"]) })
   .meta({ id: "RealtimeChatRejected" });
 
 export const RealtimeSessionRevoked = z
