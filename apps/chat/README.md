@@ -14,7 +14,14 @@ Service de chat temps réel, process Node séparé (ADR 0004, ADR 0022). Découp
 | ------------------- | ------------------------------------------------------------------------------ |
 | `CHAT_HTTP_PORT`    | Port d'écoute, 3001 par défaut                                                 |
 | `CHAT_API_BASE_URL` | URL de l'API : JWKS `/auth/jwks`, émetteur `/auth`, audience `/v1`             |
+| `CHAT_API_JWKS_URL` | JWKS lu ailleurs qu'à `CHAT_API_BASE_URL`, émetteur et audience inchangés      |
 | `REDIS_URL`         | Redis de la liste de révocation et des vues locales, `redis://` ou `rediss://` |
+
+## Image et Compose
+
+- `Dockerfile` : élagage `turbo prune @repo/chat`, dépendances de production, sources TypeScript exécutées par Node sans build. Le process tourne sous `node`.
+- Service `chat` du profil `full` (ADR 0028), démarré quand l'API et Redis sont sains, port `CHAT_HTTP_PORT` (3001) publié sur `127.0.0.1`. Il vérifie les jetons émis pour `http://127.0.0.1:3000` et lit leur JWKS à `http://api:3000/auth/jwks`. `compose.lan.yaml` le republie sur toutes les interfaces pour un iPhone réel.
+- `docker/tests/infra.test.sh` démarre le service, sonde `/health/ready`, lit le JWKS de l'API depuis le conteneur, et vérifie qu'un upgrade sans jeton ou au jeton invalide reçoit `401` depuis l'hôte.
 
 ## Transport
 

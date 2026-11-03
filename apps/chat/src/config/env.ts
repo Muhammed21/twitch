@@ -3,6 +3,7 @@ import { z } from "zod";
 const envSchema = z.object({
   CHAT_HTTP_PORT: z.coerce.number().int().min(1).max(65_535).default(3001),
   CHAT_API_BASE_URL: z.url({ protocol: /^https?$/ }).default("http://127.0.0.1:3000"),
+  CHAT_API_JWKS_URL: z.url({ protocol: /^https?$/ }).optional(),
   REDIS_URL: z.url({ protocol: /^rediss?$/ }),
 });
 
@@ -27,7 +28,7 @@ export const loadEnv = (env: Readonly<Record<string, string | undefined>>): Chat
     httpPort: parsed.data.CHAT_HTTP_PORT,
     redisUrl: parsed.data.REDIS_URL,
     accessTokens: {
-      jwksUrl: apiUrl("/auth/jwks"),
+      jwksUrl: parsed.data.CHAT_API_JWKS_URL ?? apiUrl("/auth/jwks"),
       issuer: apiUrl("/auth"),
       audience: apiUrl("/v1"),
     },

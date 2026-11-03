@@ -177,6 +177,26 @@ check "SIGTERM arrête video dans le délai de grâce" full stop video
 check "video s'est arrêté de lui-même, sans SIGKILL" stopped_by_itself video
 full rm -sf video >/dev/null 2>&1
 
+echo "Chat (profil full)"
+CHAT_HTTP="http://127.0.0.1:${CHAT_HTTP_PORT}"
+in_chat() { full exec -T chat "$@"; }
+started_after_api() { test "$(comparable_time "$(state_of chat StartedAt)")" \> "$(comparable_time "$(state_of api StartedAt)")"; }
+upgrade_status() {
+  curl -s -o /dev/null -w '%{http_code}' --max-time 5 --http1.1 \
+    -H "Connection: Upgrade" -H "Upgrade: websocket" -H "Sec-WebSocket-Version: 13" \
+    -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" "$@" "$CHAT_HTTP/socket.io/?EIO=4&transport=websocket"
+}
+check "chat démarre après l'API et devient sain" full up -d --build --wait --wait-timeout 600 chat
+check "/health/ready du chat répond 200 depuis l'hôte" curl -sf "$CHAT_HTTP/health/ready"
+check "le chat démarre après l'API" started_after_api
+check "le chat tourne sous l'utilisateur node" test "$(in_chat id -un)" = "node"
+check "le chat lit le JWKS de l'API à CHAT_API_JWKS_URL" in_chat node -e 'fetch(process.env.CHAT_API_JWKS_URL).then(r => r.json()).then(b => process.exit(b.keys.length > 0 ? 0 : 1), () => process.exit(1))'
+check "un upgrade sans jeton reçoit 401 depuis l'hôte" test "$(upgrade_status)" = "401"
+check "un upgrade au jeton invalide reçoit 401 depuis l'hôte" test "$(upgrade_status -H "authorization: Bearer invalide")" = "401"
+check "SIGTERM arrête le chat dans le délai de grâce" full stop chat
+check "le chat s'est arrêté de lui-même, sans SIGKILL" stopped_by_itself chat
+full rm -sf chat >/dev/null 2>&1
+
 echo "Exposition sur le réseau local (compose.lan.yaml)"
 host_ips() {
   local service="$1"
@@ -189,6 +209,8 @@ lan_host_ips() { host_ips "$1" -f "$ROOT/compose.yaml" -f "$ROOT/compose.lan.yam
 check "sans compose.lan.yaml, video publie RTMP et HLS sur 127.0.0.1" test "$(host_ips video)" = "127.0.0.1:${VIDEO_RTMP_PORT} 127.0.0.1:${VIDEO_HTTP_PORT} "
 check "compose.lan.yaml republie l'API sur toutes les interfaces" test "$(lan_host_ips api)" = "*:${API_PORT} "
 check "compose.lan.yaml republie RTMP et HLS de video sur toutes les interfaces" test "$(lan_host_ips video)" = "*:${VIDEO_RTMP_PORT} *:${VIDEO_HTTP_PORT} "
+check "sans compose.lan.yaml, le chat publie sur 127.0.0.1" test "$(host_ips chat)" = "127.0.0.1:${CHAT_HTTP_PORT} "
+check "compose.lan.yaml republie le chat sur toutes les interfaces" test "$(lan_host_ips chat)" = "*:${CHAT_HTTP_PORT} "
 check "compose.lan.yaml laisse PostgreSQL sur 127.0.0.1" test "$(lan_host_ips postgres)" = "127.0.0.1:${POSTGRES_PORT} "
 
 echo "Ports publiés sur 127.0.0.1 uniquement"

@@ -33,6 +33,21 @@ describe("loadEnv", () => {
     });
   });
 
+  it("lit le JWKS à CHAT_API_JWKS_URL, sans changer émetteur ni audience", () => {
+    expect(
+      loadEnv(
+        makeEnv({
+          CHAT_API_BASE_URL: "http://127.0.0.1:3000",
+          CHAT_API_JWKS_URL: "http://api:3000/auth/jwks",
+        }),
+      ).accessTokens,
+    ).toEqual({
+      jwksUrl: "http://api:3000/auth/jwks",
+      issuer: "http://127.0.0.1:3000/auth",
+      audience: "http://127.0.0.1:3000/v1",
+    });
+  });
+
   it.each([
     ["une API en http explicite", { CHAT_API_BASE_URL: "http://api.twitch.test" }],
     ["un Redis en TLS", { REDIS_URL: "rediss://cache.twitch.test:6380" }],
@@ -63,6 +78,21 @@ describe("loadEnv", () => {
     ["avec un Redis qui n'est pas une URL redis", makeEnv({ REDIS_URL: "http://x" }), "REDIS_URL"],
     ["avec un port hors plage", makeEnv({ CHAT_HTTP_PORT: "70000" }), "CHAT_HTTP_PORT"],
     ["avec un port nul", makeEnv({ CHAT_HTTP_PORT: "0" }), "CHAT_HTTP_PORT"],
+    [
+      "avec un JWKS qui n'est pas une URL http",
+      makeEnv({ CHAT_API_JWKS_URL: "ftp://api/auth/jwks" }),
+      "CHAT_API_JWKS_URL",
+    ],
+    [
+      "avec un JWKS au schéma qui finit par http",
+      makeEnv({ CHAT_API_JWKS_URL: "xhttp://api/auth/jwks" }),
+      "CHAT_API_JWKS_URL",
+    ],
+    [
+      "avec un JWKS au schéma qui commence par http",
+      makeEnv({ CHAT_API_JWKS_URL: "httpx://api/auth/jwks" }),
+      "CHAT_API_JWKS_URL",
+    ],
     [
       "avec une API qui n'est pas une URL http",
       makeEnv({ CHAT_API_BASE_URL: "ftp://api" }),
