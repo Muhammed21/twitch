@@ -3,6 +3,9 @@ import { createServer, type Socket } from "node:net";
 
 import { z } from "zod";
 
+import { err, ok } from "@repo/result";
+
+import { muxMessages } from "./chunk-mux.ts";
 import {
   type ChunkLimits,
   type ChunkRefusal,
@@ -11,7 +14,16 @@ import {
   type RtmpMessage,
   startDemuxer,
 } from "./chunk-stream.ts";
+import {
+  type Command,
+  connectAccepted,
+  publishStarted,
+  readCommand,
+  streamCreated,
+} from "./commands.ts";
 import { advanceHandshake, type Handshake, startHandshake } from "./handshake.ts";
+
+const COMMAND = 20;
 
 const BoundAddress = z.object({ port: z.int() });
 
@@ -19,7 +31,12 @@ export type RtmpRejection =
   | "unsupported_version"
   | "handshake_timeout"
   | "idle_timeout"
-  | ChunkRefusal;
+  | ChunkRefusal
+  | "malformed_command"
+  | "publish_refused"
+  | "publish_failed";
+
+export type Publication = { readonly end: () => Promise<void> };
 
 export type RtmpServerStats = {
   readonly connections: number;
@@ -49,6 +66,8 @@ export const startRtmpServer = async ({
   limits,
   randomBytes,
   onMessage,
+  publish,
+  onError,
 }: {
   port: number;
   handshakeTimeoutMs: number;
@@ -56,6 +75,8 @@ export const startRtmpServer = async ({
   limits: ChunkLimits;
   randomBytes: (size: number) => Uint8Array;
   onMessage: (message: RtmpMessage) => void;
+  publish: (streamKey: string) => Promise<Publication | undefined>;
+  onError: (error: unknown) => void;
 }): Promise<RtmpServer> => {
   const sockets = new Set<Socket>();
   const counters = {
@@ -68,6 +89,9 @@ export const startRtmpServer = async ({
       message_too_large: 0,
       invalid_chunk_size: 0,
       too_many_chunk_streams: 0,
+      malformed_command: 0,
+      publish_refused: 0,
+      publish_failed: 0,
     },
   };
 
@@ -76,17 +100,95 @@ export const startRtmpServer = async ({
     socket.destroy();
   };
 
+  const endQuietly = (publication: Publication | undefined) => publication?.end().catch(onError);
+
   const accept = (socket: Socket) => {
     sockets.add(socket);
     socket.on("close", () => sockets.delete(socket));
     socket.on("error", ignoreSocketError);
     const deadline = setTimeout(() => reject(socket, "handshake_timeout"), handshakeTimeoutMs);
     socket.on("close", () => clearTimeout(deadline));
-    const connection: { handshake: Handshake; demuxer: Demuxer; buffered: Uint8Array } = {
+    const connection: {
+      handshake: Handshake;
+      demuxer: Demuxer;
+      buffered: Uint8Array;
+      publication: Publication | undefined;
+      work: Promise<unknown>;
+    } = {
       handshake: startHandshake(),
       demuxer: startDemuxer(limits),
       buffered: new Uint8Array(0),
+      publication: undefined,
+      work: Promise.resolve(),
     };
+    const send = (messages: readonly RtmpMessage[]) => socket.write(muxMessages(messages));
+
+    const startPublication = async ({
+      streamKey,
+      streamId,
+    }: {
+      streamKey: string;
+      streamId: number;
+    }) => {
+      if (connection.publication !== undefined) {
+        reject(socket, "publish_refused");
+        return;
+      }
+      socket.pause();
+      const asked = await publish(streamKey).then(
+        (publication) => ok(publication),
+        (error: unknown) => err(error),
+      );
+      socket.resume();
+      if (!asked.ok) {
+        onError(asked.error);
+        reject(socket, "publish_failed");
+        return;
+      }
+      if (asked.value === undefined) {
+        reject(socket, "publish_refused");
+        return;
+      }
+      connection.publication = asked.value;
+      send([publishStarted(streamId)]);
+    };
+
+    const obey = async (command: Command) => {
+      if (command.name === "connect") {
+        send(connectAccepted(command.transactionId));
+      }
+      if (command.name === "createStream") {
+        send([streamCreated(command.transactionId)]);
+      }
+      if (command.name === "publish") {
+        await startPublication(command);
+      }
+      if (command.name === "deleteStream") {
+        const ended = connection.publication;
+        connection.publication = undefined;
+        await endQuietly(ended);
+      }
+    };
+
+    const handle = async (message: RtmpMessage) => {
+      if (socket.destroyed) {
+        return;
+      }
+      onMessage(message);
+      if (message.typeId !== COMMAND) {
+        return;
+      }
+      const command = readCommand(message);
+      if (!command.ok) {
+        reject(socket, command.error);
+        return;
+      }
+      await obey(command.value);
+    };
+
+    socket.on("close", () => {
+      connection.work = connection.work.then(() => endQuietly(connection.publication));
+    });
 
     const demux = (input: Uint8Array) => {
       const step = demuxChunks({ demuxer: connection.demuxer, input });
@@ -96,7 +198,9 @@ export const startRtmpServer = async ({
       }
       connection.demuxer = step.value.demuxer;
       connection.buffered = input.subarray(step.value.consumed);
-      step.value.messages.forEach(onMessage);
+      step.value.messages.forEach((message) => {
+        connection.work = connection.work.then(() => handle(message));
+      });
     };
 
     const shake = (input: Uint8Array) => {
