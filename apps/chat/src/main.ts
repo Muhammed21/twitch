@@ -19,6 +19,7 @@ import { type ChatLog, startChatServer } from "./transport/chat-server.ts";
 
 const BUCKET_SWEEP_INTERVAL_MS = 10_000;
 const REVALIDATION_INTERVAL_MS = 5 * 60_000;
+const SHUTDOWN_SPREAD_MS = 30_000;
 const EVENT_STREAMS = ["events.channel", "events.stream", "events.identity", "events.moderation"];
 const CONSUMER_GROUP = "chat";
 const CLAIM_IDLE_MS = 30_000;
@@ -111,10 +112,11 @@ try {
   log({ level: "info", msg: "chat démarré", port: server.port });
 
   await Promise.race([once(process, "SIGTERM"), once(process, "SIGINT")]);
+  log({ level: "info", msg: "arrêt du chat", spreadMs: SHUTDOWN_SPREAD_MS });
+  await server.close({ spreadMs: SHUTDOWN_SPREAD_MS });
   clearInterval(sweep);
   clearInterval(revalidation);
   await consumer.stop();
-  await server.close();
   destroyRedis();
   log({ level: "info", msg: "chat arrêté" });
 } catch (error) {

@@ -35,6 +35,10 @@ Le gestionnaire d'upgrade lit `Authorization: Bearer <jeton>` avant toute connex
 
 Chaque handshake est journalisé avec son statut seul, jamais l'en-tête `Authorization`. Un client qui coupe sa connexion pendant la vérification est journalisé (`handshake interrompu`) sans arrêter le process. `GET /health/live` et `GET /health/ready` répondent `200`.
 
+### Arrêt
+
+Sur `SIGTERM` ou `SIGINT` (ADR 0028 §8), `/health/ready` passe en `503` et tout nouvel upgrade reçoit `503`, corps vide ; `/health/live` reste à `200`. Les sockets ouvertes sont fermées par 10 lots étalés sur 30 s, au niveau du transport : le client voit une coupure réseau (`transport close`) et se reconnecte avec backoff et gigue (ADR 0023 §3). Le consommateur d'events et la révocation restent actifs pendant ces 30 s ; le process sort ensuite, sous les 45 s de `stop_grace_period`.
+
 ### Révocation et revalidation
 
 Une socket acceptée garde le `sid` et le jeton de son handshake, et rejoint le salon interne `sid:<sid>`. Une fois dans ce salon, son jeton est vérifié une seconde fois : une session révoquée pendant la lecture du profil est refusée avec l'erreur `session_revoked`.
