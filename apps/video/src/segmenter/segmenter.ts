@@ -58,7 +58,9 @@ const sealed = (segmenter: Segmenter): Segmenter => {
   };
   return {
     ...segmenter,
-    segments: [...segmenter.segments, segment].slice(-options.capacity),
+    segments: [...segmenter.segments, segment].slice(
+      Math.max(0, segmenter.segments.length + 1 - options.capacity),
+    ),
     nextSequence: nextSequence + 1,
     open: undefined,
   };

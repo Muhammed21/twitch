@@ -248,9 +248,9 @@ describe("tampon circulaire", () => {
     expect(closeSegmenter(segmenter).segments.map((segment) => segment.sequence)).toEqual([4, 5]);
   });
 
-  it("ne dépasse jamais sa capacité", () => {
+  it("garde les derniers segments sans dépasser sa capacité, même nulle", () => {
     fc.assert(
-      fc.property(fc.integer({ min: 1, max: 5 }), fc.nat({ max: 20 }), (capacity, count) => {
+      fc.property(fc.integer({ min: 0, max: 5 }), fc.nat({ max: 20 }), (capacity, count) => {
         const segmenter = closeSegmenter(
           appendAll(
             startSegmenter({ init: MILLISECONDS, ...OPTIONS, capacity }),
@@ -258,8 +258,11 @@ describe("tampon circulaire", () => {
           ),
         );
 
-        expect(segmenter.segments).toHaveLength(Math.min(capacity, count));
-        expect(segmenter.segments.at(-1)?.sequence ?? -1).toBe(count - 1);
+        const kept = Math.min(capacity, count);
+
+        expect(segmenter.segments.map((segment) => segment.sequence)).toEqual(
+          Array.from({ length: kept }, (_, index) => count - kept + index),
+        );
       }),
     );
   });
