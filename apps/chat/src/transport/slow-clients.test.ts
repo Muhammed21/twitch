@@ -10,6 +10,7 @@ import { createMessageSender, type MessageSender } from "../application/message-
 import { createRoomRegistry } from "../application/room-registry.ts";
 import type { RoomState } from "../domain/decide.ts";
 import { startChatServer } from "./chat-server.ts";
+import { LocalAdapter } from "./testing/local-adapter.ts";
 import { readMetrics } from "./testing/metrics.ts";
 import { makeTokenAuthority } from "./testing/tokens.ts";
 import { pendingPacketsOf } from "./write-buffer.ts";
@@ -72,6 +73,7 @@ const startServer = async (room: RoomState, closeAfterMs: number) => {
     rooms: createRoomRegistry({ find: async (channelId) => ({ ...room, channelId }) }),
     messages: UNLIMITED_SENDER,
     saturation: { maxPackets: MAX_PACKETS, closeAfterMs },
+    adapter: LocalAdapter,
   });
   const proxy = await startStallableProxy(server.port);
   const sockets: Socket[] = [];

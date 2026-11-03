@@ -1,6 +1,7 @@
 import { once } from "node:events";
 import { hostname } from "node:os";
 
+import { createAdapter } from "@socket.io/redis-adapter";
 import { createClient } from "redis";
 
 import { createAccessTokenVerifier } from "@repo/auth-verifier";
@@ -15,6 +16,7 @@ import { redisLocalViewWriter } from "./infrastructure/redis-local-view-writer.t
 import { redisChatterProfiles, redisRoomDirectory } from "./infrastructure/redis-local-views.ts";
 import { redisRevokedSessions } from "./infrastructure/redis-revoked-sessions.ts";
 import { subscribeToSessionRevocations } from "./infrastructure/session-revocation-subscriber.ts";
+import { withSettledCommands } from "./infrastructure/settled-commands.ts";
 import { type ChatLog, startChatServer } from "./transport/chat-server.ts";
 
 const BUCKET_SWEEP_INTERVAL_MS = 10_000;
@@ -24,6 +26,7 @@ const EVENT_STREAMS = ["events.channel", "events.stream", "events.identity", "ev
 const CONSUMER_GROUP = "chat";
 const CLAIM_IDLE_MS = 30_000;
 const BLOCK_MS = 1000;
+const FAN_OUT_KEY = "chat";
 
 const log: ChatLog = (entry) => {
   process.stdout.write(`${JSON.stringify({ time: new Date().toISOString(), ...entry })}\n`);
@@ -48,14 +51,27 @@ try {
   );
   revocationRedis.on("error", revocationConnection.onError);
   revocationRedis.on("ready", revocationConnection.onReady);
+  const fanOutPublisher = createClient({ url: config.redisUrl, name: "chat-fan-out" });
+  const fanOutSubscriber = fanOutPublisher.duplicate({ name: "chat-fan-out-subscriber" });
+  const fanOutConnection = redisConnectionLog((entry) => log({ ...entry, client: "fan-out" }));
+  [fanOutPublisher, fanOutSubscriber].forEach((client) => {
+    client.on("error", fanOutConnection.onError);
+    client.on("ready", fanOutConnection.onReady);
+  });
   redis.connect().catch(() => {});
   consumerRedis.connect().catch(() => {});
   revocationRedis.connect().catch(() => {});
+  fanOutPublisher.connect().catch(() => {});
+  fanOutSubscriber.connect().catch(() => {});
   const destroyRedis = () => {
     redis.destroy();
     consumerRedis.destroy();
     revocationRedis.destroy();
+    fanOutPublisher.destroy();
+    fanOutSubscriber.destroy();
   };
+  const logFanOutFailure = (error: unknown) =>
+    log({ level: "error", msg: "commande de fan-out en échec", error: messageOf(error) });
   const messages = createMessageSender();
   const rooms = createRoomRegistry(redisRoomDirectory(redis));
   const server = await startChatServer({
@@ -69,6 +85,11 @@ try {
     rooms,
     messages,
     saturation: config.saturation,
+    adapter: createAdapter(
+      withSettledCommands(fanOutPublisher, logFanOutFailure),
+      withSettledCommands(fanOutSubscriber, logFanOutFailure),
+      { key: FAN_OUT_KEY },
+    ),
   }).catch((error: unknown) => {
     destroyRedis();
     throw error;

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { createMessageSender } from "../application/message-sender.ts";
 import { createRoomRegistry } from "../application/room-registry.ts";
 import { startChatServer } from "./chat-server.ts";
+import { LocalAdapter } from "./testing/local-adapter.ts";
 import { SATURATION_LIMITS } from "./testing/saturation.ts";
 import { makeTokenAuthority } from "./testing/tokens.ts";
 
@@ -21,6 +22,7 @@ describe("arrêt du chat", () => {
       rooms: createRoomRegistry({ find: async () => undefined }),
       messages: createMessageSender(),
       saturation: SATURATION_LIMITS,
+      adapter: LocalAdapter,
     });
 
     await server.close();

@@ -13,6 +13,7 @@ export default defineConfig({
         "src/**/testing/**",
         "src/infrastructure/event-consumer.ts",
         "src/infrastructure/redis-local-view-writer.ts",
+        "src/transport/fan-out.ts",
       ],
       reporter: ["text"],
       thresholds: {

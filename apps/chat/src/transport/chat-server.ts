@@ -4,7 +4,7 @@ import type { Duplex } from "node:stream";
 import { setTimeout as sleep } from "node:timers/promises";
 
 import { Server as EngineServer, type ServerOptions, type Socket as EngineSocket } from "engine.io";
-import { Server as SocketServer } from "socket.io";
+import { Server as SocketServer, type ServerOptions as SocketOptions } from "socket.io";
 import { z } from "zod";
 
 import type { AccessTokenIdentity, VerificationFailure } from "@repo/auth-verifier";
@@ -21,6 +21,7 @@ import {
   type ChatSocket,
   SATURATED_ROOM,
 } from "./chat-events.ts";
+import { onRemoteSanction, publishSanction } from "./fan-out.ts";
 import { createHistogram, renderMetrics } from "./metrics.ts";
 import { createSaturationGuard } from "./saturation-guard.ts";
 import { pendingPacketsOf } from "./write-buffer.ts";
@@ -128,6 +129,7 @@ export const startChatServer = async ({
   rooms,
   messages,
   saturation,
+  adapter,
 }: {
   port: number;
   verifier: TokenVerifier;
@@ -136,9 +138,10 @@ export const startChatServer = async ({
   rooms: RoomRegistry;
   messages: MessageSender;
   saturation: SaturationLimits;
+  adapter: SocketOptions["adapter"];
 }) => {
   const engine = new EngineServer(ENGINE_OPTIONS);
-  const io: ChatIo = new SocketServer();
+  const io: ChatIo = new SocketServer({ adapter });
   io.bind(engine);
   engine.on("connection", (socket: EngineSocket) => {
     socket.on("message", (data: unknown) => {
@@ -195,9 +198,11 @@ export const startChatServer = async ({
     onRejectedEvent: () => {
       counters.rejectedEvents += 1;
     },
-    onBroadcast: (deliveries) => {
+    onBroadcast: () => {
       counters.messages += 1;
-      counters.deliveries += deliveries;
+    },
+    onDelivery: () => {
+      counters.deliveries += 1;
     },
     onFailure: (error) => {
       log({ msg: "événement en échec", error: String(error) });
@@ -289,6 +294,27 @@ export const startChatServer = async ({
   server.listen(port);
   await once(server, "listening");
 
+  const applySanction = ({ userId, channelId, expiresAt }: ChatterSanction) => {
+    const now = Date.now();
+    const sanction = { channelId, expiresAt };
+    recentSanctions.forEach((recent, user) => {
+      if (recent.every((entry) => Number(entry.expiresAt) <= now)) {
+        recentSanctions.delete(user);
+      }
+    });
+    recentSanctions.set(userId, [...(recentSanctions.get(userId) ?? []), sanction]);
+    io.sockets.sockets.forEach((socket) => {
+      if (socket.data.author.id === userId) {
+        socket.data = withSanctions(socket.data, [sanction]);
+      }
+    });
+  };
+  onRemoteSanction({
+    io,
+    apply: applySanction,
+    log,
+  });
+
   const guarded = (socket: ChatSocket) => ({
     id: socket.id,
     pendingPackets: () => pendingPacketsOf(socket.conn),
@@ -321,24 +347,13 @@ export const startChatServer = async ({
       if (sids.length === 0) {
         return;
       }
-      const revoked = io.in(sids.map(sessionRoomOf));
+      const revoked = io.local.in(sids.map(sessionRoomOf));
       revoked.emit("session:revoked", { action: "stop" });
       revoked.disconnectSockets(true);
     },
-    sanction: ({ userId, channelId, expiresAt }: ChatterSanction) => {
-      const now = Date.now();
-      const sanction = { channelId, expiresAt };
-      recentSanctions.forEach((recent, user) => {
-        if (recent.every((entry) => Number(entry.expiresAt) <= now)) {
-          recentSanctions.delete(user);
-        }
-      });
-      recentSanctions.set(userId, [...(recentSanctions.get(userId) ?? []), sanction]);
-      io.sockets.sockets.forEach((socket) => {
-        if (socket.data.author.id === userId) {
-          socket.data = withSanctions(socket.data, [sanction]);
-        }
-      });
+    sanction: (sanction: ChatterSanction) => {
+      applySanction(sanction);
+      publishSanction(io, sanction);
     },
     pendingSanctionCount: () => recentSanctions.size,
     sanctionApplied: (sanctionedAt: Date) => {

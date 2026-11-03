@@ -40,21 +40,17 @@ export const bindChatEvents = ({
   messages,
   onRejectedEvent,
   onBroadcast,
+  onDelivery,
   onFailure,
 }: {
   io: ChatIo;
   rooms: RoomRegistry;
   messages: MessageSender;
   onRejectedEvent: () => void;
-  onBroadcast: (deliveries: number) => void;
+  onBroadcast: () => void;
+  onDelivery: () => void;
   onFailure: (error: unknown) => void;
 }): void => {
-  const recipientsOf = (room: string): number => {
-    const members = io.sockets.adapter.rooms.get(room);
-    const saturated = [...new Set(io.sockets.adapter.rooms.get(SATURATED_ROOM))];
-    return Number(members?.size) - saturated.filter((id) => members?.has(id)).length;
-  };
-
   const bindSocket = (socket: ChatSocket) => {
     const joined = new Set<string>();
 
@@ -110,7 +106,7 @@ export const bindChatEvents = ({
       io.to(roomOf(channelId))
         .except(SATURATED_ROOM)
         .emit("chat:message", toRealtimeMessage(sent.value, socket.data.author));
-      onBroadcast(recipientsOf(roomOf(channelId)));
+      onBroadcast();
       ack();
     };
 
@@ -118,6 +114,11 @@ export const bindChatEvents = ({
     const inTurn = (task: () => Promise<void> | void) => {
       queue.tail = queue.tail.then(task).catch(onFailure);
     };
+    socket.onAnyOutgoing((event: string) => {
+      if (event === "chat:message") {
+        onDelivery();
+      }
+    });
     socket.onAny((event: string) => {
       if (clientEventSchema(event) === undefined) {
         onRejectedEvent();

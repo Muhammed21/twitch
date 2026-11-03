@@ -19,6 +19,7 @@ import {
   sanctionsKey,
 } from "./infrastructure/redis-local-views.ts";
 import { startChatServer } from "./transport/chat-server.ts";
+import { LocalAdapter } from "./transport/testing/local-adapter.ts";
 import { readMetrics } from "./transport/testing/metrics.ts";
 import { SATURATION_LIMITS } from "./transport/testing/saturation.ts";
 import { makeTokenAuthority } from "./transport/testing/tokens.ts";
@@ -58,6 +59,7 @@ const startChat = async () => {
     rooms,
     messages: createMessageSender(),
     saturation: SATURATION_LIMITS,
+    adapter: LocalAdapter,
   });
   onTestFinished(() => server.close());
   const consumer = startEventConsumer({

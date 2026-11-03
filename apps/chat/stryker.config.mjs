@@ -12,6 +12,7 @@ export default {
     "!src/**/testing/**",
     "!src/infrastructure/event-consumer.ts",
     "!src/infrastructure/redis-local-view-writer.ts",
+    "!src/transport/fan-out.ts",
   ],
   tsconfigFile: "stryker-skips-tsconfig-rewrite.json",
   thresholds: { high: 100, low: 90, break: null },

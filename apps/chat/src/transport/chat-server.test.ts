@@ -12,6 +12,7 @@ import { createMessageSender } from "../application/message-sender.ts";
 import { createRoomRegistry } from "../application/room-registry.ts";
 import { redisRevokedSessions } from "../infrastructure/redis-revoked-sessions.ts";
 import { startChatServer } from "./chat-server.ts";
+import { LocalAdapter } from "./testing/local-adapter.ts";
 import { SATURATION_LIMITS } from "./testing/saturation.ts";
 import { makeTokenAuthority } from "./testing/tokens.ts";
 
@@ -40,6 +41,7 @@ const startServer = async (
     rooms: createRoomRegistry({ find: async () => undefined }),
     messages: createMessageSender(),
     saturation: SATURATION_LIMITS,
+    adapter: LocalAdapter,
   });
   if (closeAfterTest) {
     onTestFinished(() => server.close());
