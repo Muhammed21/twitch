@@ -102,6 +102,7 @@ public enum ChatConnectionError: Error, Equatable, Sendable {
   case refused(String)
   case closed
   case ackTimedOut
+  case messageTooLarge
 }
 
 public protocol ChatConnection: Sendable {

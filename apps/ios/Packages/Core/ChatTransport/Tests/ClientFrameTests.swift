@@ -3,8 +3,6 @@ import Domain
 import Foundation
 import Testing
 
-private let channel = ChannelID(UUID(uuidString: "9B8A7F6E-5D4C-4B3A-8F10-1E2D3C4B5A69") ?? UUID())
-
 @Suite("Trames envoyées au serveur")
 struct ClientFrameTests {
   @Test("le pong et la connexion à l'espace de noms par défaut")

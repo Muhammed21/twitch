@@ -23,14 +23,19 @@ private enum Connection {
 
 private actor FakeChannels: ChannelRepository {
   private var failures: Int
+  private let stallsAfter: Int?
   private(set) var lookups = 0
 
-  init(failures: Int = 0) {
+  init(failures: Int = 0, stallsAfter: Int? = nil) {
     self.failures = failures
+    self.stallsAfter = stallsAfter
   }
 
   func channel(withSlug slug: ChannelSlug) async throws -> Channel {
     lookups += 1
+    if let stallsAfter, lookups > stallsAfter {
+      try await Task.sleep(for: .seconds(3600))
+    }
     guard failures == 0 else {
       failures -= 1
       throw Unreachable()
@@ -70,6 +75,7 @@ private actor FakeLiveStatusSource: LiveStatusSource {
 private final class Recorder {
   private(set) var delays: [Duration] = []
   private(set) var ends = 0
+  private(set) var lives = 0
 
   func wait(_ delay: Duration) {
     delays.append(delay)
@@ -77,6 +83,10 @@ private final class Recorder {
 
   func ended() {
     ends += 1
+  }
+
+  func wentLive() {
+    lives += 1
   }
 }
 
@@ -101,6 +111,7 @@ private func makeChannel(
     channels: channels,
     source: source,
     onEnded: { recorder.ended() },
+    onLive: { recorder.wentLive() },
     wait: { delay in await recorder.wait(delay) }
   )
 }
@@ -108,21 +119,42 @@ private func makeChannel(
 @MainActor
 @Suite("LiveStatusChannel : statut du live et compteur de viewers, avec sa propre reconnexion")
 struct LiveStatusChannelTests {
-  @Test("suit le statut et le compteur au fil du flux de la chaîne")
+  @Test("suit le titre, le statut et le compteur au fil du flux de la chaîne")
   func follows() async throws {
     let recorder = Recorder()
     let source = try FakeLiveStatusSource([.open([viewers(42), viewers(43)])])
     let channel = makeChannel(source, recorder: recorder)
     let slug = try jeanDupont()
     #expect(channel.status == nil)
+    #expect(channel.title == nil)
 
     let running = Task { await channel.run(slug) }
     try await waitUntil { channel.status == (try? viewers(43)) }
     running.cancel()
     await running.value
 
+    #expect(channel.title == "Speedrun")
     #expect(await source.opened == [channelID])
     #expect(!channel.isReconnecting)
+    #expect(recorder.ends == 0)
+    #expect(recorder.lives == 0)
+  }
+
+  @Test("le passage en live d'une chaîne hors live est annoncé une seule fois")
+  func announcesLive() async throws {
+    let recorder = Recorder()
+    let channel = try makeChannel(
+      FakeLiveStatusSource([.open([.offline, viewers(3), viewers(4)])]),
+      recorder: recorder
+    )
+    let slug = try jeanDupont()
+
+    let running = Task { await channel.run(slug) }
+    try await waitUntil { channel.status == (try? viewers(4)) }
+    running.cancel()
+    await running.value
+
+    #expect(recorder.lives == 1)
     #expect(recorder.ends == 0)
   }
 
@@ -138,6 +170,7 @@ struct LiveStatusChannelTests {
     await running.value
 
     #expect(recorder.ends == 1)
+    #expect(recorder.lives == 0)
   }
 
   @Test("une chaîne hors live dès l'ouverture n'annonce pas de fin")
@@ -223,7 +256,7 @@ struct LiveStatusChannelTests {
   func stopsOnCancel() async throws {
     let recorder = Recorder()
     let source = try FakeLiveStatusSource([.open([viewers(9)]), .open([])])
-    let channel = makeChannel(source, recorder: recorder)
+    let channel = makeChannel(source, channels: FakeChannels(stallsAfter: 1), recorder: recorder)
     let slug = try jeanDupont()
     let first = Task { await channel.run(slug) }
     try await waitUntil { channel.status != nil }
@@ -232,9 +265,11 @@ struct LiveStatusChannelTests {
     await first.value
     #expect(recorder.delays.isEmpty)
     #expect(await source.opened.count == 1)
+    #expect(channel.title == "Speedrun")
 
     let second = Task { await channel.run(slug) }
     try await waitUntil { channel.status == nil }
+    #expect(channel.title == nil)
     second.cancel()
     await second.value
   }

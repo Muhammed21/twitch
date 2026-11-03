@@ -129,7 +129,7 @@ struct SignedInRoot: View {
           case let .channel(slug):
             VStack(alignment: .leading, spacing: 0) {
               PlayerSurface()
-              ChannelHeader(slug: slug)
+              ChannelHeader()
               Spacer(minLength: 0)
             }
             .navigationTitle(slug.rawValue)
@@ -177,6 +177,11 @@ enum Composition {
     let now: @Sendable () -> Date = { Date.now }
     let player = PlayerController(player: AVMediaPlayer(), startupRetry: .every(.seconds(2), attempts: 15))
     let channels = ChannelClient(apiBaseURL: configuration.apiBaseURL, transport: transport)
+    let channelPlayback = ChannelPlayback(
+      channels: channels,
+      playback: PlaybackClient(apiBaseURL: configuration.apiBaseURL, transport: transport),
+      controller: player
+    )
     return Stores(
       session: SessionStore(
         configuration: configuration,
@@ -193,15 +198,12 @@ enum Composition {
       home: HomeStore(directory: LiveDirectoryClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
       router: Router(),
       player: player,
-      channelPlayback: ChannelPlayback(
-        channels: channels,
-        playback: PlaybackClient(apiBaseURL: configuration.apiBaseURL, transport: transport),
-        controller: player
-      ),
+      channelPlayback: channelPlayback,
       liveStatus: LiveStatusChannel(
         channels: channels,
         source: LiveStatusClient(apiBaseURL: configuration.apiBaseURL, transport: URLSessionLineTransport()),
-        onEnded: { player.end() }
+        onEnded: { player.end() },
+        onLive: { channelPlayback.channelWentLive() }
       )
     )
   }

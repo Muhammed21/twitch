@@ -24,10 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v5
-        with:
-          node-version-file: .node-version
-          package-manager-cache: false
+      - uses: ./.github/actions/install
 
       - name: Imports (ADR 0010 règle 4, ADR 0019 règle 5 bis)
         working-directory: .
@@ -67,3 +64,9 @@ jobs:
           simulator=$(xcrun simctl list devices available --json \
             | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | startswith("iPhone"))][0].udid')
           xcodebuild test -skipPackagePluginValidation -project App.xcodeproj -scheme App -destination "id=$simulator"
+      - name: ChatTransport contre le vrai serveur de chat (ADR 0023)
+        working-directory: apps/ios
+        run: |
+          simulator=$(xcrun simctl list devices available --json \
+            | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | startswith("iPhone"))][0].udid')
+          scripts/chat-integration.sh "id=$simulator"
