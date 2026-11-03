@@ -35,7 +35,8 @@ const startPlayback = async () => {
     hls: { find: registry.find, fallbackBandwidth: FALLBACK_BANDWIDTH },
   });
   onTestFinished(() => server.close());
-  const get = (path: string) => fetch(`http://127.0.0.1:${server.port}/hls/${path}`);
+  const get = (path: string, method = "GET") =>
+    fetch(`http://127.0.0.1:${server.port}/hls/${path}`, { method });
   return { registry, get };
 };
 
@@ -135,7 +136,7 @@ describe("lecture HLS d'une session", () => {
     registry.open(SESSION_ID);
     const init = makeInit({ tracks: [{ id: 1, handler: "vide", timescale: 1000 }] });
     registry.feed(SESSION_ID, init);
-    Array.from({ length: 8 }, (_, index) =>
+    Array.from({ length: 13 }, (_, index) =>
       registry.feed(
         SESSION_ID,
         makeFragment({
@@ -148,11 +149,39 @@ describe("lecture HLS d'une session", () => {
     );
 
     const evicted = await get(`${SESSION_ID}/0.m4s`);
-    const kept = await get(`${SESSION_ID}/6.m4s`);
+    const kept = await get(`${SESSION_ID}/10.m4s`);
 
     expect(evicted.status).toBe(404);
     expect(evicted.headers.get("content-type")).toBe("application/problem+json");
+    expect(await evicted.json()).toEqual({
+      type: "about:blank",
+      title: "Ressource introuvable",
+      status: 404,
+    });
     expect(kept.status).toBe(200);
+  });
+
+  it.each([
+    ["préfixé", "x0.m4s"],
+    ["suffixé", "0.m4sx"],
+    ["à zéro de tête", "00.m4s"],
+    ["suivi d'un chemin", "media.m3u8/0.m4s"],
+    ["imbriqué dans un autre chemin HLS", `${SESSION_ID}/hls/${SESSION_ID}/0.m4s`],
+  ])("répond 404 pour un nom de fichier %s", async (_, file) => {
+    const { registry, get } = await startPlayback();
+    registry.open(SESSION_ID);
+    registry.feed(SESSION_ID, FFMPEG_FRAGMENTED_MP4);
+
+    expect((await get(`${SESSION_ID}/0.m4s`)).status).toBe(200);
+    expect((await get(`${SESSION_ID}/${file}`)).status).toBe(404);
+  });
+
+  it("ne sert les fichiers HLS qu'en GET", async () => {
+    const { registry, get } = await startPlayback();
+    registry.open(SESSION_ID);
+    registry.feed(SESSION_ID, FFMPEG_FRAGMENTED_MP4);
+
+    expect((await get(`${SESSION_ID}/media.m3u8`, "POST")).status).toBe(404);
   });
 
   it.each([

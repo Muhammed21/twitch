@@ -32,6 +32,9 @@ const feedAll = (pieces: readonly Uint8Array[], options: HlsStreamOptions = OPTI
     return step.value;
   }, startHlsStream(options));
 
+const fingerprint = (segments: HlsStream["segments"]) =>
+  segments.map((segment) => ({ ...segment, bytes: Buffer.from(segment.bytes).toString("base64") }));
+
 const VIDEO_TRACK = { id: 1, handler: "vide", timescale: 1000 };
 
 describe("flux HLS d'une session", () => {
@@ -58,7 +61,7 @@ describe("flux HLS d'une session", () => {
   });
 
   it("rend le même flux quel que soit le découpage des octets", () => {
-    const expected = endHlsStream(feedAll([FFMPEG_FRAGMENTED_MP4])).segments;
+    const expected = fingerprint(endHlsStream(feedAll([FFMPEG_FRAGMENTED_MP4])).segments);
 
     fc.assert(
       fc.property(
@@ -68,7 +71,7 @@ describe("flux HLS d'une session", () => {
           const pieces = [0, ...points].map((start, index) =>
             FFMPEG_FRAGMENTED_MP4.subarray(start, [...points, FFMPEG_FRAGMENTED_MP4.length][index]),
           );
-          expect(endHlsStream(feedAll(pieces)).segments).toEqual(expected);
+          expect(fingerprint(endHlsStream(feedAll(pieces)).segments)).toEqual(expected);
         },
       ),
       { numRuns: 30 },
@@ -101,6 +104,15 @@ describe("flux HLS d'une session", () => {
 });
 
 describe("refus du flux", () => {
+  it("refuse une boîte au-delà du plafond de la session", () => {
+    expect(
+      feedHlsStream(startHlsStream({ ...OPTIONS, maxBoxSize: 64 }), FFMPEG_FRAGMENTED_MP4),
+    ).toEqual({
+      ok: false,
+      error: "box_too_large",
+    });
+  });
+
   it("relaie le refus du lecteur fMP4", () => {
     const stream = startHlsStream(OPTIONS);
 

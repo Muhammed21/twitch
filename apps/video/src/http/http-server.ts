@@ -45,11 +45,7 @@ const send = (response: ServerResponse, reply: Reply): void => {
 };
 
 const sendHls = (response: ServerResponse, reply: HlsReply): void => {
-  if (reply.kind === "not_found") {
-    sendProblem(response, { title: "Ressource introuvable", status: 404 });
-    return;
-  }
-  response.writeHead(200, reply.headers).end(reply.body);
+  response.writeHead(reply.status, reply.headers).end(reply.body);
 };
 
 export const startHttpServer = async ({
