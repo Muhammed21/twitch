@@ -20,6 +20,7 @@ const CLOSE_AFTER_MS = 400;
 const NEVER_CLOSE_MS = 60_000;
 const BATCH = 20;
 const LONG_BODY = "x".repeat(500);
+const FLOOD_TEST_TIMEOUT_MS = 30_000;
 
 const BoundAddress = z.object({ port: z.int() });
 
@@ -147,55 +148,66 @@ const floodUntilSaturated = async (port: number, socket: Socket, channelId: stri
 };
 
 describe("clients lents (ADR 0027, §2)", () => {
-  it("exclut puis ferme un client qui ne lit plus, sans perte chez un client rapide du même salon", async () => {
-    const room: RoomState = { channelId: crypto.randomUUID(), sessionId: null };
-    const { server, proxy, connectFast, connectSlow } = await startServer(room, CLOSE_AFTER_MS);
-    const fast = await connectFast();
-    await connectSlow();
-    const atFast = collectBodies(fast);
-    proxy.stall();
+  it(
+    "exclut puis ferme un client qui ne lit plus, sans perte chez un client rapide du même salon",
+    async () => {
+      const room: RoomState = { channelId: crypto.randomUUID(), sessionId: null };
+      const { server, proxy, connectFast, connectSlow } = await startServer(room, CLOSE_AFTER_MS);
+      const fast = await connectFast();
+      await connectSlow();
+      const atFast = collectBodies(fast);
+      proxy.stall();
 
-    const sent = await floodUntilSaturated(server.port, fast, room.channelId);
-    const saturatedAt = Date.now();
-    await sendBatch(fast, room.channelId);
-    sent.count += BATCH;
-    await waitFor(() => server.connectionCount() === 1, CLOSE_AFTER_MS * 10);
+      const sent = await floodUntilSaturated(server.port, fast, room.channelId);
+      const saturatedAt = Date.now();
+      await sendBatch(fast, room.channelId);
+      sent.count += BATCH;
+      await waitFor(() => server.connectionCount() === 1, CLOSE_AFTER_MS * 10);
 
-    expect(Date.now() - saturatedAt).toBeGreaterThanOrEqual(CLOSE_AFTER_MS * 0.9);
-    expect(await metricOf(server.port, "chat_saturation_closures_total")).toBe(1);
-    expect(await metricOf(server.port, "chat_saturated_sockets")).toBe(0);
-    await waitFor(() => atFast.length === sent.count, 2000);
-    expect(fast.connected).toBe(true);
-  });
+      expect(Date.now() - saturatedAt).toBeGreaterThanOrEqual(CLOSE_AFTER_MS * 0.9);
+      expect(await metricOf(server.port, "chat_saturation_closures_total")).toBe(1);
+      expect(await metricOf(server.port, "chat_saturated_sockets")).toBe(0);
+      await waitFor(() => atFast.length === sent.count, 2000);
+      expect(fast.connected).toBe(true);
+    },
+    FLOOD_TEST_TIMEOUT_MS,
+  );
 
-  it("ne diffuse plus rien à un client saturé, puis le rend à la diffusion dès qu'il a vidé son tampon", async () => {
-    const room: RoomState = { channelId: crypto.randomUUID(), sessionId: null };
-    const { server, proxy, connectFast, connectSlow } = await startServer(room, NEVER_CLOSE_MS);
-    const fast = await connectFast();
-    const slow = await connectSlow();
-    const atSlow = collectBodies(slow);
-    const elsewhere = crypto.randomUUID();
-    fast.emit("room:join", { channelId: elsewhere });
-    proxy.stall();
-    const flooded = await floodUntilSaturated(server.port, fast, room.channelId);
-    const deliveredBefore = await metricOf(server.port, "chat_deliveries_total");
-    await sendBatch(fast, room.channelId);
-    await sendBatch(fast, room.channelId);
-    await fast.timeout(2000).emitWithAck("chat:send", { channelId: elsewhere, body: "ailleurs" });
-    const deliveredWhileSaturated = await metricOf(server.port, "chat_deliveries_total");
+  it(
+    "ne diffuse plus rien à un client saturé, puis le rend à la diffusion dès qu'il a vidé son tampon",
+    async () => {
+      const room: RoomState = { channelId: crypto.randomUUID(), sessionId: null };
+      const { server, proxy, connectFast, connectSlow } = await startServer(room, NEVER_CLOSE_MS);
+      const fast = await connectFast();
+      const slow = await connectSlow();
+      const atSlow = collectBodies(slow);
+      const elsewhere = crypto.randomUUID();
+      fast.emit("room:join", { channelId: elsewhere });
+      proxy.stall();
+      const flooded = await floodUntilSaturated(server.port, fast, room.channelId);
+      const deliveredBefore = await metricOf(server.port, "chat_deliveries_total");
+      await sendBatch(fast, room.channelId);
+      await sendBatch(fast, room.channelId);
+      await fast.timeout(2000).emitWithAck("chat:send", { channelId: elsewhere, body: "ailleurs" });
+      const deliveredWhileSaturated = await metricOf(server.port, "chat_deliveries_total");
 
-    proxy.resume();
-    await waitFor(async () => (await metricOf(server.port, "chat_saturated_sockets")) === 0, 5000);
-    await fast
-      .timeout(2000)
-      .emitWithAck("chat:send", { channelId: room.channelId, body: "retour" });
-    await waitFor(() => atSlow.includes("retour"), 2000);
+      proxy.resume();
+      await waitFor(
+        async () => (await metricOf(server.port, "chat_saturated_sockets")) === 0,
+        5000,
+      );
+      await fast
+        .timeout(2000)
+        .emitWithAck("chat:send", { channelId: room.channelId, body: "retour" });
+      await waitFor(() => atSlow.includes("retour"), 2000);
 
-    expect(atSlow.length).toBeLessThan(flooded.count + 2 * BATCH + 1);
-    expect(Number(deliveredWhileSaturated) - Number(deliveredBefore)).toBe(2 * BATCH + 1);
-    expect(server.connectionCount()).toBe(2);
-    expect(await metricOf(server.port, "chat_saturation_closures_total")).toBe(0);
-  });
+      expect(atSlow.length).toBeLessThan(flooded.count + 2 * BATCH + 1);
+      expect(Number(deliveredWhileSaturated) - Number(deliveredBefore)).toBe(2 * BATCH + 1);
+      expect(server.connectionCount()).toBe(2);
+      expect(await metricOf(server.port, "chat_saturation_closures_total")).toBe(0);
+    },
+    FLOOD_TEST_TIMEOUT_MS,
+  );
 
   it("compte zéro paquet en attente sur une connexion sans tampon d'écriture lisible", () => {
     expect(pendingPacketsOf({})).toBe(0);
