@@ -451,6 +451,7 @@ describe("panne du dépôt", () => {
         findChannelByStreamKey: failing,
         saveChannel: failing,
         liveSessions: failing,
+        liveSessionOf: failing,
         saveSession: failing,
       },
     });

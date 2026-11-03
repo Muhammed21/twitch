@@ -133,6 +133,27 @@ export const describeVideoStoreContract = ({
       expect(ours).toEqual([liveSession(live)]);
     });
 
+    it("rend la session live d'un canal, et aucune pour un canal sans session live", async () => {
+      const videoStore = store();
+      const [channel, idleChannel, endedChannel] = [
+        makeVideoChannel(),
+        makeVideoChannel(),
+        makeVideoChannel(),
+      ];
+      await Promise.all(
+        [channel, idleChannel, endedChannel].map((each) => videoStore.saveChannel(each)),
+      );
+      const live = liveSession(idleSession(channel.id));
+      await videoStore.saveSession(live, []);
+      await videoStore.saveSession(idleSession(idleChannel.id), []);
+      await videoStore.saveSession(endedSession(idleSession(endedChannel.id)), []);
+
+      expect(await videoStore.liveSessionOf(channel.id)).toEqual(live);
+      expect(await videoStore.liveSessionOf(idleChannel.id)).toBeUndefined();
+      expect(await videoStore.liveSessionOf(endedChannel.id)).toBeUndefined();
+      expect(await videoStore.liveSessionOf(randomUUID())).toBeUndefined();
+    });
+
     it("suit une session de idle à live puis ended", async () => {
       const videoStore = store();
       const channel = makeVideoChannel();

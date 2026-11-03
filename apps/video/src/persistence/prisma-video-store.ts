@@ -106,6 +106,17 @@ export const prismaVideoStore = ({
         fetchPage: liveSessionsPage,
         keyOf: ({ id }) => id,
       }),
+    liveSessionOf: async (channelId) => {
+      const live = ChannelId.safeParse(channelId).success
+        ? await prisma.videoIngestSession.findFirst({
+            where: { channelId, state: "live" },
+            select: { id: true, channelId: true, startedAt: true },
+          })
+        : null;
+      return live?.startedAt == null
+        ? undefined
+        : { state: "live", id: live.id, channelId: live.channelId, startedAt: live.startedAt };
+    },
     saveSession: async (session, events) => {
       const data = { state: session.state, ...sessionTimes(session) };
       await prisma.$transaction(async (tx) => {

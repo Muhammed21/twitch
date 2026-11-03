@@ -18,6 +18,7 @@ export interface VideoStore {
   findChannelByStreamKey(streamKey: string): Promise<VideoChannel | undefined>;
   saveChannel(channel: VideoChannel): Promise<void>;
   liveSessions(): Promise<readonly LiveSession[]>;
+  liveSessionOf(channelId: string): Promise<LiveSession | undefined>;
   saveSession(session: IngestSession, events: readonly LifecycleEvent[]): Promise<void>;
 }
 
@@ -94,7 +95,7 @@ export const createControlPlane = ({
       if ((await store.findChannel(channelId)) === undefined) {
         return err("not_found");
       }
-      const live = (await store.liveSessions()).find((session) => session.channelId === channelId);
+      const live = await store.liveSessionOf(channelId);
       const ended = live === undefined ? err<"not_live">("not_live") : stop(live, now);
       if (!ended.ok) {
         return ended;

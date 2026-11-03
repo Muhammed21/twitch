@@ -13,8 +13,8 @@ export const createPublishGate =
       channel,
       presentedKey: streamKey,
       session: openSession({ id: newId(), channelId: channel.id }),
-      channelSessions: (await store.liveSessions()).filter(
-        ({ channelId }) => channelId === channel.id,
+      channelSessions: [await store.liveSessionOf(channel.id)].filter(
+        (session) => session !== undefined,
       ),
       now: now(),
     });
@@ -24,8 +24,8 @@ export const createPublishGate =
     await store.saveSession(live.value, [lifecycleEvent({ id: newId(), session: live.value })]);
     return {
       end: async () => {
-        const current = (await store.liveSessions()).find(({ id }) => id === live.value.id);
-        const ended = current === undefined ? undefined : stop(current, now());
+        const current = await store.liveSessionOf(live.value.channelId);
+        const ended = current?.id === live.value.id ? stop(current, now()) : undefined;
         if (ended?.ok === true) {
           await store.saveSession(ended.value, [
             lifecycleEvent({ id: newId(), session: ended.value }),
