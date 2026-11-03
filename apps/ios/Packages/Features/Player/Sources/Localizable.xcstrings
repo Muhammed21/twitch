@@ -21,6 +21,16 @@
         }
       }
     },
+    "player.play" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play"
+          }
+        }
+      }
+    },
     "player.retry" : {
       "localizations" : {
         "en" : {

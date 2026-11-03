@@ -6,7 +6,7 @@ public extension MediaPlayerEvent {
     switch status {
     case .playing: self = .playing
     case .waitingToPlayAtSpecifiedRate: self = .waiting
-    case .paused: return nil
+    case .paused: self = .paused
     @unknown default: return nil
     }
   }
@@ -55,18 +55,28 @@ public final class AVMediaPlayer: MediaPlayer {
     layer.player = player
   }
 
+  var currentItemID: ObjectIdentifier? {
+    player.currentItem.map(ObjectIdentifier.init)
+  }
+
+  func deliver(_ event: MediaPlayerEvent?, from item: ObjectIdentifier) {
+    guard item == currentItemID else { return }
+    emit(event)
+  }
+
   private func observeItem(_ item: AVPlayerItem) {
+    let id = ObjectIdentifier(item)
     observations.append(item.observe(\.status, options: [.new]) { [weak self] item, _ in
       let event = MediaPlayerEvent(item.status)
-      Task { @MainActor in self?.emit(event) }
+      Task { @MainActor in self?.deliver(event, from: id) }
     })
     let center = NotificationCenter.default
     notifications = [
       center.addObserver(forName: AVPlayerItem.didPlayToEndTimeNotification, object: item, queue: .main) { [weak self] _ in
-        Task { @MainActor in self?.emit(.ended) }
+        Task { @MainActor in self?.deliver(.ended, from: id) }
       },
       center.addObserver(forName: AVPlayerItem.failedToPlayToEndTimeNotification, object: item, queue: .main) { [weak self] _ in
-        Task { @MainActor in self?.emit(.failed) }
+        Task { @MainActor in self?.deliver(.failed, from: id) }
       },
     ]
   }

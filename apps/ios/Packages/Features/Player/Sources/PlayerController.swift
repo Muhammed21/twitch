@@ -7,6 +7,7 @@ public enum PlayerState: Equatable, Sendable {
   case loading
   case playing
   case buffering
+  case paused
   case failed
   case ended
 }
@@ -14,6 +15,7 @@ public enum PlayerState: Equatable, Sendable {
 public enum MediaPlayerEvent: Equatable, Sendable {
   case playing
   case waiting
+  case paused
   case failed
   case ended
 }
@@ -52,6 +54,11 @@ public final class PlayerController {
     load(url)
   }
 
+  public func resume() {
+    guard state == .paused else { return }
+    player.play()
+  }
+
   public func stop() {
     state = .idle
     player.stop()
@@ -71,8 +78,9 @@ public final class PlayerController {
     case (_, .failed): .failed
     case (_, .ended): .ended
     case (_, .playing): .playing
-    case (.loading, .waiting): .loading
+    case (.loading, .waiting), (.loading, .paused): .loading
     case (_, .waiting): .buffering
+    case (_, .paused): .paused
     }
   }
 }

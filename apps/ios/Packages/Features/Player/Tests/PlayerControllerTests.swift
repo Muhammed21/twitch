@@ -144,6 +144,45 @@ struct PlayerControllerTests {
     #expect(player.calls.last == "stop")
   }
 
+  @Test("une pause en lecture ou en bufferisation passe en pause, et la lecture qui reprend repasse en lecture")
+  func pause() {
+    let (controller, player) = playing()
+
+    player.send(.paused)
+    #expect(controller.state == .paused)
+
+    player.send(.waiting)
+    #expect(controller.state == .buffering)
+    player.send(.paused)
+    #expect(controller.state == .paused)
+
+    player.send(.playing)
+    #expect(controller.state == .playing)
+  }
+
+  @Test("une pause pendant le chargement reste un chargement")
+  func pauseWhileLoading() {
+    let player = FakeMediaPlayer()
+    let controller = PlayerController(player: player)
+    controller.load(streamURL)
+
+    player.send(.paused)
+
+    #expect(controller.state == .loading)
+  }
+
+  @Test("reprendre relance le lecteur en pause, et seulement en pause")
+  func resume() {
+    let (controller, player) = playing()
+
+    controller.resume()
+    #expect(player.calls == ["load \(streamURL.absoluteString)", "play"])
+
+    player.send(.paused)
+    controller.resume()
+    #expect(player.calls == ["load \(streamURL.absoluteString)", "play", "play"])
+  }
+
   @Test("arrêter puis réessayer ne relance rien")
   func retryAfterStop() {
     let (controller, player) = playing()

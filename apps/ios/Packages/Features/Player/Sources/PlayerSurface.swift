@@ -35,6 +35,13 @@ private struct PlayerStatus: View {
           .buttonStyle(ActionButtonStyle(.secondary))
           .fixedSize()
       }
+    case .paused:
+      Button { controller.resume() } label: {
+        Image(systemName: "play.fill")
+          .font(.largeTitle)
+          .foregroundStyle(.white)
+      }
+      .accessibilityLabel(PlayerText.play)
     case .ended:
       Text(PlayerText.ended)
         .font(TextRole.body.font)
@@ -64,5 +71,6 @@ final class PlayerLayerView: UIView {
 enum PlayerText {
   static var failed: String { String(localized: "player.failed", bundle: .module) }
   static var retry: String { String(localized: "player.retry", bundle: .module) }
+  static var play: String { String(localized: "player.play", bundle: .module) }
   static var ended: String { String(localized: "player.ended", bundle: .module) }
 }

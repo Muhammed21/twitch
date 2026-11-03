@@ -1,6 +1,6 @@
 import AVFoundation
 import Foundation
-import Player
+@testable import Player
 import Testing
 
 @Suite("AVMediaPlayer : signaux d'AVPlayer traduits en événements")
@@ -10,7 +10,7 @@ struct AVMediaPlayerEventTests {
     arguments: [
       (AVPlayer.TimeControlStatus.playing, MediaPlayerEvent?.some(.playing)),
       (.waitingToPlayAtSpecifiedRate, .some(.waiting)),
-      (.paused, nil),
+      (.paused, .some(.paused)),
     ]
   )
   func timeControlStatus(status: AVPlayer.TimeControlStatus, expected: MediaPlayerEvent?) {
@@ -49,6 +49,36 @@ struct AVMediaPlayerTests {
     }
 
     #expect(event == .failed)
+  }
+
+  @Test("ignore un événement de l'item précédent, transmet celui de l'item courant")
+  func ignoresStaleItem() throws {
+    let player = AVMediaPlayer()
+    var events: [MediaPlayerEvent] = []
+    player.onEvent = { events.append($0) }
+    player.load(URL(fileURLWithPath: "/nonexistent/a.m3u8"))
+    let previous = try #require(player.currentItemID)
+    player.load(URL(fileURLWithPath: "/nonexistent/b.m3u8"))
+    let current = try #require(player.currentItemID)
+
+    player.deliver(.failed, from: previous)
+    player.deliver(.ended, from: current)
+
+    #expect(events == [.ended])
+  }
+
+  @Test("après l'arrêt, plus aucun événement d'item n'est transmis")
+  func ignoresItemAfterStop() throws {
+    let player = AVMediaPlayer()
+    var events: [MediaPlayerEvent] = []
+    player.onEvent = { events.append($0) }
+    player.load(URL(fileURLWithPath: "/nonexistent/a.m3u8"))
+    let item = try #require(player.currentItemID)
+
+    player.stop()
+    player.deliver(.failed, from: item)
+
+    #expect(events.isEmpty)
   }
 
   @Test("rend le même lecteur dans chaque surface")
