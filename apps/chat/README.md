@@ -2,14 +2,19 @@
 
 Service de chat temps réel, process Node séparé (ADR 0004, ADR 0022). Découpage : [plan du chat](../../plans/chat.md).
 
-| Commande                | Effet                                                      |
-| ----------------------- | ---------------------------------------------------------- |
-| `pnpm test`             | Tests unitaires, serveur sur un port libre                 |
-| `pnpm test:coverage`    | Tests et couverture 100 %                                  |
-| `pnpm test:integration` | Lecture de la liste de révocation dans le Redis de Compose |
-| `pnpm mutation`         | Stryker sur `src/`, hors `testing/`                        |
+| Commande                | Effet                                                       |
+| ----------------------- | ----------------------------------------------------------- |
+| `pnpm start`            | Lance `src/main.ts` avec le `.env` racine                   |
+| `pnpm test`             | Tests unitaires, serveur sur un port libre, process complet |
+| `pnpm test:coverage`    | Tests et couverture 100 %                                   |
+| `pnpm test:integration` | Lecture de la liste de révocation dans le Redis de Compose  |
+| `pnpm mutation`         | Stryker sur `src/`, hors `main.ts` et `testing/`            |
 
-Le process (`main.ts`, environnement parsé par Zod) arrive avec la seconde partie de la PR 3 du plan.
+| Variable            | Rôle                                                                    |
+| ------------------- | ----------------------------------------------------------------------- |
+| `CHAT_HTTP_PORT`    | Port d'écoute, 3001 par défaut                                          |
+| `CHAT_API_BASE_URL` | URL de l'API : JWKS `/auth/jwks`, émetteur `/auth`, audience `/v1`      |
+| `REDIS_URL`         | Redis de la liste de révocation des sessions, `redis://` ou `rediss://` |
 
 ## Transport
 
