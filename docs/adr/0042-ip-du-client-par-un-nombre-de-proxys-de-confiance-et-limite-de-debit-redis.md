@@ -77,7 +77,7 @@ Un heartbeat refusé n'est pas enregistré. La limite vaut aussi pour un viewer 
 
 ### Négatives
 
-- Plusieurs viewers derrière une même IP (NAT d'un foyer, réseau d'entreprise, CGNAT mobile) partagent les 4 heartbeats par minute d'une chaîne : au-delà de quelques viewers sur la même chaîne, une partie n'est plus comptée.
+- Plusieurs viewers derrière une même IP (NAT d'un foyer, réseau d'entreprise, CGNAT mobile) partagent les 4 heartbeats par minute d'une chaîne. Le compteur unit les deux dernières fenêtres de présence de 30 s (ADR 0004 §3), et un heartbeat admis en début de minute compte son viewer jusqu'à la minute suivante : jusqu'à 4 viewers sur la même chaîne restent comptés, le cinquième et les suivants ne le sont plus.
 - Une fenêtre fixe laisse passer jusqu'à deux fois le plafond autour d'un changement de fenêtre.
 - Chaque heartbeat coûte deux commandes Redis de plus.
 
