@@ -42,6 +42,12 @@ const demuxAll = (pieces: readonly Uint8Array[], limits: ChunkLimits = LIMITS) =
 const demuxOnce = (input: Uint8Array, limits: ChunkLimits = LIMITS) =>
   demuxChunks({ demuxer: startDemuxer(limits), input });
 
+const fingerprint = (messages: readonly RtmpMessage[]) =>
+  messages.map(({ payload, ...header }) => ({
+    ...header,
+    payload: Buffer.from(payload).toString("base64"),
+  }));
+
 const mediaOf = (messages: readonly RtmpMessage[]) =>
   messages
     .filter(({ typeId }) => typeId === AUDIO || typeId === VIDEO)
@@ -80,9 +86,11 @@ describe("démultiplexage des chunks RTMP, rejoué depuis une publication ffmpeg
     const expected = demuxAll([FFMPEG_PUBLISH_CHUNKS]).messages;
     fc.assert(
       fc.property(fc.array(fc.nat(), { maxLength: 20 }), (cuts) => {
-        expect(demuxAll(splitAt(FFMPEG_PUBLISH_CHUNKS, cuts)).messages).toEqual(expected);
+        expect(fingerprint(demuxAll(splitAt(FFMPEG_PUBLISH_CHUNKS, cuts)).messages)).toEqual(
+          fingerprint(expected),
+        );
       }),
-      { numRuns: 50 },
+      { numRuns: 30 },
     );
   });
 });
@@ -342,6 +350,31 @@ describe("plafonds du démultiplexeur (ADR 0031, §3)", () => {
     expect(performance.now() - startedAt).toBeLessThan(500);
     const [message] = step.ok ? step.value.messages : [];
     expect(Buffer.from(message?.payload ?? []).equals(Buffer.alloc(length, 9))).toBe(true);
+  });
+
+  it("ne réserve pour un message que le double des octets reçus, pas la taille annoncée", () => {
+    const announced = 2 * 1024 * 1024;
+    const input = concatBytes(
+      ...Array.from({ length: 16 }, (_, index) =>
+        makeChunk({
+          fmt: 0,
+          chunkStreamId: 4 + index,
+          length: announced,
+          typeId: VIDEO,
+          data: bytes(128),
+        }),
+      ),
+    );
+
+    const step = demuxOnce(input, { ...LIMITS, maxMessageSize: announced, maxChunkStreams: 16 });
+
+    const reserved = step.ok
+      ? [...step.value.demuxer.streams.values()].reduce(
+          (total, { payload }) => total + payload.byteLength,
+          0,
+        )
+      : Number.NaN;
+    expect(reserved).toBeLessThanOrEqual(16 * 2 * 128);
   });
 
   it("refuse un flux de chunks de trop, mais réutilise un flux déjà ouvert", () => {

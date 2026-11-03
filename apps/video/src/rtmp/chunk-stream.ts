@@ -111,6 +111,15 @@ const startedMessage = ({
   received: 0,
 });
 
+const withRoomFor = ({ payload, received, length }: ChunkStream, size: number): Uint8Array => {
+  if (received + size <= payload.length) {
+    return payload;
+  }
+  const grown = new Uint8Array(Math.min(length, Math.max(received + size, payload.length * 2)));
+  grown.set(payload.subarray(0, received));
+  return grown;
+};
+
 const chunkSizeAfter = (demuxer: Demuxer, message: RtmpMessage | undefined) => {
   if (message?.typeId !== SET_CHUNK_SIZE) {
     return ok(demuxer.chunkSize);
@@ -161,12 +170,11 @@ const readChunk = (
   if (started.length > demuxer.limits.maxMessageSize) {
     return err("message_too_large");
   }
-  const stream =
-    started.received === 0 ? { ...started, payload: new Uint8Array(started.length) } : started;
-  const size = Math.min(demuxer.chunkSize, stream.length - stream.received);
+  const size = Math.min(demuxer.chunkSize, started.length - started.received);
   if (dataStart + size > input.length) {
     return ok(undefined);
   }
+  const stream = { ...started, payload: withRoomFor(started, size) };
   stream.payload.set(input.subarray(dataStart, dataStart + size), stream.received);
   const received = stream.received + size;
   const message =
