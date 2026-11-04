@@ -10,8 +10,10 @@ import {
   type CategoryImageChange,
   type CategoryMerge,
   type CategoryRetirement,
+  type CategoryTagsChange,
   type CategoryView,
   changeCategoryImage,
+  changeCategoryTags,
   createCategory,
   mergeCategory,
   retireCategory,
@@ -37,6 +39,7 @@ const makeCategory = (overrides: Partial<CategoryView> = {}): CategoryView => ({
   name: "Just Chatting",
   status: "active",
   imageKey: null,
+  tags: [],
   ...overrides,
 });
 
@@ -57,6 +60,7 @@ const memoryCatalog = ({
   const merges: CategoryMerge[] = [];
   const retirements: CategoryRetirement[] = [];
   const imageChanges: CategoryImageChange[] = [];
+  const tagChanges: CategoryTagsChange[] = [];
   const steps: string[] = [];
   const byId = (id: string) => categories.find((category) => category.id === id);
   const catalog: CategoryCatalog = {
@@ -72,6 +76,7 @@ const memoryCatalog = ({
         name: creation.name,
         status: "active",
         imageKey: null,
+        tags: [],
       });
     },
     merge: async (merge) => {
@@ -94,6 +99,14 @@ const memoryCatalog = ({
       retirements.push(retirement);
       return ok({ ...category, status: "retired" });
     },
+    changeTags: async (change) => {
+      const category = byId(change.categoryId);
+      if (category?.status !== "active") {
+        return err("category_inactive");
+      }
+      tagChanges.push(change);
+      return ok({ ...category, tags: change.tags });
+    },
     changeImage: async (change) => {
       const category = byId(change.categoryId);
       if (category?.status !== "active") {
@@ -107,7 +120,7 @@ const memoryCatalog = ({
       });
     },
   };
-  return { catalog, created, merges, retirements, imageChanges, steps };
+  return { catalog, created, merges, retirements, imageChanges, tagChanges, steps };
 };
 
 const ASSIGNMENTS = { [ADMIN]: [onPlatform("admin")], [STAFF]: [onPlatform("staff")] };
@@ -140,6 +153,7 @@ describe("création d'une catégorie", () => {
         name: "League of Legends",
         status: "active",
         imageKey: null,
+        tags: [],
       },
     });
     expect(created).toEqual([
@@ -558,5 +572,52 @@ describe("pochette d'une catégorie", () => {
 
     expect(outcome).toEqual(err("category_inactive"));
     expect(steps).toEqual([]);
+  });
+});
+
+describe("tags d'une catégorie (ADR 0050)", () => {
+  it("remplace les tags pour un admin, avec channel.category.updated", async () => {
+    const { catalog, tagChanges } = memoryCatalog();
+
+    const outcome = await changeCategoryTags(dependencies(catalog))({
+      actorId: ADMIN,
+      slug: "just-chatting",
+      tags: [" IRL ", "Discussion"],
+    });
+
+    expect(outcome).toEqual(ok(makeCategory({ tags: ["IRL", "Discussion"] })));
+    expect(tagChanges).toEqual([
+      {
+        categoryId: makeCategory().id,
+        tags: ["IRL", "Discussion"],
+        outboxEventId: NEW_ID,
+        occurredAt: NOW,
+      },
+    ]);
+  });
+
+  it.each([
+    [
+      "un compte sans le rôle admin, même avec des tags invalides",
+      STAFF,
+      "just-chatting",
+      ["!"],
+      "forbidden",
+    ],
+    ["des tags invalides", ADMIN, "just-chatting", ["FPS", "fps"], "invalid_tags"],
+    ["une catégorie inconnue", ADMIN, "inconnue", ["IRL"], "category_not_found"],
+    ["une catégorie fusionnée", ADMIN, "talk", ["IRL"], "category_inactive"],
+  ] as const)("est refusé pour %s", async (_name, actorId, slug, tags, error) => {
+    const { catalog, tagChanges } = memoryCatalog({
+      categories: [
+        makeCategory(),
+        makeCategory({ id: VALORANT.id, slug: "talk", status: "merged" }),
+      ],
+    });
+
+    const outcome = await changeCategoryTags(dependencies(catalog))({ actorId, slug, tags });
+
+    expect(outcome).toEqual(err(error));
+    expect(tagChanges).toEqual([]);
   });
 });

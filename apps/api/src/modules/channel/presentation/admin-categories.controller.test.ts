@@ -37,6 +37,7 @@ const JUST_CHATTING: CategoryView = {
   name: "Just Chatting",
   status: "active",
   imageKey: null,
+  tags: ["IRL"],
 };
 
 const JUST_CHATTING_RESPONSE = {
@@ -44,6 +45,7 @@ const JUST_CHATTING_RESPONSE = {
   slug: "just-chatting",
   name: "Just Chatting",
   status: "active",
+  tags: ["IRL"],
 };
 
 const IMAGE_KEY = "images/category/3a4b5c6d-7e8f-4a0b-9c1d-2e3f4a5b6c7d.webp";
@@ -60,6 +62,7 @@ const ANSWERS: Answers = {
   merge: ok(JUST_CHATTING),
   retire: ok(JUST_CHATTING),
   image: ok({ ...JUST_CHATTING, imageKey: IMAGE_KEY }),
+  tags: ok({ ...JUST_CHATTING, tags: ["IRL", "Discussion"] }),
 };
 
 const recordingAdmin = (answers: Answers) => {
@@ -80,6 +83,10 @@ const recordingAdmin = (answers: Answers) => {
     image: async (request) => {
       calls.push({ name: "image", request });
       return answers.image;
+    },
+    tags: async (request) => {
+      calls.push({ name: "tags", request });
+      return answers.tags;
     },
   };
   return { admin, calls };
@@ -173,7 +180,8 @@ describe("POST /v1/admin/categories", () => {
       422,
       {
         title: "Slug de catégorie invalide",
-        detail: "Un slug s'écrit en minuscules, chiffres et tirets, sur 50 caractères au plus.",
+        detail:
+          "Un slug s'écrit en minuscules, chiffres et tirets, sur 50 caractères au plus, et ne peut pas être catalog.",
       },
     ],
     [
@@ -367,6 +375,74 @@ describe("PUT /v1/admin/categories/{slug}/image", () => {
     ["sans envoi", {}],
     ["avec un envoi qui n'est pas un UUID", { uploadId: "photo" }],
     ["avec un champ inconnu", { uploadId: UPLOAD_ID, imageKey: IMAGE_KEY }],
+  ])("répond 400 pour un corps %s", async (_name, body) => {
+    await withAdmin({}, async (base, calls) => {
+      expect((await put(base, { body })).status).toBe(400);
+      expect(calls).toEqual([]);
+    });
+  });
+});
+
+describe("PUT /v1/admin/categories/{slug}/tags (ADR 0050)", () => {
+  const put = (base: string, options: { body?: unknown; token?: boolean } = {}) =>
+    post(`${base}/just-chatting/tags`, {
+      body: { tags: ["IRL", "Discussion"] },
+      ...options,
+      method: "PUT",
+    });
+
+  it("remplace les tags au nom de l'identité du jeton, et rend la catégorie", async () => {
+    await withAdmin({}, async (base, calls) => {
+      const response = await put(base);
+
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({
+        ...JUST_CHATTING_RESPONSE,
+        tags: ["IRL", "Discussion"],
+      });
+      expect(calls).toEqual([
+        {
+          name: "tags",
+          request: { actorId: ADMIN_ID, slug: "just-chatting", tags: ["IRL", "Discussion"] },
+        },
+      ]);
+    });
+  });
+
+  it("répond 403 sans le scope admin:category.manage", async () => {
+    await withAdmin({ scopes: ["openid"] }, async (base, calls) => {
+      expect((await put(base)).status).toBe(403);
+      expect(calls).toEqual([]);
+    });
+  });
+
+  it.each([
+    ["forbidden", 403, { title: "Action non autorisée" }],
+    [
+      "invalid_tags",
+      400,
+      {
+        title: "Tags de catégorie invalides",
+        detail:
+          "Une catégorie porte 5 tags au plus, distincts, de 1 à 24 lettres, chiffres, espaces, tirets, apostrophes ou &.",
+      },
+    ],
+    ["category_not_found", 404, { title: "Catégorie introuvable" }],
+    ["category_inactive", 409, { title: "Catégorie déjà fusionnée ou retirée" }],
+  ] as const)("répond au refus %s par un %i", async (error, status, problem) => {
+    await withAdmin({ answers: { tags: err(error) } }, async (base) => {
+      const response = await put(base);
+
+      expect(response.status).toBe(status);
+      expect(await response.json()).toMatchObject({ status, ...problem });
+    });
+  });
+
+  it.each([
+    ["sans tags", {}],
+    ["avec des tags qui ne sont pas une liste", { tags: "IRL" }],
+    ["avec un tag qui n'est pas un texte", { tags: [1] }],
+    ["avec un champ inconnu", { tags: [], name: "IRL" }],
   ])("répond 400 pour un corps %s", async (_name, body) => {
     await withAdmin({}, async (base, calls) => {
       expect((await put(base, { body })).status).toBe(400);
