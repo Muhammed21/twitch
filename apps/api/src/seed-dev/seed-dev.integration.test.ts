@@ -236,14 +236,15 @@ describe("seed de développement (ADR 0039, §6)", () => {
     });
   });
 
-  it("crée les dix catégories de Browse, actives, chacune annoncée par channel.category.created", async () => {
+  it("crée les dix catégories de Browse, actives, avec leurs tags, chacune annoncée une seule fois", async () => {
+    await seedDevelopment(process.env);
     await seedDevelopment(process.env);
     const slugs = DEV_CATEGORIES.map(({ slug }) => slug);
 
-    const { categories, announced } = await asMigrator(async (client) => ({
+    const { categories, announced, tagged } = await asMigrator(async (client) => ({
       categories: (
-        await client.query<{ slug: string; name: string; status: string }>(
-          `SELECT "slug", "name", "status"::text AS "status" FROM "channel"."ChannelCategory"
+        await client.query<{ slug: string; name: string; status: string; tags: string[] }>(
+          `SELECT "slug", "name", "status"::text AS "status", "tags" FROM "channel"."ChannelCategory"
             WHERE "slug" = ANY($1) ORDER BY "slug"`,
           [slugs],
         )
@@ -255,15 +256,31 @@ describe("seed de développement (ADR 0039, §6)", () => {
           [slugs],
         )
       ).rows,
+      tagged: (
+        await client.query<{ slug: string; count: string }>(
+          `SELECT o."payload"->>'categoryId' AS "categoryId", count(*)::text AS "count"
+             FROM "channel"."ChannelOutbox" o
+             JOIN "channel"."ChannelCategory" c ON c."id"::text = o."payload"->>'categoryId'
+            WHERE o."name" = 'channel.category.updated' AND c."slug" = ANY($1)
+              AND o."payload"->'tags' = to_jsonb(c."tags")
+            GROUP BY 1`,
+          [slugs],
+        )
+      ).rows,
     }));
 
     expect(slugs).toHaveLength(10);
     expect(categories).toEqual(
-      DEV_CATEGORIES.map(({ slug, name }) => ({ slug, name, status: "active" })).toSorted(
-        (left, right) => left.slug.localeCompare(right.slug),
-      ),
+      DEV_CATEGORIES.map(({ slug, name, tags }) => ({
+        slug,
+        name,
+        status: "active",
+        tags,
+      })).toSorted((left, right) => left.slug.localeCompare(right.slug)),
     );
     expect(announced).toHaveLength(10);
+    expect(DEV_CATEGORIES.every(({ tags }) => tags.length > 0)).toBe(true);
+    expect(tagged.map(({ count }) => count)).toEqual(Array.from({ length: 10 }, () => "1"));
   });
 
   it("donne sa catégorie à la chaîne de démo du compte de test, une seule fois, par channel.metadata.updated", async () => {
