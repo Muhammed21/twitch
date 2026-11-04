@@ -5,28 +5,33 @@ import SwiftUI
 public struct ProfileScreen<Settings: View>: View {
   @Environment(MyChannelStore.self) private var store
 
-  private let accountName: String?
+  @Environment(\.locale) private var locale
+  private let account: Account?
   private let onOpenChannel: (ChannelSlug) -> Void
   private let settings: () -> Settings
 
   public init(
-    accountName: String?,
+    account: Account?,
     onOpenChannel: @escaping (ChannelSlug) -> Void,
     @ViewBuilder settings: @escaping () -> Settings
   ) {
-    self.accountName = accountName
+    self.account = account
     self.onOpenChannel = onOpenChannel
     self.settings = settings
   }
 
   public var body: some View {
     ScrollView {
-      VStack(alignment: .leading, spacing: LayoutRole.menuCardGap.points) {
-        if let accountName {
-          Text(accountName)
-            .font(TextRole.title.font)
-            .foregroundStyle(ColorRole.textPrimary.color)
+      if let account {
+        TimelineView(.everyMinute) { context in
+          ProfileHeader(
+            name: account.name,
+            lastLive: account.lastLiveAt.map { ProfileText.lastLive(at: $0, now: context.date, locale: locale) },
+            bio: account.bio
+          )
         }
+      }
+      VStack(alignment: .leading, spacing: LayoutRole.menuCardGap.points) {
         MenuCard {
           Button {
             if case let .ready(owned) = store.phase { onOpenChannel(owned.slug) }
@@ -54,6 +59,7 @@ public struct ProfileScreen<Settings: View>: View {
       .padding(LayoutRole.screenInset.points)
     }
     .background(ColorRole.background.color.ignoresSafeArea())
+    .toolbar(.hidden, for: .navigationBar)
     .task { await store.load() }
   }
 }

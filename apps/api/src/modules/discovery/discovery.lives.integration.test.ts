@@ -383,6 +383,46 @@ describe("GET /v1/lives (jalon A3)", () => {
   });
 });
 
+describe("lives d'une catégorie", () => {
+  it("liste les lives d'une catégorie fusionnée avec ceux de sa cible, par l'un ou l'autre slug", async () => {
+    const suffix = randomUUID().slice(0, 8);
+    const target = { categoryId: randomUUID(), slug: `cible-${suffix}`, name: `Cible ${suffix}` };
+    const source = {
+      categoryId: randomUUID(),
+      slug: `source-${suffix}`,
+      name: "Source",
+      status: "merged" as const,
+      mergedIntoId: target.categoryId,
+    };
+    await discovery.discoveryCategoryView.createMany({ data: [target, source] });
+    const inTarget = await seedLiveView({ minute: 80 });
+    const inSource = await seedLiveView({ minute: 79 });
+    await discovery.discoveryLiveChannelView.update({
+      where: { channelId: inTarget.channelId },
+      data: { categoryId: target.categoryId },
+    });
+    await discovery.discoveryLiveChannelView.update({
+      where: { channelId: inSource.channelId },
+      data: { categoryId: source.categoryId },
+    });
+    const category = { slug: target.slug, name: target.name };
+    try {
+      for (const slug of [target.slug, source.slug]) {
+        const response = await fetch(`${state.url}/v1/categories/${slug}/lives`);
+        expect(responses.LivePage.parse(await response.json()).items).toEqual(
+          [inTarget, inSource].map((live) => ({ ...asListed(live), category })),
+        );
+      }
+      expect((await fetch(`${state.url}/v1/categories/inconnue-${suffix}/lives`)).status).toBe(404);
+    } finally {
+      await cleanUp();
+      await discovery.discoveryCategoryView.deleteMany({
+        where: { categoryId: { in: [target.categoryId, source.categoryId] } },
+      });
+    }
+  });
+});
+
 const planOfLivePage = async (after: { startedAt: Date; channelId: string } | undefined) => {
   const client = new Client({ connectionString: urlOf("DATABASE_URL_MIGRATOR") });
   await client.connect();
