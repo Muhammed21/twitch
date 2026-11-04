@@ -58,6 +58,8 @@ public struct TabBar<Tab: Hashable>: View {
         }
       }
       .frame(height: LayoutRole.tabBarHeight.points, alignment: .top)
+      .accessibilityElement(children: .contain)
+      .accessibilityAddTraits(.isTabBar)
     }
     .background(ColorRole.background.color.ignoresSafeArea(edges: .bottom))
   }
