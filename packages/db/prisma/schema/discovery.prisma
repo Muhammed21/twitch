@@ -9,11 +9,45 @@ model DiscoveryLiveChannelView {
   title          String    @default("")
   /// occurredAt du dernier channel.metadata.updated appliqué : un titre plus ancien est ignoré.
   titleChangedAt DateTime?
+  /// Catégorie posée par le dernier channel.metadata.updated, telle qu'il la nomme : une fusion se résout à la lecture.
+  categoryId     String?   @db.Uuid
   liveSessionId  String?   @db.Uuid
   liveStartedAt  DateTime?
   lastEndedAt    DateTime?
 
   @@index([liveStartedAt(sort: Desc), channelId])
+  @@schema("discovery")
+}
+
+enum DiscoveryCategoryStatus {
+  active
+  merged
+  retired
+
+  @@schema("discovery")
+}
+
+/// Vue d'une catégorie, alimentée par channel.category.*. Une catégorie fusionnée garde sa cible dans mergedIntoId.
+model DiscoveryCategoryView {
+  categoryId   String                  @id @db.Uuid
+  /// Nul tant que channel.category.created n'est pas arrivé.
+  slug         String?
+  name         String                  @default("")
+  status       DiscoveryCategoryStatus @default(active)
+  mergedIntoId String?                 @db.Uuid
+
+  @@schema("discovery")
+}
+
+/// Audience d'une catégorie qui a au moins un live, recalculée toutes les 15 s par un job (ADR 0047). Reconstructible.
+model DiscoveryCategoryAudience {
+  /// Catégorie active, fusions suivies.
+  categoryId  String   @id @db.Uuid
+  liveCount   Int
+  viewerCount Int
+  refreshedAt DateTime
+
+  @@index([viewerCount(sort: Desc), liveCount(sort: Desc), categoryId])
   @@schema("discovery")
 }
 

@@ -1,6 +1,8 @@
 import { z } from "zod";
 
+import type { CategoryViewReader } from "../application/category-reads.ts";
 import type { LivePosition, LiveReader } from "../application/list-lives.ts";
+import type { CategoryView } from "../domain/category-view.ts";
 import type { DiscoveryPrisma } from "./prisma-live-channel-projection.ts";
 
 const LiveRows = z.array(
@@ -9,6 +11,7 @@ const LiveRows = z.array(
     slug: z.string(),
     title: z.string(),
     startedAt: z.date(),
+    categoryId: z.string().nullable(),
   }),
 );
 
@@ -20,22 +23,98 @@ const SEEK = `AND "liveStartedAt" <= ($2::timestamptz AT TIME ZONE 'UTC')
 export const livePageQuery = ({
   after,
   take,
+  categoryIds,
 }: {
   after: LivePosition | undefined;
   take: number;
-}): { text: string; values: readonly unknown[] } => ({
-  text: `SELECT "channelId"::text AS "channelId", "slug", "title",
-                "liveStartedAt" AT TIME ZONE 'UTC' AS "startedAt"
-           FROM "discovery"."DiscoveryLiveChannelView"
-          WHERE ${LIVE} ${after === undefined ? "" : SEEK}
-          ORDER BY "liveStartedAt" DESC, "channelId" ASC
-          LIMIT $1`,
-  values: after === undefined ? [take] : [take, after.startedAt.toISOString(), after.channelId],
-});
+  categoryIds?: readonly string[];
+}): { text: string; values: readonly unknown[] } => {
+  const values =
+    after === undefined ? [take] : [take, after.startedAt.toISOString(), after.channelId];
+  const inCategories =
+    categoryIds === undefined ? "" : `AND "categoryId" = ANY($${values.length + 1}::uuid[])`;
+  return {
+    text: `SELECT "channelId"::text AS "channelId", "slug", "title",
+                  "liveStartedAt" AT TIME ZONE 'UTC' AS "startedAt", "categoryId"::text AS "categoryId"
+             FROM "discovery"."DiscoveryLiveChannelView"
+            WHERE ${LIVE} ${after === undefined ? "" : SEEK} ${inCategories}
+            ORDER BY "liveStartedAt" DESC, "channelId" ASC
+            LIMIT $1`,
+    values: categoryIds === undefined ? values : [...values, [...categoryIds]],
+  };
+};
 
 export const prismaLiveReader = (prisma: DiscoveryPrisma): LiveReader => ({
-  page: async ({ after, take }) => {
-    const { text, values } = livePageQuery({ after, take });
+  page: async (request) => {
+    const { text, values } = livePageQuery(request);
     return LiveRows.parse(await prisma.$queryRawUnsafe(text, ...values));
+  },
+});
+
+const MAX_MERGE_HOPS = 16;
+const MAX_MERGED_SOURCES = 200;
+
+type Views = ReadonlyMap<string, CategoryView>;
+
+const withRows = (views: Views, rows: readonly CategoryView[]): Views =>
+  new Map([...views, ...rows.map((row): [string, CategoryView] => [row.categoryId, row])]);
+
+const followTargets = async (
+  prisma: DiscoveryPrisma,
+  frontier: readonly string[],
+  views: Views,
+  hops = 0,
+): Promise<Views> => {
+  const missing = frontier.filter((id) => !views.has(id));
+  if (missing.length === 0 || hops > MAX_MERGE_HOPS) {
+    return views;
+  }
+  const rows: readonly CategoryView[] = await prisma.discoveryCategoryView.findMany({
+    where: { categoryId: { in: [...missing] } },
+    take: missing.length,
+  });
+  return followTargets(
+    prisma,
+    rows.flatMap(({ mergedIntoId }) => (mergedIntoId === null ? [] : [mergedIntoId])),
+    withRows(views, rows),
+    hops + 1,
+  );
+};
+
+const followSources = async (
+  prisma: DiscoveryPrisma,
+  frontier: readonly string[],
+  views: Views,
+  hops = 0,
+): Promise<Views> => {
+  if (frontier.length === 0 || hops > MAX_MERGE_HOPS) {
+    return views;
+  }
+  const rows: readonly CategoryView[] = await prisma.discoveryCategoryView.findMany({
+    where: { mergedIntoId: { in: [...frontier] } },
+    take: MAX_MERGED_SOURCES,
+  });
+  const unseen = rows.filter(({ categoryId }) => !views.has(categoryId));
+  return followSources(
+    prisma,
+    unseen.map(({ categoryId }) => categoryId),
+    withRows(views, unseen),
+    hops + 1,
+  );
+};
+
+export const prismaCategoryViewReader = (prisma: DiscoveryPrisma): CategoryViewReader => ({
+  withMergeTargets: (categoryIds) => followTargets(prisma, categoryIds, new Map()),
+  aroundSlug: async (slug) => {
+    const named: readonly CategoryView[] = await prisma.discoveryCategoryView.findMany({
+      where: { slug },
+      take: 1,
+    });
+    const targets = await followTargets(
+      prisma,
+      named.map(({ categoryId }) => categoryId),
+      new Map(),
+    );
+    return followSources(prisma, [...targets.keys()], targets);
   },
 });

@@ -26,6 +26,9 @@ private let logOutDialogMeasures: [(LayoutRole, CGFloat)] = [
 private let chatMeasures: [(LayoutRole, CGFloat)] = [
   (.chatInset, 8),
   (.chatRowGap, 20),
+  (.chatUnreadGap, 2),
+  (.chatUnreadLabelGap, 4),
+  (.chatUnreadLineWidth, 1),
   (.composerHeight, 40),
   (.composerPadding, 12),
   (.composerRadius, 6),
@@ -166,10 +169,15 @@ struct RolesTests {
     #expect(TextRole.title.font == Font.title2.weight(.bold))
   }
 
-  @Test("un message du chat est en body régulier, son auteur en headline gras")
+  @Test("un message du chat est en caption 12 pt, son auteur en caption medium, comme sur chat/chat-chaine--defaut")
   func chatTextRoles() {
-    #expect(TextRole.chatMessage.font == Font.body.weight(.regular))
-    #expect(TextRole.chatAuthor.font == Font.headline.weight(.bold))
+    #expect(TextRole.chatMessage.font == Font.caption.weight(.regular))
+    #expect(TextRole.chatAuthor.font == Font.caption.weight(.medium))
+  }
+
+  @Test("le champ « Send chat » reste en body 17 pt, comme sur chat/chat-chaine--defaut")
+  func chatComposerTextRole() {
+    #expect(TextRole.chatComposer.font == Font.body.weight(.regular))
   }
 
   @Test("le bouton principal sur l'accent est blanc à libellé noir, le secondaire violet clair à libellé blanc")

@@ -95,6 +95,22 @@
         "fontWeight": 400
       },
       "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : nombre de viewers sur la miniature, hauteur de capitale 10,3 pt, soit 14 pt (parcourir/liste-chaines-live--defaut et --theme-sombre). Text style iOS subheadline (15 pt), le plus proche, pour le Dynamic Type."
+    },
+    "chatText": {
+      "$type": "iosTextStyle",
+      "$value": {
+        "textStyle": "caption",
+        "fontWeight": 400
+      },
+      "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/chat/chat-chaine--defaut) : « Welcome to the chat room! » large de 151 pt et « 04:13 » de 30 pt, hauteur de capitale 8,8 pt, soit 12 pt régulier, text style iOS caption."
+    },
+    "chatAuthorText": {
+      "$type": "iosTextStyle",
+      "$value": {
+        "textStyle": "caption",
+        "fontWeight": 500
+      },
+      "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/chat/chat-chaine--defaut) : pseudo « skibidisiege22: » large de 86 pt, soit 12 pt medium (85 pt en régulier, 87 pt en medium), text style iOS caption."
     }
   }
 }

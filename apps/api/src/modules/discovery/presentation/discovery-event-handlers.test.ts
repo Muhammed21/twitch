@@ -1,17 +1,25 @@
 import { describe, expect, it } from "vitest";
 
 import type { StreamEvent } from "../../../platform/stream-entry.ts";
-import type { DiscoveryEvent } from "../domain/live-channel-view.ts";
+import type { DiscoveryEvent } from "../domain/discovery-event.ts";
 import { discoveryEventHandlers } from "./discovery-event-handlers.ts";
 
 const CHANNEL_ID = "9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69";
 const OWNER_ID = "4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b";
 const SESSION_ID = "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d";
 const EVENT_ID = "0e1d2c3b-4a59-4687-9a1b-2c3d4e5f6a7b";
+const CATEGORY_ID = "0b5e4d3c-2a19-4f08-8e7d-6c5b4a392817";
+const TARGET_CATEGORY_ID = "1c6f5e4d-3b2a-4019-9f8e-7d6c5b4a3928";
 
 const PAYLOADS: Readonly<Record<string, unknown>> = {
   "channel.created": { channelId: CHANNEL_ID, ownerId: OWNER_ID, slug: "streamer" },
   "channel.metadata.updated": { channelId: CHANNEL_ID, title: "Speedrun" },
+  "channel.category.created": { categoryId: CATEGORY_ID, slug: "irl", name: "IRL" },
+  "channel.category.merged": {
+    sourceCategoryId: CATEGORY_ID,
+    targetCategoryId: TARGET_CATEGORY_ID,
+  },
+  "channel.category.retired": { categoryId: CATEGORY_ID },
   "stream.started": {
     sessionId: SESSION_ID,
     channelId: CHANNEL_ID,
@@ -56,8 +64,11 @@ const setup = () => {
 };
 
 describe("handlers de discovery pour events.channel et events.stream", () => {
-  it("traite la création, le titre, le démarrage et la fin, et rien d'autre", () => {
+  it("traite la chaîne, ses catégories et ses sessions, et rien d'autre", () => {
     expect(Object.keys(setup().handlers).toSorted()).toEqual([
+      "channel.category.created",
+      "channel.category.merged",
+      "channel.category.retired",
       "channel.created",
       "channel.metadata.updated",
       "stream.ended",
@@ -70,12 +81,25 @@ describe("handlers de discovery pour events.channel et events.stream", () => {
     [
       "channel.metadata.updated",
       {
-        kind: "title-changed",
+        kind: "metadata-changed",
         channelId: CHANNEL_ID,
         title: "Speedrun",
         changedAt: new Date("2026-11-02T19:58:00.000Z"),
       },
     ],
+    [
+      "channel.category.created",
+      { kind: "category-created", categoryId: CATEGORY_ID, slug: "irl", name: "IRL" },
+    ],
+    [
+      "channel.category.merged",
+      {
+        kind: "category-merged",
+        categoryId: CATEGORY_ID,
+        targetCategoryId: TARGET_CATEGORY_ID,
+      },
+    ],
+    ["channel.category.retired", { kind: "category-retired", categoryId: CATEGORY_ID }],
     [
       "stream.started",
       {
@@ -101,6 +125,32 @@ describe("handlers de discovery pour events.channel et events.stream", () => {
 
     expect(projected).toEqual([{ eventId: EVENT_ID, event: expected }]);
     expect(lines).toEqual([]);
+  });
+
+  it.each([
+    ["une catégorie", CATEGORY_ID],
+    ["l'absence de catégorie", null],
+  ])("projette avec le titre %s portée par channel.metadata.updated", async (_name, categoryId) => {
+    const { projected, handle } = setup();
+
+    await handle(
+      makeEvent("channel.metadata.updated", {
+        payload: { channelId: CHANNEL_ID, title: "Speedrun", categoryId },
+      }),
+    );
+
+    expect(projected).toEqual([
+      {
+        eventId: EVENT_ID,
+        event: {
+          kind: "metadata-changed",
+          channelId: CHANNEL_ID,
+          title: "Speedrun",
+          categoryId,
+          changedAt: new Date("2026-11-02T19:58:00.000Z"),
+        },
+      },
+    ]);
   });
 
   it.each(Object.keys(PAYLOADS))(

@@ -4,12 +4,18 @@ import { events } from "@repo/contracts";
 import { appendToOutbox } from "@repo/db";
 
 import type { CategoryCatalog, CategoryStatus } from "../application/category-admin.ts";
+import type { CategorySearch } from "../application/category-search.ts";
 import type { ChannelPrisma } from "./prisma-channel-registry.ts";
 
 const OUTBOX = { schema: "channel", table: "ChannelOutbox" };
-const VIEW = { id: true, slug: true, name: true, status: true } as const;
+const VIEW = { id: true, slug: true, name: true, status: true, imageKey: true } as const;
 
-const { channelCategoryCreated, channelCategoryMerged, channelCategoryRetired } = events.channel;
+const {
+  channelCategoryCreated,
+  channelCategoryMerged,
+  channelCategoryRetired,
+  channelCategoryUpdated,
+} = events.channel;
 
 type Transaction = Parameters<Parameters<ChannelPrisma["$transaction"]>[0]>[0];
 
@@ -51,7 +57,10 @@ export const prismaCategoryCatalog = (prisma: ChannelPrisma): CategoryCatalog =>
           occurredAt,
         },
       });
-      return { ok: true, value: { id: categoryId, slug, name, status: "active" } } as const;
+      return {
+        ok: true,
+        value: { id: categoryId, slug, name, status: "active", imageKey: null },
+      } as const;
     }),
   merge: ({ sourceId, targetId, outboxEventId, occurredAt }) =>
     prisma.$transaction(async (tx) => {
@@ -113,5 +122,48 @@ export const prismaCategoryCatalog = (prisma: ChannelPrisma): CategoryCatalog =>
         },
       });
       return { ok: true, value: retired } as const;
+    }),
+  changeImage: ({ categoryId, imageKey, outboxEventId, occurredAt }) =>
+    prisma.$transaction(async (tx) => {
+      const locked = await lockCategories(tx, [categoryId]);
+      if (!isActive(locked, categoryId)) {
+        return { ok: false, error: "category_inactive" } as const;
+      }
+      const updated = await tx.channelCategory.update({
+        where: { id: categoryId },
+        data: { imageKey },
+        select: VIEW,
+      });
+      const payload = {
+        categoryId,
+        name: updated.name,
+        imageKey,
+      } satisfies z.input<typeof channelCategoryUpdated.payload>;
+      await appendToOutbox(tx, {
+        outbox: OUTBOX,
+        event: {
+          id: outboxEventId,
+          name: channelCategoryUpdated.name,
+          version: channelCategoryUpdated.version,
+          payload,
+          occurredAt,
+        },
+      });
+      return { ok: true, value: updated } as const;
+    }),
+});
+
+export const prismaCategorySearch = (prisma: ChannelPrisma): CategorySearch => ({
+  search: ({ nameContains, limit }) =>
+    prisma.channelCategory.findMany({
+      where: {
+        status: "active",
+        ...(nameContains === undefined
+          ? {}
+          : { name: { contains: nameContains, mode: "insensitive" } }),
+      },
+      orderBy: [{ name: "asc" }, { id: "asc" }],
+      take: limit,
+      select: { id: true, slug: true, name: true },
     }),
 });

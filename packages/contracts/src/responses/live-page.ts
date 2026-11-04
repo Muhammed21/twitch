@@ -2,6 +2,14 @@ import { z } from "zod";
 
 import { Uuid } from "../conventions/schemas.ts";
 
+export const LiveCategory = z
+  .looseObject({
+    slug: z.string(),
+    name: z.string(),
+    imageUrl: z.url().optional(),
+  })
+  .meta({ id: "LiveCategory" });
+
 export const Live = z
   .looseObject({
     channelId: Uuid,
@@ -9,6 +17,7 @@ export const Live = z
     title: z.string(),
     startedAt: z.iso.datetime(),
     viewerCount: z.int().min(0).optional(),
+    category: LiveCategory.optional(),
   })
   .meta({ id: "Live" });
 

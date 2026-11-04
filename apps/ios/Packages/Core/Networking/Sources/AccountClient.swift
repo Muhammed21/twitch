@@ -29,6 +29,6 @@ public struct AccountClient: AccountRepository {
 
 extension Account {
   init(_ current: Components.Schemas.Me) {
-    self.init(id: current.id, name: current.name, email: current.email)
+    self.init(id: current.id, name: current.name, email: current.email, bio: current.bio, lastLiveAt: current.lastLiveAt)
   }
 }

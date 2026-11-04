@@ -12,7 +12,10 @@ import type { Pool } from "pg";
 import { errorDetails, type LogSink, writeLog } from "../../platform/logging.ts";
 import { startPeriodicJob } from "../../platform/periodic-job.ts";
 import { startStreamConsumer, type StreamConsumerRedis } from "../../platform/stream-consumer.ts";
-import { listLives, withLiveViewerCounts } from "./application/list-lives.ts";
+import { browseCategories, refreshCategoryAudience } from "./application/category-audience.ts";
+import { listCategoryLives } from "./application/category-reads.ts";
+import { type ListLives, listLives, withLiveViewerCounts } from "./application/list-lives.ts";
+import { withLiveCategories } from "./application/live-categories.ts";
 import { createLiveStatusHub, type LiveStatusHub } from "./application/live-status-hub.ts";
 import { type ViewerCountReader, withViewerCounts } from "./application/live-status-viewers.ts";
 import { projectDiscoveryEvent } from "./application/project-discovery-event.ts";
@@ -22,12 +25,23 @@ import {
 } from "./application/rebuild-live-channel-views.ts";
 import { pgOutboxHistory } from "./infrastructure/pg-outbox-history.ts";
 import {
+  prismaCategoryAudienceReader,
+  prismaCategoryAudienceStore,
+  prismaLivesInCategory,
+} from "./infrastructure/prisma-category-audience.ts";
+import {
   type DiscoveryPrisma,
+  prismaCategoryProjection,
   prismaLiveChannelProjection,
   prismaLiveChannelStore,
 } from "./infrastructure/prisma-live-channel-projection.ts";
-import { prismaLiveReader } from "./infrastructure/prisma-live-reader.ts";
+import { prismaCategoryViewReader, prismaLiveReader } from "./infrastructure/prisma-live-reader.ts";
 import { prismaLiveStatusReader } from "./infrastructure/prisma-live-status-reader.ts";
+import {
+  BROWSE_CATEGORIES,
+  CategoriesController,
+  LIST_CATEGORY_LIVES,
+} from "./presentation/categories.controller.ts";
 import { discoveryEventHandlers } from "./presentation/discovery-event-handlers.ts";
 import {
   LIVE_STATUS_HEARTBEAT_MS,
@@ -59,6 +73,8 @@ const CLAIM_IDLE_MS = 30_000;
 const BLOCK_MS = 1000;
 const LIVE_STATUS_TICK_MS = 1000;
 const LIVE_STATUS_HEARTBEAT_INTERVAL_MS = 15_000;
+const CATEGORY_AUDIENCE_INTERVAL_MS = 15_000;
+const CATEGORY_AUDIENCE_BATCH_SIZE = 500;
 
 type DiscoveryDependencies = {
   prisma: DiscoveryPrisma;
@@ -67,6 +83,36 @@ type DiscoveryDependencies = {
   viewerCounts: ViewerCountReader;
   logSink: LogSink;
 };
+
+const listedLives = ({ prisma, viewerCounts, logSink }: DiscoveryDependencies): ListLives =>
+  withLiveCategories({
+    lives: withLiveViewerCounts({
+      lives: listLives(prismaLiveReader(prisma)),
+      viewerCounts,
+      onViewerCountFailure: (error) =>
+        writeLog(logSink, {
+          level: "error",
+          msg: "lecture du nombre de viewers de la liste des lives en échec",
+          ...errorDetails(error),
+        }),
+    }),
+    categories: prismaCategoryViewReader(prisma),
+  });
+
+export const categoryAudienceRefresh = ({
+  prisma,
+  viewerCounts,
+  batchSize = CATEGORY_AUDIENCE_BATCH_SIZE,
+}: Pick<DiscoveryDependencies, "prisma" | "viewerCounts"> & {
+  batchSize?: number;
+}): (() => Promise<void>) =>
+  refreshCategoryAudience({
+    lives: prismaLivesInCategory(prisma),
+    categories: prismaCategoryViewReader(prisma),
+    viewerCounts,
+    store: prismaCategoryAudienceStore(prisma),
+    batchSize,
+  });
 
 @Module({})
 export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
@@ -80,7 +126,7 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
   static register(dependencies: DiscoveryDependencies): DynamicModule {
     return {
       module: DiscoveryModule,
-      controllers: [LivesController, LiveStatusController],
+      controllers: [LivesController, LiveStatusController, CategoriesController],
       providers: [
         { provide: DISCOVERY_DEPENDENCIES, useValue: dependencies },
         {
@@ -99,18 +145,17 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
           ),
         },
         { provide: LIVE_STATUS_HEARTBEAT_MS, useValue: LIVE_STATUS_HEARTBEAT_INTERVAL_MS },
+        { provide: LIST_LIVES, useValue: listedLives(dependencies) },
         {
-          provide: LIST_LIVES,
-          useValue: withLiveViewerCounts({
-            lives: listLives(prismaLiveReader(dependencies.prisma)),
-            viewerCounts: dependencies.viewerCounts,
-            onViewerCountFailure: (error) =>
-              writeLog(dependencies.logSink, {
-                level: "error",
-                msg: "lecture du nombre de viewers de la liste des lives en échec",
-                ...errorDetails(error),
-              }),
+          provide: LIST_CATEGORY_LIVES,
+          useValue: listCategoryLives({
+            categories: prismaCategoryViewReader(dependencies.prisma),
+            lives: listedLives(dependencies),
           }),
+        },
+        {
+          provide: BROWSE_CATEGORIES,
+          useValue: browseCategories(prismaCategoryAudienceReader(dependencies.prisma)),
         },
       ],
     };
@@ -119,7 +164,10 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
   onModuleInit(): void {
     const { prisma, channelConsumerRedis, streamConsumerRedis, logSink } = this.dependencies;
     const handlers = discoveryEventHandlers({
-      project: projectDiscoveryEvent(prismaLiveChannelProjection(prisma)),
+      project: projectDiscoveryEvent({
+        channels: prismaLiveChannelProjection(prisma),
+        categories: prismaCategoryProjection(prisma),
+      }),
       logSink,
     });
     const liveStatusTicks = startPeriodicJob({
@@ -132,8 +180,19 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
           ...errorDetails(error),
         }),
     });
+    const categoryAudience = startPeriodicJob({
+      intervalMs: CATEGORY_AUDIENCE_INTERVAL_MS,
+      run: categoryAudienceRefresh(this.dependencies),
+      onError: (error) =>
+        writeLog(logSink, {
+          level: "error",
+          msg: "calcul de l'audience des catégories en échec, agrégat précédent conservé",
+          ...errorDetails(error),
+        }),
+    });
     this.#consumers = [
       liveStatusTicks,
+      categoryAudience,
       ...[
         { redis: channelConsumerRedis, stream: "events.channel" },
         { redis: streamConsumerRedis, stream: "events.stream" },
