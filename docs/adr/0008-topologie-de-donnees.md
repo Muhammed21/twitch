@@ -1,6 +1,6 @@
 # 0008 — Topologie de données : PostgreSQL multi-schéma, Redis, OLAP, stockage objet
 
-- Statut : Accepté — client par contexte, transactions, enums, migrations amendés par [0025](0025-un-client-prisma-par-contexte.md) — stockage objet local (MinIO → SeaweedFS), schéma `cms` non créé et ordre du pipeline précisés par [0028](0028-conteneurisation-et-environnement-local-docker-compose.md)
+- Statut : Accepté — client par contexte, transactions, enums, migrations amendés par [0025](0025-un-client-prisma-par-contexte.md) — stockage objet local (MinIO → SeaweedFS), schéma `cms` non créé et ordre du pipeline précisés par [0028](0028-conteneurisation-et-environnement-local-docker-compose.md) — relecture par l'API des images envoyées (§4) amendée par [0044](0044-images-envoyees-relues-validees-et-reencodees-par-l-api-avec-sharp.md)
 - Date : 2026-09-22
 - Décideurs : Muhammed Cavus
 
