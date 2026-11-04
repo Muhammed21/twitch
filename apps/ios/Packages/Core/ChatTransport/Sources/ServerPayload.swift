@@ -4,11 +4,13 @@ import Foundation
 enum ServerPayload {
   private typealias Message = Components.Schemas.RealtimeChatMessage
   private typealias Rejected = Components.Schemas.RealtimeChatRejected
+  private typealias Cleared = Components.Schemas.RealtimeChatUserCleared
   private typealias Revoked = Components.Schemas.RealtimeSessionRevoked
 
   static func event(name: String, payload: Data?) -> ChatEvent? {
     switch name {
     case "chat:message": decode(Message.self, payload).map { .message(ChatMessage($0)) }
+    case "chat:user_cleared": decode(Cleared.self, payload).map { .cleared(ChatClearance(channelID: ChannelID($0.channelId), authorID: $0.userId)) }
     case "session:revoked": decode(Revoked.self, payload).map { .revoked(SessionRevocation($0.action)) }
     default: nil
     }
