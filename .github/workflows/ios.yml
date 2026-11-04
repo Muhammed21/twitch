@@ -20,7 +20,9 @@ jobs:
   ios:
     name: iOS
     runs-on: macos-15
-    timeout-minutes: 30
+    # Cache Mint froid (ios.yml ne tourne pas sur main, donc chaque PR part sans cache) : la
+    # compilation de SwiftLint prend 12 min et le job dure environ 32 min (run 41798220030).
+    timeout-minutes: 40
     defaults:
       run:
         working-directory: apps/ios
@@ -36,7 +38,8 @@ jobs:
         working-directory: .
         run: node packages/ios-imports/scripts/check.ts
 
-      - uses: actions/cache@v4
+      - id: mint-cache
+        uses: actions/cache/restore@v4
         with:
           path: ~/.mint
           key: mint-v1-${{ runner.os }}-${{ hashFiles('apps/ios/Mintfile') }}
@@ -45,6 +48,13 @@ jobs:
         run: |
           brew install mint
           mint bootstrap
+
+      # Sauvé tout de suite : un job annulé ou en échec plus loin ne sauverait rien.
+      - if: steps.mint-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.mint
+          key: ${{ steps.mint-cache.outputs.cache-primary-key }}
 
       - name: SwiftFormat
         run: mint run swiftformat --lint .
