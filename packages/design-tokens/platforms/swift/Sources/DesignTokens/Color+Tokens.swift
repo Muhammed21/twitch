@@ -165,6 +165,34 @@ public extension Color {
             ? UIColor(red: 0.612, green: 0.604, blue: 1, alpha: 1)
             : UIColor(red: 0.38, green: 0.369, blue: 0.784, alpha: 1)
     })
+    /// Glyphe et libellé de l'onglet actif de la barre d'onglets, anneau de l'avatar de l'onglet Profile actif.
+    /// clair #772CE8 · sombre #BF94FF
+    static let navigationActive = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.749, green: 0.58, blue: 1, alpha: 1)
+            : UIColor(red: 0.467, green: 0.173, blue: 0.91, alpha: 1)
+    })
+    /// Filet décoratif d'un pixel : séparation entre le contenu et la barre d'onglets.
+    /// clair #D9D9D9 · sombre #2D2D2F
+    static let borderSubtle = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.176, green: 0.176, blue: 0.184, alpha: 1)
+            : UIColor(red: 0.851, green: 0.851, blue: 0.851, alpha: 1)
+    })
+    /// Fond de l'avatar par défaut d'un compte sans photo.
+    /// clair #BFFF00 · sombre #BFFF00
+    static let avatarDefault = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.749, green: 1, blue: 0, alpha: 1)
+            : UIColor(red: 0.749, green: 1, blue: 0, alpha: 1)
+    })
+    /// Glyphe posé sur l'avatar par défaut.
+    /// clair #000000 · sombre #000000
+    static let avatarOnDefault = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0, green: 0, blue: 0, alpha: 1)
+            : UIColor(red: 0, green: 0, blue: 0, alpha: 1)
+    })
 
     /// Valeurs fixes par thème, réservées aux contextes sans traits et aux tests (ADR 0019 §2.2).
     enum Static {
@@ -214,5 +242,13 @@ public extension Color {
         public static let chatNameTealDark = Color(.sRGB, red: 0.373, green: 0.722, blue: 0.729, opacity: 1)
         public static let chatNameIndigoLight = Color(.sRGB, red: 0.38, green: 0.369, blue: 0.784, opacity: 1)
         public static let chatNameIndigoDark = Color(.sRGB, red: 0.612, green: 0.604, blue: 1, opacity: 1)
+        public static let navigationActiveLight = Color(.sRGB, red: 0.467, green: 0.173, blue: 0.91, opacity: 1)
+        public static let navigationActiveDark = Color(.sRGB, red: 0.749, green: 0.58, blue: 1, opacity: 1)
+        public static let borderSubtleLight = Color(.sRGB, red: 0.851, green: 0.851, blue: 0.851, opacity: 1)
+        public static let borderSubtleDark = Color(.sRGB, red: 0.176, green: 0.176, blue: 0.184, opacity: 1)
+        public static let avatarDefaultLight = Color(.sRGB, red: 0.749, green: 1, blue: 0, opacity: 1)
+        public static let avatarDefaultDark = Color(.sRGB, red: 0.749, green: 1, blue: 0, opacity: 1)
+        public static let avatarOnDefaultLight = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 1)
+        public static let avatarOnDefaultDark = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 1)
     }
 }

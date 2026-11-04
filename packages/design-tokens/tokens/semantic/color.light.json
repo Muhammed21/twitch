@@ -130,6 +130,32 @@
           "$description": "Couleur de pseudo dans le chat, attribuée à un auteur d'après son identifiant."
         }
       }
+    },
+    "navigation": {
+      "active": {
+        "$type": "color",
+        "$value": "{core.color.purple.55}",
+        "$description": "Glyphe et libellé de l'onglet actif de la barre d'onglets, anneau de l'avatar de l'onglet Profile actif."
+      }
+    },
+    "border": {
+      "subtle": {
+        "$type": "color",
+        "$value": "{core.color.neutral.85}",
+        "$description": "Filet décoratif d'un pixel : séparation entre le contenu et la barre d'onglets."
+      }
+    },
+    "avatar": {
+      "default": {
+        "$type": "color",
+        "$value": "{core.color.lime.90}",
+        "$description": "Fond de l'avatar par défaut d'un compte sans photo."
+      },
+      "onDefault": {
+        "$type": "color",
+        "$value": "{core.color.neutral.0}",
+        "$description": "Glyphe posé sur l'avatar par défaut."
+      }
     }
   }
 }

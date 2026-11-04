@@ -60,6 +60,11 @@
       "$value": "{core.dimension.20}",
       "$description": "Marges latérales et basse des boutons de l'accueil, relevées sur l'app iOS Twitch (20 pt)."
     },
+    "x24": {
+      "$type": "dimension",
+      "$value": "{core.dimension.24}",
+      "$description": "Avatar de l'onglet Profile, relevé sur l'app iOS Twitch (24 pt)."
+    },
     "x40": {
       "$type": "dimension",
       "$value": "{core.dimension.40}",
@@ -69,6 +74,11 @@
       "$type": "dimension",
       "$value": "{core.dimension.44}",
       "$description": "Hauteur des boutons d'action, relevée sur l'app iOS Twitch (44 pt), cible tactile minimale d'iOS."
+    },
+    "x49": {
+      "$type": "dimension",
+      "$value": "{core.dimension.49}",
+      "$description": "Hauteur de la barre d'onglets, relevée sur l'app iOS Twitch (49 pt)."
     },
     "x56": {
       "$type": "dimension",

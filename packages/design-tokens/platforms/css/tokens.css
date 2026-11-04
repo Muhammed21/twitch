@@ -25,6 +25,10 @@
   --color-chat-name-maroon: #a72b2d;
   --color-chat-name-teal: #347274;
   --color-chat-name-indigo: #615ec8;
+  --color-navigation-active: #772ce8;
+  --color-border-subtle: #d9d9d9;
+  --color-avatar-default: #bfff00;
+  --color-avatar-on-default: #000000;
   --typography-display-text-font: -apple-system-headline;
   --typography-display-text-weight: 600;
   --typography-heading-text-font: -apple-system-subheadline;
@@ -43,6 +47,8 @@
   --typography-dialog-title-weight: 700;
   --typography-dialog-message-font: -apple-system-body;
   --typography-dialog-message-weight: 400;
+  --typography-tab-label-font: -apple-system-caption2;
+  --typography-tab-label-weight: 500;
   --spacing-x1: 1px;
   --spacing-x2: 2px;
   --spacing-x3: 3px;
@@ -55,8 +61,10 @@
   --spacing-x15: 15px;
   --spacing-x16: 16px;
   --spacing-x20: 20px;
+  --spacing-x24: 24px;
   --spacing-x40: 40px;
   --spacing-x44: 44px;
+  --spacing-x49: 49px;
   --spacing-x56: 56px;
   --spacing-x300: 300px;
   --radius-sm: 2px;
@@ -92,5 +100,9 @@
     --color-chat-name-maroon: #f08c8c;
     --color-chat-name-teal: #5fb8ba;
     --color-chat-name-indigo: #9c9aff;
+    --color-navigation-active: #bf94ff;
+    --color-border-subtle: #2d2d2f;
+    --color-avatar-default: #bfff00;
+    --color-avatar-on-default: #000000;
   }
 }

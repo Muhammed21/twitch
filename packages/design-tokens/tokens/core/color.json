@@ -22,6 +22,11 @@
           "$value": "#29282f",
           "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : champs et boutons secondaires, thème sombre."
         },
+        "18": {
+          "$type": "color",
+          "$value": "#2d2d2f",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : filet au-dessus de la barre d'onglets, thème sombre (accueil/flux-suivis--aucun-live)."
+        },
         "35": {
           "$type": "color",
           "$value": "#53535f",
@@ -31,6 +36,11 @@
           "$type": "color",
           "$value": "#adadb8",
           "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : texte secondaire, thème sombre. Valeur de la charte twitch.tv, mesurée #adadb2 sur le texte lissé."
+        },
+        "85": {
+          "$type": "color",
+          "$value": "#d9d9d9",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : filet au-dessus de la barre d'onglets, thème clair (profil/menu-compte--defaut)."
         },
         "90": {
           "$type": "color",
@@ -68,6 +78,11 @@
           "$type": "color",
           "$value": "#872ddf",
           "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : pseudo bellabignuts (chat/chat-lecteur--toast-abonne), thème clair."
+        },
+        "55": {
+          "$type": "color",
+          "$value": "#772ce8",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : onglet actif de la barre d'onglets, thème clair, mesuré #782de6 (parcourir/liste-chaines-live--defaut). Valeur de la charte twitch.tv (purple-11) retenue."
         },
         "60": {
           "$type": "color",
@@ -170,6 +185,13 @@
           "$type": "color",
           "$value": "#9c9aff",
           "$description": "Convention : teinte de core.color.indigo.50, éclaircie pour le contraste AA sur le fond sombre (aucune capture du chat en thème sombre)."
+        }
+      },
+      "lime": {
+        "90": {
+          "$type": "color",
+          "$value": "#bfff00",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : avatar par défaut d'un compte sans photo, mesuré #bfff04 (accueil/flux-suivis--aucun-live)."
         }
       }
     }

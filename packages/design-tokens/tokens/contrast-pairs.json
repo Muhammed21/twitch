@@ -143,6 +143,18 @@
       "background": "color.background.primary",
       "min": 4.5,
       "note": "Pseudo d'un auteur dans le chat"
+    },
+    {
+      "foreground": "color.navigation.active",
+      "background": "color.background.primary",
+      "min": 4.5,
+      "note": "Libellé de l'onglet actif de la barre d'onglets"
+    },
+    {
+      "foreground": "color.avatar.onDefault",
+      "background": "color.avatar.default",
+      "min": 3.0,
+      "note": "SC 1.4.11 — glyphe de l'avatar par défaut"
     }
   ]
 }
