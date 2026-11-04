@@ -5,6 +5,7 @@ import {
   MAX_CATEGORY_SLUG_LENGTH,
   parseCategoryName,
   parseCategorySlug,
+  parseCategoryTags,
 } from "./category.ts";
 
 describe("slug d'une catégorie", () => {
@@ -50,5 +51,40 @@ describe("nom d'une catégorie", () => {
     ["trop long", "é".repeat(MAX_CATEGORY_NAME_LENGTH + 1)],
   ])("refuse un nom %s", (_name, name) => {
     expect(parseCategoryName(name)).toEqual({ ok: false, error: "invalid_name" });
+  });
+});
+
+describe("tags d'une catégorie (ADR 0050)", () => {
+  it("garde les tags dans leur ordre et leur casse, sans leurs espaces de bord", () => {
+    expect(
+      parseCategoryTags([" FPS ", "Shooter", "Rock & Roll", "Beat 'em up", "Point-and-click"]),
+    ).toEqual({
+      ok: true,
+      value: ["FPS", "Shooter", "Rock & Roll", "Beat 'em up", "Point-and-click"],
+    });
+  });
+
+  it("accepte une catégorie sans tag", () => {
+    expect(parseCategoryTags([])).toEqual({ ok: true, value: [] });
+  });
+
+  it("accepte un tag de 24 caractères, accents compris", () => {
+    const tag = `${"é".repeat(23)}1`;
+
+    expect(parseCategoryTags([tag])).toEqual({ ok: true, value: [tag] });
+  });
+
+  it.each([
+    ["six tags", ["a", "b", "c", "d", "e", "f"]],
+    ["un tag vide", ["IRL", "  "]],
+    ["un tag de 25 caractères", ["a".repeat(25)]],
+    ["un tag avec un caractère hors format", ["FPS!"]],
+    ["un tag avec un emoji", ["Jeux 🎮"]],
+    ["un tag qui commence par un caractère hors format", ["#FPS"]],
+    ["deux tags égaux à la casse près", ["FPS", "fps"]],
+    ["deux tags égaux aux accents près", ["Rétro", "retro"]],
+    ["deux tags égaux aux espaces de bord près", ["IRL", " IRL"]],
+  ])("refuse %s", (_name, tags) => {
+    expect(parseCategoryTags(tags)).toEqual({ ok: false, error: "invalid_tags" });
   });
 });

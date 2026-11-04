@@ -20,6 +20,7 @@ import type {
   CategoryMergeError,
   CategoryRetirementError,
   CategoryImageError,
+  CategoryTagsError,
   CategoryView,
 } from "../application/category-admin.ts";
 
@@ -48,6 +49,11 @@ export type CategoryAdmin = {
     slug: string;
     uploadId: string;
   }) => Promise<Result<CategoryView, CategoryImageError>>;
+  readonly tags: (request: {
+    actorId: string;
+    slug: string;
+    tags: readonly string[];
+  }) => Promise<Result<CategoryView, CategoryTagsError>>;
 };
 
 class Category extends responseDto(responses.Category) {}
@@ -59,6 +65,8 @@ class CreateCategoryRequest extends createZodDto(
 class MergeCategoryRequest extends createZodDto(z.strictObject({ targetSlug: z.string() })) {}
 
 class CategoryImageRequest extends createZodDto(z.strictObject({ uploadId: Uuid })) {}
+
+class CategoryTagsRequest extends createZodDto(z.strictObject({ tags: z.array(z.string()) })) {}
 
 const PROBLEMS: Readonly<
   Record<
@@ -111,6 +119,19 @@ const IMAGE_PROBLEMS: Readonly<Record<CategoryImageError, () => ProblemException
   too_many_pixels: rejected("too_many_pixels"),
 };
 
+const TAGS_PROBLEMS: Readonly<Record<CategoryTagsError, () => ProblemException>> = {
+  forbidden: PROBLEMS.forbidden,
+  category_not_found: PROBLEMS.category_not_found,
+  category_inactive: PROBLEMS.category_inactive,
+  invalid_tags: () =>
+    new ProblemException({
+      status: 400,
+      title: "Tags de catégorie invalides",
+      detail:
+        "Une catégorie porte 5 tags au plus, distincts, de 1 à 24 lettres, chiffres, espaces, tirets, apostrophes ou &.",
+    }),
+};
+
 type CategoryResponse = z.input<typeof responses.Category>;
 
 const unwrap = <Error extends string>(
@@ -131,12 +152,13 @@ export class AdminCategoriesController {
     @Inject(CATEGORY_IMAGE_URL) private readonly imageUrlOf: (key: string) => string,
   ) {}
 
-  private present({ id, slug, name, status, imageKey }: CategoryView): CategoryResponse {
+  private present({ id, slug, name, status, imageKey, tags }: CategoryView): CategoryResponse {
     return {
       id,
       slug,
       name,
       status,
+      tags: [...tags],
       ...(imageKey === null ? {} : { imageUrl: this.imageUrlOf(imageKey) }),
     };
   }
@@ -198,6 +220,21 @@ export class AdminCategoriesController {
       unwrap(
         await this.admin.image({ actorId: identity.userId, slug, uploadId: body.uploadId }),
         IMAGE_PROBLEMS,
+      ),
+    );
+  }
+
+  @Put(":slug/tags")
+  @ZodResponse({ status: 200, type: Category })
+  async tags(
+    @Param("slug") slug: string,
+    @Body() body: CategoryTagsRequest,
+    @CurrentIdentity() identity: AccessTokenIdentity,
+  ): Promise<CategoryResponse> {
+    return this.present(
+      unwrap(
+        await this.admin.tags({ actorId: identity.userId, slug, tags: body.tags }),
+        TAGS_PROBLEMS,
       ),
     );
   }

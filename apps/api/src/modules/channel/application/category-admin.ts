@@ -7,6 +7,7 @@ import {
   type CategorySlug,
   parseCategoryName,
   parseCategorySlug,
+  parseCategoryTags,
 } from "../domain/category.ts";
 
 export type CategoryStatus = "active" | "merged" | "retired";
@@ -17,6 +18,7 @@ export type CategoryView = {
   readonly name: string;
   readonly status: CategoryStatus;
   readonly imageKey: string | null;
+  readonly tags: readonly string[];
 };
 
 export type CategoryCreation = {
@@ -47,6 +49,13 @@ export type CategoryImageChange = {
   readonly occurredAt: Date;
 };
 
+export type CategoryTagsChange = {
+  readonly categoryId: string;
+  readonly tags: readonly string[];
+  readonly outboxEventId: string;
+  readonly occurredAt: Date;
+};
+
 export type CategoryImageChanged = {
   readonly category: CategoryView;
   readonly replacedImageKey: string | null;
@@ -59,6 +68,7 @@ export interface CategoryCatalog {
   retire(
     retirement: CategoryRetirement,
   ): Promise<Result<CategoryView, "category_inactive" | "category_in_use">>;
+  changeTags(change: CategoryTagsChange): Promise<Result<CategoryView, "category_inactive">>;
   changeImage(
     change: CategoryImageChange,
   ): Promise<Result<CategoryImageChanged, "category_inactive">>;
@@ -223,4 +233,40 @@ export const changeCategoryImage =
       );
     }
     return ok(changed.value.category);
+  };
+
+export type CategoryTagsError =
+  | "forbidden"
+  | "invalid_tags"
+  | "category_not_found"
+  | "category_inactive";
+
+export const changeCategoryTags =
+  ({ catalog, authz, newId, now }: Dependencies) =>
+  async ({
+    actorId,
+    slug,
+    tags,
+  }: {
+    actorId: string;
+    slug: string;
+    tags: readonly string[];
+  }): Promise<Result<CategoryView, CategoryTagsError>> => {
+    if (!(await isAdmin(authz, actorId))) {
+      return err("forbidden");
+    }
+    const parsed = parseCategoryTags(tags);
+    if (!parsed.ok) {
+      return parsed;
+    }
+    const category = await catalog.findBySlug(slug);
+    if (category === null) {
+      return err("category_not_found");
+    }
+    return catalog.changeTags({
+      categoryId: category.id,
+      tags: parsed.value,
+      outboxEventId: newId(),
+      occurredAt: now(),
+    });
   };

@@ -250,7 +250,40 @@ describe("catalogue des catégories dans channel (ADR 0045)", () => {
     expect(await outboxEvent(outboxEventId)).toMatchObject({
       name: "channel.category.updated",
       version: 1,
-      payload: { categoryId: category.id, name: category.name, imageKey },
+      payload: { categoryId: category.id, name: category.name, imageKey, tags: [] },
+    });
+  });
+
+  it("remplace les tags d'une catégorie active, avec l'état complet dans channel.category.updated, et les refuse une fois retirée", async () => {
+    const category = await seedCategory();
+    const outboxEventId = randomUUID();
+
+    const changed = await catalog.changeTags({
+      categoryId: category.id,
+      tags: ["Shooter", "RPG"],
+      outboxEventId,
+      occurredAt: NOW,
+    });
+    await catalog.retire({ categoryId: category.id, outboxEventId: randomUUID(), occurredAt: NOW });
+    const afterRetire = await catalog.changeTags({
+      categoryId: category.id,
+      tags: ["IRL"],
+      outboxEventId: randomUUID(),
+      occurredAt: NOW,
+    });
+
+    expect(changed).toEqual({ ok: true, value: { ...category, tags: ["Shooter", "RPG"] } });
+    expect(await catalog.findBySlug(category.slug)).toMatchObject({ tags: ["Shooter", "RPG"] });
+    expect(afterRetire).toEqual({ ok: false, error: "category_inactive" });
+    expect(await outboxEvent(outboxEventId)).toMatchObject({
+      name: "channel.category.updated",
+      version: 1,
+      payload: {
+        categoryId: category.id,
+        name: category.name,
+        imageKey: null,
+        tags: ["Shooter", "RPG"],
+      },
     });
   });
 });
