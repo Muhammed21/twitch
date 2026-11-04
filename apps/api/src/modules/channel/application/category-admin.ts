@@ -39,7 +39,6 @@ export type CategoryRetirement = {
 };
 
 export interface CategoryCatalog {
-  findBySlug(slug: string): Promise<CategoryView | null>;
   create(creation: CategoryCreation): Promise<Result<CategoryView, "slug_taken">>;
   merge(merge: CategoryMerge): Promise<Result<CategoryView, "invalid_merge">>;
   retire(
