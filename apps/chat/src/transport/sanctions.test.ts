@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { io, type Socket } from "socket.io-client";
-import { describe, expect, it, onTestFinished } from "vitest";
+import { describe, expect, it, onTestFinished, vi } from "vitest";
 
 import type { ChatSanction } from "@repo/authorization";
 
@@ -91,6 +91,14 @@ const startServer = async ({
 
 const send = (socket: Socket, channelId: string) =>
   socket.timeout(2000).emitWithAck("chat:send", { channelId, body: "Bonjour" });
+
+const clearsAt = (socket: Socket) => {
+  const cleared: unknown[] = [];
+  socket.on("chat:user_cleared", (payload: unknown) => {
+    cleared.push(payload);
+  });
+  return cleared;
+};
 
 const joinedAs = async (connect: () => Promise<Socket>, channelId: string) => {
   const socket = await connect();
@@ -206,6 +214,44 @@ describe("sanctions des chatters connectés", () => {
     alice.emit("room:join", { channelId: room.channelId });
 
     expect(await send(alice, room.channelId)).toEqual({ reason: "timed_out" });
+  });
+
+  it("efface les messages du chatter mis en timeout chez tous les connectés du salon", async () => {
+    const room = makeRoom();
+    const { server, connectAs } = await startServer({ rooms: [room] });
+    const alice = await joinedAs(() => connectAs(ALICE), room.channelId);
+    const bob = await joinedAs(() => connectAs(BOB), room.channelId);
+    const clearedAtAlice = clearsAt(alice);
+    const clearedAtBob = clearsAt(bob);
+
+    server.sanction({ userId: ALICE, channelId: room.channelId, expiresAt: minutesFromNow(10) });
+
+    await vi.waitFor(() => {
+      expect(clearedAtBob).toEqual([{ channelId: room.channelId, userId: ALICE }]);
+      expect(clearedAtAlice).toEqual([{ channelId: room.channelId, userId: ALICE }]);
+    });
+  });
+
+  it("n'efface rien dans les autres salons", async () => {
+    const timedOutRoom = makeRoom();
+    const otherRoom = makeRoom();
+    const { server, connectAs } = await startServer({ rooms: [timedOutRoom, otherRoom] });
+    const carol = await joinedAs(() => connectAs(CAROL), otherRoom.channelId);
+    const bob = await joinedAs(() => connectAs(BOB), timedOutRoom.channelId);
+    const clearedAtCarol = clearsAt(carol);
+    const clearedAtBob = clearsAt(bob);
+
+    server.sanction({
+      userId: ALICE,
+      channelId: timedOutRoom.channelId,
+      expiresAt: minutesFromNow(10),
+    });
+
+    await vi.waitFor(() => {
+      expect(clearedAtBob).toHaveLength(1);
+    });
+    expect(await send(carol, otherRoom.channelId)).toBeUndefined();
+    expect(clearedAtCarol).toEqual([]);
   });
 
   it("oublie les timeouts échus des chatters en cours de connexion", async () => {

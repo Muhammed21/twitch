@@ -25,8 +25,14 @@ import {
 } from "./modules/stream/stream.module.ts";
 import type { AccessTokenVerifier } from "./platform/authentication.ts";
 import type { FeatureFlagsConfig, VideoProviderConfig } from "./platform/config/env.ts";
+import {
+  createImageBrick,
+  type ImageStorage,
+  ImagesModule,
+} from "./platform/images/images.module.ts";
 import type { LogSink } from "./platform/logging.ts";
 import { PlatformModule, type SchemaVersionCheck } from "./platform/platform.module.ts";
+import type { WindowCounter } from "./platform/rate-limit.ts";
 import type { StreamConsumerRedis } from "./platform/stream-consumer.ts";
 
 const lastLiveOfOwner =
@@ -51,6 +57,7 @@ export class AppModule {
     moderation,
     discovery,
     mobile,
+    images,
     ...platform
   }: {
     schemaVersionCheck: SchemaVersionCheck;
@@ -78,7 +85,9 @@ export class AppModule {
       streamConsumerRedis: StreamConsumerRedis;
     };
     mobile: { featureFlags: FeatureFlagsConfig; minSupportedVersion: string };
+    images: { storage: ImageStorage; publicBaseUrl: string; counter: WindowCounter };
   }): DynamicModule {
+    const imageBrick = createImageBrick(images);
     const ownedChannel = createOwnedChannelReader(channel.prisma);
     const lastLiveOf = lastLiveOfOwner({
       ownedChannel,
@@ -88,6 +97,7 @@ export class AppModule {
       module: AppModule,
       imports: [
         PlatformModule.register(platform),
+        ImagesModule.register({ images: imageBrick, counter: images.counter }),
         IdentityModule.register({ ...identity, lastLiveOf }),
         ChannelModule.register({ ...channel, logSink: platform.logSink }),
         StreamModule.register({
