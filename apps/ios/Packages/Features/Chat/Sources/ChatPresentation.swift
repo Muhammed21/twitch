@@ -8,6 +8,7 @@ struct ChatLine: Equatable {
   let authorID: UUID
   let author: String
   let body: String
+  let isDeleted: Bool
 }
 
 extension ChatLine {
@@ -19,7 +20,8 @@ extension ChatLine {
       time: message.sentAt.formatted(style),
       authorID: message.author.id,
       author: "\(message.author.displayName):",
-      body: message.body
+      body: message.isDeleted ? ChatText.messageDeleted : message.body,
+      isDeleted: message.isDeleted
     )
   }
 
@@ -29,7 +31,7 @@ extension ChatLine {
       + separator
       + Self.styled(author, color: .chatName(authorID), font: TextRole.chatAuthor.font)
       + separator
-      + Self.styled(body, color: .textPrimary)
+      + Self.styled(body, color: isDeleted ? .textSecondary : .textPrimary)
   }
 
   private static func styled(_ text: String, color: ColorRole, font: Font = TextRole.chatMessage.font) -> AttributedString {
@@ -87,6 +89,9 @@ enum ChatText {
   static var send: String { localized("chat.composer.send") }
   static var unsent: String { localized("chat.rejection.unsent") }
   static var timeOutAction: String { localized("chat.moderation.timeOut") }
+  static var messageDeleted: String { localized("chat.message.deleted") }
+  static var welcome: String { localized("chat.feed.welcome") }
+  static var unread: String { localized("chat.feed.unread") }
 
   static func moderation(_ notice: ChatSession.ModerationNotice) -> String {
     switch notice {
