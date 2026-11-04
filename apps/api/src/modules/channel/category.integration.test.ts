@@ -85,7 +85,14 @@ describe("catalogue des catégories dans channel (ADR 0045)", () => {
 
     expect(created).toEqual({
       ok: true,
-      value: { id: categoryId, slug, name: "Just Chatting", status: "active", imageKey: null },
+      value: {
+        id: categoryId,
+        slug,
+        name: "Just Chatting",
+        status: "active",
+        imageKey: null,
+        tags: [],
+      },
     });
     expect(
       await prisma.channelCategory.findUnique({
