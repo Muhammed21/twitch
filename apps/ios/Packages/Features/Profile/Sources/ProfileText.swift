@@ -22,6 +22,16 @@ public enum ProfileText {
   public static var tabTitle: String { String(localized: "profile.tab", bundle: .module) }
   static let masked = "••••••••••••••••"
 
+  public static func lastLive(at date: Date, now: Date, locale: Locale) -> String {
+    let seconds = max(0, now.timeIntervalSince(date))
+    let units: Set<Duration.UnitsFormatStyle.Unit> = seconds < 60 ? [.minutes] : [.days, .hours, .minutes]
+    let short = Duration.seconds(seconds).formatted(
+      .units(allowed: units, width: .narrow, maximumUnitCount: 1, zeroValueUnits: .show(length: 1), fractionalPart: .hide(rounded: .down))
+        .locale(locale)
+    )
+    return String(format: String(localized: "profile.lastLive", bundle: .module, locale: locale), short)
+  }
+
   static func remaining(_ count: Int) -> LocalizedStringResource {
     LocalizedStringResource("editStreamInfo.remaining \(count)", bundle: .module)
   }

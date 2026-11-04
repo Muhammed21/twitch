@@ -110,6 +110,27 @@ struct ServerPayloadTests {
     #expect(ServerPayload.event(name: "session:revoked", payload: payload) == nil)
   }
 
+  @Test("chat:user_cleared nomme l'auteur dont les messages sont effacés du salon")
+  func userCleared() {
+    let payload = Data(#"{"channelId":"\#(channelID)","userId":"\#(authorID)"}"#.utf8)
+
+    let event = ServerPayload.event(name: "chat:user_cleared", payload: payload)
+
+    #expect(event == .cleared(ChatClearance(channelID: ChannelID(uuid(channelID)), authorID: uuid(authorID))))
+  }
+
+  @Test(
+    "un effacement hors contrat est rejeté",
+    arguments: [
+      Data(#"{"channelId":"\#(channelID)"}"#.utf8),
+      Data(#"{"channelId":"\#(channelID)","userId":"viewer-1"}"#.utf8),
+      Data("{".utf8),
+    ]
+  )
+  func malformedUserCleared(payload: Data) {
+    #expect(ServerPayload.event(name: "chat:user_cleared", payload: payload) == nil)
+  }
+
   @Test("un événement inconnu est rejeté", arguments: ["chat:delete", "chat:rejected", "", "Chat:message"])
   func unknownEvent(name: String) {
     #expect(ServerPayload.event(name: name, payload: messageJSON()) == nil)
