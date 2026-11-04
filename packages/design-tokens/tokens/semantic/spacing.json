@@ -45,6 +45,11 @@
       "$value": "{core.dimension.12}",
       "$description": "12 fois l'unité de base de la charte relevée (1 pt)."
     },
+    "x14": {
+      "$type": "dimension",
+      "$value": "{core.dimension.14}",
+      "$description": "Glyphe « + » de la barre d'onglets, relevé sur l'app iOS Twitch (14 pt)."
+    },
     "x15": {
       "$type": "dimension",
       "$value": "{core.dimension.15}",
@@ -84,6 +89,11 @@
       "$type": "dimension",
       "$value": "{core.dimension.56}",
       "$description": "Hauteur des lignes du menu du compte, relevée sur l'app iOS Twitch (56 pt, profil/menu-compte--defaut)."
+    },
+    "x72": {
+      "$type": "dimension",
+      "$value": "{core.dimension.72}",
+      "$description": "Largeur du bouton « + » de la barre d'onglets, relevée sur l'app iOS Twitch (72 pt)."
     },
     "x300": {
       "$type": "dimension",

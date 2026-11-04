@@ -220,10 +220,18 @@ describe("LivePage", () => {
     expect(responses.LivePage.parse({ items: [] })).toEqual({ items: [] });
   });
 
+  it("décode le nombre de viewers d'un live, zéro compris", () => {
+    const page = { items: [makeLive({ viewerCount: 42 }), makeLive({ viewerCount: 0 })] };
+
+    expect(responses.LivePage.parse(page)).toEqual(page);
+  });
+
   it.each([
     ["sans slug", { slug: undefined }],
     ["avec un démarrage qui n'est pas une date ISO", { startedAt: "hier soir" }],
     ["avec un identifiant de chaîne qui n'est pas un UUID", { channelId: "42" }],
+    ["avec un nombre de viewers négatif", { viewerCount: -1 }],
+    ["avec un nombre de viewers fractionnaire", { viewerCount: 1.5 }],
   ])("refuse un live %s", (_name, overrides) => {
     expect(responses.LivePage.safeParse({ items: [makeLive(overrides)] }).success).toBe(false);
   });

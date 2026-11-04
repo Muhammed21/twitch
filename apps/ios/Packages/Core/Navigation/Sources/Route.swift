@@ -28,6 +28,7 @@ public final class Router {
   public var selectedTab: AppTab = .home
   public var path: [Route] = []
   public var profilePath: [Route] = []
+  public var isShowingStreamManager = false
 
   public init() {}
 
@@ -45,7 +46,12 @@ public final class Router {
     }
   }
 
+  public func create() {
+    isShowingStreamManager = true
+  }
+
   public func reset() {
+    isShowingStreamManager = false
     selectedTab = .home
     path = []
     profilePath = []
@@ -54,6 +60,7 @@ public final class Router {
   @discardableResult
   public func open(_ url: URL) -> Bool {
     guard let route = Route(deepLink: url) else { return false }
+    isShowingStreamManager = false
     selectedTab = .home
     path.append(route)
     return true
