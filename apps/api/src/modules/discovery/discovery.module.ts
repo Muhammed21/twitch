@@ -12,6 +12,7 @@ import type { Pool } from "pg";
 import { errorDetails, type LogSink, writeLog } from "../../platform/logging.ts";
 import { startPeriodicJob } from "../../platform/periodic-job.ts";
 import { startStreamConsumer, type StreamConsumerRedis } from "../../platform/stream-consumer.ts";
+import { listCategoryLives } from "./application/category-reads.ts";
 import { type ListLives, listLives, withLiveViewerCounts } from "./application/list-lives.ts";
 import { withLiveCategories } from "./application/live-categories.ts";
 import { createLiveStatusHub, type LiveStatusHub } from "./application/live-status-hub.ts";
@@ -30,6 +31,7 @@ import {
 } from "./infrastructure/prisma-live-channel-projection.ts";
 import { prismaCategoryViewReader, prismaLiveReader } from "./infrastructure/prisma-live-reader.ts";
 import { prismaLiveStatusReader } from "./infrastructure/prisma-live-status-reader.ts";
+import { CategoriesController, LIST_CATEGORY_LIVES } from "./presentation/categories.controller.ts";
 import { discoveryEventHandlers } from "./presentation/discovery-event-handlers.ts";
 import {
   LIVE_STATUS_HEARTBEAT_MS,
@@ -97,7 +99,7 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
   static register(dependencies: DiscoveryDependencies): DynamicModule {
     return {
       module: DiscoveryModule,
-      controllers: [LivesController, LiveStatusController],
+      controllers: [LivesController, LiveStatusController, CategoriesController],
       providers: [
         { provide: DISCOVERY_DEPENDENCIES, useValue: dependencies },
         {
@@ -117,6 +119,13 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
         },
         { provide: LIVE_STATUS_HEARTBEAT_MS, useValue: LIVE_STATUS_HEARTBEAT_INTERVAL_MS },
         { provide: LIST_LIVES, useValue: listedLives(dependencies) },
+        {
+          provide: LIST_CATEGORY_LIVES,
+          useValue: listCategoryLives({
+            categories: prismaCategoryViewReader(dependencies.prisma),
+            lives: listedLives(dependencies),
+          }),
+        },
       ],
     };
   }
