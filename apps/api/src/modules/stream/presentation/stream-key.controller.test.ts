@@ -93,6 +93,14 @@ describe("GET /v1/channels/{id}/stream-key", () => {
     });
   });
 
+  it("lit la clé de la chaîne en minuscules quand son UUID arrive en majuscules", async () => {
+    await withStreamKey(ok(CREDENTIALS), async (base, { requests }) => {
+      await fetch(`${base}/${CHANNEL_ID.toUpperCase()}/stream-key`, withToken);
+
+      expect(requests).toEqual([{ actorId: ACTOR_ID, channelId: CHANNEL_ID }]);
+    });
+  });
+
   it("n'écrit jamais la clé dans le journal des requêtes", async () => {
     await withStreamKey(ok(CREDENTIALS), async (base, { logs }) => {
       await fetch(`${base}/${CHANNEL_ID}/stream-key`, withToken);
@@ -155,6 +163,14 @@ describe("POST /v1/channels/{id}/stream-key/rotate", () => {
       expect(await response.json()).toEqual(CREDENTIALS);
       expect(rotations).toEqual([{ actorId: ACTOR_ID, channelId: CHANNEL_ID }]);
       expect(requests).toEqual([]);
+    });
+  });
+
+  it("change la clé de la chaîne en minuscules quand son UUID arrive en majuscules", async () => {
+    await withStreamKey(ok(CREDENTIALS), async (base, { rotations }) => {
+      await rotate(base, CHANNEL_ID.toUpperCase());
+
+      expect(rotations).toEqual([{ actorId: ACTOR_ID, channelId: CHANNEL_ID }]);
     });
   });
 

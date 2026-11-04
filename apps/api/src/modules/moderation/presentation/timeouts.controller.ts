@@ -8,6 +8,7 @@ import type { Result } from "@repo/result";
 
 import { responseDto } from "../../../openapi/response-dto.ts";
 import { AccessTokenGuard, CurrentIdentity } from "../../../platform/authentication.ts";
+import { pathChannelIdOf } from "../../../platform/channel-id.ts";
 import { ProblemException } from "../../../platform/problem.ts";
 import type {
   Timeout as TimeoutOutcome,
@@ -52,19 +53,20 @@ export class TimeoutsController {
     @Body() body: TimeoutUserRequest,
     @CurrentIdentity() identity: AccessTokenIdentity,
   ): Promise<TimeoutView> {
-    if (!Uuid.safeParse(id).success) {
+    const channelId = pathChannelIdOf(id);
+    if (channelId === undefined) {
       throw new ProblemException({ status: 404, title: "Chaîne introuvable" });
     }
     const timedOut = await this.timeoutUser({
       actorId: identity.userId,
-      channelId: id,
+      channelId,
       targetId: body.userId,
       durationSeconds: body.durationSeconds,
     });
     if (!timedOut.ok) {
       throw PROBLEMS[timedOut.error]();
     }
-    const { channelId, userId, expiresAt } = timedOut.value;
-    return { channelId, userId, expiresAt: expiresAt.toISOString() };
+    const { userId, expiresAt } = timedOut.value;
+    return { channelId: timedOut.value.channelId, userId, expiresAt: expiresAt.toISOString() };
   }
 }

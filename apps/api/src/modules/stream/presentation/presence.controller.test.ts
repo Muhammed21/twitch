@@ -20,6 +20,7 @@ const CHANNEL_ID = "00000000-0000-4000-8000-000000000001";
 const INSTALLATION_ID = "00000000-0000-4000-8000-0000000000aa";
 const INVALID_TOKEN = "jeton-invalide";
 const OTHER_CHANNEL_ID = "00000000-0000-4000-8000-000000000002";
+const LETTERED_CHANNEL_ID = "9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69";
 const NOW = new Date("2026-11-03T20:00:20.000Z");
 const CLIENT_IP = "203.0.113.7";
 const FORGED_IP = "198.51.100.66";
@@ -48,6 +49,7 @@ const withPresence = async (
     ) => Promise<Response>,
     recorded: readonly Heartbeat[],
     counted: readonly { key: string; ttlMs: number }[],
+    viewersOf: (channelId: string) => Promise<number | undefined>,
   ) => Promise<void>,
 ) => {
   const recorded: Heartbeat[] = [];
@@ -56,7 +58,15 @@ const withPresence = async (
     record: async (heartbeat) => {
       recorded.push(heartbeat);
     },
-    count: async () => new Map(),
+    count: async ({ channelIds }) =>
+      new Map(
+        channelIds.map((channelId) => [
+          channelId,
+          new Set(
+            recorded.filter((beat) => beat.channelId === channelId).map((beat) => beat.viewerId),
+          ).size,
+        ]),
+      ),
   };
   const moduleRef = await Test.createTestingModule({
     imports: [
@@ -89,6 +99,7 @@ const withPresence = async (
         }),
       recorded,
       window.calls,
+      async (channelId) => (await store.count({ channelIds: [channelId], at: NOW })).get(channelId),
     );
   } finally {
     await app.close();
@@ -155,6 +166,17 @@ describe("POST /v1/channels/{channelId}/presence (ADR 0004 §3)", () => {
 
       expect(response.status).toBe(401);
       expect(recorded).toEqual([]);
+    });
+  });
+
+  it("compte dans les viewers de la chaîne le heartbeat dont l'UUID de chaîne est en majuscules", async () => {
+    await withPresence({}, async (post, _recorded, _counted, viewersOf) => {
+      const response = await post(presenceOf(LETTERED_CHANNEL_ID.toUpperCase()), {
+        body: JSON.stringify({ viewerId: INSTALLATION_ID }),
+      });
+
+      expect(response.status).toBe(204);
+      expect(await viewersOf(LETTERED_CHANNEL_ID)).toBe(1);
     });
   });
 
@@ -226,6 +248,19 @@ describe("limite de débit du heartbeat de présence (ADR 0042)", () => {
         { key: `ratelimit:presence:channel:127.0.0.1:${CHANNEL_ID}:${window}`, ttlMs: 60_000 },
         { key: `ratelimit:presence:ip:127.0.0.1:${window}`, ttlMs: 60_000 },
       ]);
+    });
+  });
+
+  it("compte une chaîne écrite en majuscules dans la même limite que la chaîne en minuscules", async () => {
+    await withPresence({}, async (post) => {
+      await repeat(4, () => post(presenceOf(LETTERED_CHANNEL_ID), anonymousHeartbeat()));
+
+      const upperCase = await post(
+        presenceOf(LETTERED_CHANNEL_ID.toUpperCase()),
+        anonymousHeartbeat(),
+      );
+
+      expect(upperCase.status).toBe(429);
     });
   });
 

@@ -29,6 +29,7 @@ struct TwitchApp: App {
         .environment(stores.player)
         .environment(stores.channelPlayback)
         .environment(stores.liveStatus)
+        .environment(stores.presence)
         .environment(stores.chat)
         .environment(stores.myChannel)
     }
@@ -161,7 +162,13 @@ struct ChannelScreen: View {
 
   @Environment(ChannelPlayback.self) private var channelPlayback
   @Environment(LiveStatusChannel.self) private var liveStatus
+  @Environment(ChannelPresence.self) private var presence
   @Environment(ChatSession.self) private var chat
+  @Environment(\.scenePhase) private var scenePhase
+
+  private var watching: ChannelPresence.Watching {
+    ChannelPresence.Watching(slug: slug, status: liveStatus.status, scenePhase: scenePhase)
+  }
 
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
@@ -175,6 +182,7 @@ struct ChannelScreen: View {
     .task(id: slug) { await channelPlayback.open(slug) }
     .task(id: slug) { await liveStatus.run(slug) }
     .task(id: slug) { await chat.run(slug) }
+    .task(id: watching) { await presence.run(watching) }
   }
 }
 
@@ -186,6 +194,7 @@ struct Stores {
   let player: PlayerController
   let channelPlayback: ChannelPlayback
   let liveStatus: LiveStatusChannel
+  let presence: ChannelPresence
   let chat: ChatSession
   let myChannel: MyChannelStore
 }
@@ -204,12 +213,7 @@ enum Composition {
   }
 
   static func stores(info: [String: Any]) -> Stores {
-    let configuration: OAuthConfiguration
-    do {
-      configuration = try OAuthConfiguration(infoDictionary: info)
-    } catch {
-      fatalError("Info.plist : configuration OAuth invalide (\(error)).")
-    }
+    let configuration = oauthConfiguration(info: info)
     guard let version = clientVersion(info: info), let currentVersion = try? AppVersion(version) else {
       fatalError("Info.plist : CFBundleShortVersionString manquant ou mal formé.")
     }
@@ -243,6 +247,7 @@ enum Composition {
         onEnded: { player.end() },
         onLive: { channelPlayback.channelWentLive() }
       ),
+      presence: Self.presence(configuration: configuration, channels: channels, session: session, transport: transport, now: now),
       chat: ChatSession(
         connector: ChatSocketConnector(chatBaseURL: chatBaseURL),
         tokens: session,
@@ -269,6 +274,27 @@ enum Composition {
           options: [.localOnly: true, .expirationDate: Date.now.addingTimeInterval(120)]
         )
       }
+    )
+  }
+
+  private static func oauthConfiguration(info: [String: Any]) -> OAuthConfiguration {
+    do {
+      return try OAuthConfiguration(infoDictionary: info)
+    } catch {
+      fatalError("Info.plist : configuration OAuth invalide (\(error)).")
+    }
+  }
+
+  private static func presence(
+    configuration: OAuthConfiguration,
+    channels: ChannelClient,
+    session: OAuthSession,
+    transport: ClientVersionTransport,
+    now: @escaping @Sendable () -> Date
+  ) -> ChannelPresence {
+    ChannelPresence(
+      channels: channels,
+      reporter: PresenceClient(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now)
     )
   }
 

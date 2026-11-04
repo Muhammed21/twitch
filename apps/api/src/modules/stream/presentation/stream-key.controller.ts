@@ -2,11 +2,12 @@ import { Controller, Get, Header, HttpCode, Inject, Param, Post, UseGuards } fro
 import { ZodResponse } from "nestjs-zod";
 
 import type { AccessTokenIdentity } from "@repo/auth-verifier";
-import { responses, Uuid } from "@repo/contracts";
+import { responses } from "@repo/contracts";
 import type { Result } from "@repo/result";
 
 import { responseDto } from "../../../openapi/response-dto.ts";
 import { AccessTokenGuard, CurrentIdentity } from "../../../platform/authentication.ts";
+import { pathChannelIdOf } from "../../../platform/channel-id.ts";
 import { ProblemException } from "../../../platform/problem.ts";
 import type { StreamCredentials } from "../application/live-video-provider.ts";
 import type { StreamKeyError } from "../application/stream-keys.ts";
@@ -36,10 +37,11 @@ const credentialsOf = async (
   useCase: StreamKeyUseCase,
   { id, identity }: { id: string; identity: AccessTokenIdentity },
 ): Promise<StreamCredentials> => {
-  if (!Uuid.safeParse(id).success) {
+  const channelId = pathChannelIdOf(id);
+  if (channelId === undefined) {
     throw streamKeyNotFound();
   }
-  const credentials = await useCase({ actorId: identity.userId, channelId: id });
+  const credentials = await useCase({ actorId: identity.userId, channelId });
   if (!credentials.ok) {
     throw PROBLEMS[credentials.error]();
   }
