@@ -11,8 +11,8 @@ import type { LiveChannelView } from "../domain/live-channel-view.ts";
 
 export type DiscoveryPrisma = ReturnType<typeof createContextClient>;
 
-const HANDLER = "discovery.live-channel-view";
-const PROCESSED_EVENTS = { schema: "discovery", table: "DiscoveryProcessedEvent" };
+export const DISCOVERY_HANDLER = "discovery.live-channel-view";
+export const PROCESSED_EVENTS = { schema: "discovery", table: "DiscoveryProcessedEvent" };
 
 type ViewRow = {
   readonly channelId: string;
@@ -56,7 +56,7 @@ export const prismaLiveChannelProjection = (prisma: DiscoveryPrisma): LiveChanne
         await alreadyProcessed(tx, {
           processedEvents: PROCESSED_EVENTS,
           eventId,
-          handler: HANDLER,
+          handler: DISCOVERY_HANDLER,
         })
       ) {
         return;
@@ -91,7 +91,7 @@ export const prismaCategoryProjection = (prisma: DiscoveryPrisma): CategoryProje
         await alreadyProcessed(tx, {
           processedEvents: PROCESSED_EVENTS,
           eventId,
-          handler: HANDLER,
+          handler: DISCOVERY_HANDLER,
         })
       ) {
         return;
@@ -159,7 +159,7 @@ export const prismaLiveChannelStore = (prisma: DiscoveryPrisma): LiveChannelStor
         );
         await sequentially(inBatches(projection.eventIds), (eventIds) =>
           tx.discoveryProcessedEvent.createMany({
-            data: eventIds.map((eventId) => ({ eventId, handlerName: HANDLER })),
+            data: eventIds.map((eventId) => ({ eventId, handlerName: DISCOVERY_HANDLER })),
             skipDuplicates: true,
           }),
         );

@@ -2,10 +2,11 @@ import { alreadyProcessed } from "@repo/db";
 
 import type { CategoryFollowProjection } from "../application/project-discovery-event.ts";
 import { followerDelta } from "../domain/category-follow-view.ts";
-import type { DiscoveryPrisma } from "./prisma-live-channel-projection.ts";
-
-const HANDLER = "discovery.category-follow";
-const PROCESSED_EVENTS = { schema: "discovery", table: "DiscoveryProcessedEvent" };
+import {
+  DISCOVERY_HANDLER,
+  type DiscoveryPrisma,
+  PROCESSED_EVENTS,
+} from "./prisma-live-channel-projection.ts";
 
 type PairRow = { readonly following: boolean; readonly version: number };
 
@@ -18,7 +19,7 @@ export const prismaCategoryFollowProjection = (
         await alreadyProcessed(tx, {
           processedEvents: PROCESSED_EVENTS,
           eventId,
-          handler: HANDLER,
+          handler: DISCOVERY_HANDLER,
         })
       ) {
         return;

@@ -170,4 +170,30 @@ describe("reconstruction du suivi depuis l'outbox de channel (ADR 0049 §6, ADR 
     expect(await pairOf(former, categoryId)).toEqual({ following: false, version: 2 });
     expect(await followerCountOf(categoryId)).toBe(1);
   });
+
+  it("ignore ensuite, par son identifiant, un event que la reconstruction a replié", async () => {
+    const categoryId = randomUUID();
+    const userId = randomUUID();
+    const eventId = randomUUID();
+    const occurredAt = new Date();
+    await channelDb.channelOutbox.create({
+      data: {
+        id: eventId,
+        name: "channel.category.followed",
+        version: 1,
+        payload: { userId, categoryId, followedAt: occurredAt.toISOString(), version: 1 },
+        occurredAt,
+        publishedAt: occurredAt,
+      },
+    });
+
+    await rebuildDiscoveryProjection({
+      pool: outboxPool,
+      prisma: createContextClient({ context: "discovery", env: process.env }),
+    });
+    await project({ eventId, userId, categoryId, following: false, version: 2 });
+
+    expect(await pairOf(userId, categoryId)).toEqual({ following: true, version: 1 });
+    expect(await followerCountOf(categoryId)).toBe(1);
+  });
 });
