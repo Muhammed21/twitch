@@ -9,8 +9,10 @@ import { loadEnv } from "./config/env.ts";
 import { createControlPlane } from "./control-plane/control-plane.ts";
 import { createHlsRegistry } from "./hls/hls-registry.ts";
 import { hlsFragmentSink } from "./hls/hls-sink.ts";
+import { createThumbnails } from "./hls/thumbnails.ts";
 import { startHttpServer } from "./http/http-server.ts";
 import { createPublishGate } from "./ingest/publish-gate.ts";
+import { extractFrame, FFMPEG_THUMBNAIL_ARGS } from "./media/frame-extractor.ts";
 import { createLivePipeline } from "./media/live-pipeline.ts";
 import { FFMPEG_FMP4_ARGS, startPackaging } from "./media/packager.ts";
 import { startRelayLoop } from "./outbox/relay-loop.ts";
@@ -35,6 +37,9 @@ const HLS_OPTIONS = {
 const HLS_FALLBACK_BANDWIDTH = 6_000_000;
 const HLS_BLOCKING_TIMEOUT_MS = 3 * HLS_OPTIONS.targetDuration * 1000;
 const HLS_ENDED_RETENTION_MS = 30_000;
+const THUMBNAIL_TTL_MS = 30_000;
+const THUMBNAIL_TIMEOUT_MS = 5000;
+const THUMBNAIL_MAX_BYTES = 1024 * 1024;
 
 const log = (
   msg: string,
@@ -118,6 +123,15 @@ try {
       waitFor: hls.waitFor,
       blockingTimeoutMs: HLS_BLOCKING_TIMEOUT_MS,
       fallbackBandwidth: HLS_FALLBACK_BANDWIDTH,
+      thumbnailOf: createThumbnails({
+        extract: extractFrame({
+          command: { file: config.media.ffmpegPath, args: FFMPEG_THUMBNAIL_ARGS },
+          timeoutMs: THUMBNAIL_TIMEOUT_MS,
+          maxOutputBytes: THUMBNAIL_MAX_BYTES,
+        }),
+        ttlMs: THUMBNAIL_TTL_MS,
+        now: Date.now,
+      }).of,
     },
   }).catch(async (error: unknown) => {
     await rtmp.close();

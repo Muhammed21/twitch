@@ -10,6 +10,7 @@ import {
   makeFragment,
   makeInit,
 } from "../segmenter/testing/fmp4-fixtures.ts";
+import type { HlsPlayback } from "./hls-routes.ts";
 import { startHttpServer } from "./http-server.ts";
 
 const SESSION_ID = "0b6b8e8e-3c39-4c4f-9a8e-2f1f7f6a9d10";
@@ -24,12 +25,16 @@ const HLS_OPTIONS = {
 const FALLBACK_BANDWIDTH = 2_000_000;
 const BLOCKING_TIMEOUT_MS = 200;
 
+const JPEG = Uint8Array.from([0xff, 0xd8, 0xff, 0xd9]);
+
 const startPlayback = async ({
   liveSessionOf,
   blockingTimeoutMs = BLOCKING_TIMEOUT_MS,
+  thumbnailOf = async () => ({ ok: true, value: JPEG }),
 }: {
   readonly liveSessionOf?: (channelId: string) => Promise<string | undefined>;
   readonly blockingTimeoutMs?: number;
+  readonly thumbnailOf?: HlsPlayback["thumbnailOf"];
 } = {}) => {
   const registry = createHlsRegistry(HLS_OPTIONS);
   const liveSessions = new Map<string, string>();
@@ -48,6 +53,7 @@ const startPlayback = async ({
       blockingTimeoutMs,
       liveSessionOf: liveSessionOf ?? (async (channelId) => liveSessions.get(channelId)),
       fallbackBandwidth: FALLBACK_BANDWIDTH,
+      thumbnailOf,
     },
   });
   onTestFinished(() => server.close());
@@ -132,6 +138,79 @@ describe("playlist maître d'un canal", () => {
     registry.open(SESSION_ID);
 
     expect((await get(path)).status).toBe(404);
+  });
+});
+
+describe("vignette d'un canal", () => {
+  const CHANNEL_ID = "5f0c2a4e-8d1b-4b7a-9c3e-6a2d1f0e9b87";
+  const THUMBNAIL_HEADERS = { "content-type": "image/jpeg", "cache-control": "public, max-age=30" };
+
+  it("sert le JPEG de la session en direct du canal, en cache de 30 s", async () => {
+    const asked: string[] = [];
+    const { registry, liveSessions, get } = await startPlayback({
+      thumbnailOf: async (sessionId, stream) => {
+        asked.push(`${sessionId}:${String(stream.ended)}`);
+        return { ok: true, value: JPEG };
+      },
+    });
+    liveSessions.set(CHANNEL_ID, SESSION_ID);
+    registry.open(SESSION_ID);
+
+    const response = await get(`channels/${CHANNEL_ID}/thumbnail.jpg`);
+
+    expect(response.status).toBe(200);
+    expect(headersOf(response, Object.keys(THUMBNAIL_HEADERS))).toEqual(THUMBNAIL_HEADERS);
+    expect(new Uint8Array(await response.arrayBuffer())).toEqual(JPEG);
+    expect(asked).toEqual([`${SESSION_ID}:false`]);
+  });
+
+  it("répond 404 pour la vignette d'un canal hors direct", async () => {
+    const { registry, get } = await startPlayback();
+    registry.open(SESSION_ID);
+
+    expect((await get(`channels/${CHANNEL_ID}/thumbnail.jpg`)).status).toBe(404);
+  });
+
+  it("répond 404 tant que ffmpeg n'a rien rendu pour la session en direct du canal", async () => {
+    const { liveSessions, get } = await startPlayback();
+    liveSessions.set(CHANNEL_ID, SESSION_ID);
+
+    expect((await get(`channels/${CHANNEL_ID}/thumbnail.jpg`)).status).toBe(404);
+  });
+
+  it("répond 404 tant qu'aucun segment n'est fermé", async () => {
+    const { registry, liveSessions, get } = await startPlayback({
+      thumbnailOf: async () => ({ ok: false, error: "not_ready" }),
+    });
+    liveSessions.set(CHANNEL_ID, SESSION_ID);
+    registry.open(SESSION_ID);
+
+    expect((await get(`channels/${CHANNEL_ID}/thumbnail.jpg`)).status).toBe(404);
+  });
+
+  it("répond 503 en RFC 9457 quand ffmpeg n'a pas rendu d'image", async () => {
+    const { registry, liveSessions, get } = await startPlayback({
+      thumbnailOf: async () => ({ ok: false, error: "failed" }),
+    });
+    liveSessions.set(CHANNEL_ID, SESSION_ID);
+    registry.open(SESSION_ID);
+
+    const response = await get(`channels/${CHANNEL_ID}/thumbnail.jpg`);
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({
+      type: "about:blank",
+      title: "Vignette indisponible",
+      status: 503,
+    });
+  });
+
+  it("répond 404 pour la vignette d'un identifiant de canal invalide", async () => {
+    const { registry, liveSessions, get } = await startPlayback();
+    liveSessions.set(CHANNEL_ID, SESSION_ID);
+    registry.open(SESSION_ID);
+
+    expect((await get("channels/pas-un-uuid/thumbnail.jpg")).status).toBe(404);
   });
 });
 
