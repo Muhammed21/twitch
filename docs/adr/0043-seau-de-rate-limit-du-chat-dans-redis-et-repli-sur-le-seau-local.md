@@ -1,6 +1,6 @@
 # 0043 — Le seau de rate limit du chat vit dans Redis, et se replie sur le seau local de l'instance quand Redis ne répond pas
 
-- Statut : Proposé
+- Statut : Accepté
 - Date : 2026-11-04
 - Décideurs : Muhammed Cavus
 
