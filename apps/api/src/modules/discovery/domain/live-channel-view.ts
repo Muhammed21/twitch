@@ -8,16 +8,18 @@ export type LiveChannelView = {
   readonly slug: string | null;
   readonly title: string;
   readonly titleChangedAt: Date | null;
+  readonly categoryId: string | null;
   readonly live: LiveSession | null;
   readonly lastEndedAt: Date | null;
 };
 
-export type DiscoveryEvent =
+export type LiveChannelEvent =
   | { readonly kind: "channel-created"; readonly channelId: string; readonly slug: string }
   | {
-      readonly kind: "title-changed";
+      readonly kind: "metadata-changed";
       readonly channelId: string;
       readonly title: string;
+      readonly categoryId?: string | null;
       readonly changedAt: Date;
     }
   | {
@@ -38,6 +40,7 @@ const unknownChannel = (channelId: string): LiveChannelView => ({
   slug: null,
   title: "",
   titleChangedAt: null,
+  categoryId: null,
   live: null,
   lastEndedAt: null,
 });
@@ -53,15 +56,20 @@ const startsAfter = (view: LiveChannelView, startedAt: Date): boolean =>
 
 export const applyDiscoveryEvent = (
   current: LiveChannelView | null,
-  event: DiscoveryEvent,
+  event: LiveChannelEvent,
 ): LiveChannelView => {
   const view = current ?? unknownChannel(event.channelId);
   switch (event.kind) {
     case "channel-created":
       return { ...view, slug: event.slug };
-    case "title-changed":
+    case "metadata-changed":
       return isAfter(event.changedAt, view.titleChangedAt)
-        ? { ...view, title: event.title, titleChangedAt: event.changedAt }
+        ? {
+            ...view,
+            title: event.title,
+            titleChangedAt: event.changedAt,
+            categoryId: event.categoryId === undefined ? view.categoryId : event.categoryId,
+          }
         : view;
     case "stream-started":
       return startsAfter(view, event.startedAt)

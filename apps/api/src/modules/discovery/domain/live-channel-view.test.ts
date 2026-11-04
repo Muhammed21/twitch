@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   applyDiscoveryEvent,
-  type DiscoveryEvent,
+  type LiveChannelEvent,
   type LiveChannelView,
 } from "./live-channel-view.ts";
 
@@ -15,32 +15,44 @@ const makeView = (overrides: Partial<LiveChannelView> = {}): LiveChannelView => 
   slug: "chaine",
   title: "",
   titleChangedAt: null,
+  categoryId: null,
   live: null,
   lastEndedAt: null,
   ...overrides,
 });
 
-const channelCreated = (slug = "chaine"): DiscoveryEvent => ({
+const channelCreated = (slug = "chaine"): LiveChannelEvent => ({
   kind: "channel-created",
   channelId: CHANNEL_ID,
   slug,
 });
 
-const titleChanged = (title: string, minute: number): DiscoveryEvent => ({
-  kind: "title-changed",
+const titleChanged = (title: string, minute: number): LiveChannelEvent => ({
+  kind: "metadata-changed",
   channelId: CHANNEL_ID,
   title,
   changedAt: at(minute),
 });
 
-const streamStarted = (sessionId: string, minute: number): DiscoveryEvent => ({
+const JUST_CHATTING = "0b5e4d3c-2a19-4f08-8e7d-6c5b4a392817";
+const IRL = "1c6f5e4d-3b2a-4019-9f8e-7d6c5b4a3928";
+
+const categoryChanged = (categoryId: string | null, minute: number): LiveChannelEvent => ({
+  kind: "metadata-changed",
+  channelId: CHANNEL_ID,
+  title: "Speedrun",
+  categoryId,
+  changedAt: at(minute),
+});
+
+const streamStarted = (sessionId: string, minute: number): LiveChannelEvent => ({
   kind: "stream-started",
   channelId: CHANNEL_ID,
   sessionId,
   startedAt: at(minute),
 });
 
-const streamEnded = (sessionId: string, minute: number): DiscoveryEvent => ({
+const streamEnded = (sessionId: string, minute: number): LiveChannelEvent => ({
   kind: "stream-ended",
   channelId: CHANNEL_ID,
   sessionId,
@@ -49,7 +61,7 @@ const streamEnded = (sessionId: string, minute: number): DiscoveryEvent => ({
 
 const LIVE_ON_SESSION_1 = { live: { sessionId: "session-1", startedAt: at(10) } };
 
-const applyAll = (events: readonly DiscoveryEvent[]): LiveChannelView | null =>
+const applyAll = (events: readonly LiveChannelEvent[]): LiveChannelView | null =>
   events.reduce<LiveChannelView | null>((view, event) => applyDiscoveryEvent(view, event), null);
 
 const permutations = <T>(items: readonly T[]): readonly (readonly T[])[] =>
@@ -109,6 +121,30 @@ describe("vue d'une chaîne dans discovery", () => {
     const view = makeView({ title: "Actuel", titleChangedAt: at(5) });
 
     expect(applyDiscoveryEvent(view, titleChanged("Périmé", minute))).toEqual(view);
+  });
+
+  it("pose la catégorie portée par un changement de métadonnées", () => {
+    expect(applyDiscoveryEvent(makeView(), categoryChanged(JUST_CHATTING, 5))).toEqual(
+      makeView({ title: "Speedrun", titleChangedAt: at(5), categoryId: JUST_CHATTING }),
+    );
+  });
+
+  it("retire la catégorie quand le changement de métadonnées la dit absente", () => {
+    const view = makeView({ categoryId: JUST_CHATTING });
+
+    expect(applyDiscoveryEvent(view, categoryChanged(null, 5)).categoryId).toBeNull();
+  });
+
+  it("garde la catégorie face à un changement de métadonnées qui ne la porte pas", () => {
+    const view = makeView({ categoryId: JUST_CHATTING });
+
+    expect(applyDiscoveryEvent(view, titleChanged("Speedrun", 5)).categoryId).toBe(JUST_CHATTING);
+  });
+
+  it("garde la catégorie en place face à un changement de métadonnées plus ancien", () => {
+    const view = makeView({ categoryId: JUST_CHATTING, titleChangedAt: at(5) });
+
+    expect(applyDiscoveryEvent(view, categoryChanged(IRL, 4))).toEqual(view);
   });
 
   it("met en live une chaîne dont la session démarre", () => {

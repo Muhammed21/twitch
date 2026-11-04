@@ -1073,6 +1073,9 @@
             "type": "integer",
             "minimum": 0,
             "maximum": 9007199254740991
+          },
+          "category": {
+            "$ref": "#/components/schemas/LiveCategory"
           }
         },
         "required": [
@@ -1080,6 +1083,26 @@
           "slug",
           "title",
           "startedAt"
+        ],
+        "additionalProperties": {}
+      },
+      "LiveCategory": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "imageUrl": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "slug",
+          "name"
         ],
         "additionalProperties": {}
       },
