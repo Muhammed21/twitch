@@ -126,6 +126,17 @@ describe("PATCH /v1/channels/{id}", () => {
     });
   });
 
+  it("change le titre de la chaîne en minuscules quand son UUID arrive en majuscules", async () => {
+    await withChannels({}, async (base, calls) => {
+      const response = await patch(`${base}/${CHANNEL.id.toUpperCase()}`, { title: "Titre" });
+
+      expect(response.status).toBe(200);
+      expect(calls.titleUpdates).toEqual([
+        { actorId: ACTOR_ID, channelId: CHANNEL.id, title: "Titre" },
+      ]);
+    });
+  });
+
   it("répond 401 sans jeton", async () => {
     await withChannels({}, async (base, calls) => {
       const response = await fetch(`${base}/${CHANNEL.id}`, {

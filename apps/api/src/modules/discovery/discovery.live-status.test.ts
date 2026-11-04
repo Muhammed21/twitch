@@ -23,6 +23,7 @@ import {
 const LIVE_CHANNEL = "00000000-0000-4000-8000-000000000001";
 const OFFLINE_CHANNEL = "00000000-0000-4000-8000-000000000002";
 const UNKNOWN_CHANNEL = "00000000-0000-4000-8000-000000000003";
+const LETTERED_CHANNEL = "9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69";
 
 const STARTED_AT = new Date("2026-11-03T20:00:00.000Z");
 
@@ -32,6 +33,7 @@ const makeProjection = () => {
   const state = new Map<string, ChannelLiveStatus>([
     [LIVE_CHANNEL, { channelId: LIVE_CHANNEL, startedAt: STARTED_AT }],
     [OFFLINE_CHANNEL, { channelId: OFFLINE_CHANNEL, startedAt: undefined }],
+    [LETTERED_CHANNEL, { channelId: LETTERED_CHANNEL, startedAt: undefined }],
   ]);
   const reads: (readonly string[])[] = [];
   const gate: { opened: Promise<void> } = { opened: Promise.resolve() };
@@ -175,6 +177,19 @@ describe("GET /v1/channels/{channelId}/live-status (canal 2, ADR 0004 §2)", () 
       const stream = await openStream(`${url}/${OFFLINE_CHANNEL}/live-status`);
 
       expect((await stream.nextEvent())?.data).toEqual({ channelId: OFFLINE_CHANNEL, live: false });
+      stream.abort();
+    });
+  });
+
+  it("envoie l'état d'une chaîne dont l'UUID arrive en majuscules, sous son identifiant en minuscules", async () => {
+    await withLiveStatus(async ({ url }) => {
+      const stream = await openStream(`${url}/${LETTERED_CHANNEL.toUpperCase()}/live-status`);
+
+      expect(stream.response.status).toBe(200);
+      expect((await stream.nextEvent())?.data).toEqual({
+        channelId: LETTERED_CHANNEL,
+        live: false,
+      });
       stream.abort();
     });
   });
