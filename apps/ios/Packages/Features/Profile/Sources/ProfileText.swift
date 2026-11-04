@@ -14,7 +14,6 @@ public enum ProfileText {
   static let show = LocalizedStringResource("streamManager.show", bundle: .module)
   static let hide = LocalizedStringResource("streamManager.hide", bundle: .module)
   static let copy = LocalizedStringResource("streamManager.copy", bundle: .module)
-  static let obs = LocalizedStringResource("streamManager.obs", bundle: .module)
   static let editStreamInfo = LocalizedStringResource("editStreamInfo.navigationTitle", bundle: .module)
   static let cancel = LocalizedStringResource("editStreamInfo.cancel", bundle: .module)
   static let done = LocalizedStringResource("editStreamInfo.done", bundle: .module)

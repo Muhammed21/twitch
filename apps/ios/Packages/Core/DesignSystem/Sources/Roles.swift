@@ -12,6 +12,7 @@ public enum TextRole: Sendable {
   case chatAuthor
   case title
   case tabLabel
+  case widgetTitle
 
   public var font: Font {
     switch self {
@@ -25,6 +26,7 @@ public enum TextRole: Sendable {
     case .chatAuthor: .actionLabel
     case .title: .titleText
     case .tabLabel: .tabLabel
+    case .widgetTitle: .actionLabel
     }
   }
 }
@@ -67,6 +69,15 @@ public enum LayoutRole: Sendable {
   case createGlyphSize
   case avatarRingWidth
   case avatarRingGap
+  case widgetInset
+  case widgetGap
+  case widgetHeaderHeight
+  case widgetHeaderPadding
+  case widgetRadius
+  case dockButtonSize
+  case dockGap
+  case dockRingWidth
+  case dockRingGap
 
   public var points: CGFloat {
     switch self {
@@ -107,6 +118,15 @@ public enum LayoutRole: Sendable {
     case .createGlyphSize: Spacing.x14
     case .avatarRingWidth: Spacing.x2
     case .avatarRingGap: Spacing.x1
+    case .widgetInset: Spacing.x14
+    case .widgetGap: Spacing.x8
+    case .widgetHeaderHeight: Spacing.x40
+    case .widgetHeaderPadding: Spacing.x8
+    case .widgetRadius: Radius.md
+    case .dockButtonSize: Spacing.x44
+    case .dockGap: Spacing.x16
+    case .dockRingWidth: Spacing.x2
+    case .dockRingGap: Spacing.x3
     }
   }
 }

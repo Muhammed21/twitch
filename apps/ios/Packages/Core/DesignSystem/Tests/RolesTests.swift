@@ -54,6 +54,18 @@ private let tabBarMeasures: [(LayoutRole, CGFloat)] = [
   (.avatarRingGap, 1),
 ]
 
+private let widgetMeasures: [(LayoutRole, CGFloat)] = [
+  (.widgetInset, 14),
+  (.widgetGap, 8),
+  (.widgetHeaderHeight, 40),
+  (.widgetHeaderPadding, 8),
+  (.widgetRadius, 4),
+  (.dockButtonSize, 44),
+  (.dockGap, 16),
+  (.dockRingWidth, 2),
+  (.dockRingGap, 3),
+]
+
 @Suite("Rôles de texte, de mise en page et de bouton")
 struct RolesTests {
   @Test("les catégories et le slogan de l'accueil sont en largeTitle gras, les boutons en headline gras")
@@ -111,6 +123,16 @@ struct RolesTests {
   @Test("les libellés de la barre d'onglets sont en caption2 medium")
   func tabBarTextRoles() {
     #expect(TextRole.tabLabel.font == Font.caption2.weight(.medium))
+  }
+
+  @Test("les mesures du Stream Manager à widgets relevées sur creer/gestionnaire-diffusion--widget-actions-rapides", arguments: widgetMeasures)
+  func widgetLayoutRoles(role: LayoutRole, points: CGFloat) {
+    #expect(role.points == points)
+  }
+
+  @Test("le titre d'un widget est en headline gras")
+  func widgetTextRoles() {
+    #expect(TextRole.widgetTitle.font == Font.headline.weight(.bold))
   }
 
   @Test("le nom du compte en tête du menu est en title2 gras")
