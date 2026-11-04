@@ -46,6 +46,11 @@
         "$value": "12px",
         "$description": "Charte relevée sur twitch.tv (échelle d'espacement, base 1px)."
       },
+      "14": {
+        "$type": "dimension",
+        "$value": "14px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : glyphe « + » du bouton de création de la barre d'onglets, 42 px à @3x (profil/menu-compte--defaut)."
+      },
       "15": {
         "$type": "dimension",
         "$value": "15px",
@@ -85,6 +90,11 @@
         "$type": "dimension",
         "$value": "56px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : hauteur des lignes du menu du compte."
+      },
+      "72": {
+        "$type": "dimension",
+        "$value": "72px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : largeur du bouton « + » en pilule de la barre d'onglets, 216 px à @3x (profil/menu-compte--defaut)."
       },
       "300": {
         "$type": "dimension",
