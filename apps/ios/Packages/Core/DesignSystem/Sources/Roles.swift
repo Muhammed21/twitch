@@ -23,6 +23,12 @@ public enum TextRole: Sendable {
   case categoryName
   case fieldHint
   case fieldText
+  case profileEdit
+  case editSectionLabel
+  case editRowTitle
+  case editRowValue
+  case bioText
+  case bioCounter
 
   public var font: Font {
     switch self {
@@ -47,6 +53,12 @@ public enum TextRole: Sendable {
     case .categoryName: .actionLabel
     case .fieldHint: .hintText
     case .fieldText: .supportingText
+    case .profileEdit: .chatAuthorText
+    case .editSectionLabel: .viewerCount
+    case .editRowTitle: .actionLabel
+    case .editRowValue: .viewerCount
+    case .bioText: .supportingText
+    case .bioCounter: .viewerCount
     }
   }
 }
@@ -136,6 +148,14 @@ public enum LayoutRole: Sendable {
   case cardAvatarGlyphInset
   case cardAvatarGap
   case cardLineGap
+  case profileEditTop
+  case profileEditTrailing
+  case editSectionLabelGap
+  case editRowPadding
+  case editRowLineGap
+  case bioFieldPadding
+  case bioFieldBottom
+  case bioCounterInset
 
   public var points: CGFloat {
     switch self {
@@ -223,6 +243,14 @@ public enum LayoutRole: Sendable {
     case .cardAvatarGlyphInset: Spacing.x10
     case .cardAvatarGap: Spacing.x8
     case .cardLineGap: Spacing.x2
+    case .profileEditTop: Spacing.x8
+    case .profileEditTrailing: Spacing.x24
+    case .editSectionLabelGap: Spacing.x8
+    case .editRowPadding: Spacing.x8
+    case .editRowLineGap: Spacing.x2
+    case .bioFieldPadding: Spacing.x6
+    case .bioFieldBottom: Spacing.x8
+    case .bioCounterInset: Spacing.x20
     }
   }
 }

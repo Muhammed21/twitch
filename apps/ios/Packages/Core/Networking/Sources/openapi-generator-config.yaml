@@ -6,6 +6,7 @@ namingStrategy: idiomatic
 filter:
   operations:
     - MeController_read
+    - MeController_update
     - MobileBootstrapController_read
     - LivesController_list
     - ChannelsController_read

@@ -11,11 +11,13 @@ public struct ProfileHeader: View {
   private let name: String
   private let lastLive: String?
   private let bio: String?
+  private let edit: ProfileHeaderAction?
 
-  public init(name: String, lastLive: String?, bio: String?) {
+  public init(name: String, lastLive: String?, bio: String?, edit: ProfileHeaderAction? = nil) {
     self.name = name
     self.lastLive = lastLive
     self.bio = bio
+    self.edit = edit
   }
 
   public var body: some View {
@@ -25,7 +27,9 @@ public struct ProfileHeader: View {
         .background(alignment: .bottom) {
           ProfileHeaderStyle.banner.color.containerRelativeFrame(.vertical)
         }
-        .accessibilityHidden(true)
+        .overlay(alignment: .topTrailing) {
+          if let edit { ProfileEditButton(edit: edit) }
+        }
       HStack(alignment: .top, spacing: LayoutRole.profileAvatarGap.points) {
         DefaultAvatar(
           diameter: LayoutRole.profileAvatarSize.points,

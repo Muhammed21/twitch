@@ -35,6 +35,7 @@ struct TwitchApp: App {
         .environment(stores.chat)
         .environment(stores.myChannel)
         .environment(stores.categorySearch)
+        .environment(stores.profileEdit)
     }
   }
 }
@@ -166,6 +167,8 @@ struct SignedInRoot: View {
       NavigationStack(path: $router.profilePath) {
         ProfileScreen(account: account) { slug in
           router.push(.channel(slug))
+        } onAccountSaved: { saved in
+          session.accountSaved(saved)
         } settings: {
           SignedInScreen()
         }
@@ -256,6 +259,7 @@ struct Stores {
   let chat: ChatSession
   let myChannel: MyChannelStore
   let categorySearch: CategorySearch
+  let profileEdit: ProfileEditStore
 }
 
 @MainActor
@@ -317,7 +321,10 @@ enum Composition {
         viewer: { sessionStore.accountID }
       ),
       myChannel: Self.myChannel(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, channels: channels),
-      categorySearch: CategorySearch(catalog: CategoryCatalogClient(apiBaseURL: configuration.apiBaseURL, transport: transport))
+      categorySearch: CategorySearch(catalog: CategoryCatalogClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
+      profileEdit: ProfileEditStore(
+        editor: AccountClient(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now)
+      )
     )
   }
 
