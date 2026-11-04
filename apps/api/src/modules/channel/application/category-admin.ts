@@ -1,7 +1,7 @@
 import type { AuthzContext } from "@repo/authorization";
 import { err, type Result } from "@repo/result";
 
-import type { FinalizeImage, ImageRejection } from "../../../platform/images/images.module.ts";
+import type { FinalizeImage, ImageRejection } from "../../../platform/images/finalize-image.ts";
 import {
   type CategoryName,
   type CategorySlug,

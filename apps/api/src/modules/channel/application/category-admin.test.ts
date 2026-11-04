@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { inMemoryAuthzContext, type RoleAssignment } from "@repo/authorization";
 import { err, ok } from "@repo/result";
 
-import type { FinalizeImage } from "../../../platform/images/images.module.ts";
+import type { FinalizeImage } from "../../../platform/images/finalize-image.ts";
 import {
   type CategoryCatalog,
   type CategoryCreation,
