@@ -10,8 +10,12 @@ const SLUG_FORMAT = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 const graphemes = new Intl.Segmenter();
 
+export const RESERVED_CATEGORY_SLUGS: ReadonlySet<string> = new Set(["catalog"]);
+
 const isSlug = (value: string): value is CategorySlug =>
-  value.length <= MAX_CATEGORY_SLUG_LENGTH && SLUG_FORMAT.test(value);
+  value.length <= MAX_CATEGORY_SLUG_LENGTH &&
+  SLUG_FORMAT.test(value) &&
+  !RESERVED_CATEGORY_SLUGS.has(value);
 
 const isName = (value: string): value is CategoryName => {
   const length = Array.from(graphemes.segment(value)).length;

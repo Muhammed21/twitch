@@ -80,7 +80,8 @@ const PROBLEMS: Readonly<
     new ProblemException({
       status: 422,
       title: "Slug de catégorie invalide",
-      detail: "Un slug s'écrit en minuscules, chiffres et tirets, sur 50 caractères au plus.",
+      detail:
+        "Un slug s'écrit en minuscules, chiffres et tirets, sur 50 caractères au plus, et ne peut pas être catalog.",
     }),
   invalid_name: () =>
     new ProblemException({
