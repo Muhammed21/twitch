@@ -58,6 +58,13 @@ public final class MyChannelStore {
     await load()
   }
 
+  public func reset() {
+    hasStartedLoading = false
+    phase = .loading
+    title = ""
+    leave()
+  }
+
   public func load() async {
     hasStartedLoading = true
     phase = .loading
