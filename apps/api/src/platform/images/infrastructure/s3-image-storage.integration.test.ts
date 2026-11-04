@@ -46,7 +46,7 @@ afterAll(async () => {
   client.destroy();
 });
 
-describe("stockage S3 des images", () => {
+describe.skipIf(process.env.INTEGRATION_S3 !== "1")("stockage S3 des images", () => {
   it("accepte un dépôt sur l'URL présignée avec les en-têtes figés, puis le relit", async () => {
     const key = keyOf("depot");
 
