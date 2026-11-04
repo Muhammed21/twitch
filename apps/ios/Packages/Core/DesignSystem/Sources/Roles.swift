@@ -62,6 +62,9 @@ public enum LayoutRole: Sendable {
   case tabIconSize
   case tabGlyphSize
   case avatarGlyphInset
+  case createButtonWidth
+  case createButtonHeight
+  case createGlyphSize
   case avatarRingWidth
   case avatarRingGap
 
@@ -99,6 +102,9 @@ public enum LayoutRole: Sendable {
     case .tabIconSize: Spacing.x24
     case .tabGlyphSize: Spacing.x20
     case .avatarGlyphInset: Spacing.x5
+    case .createButtonWidth: Spacing.x72
+    case .createButtonHeight: Spacing.x40
+    case .createGlyphSize: Spacing.x14
     case .avatarRingWidth: Spacing.x2
     case .avatarRingGap: Spacing.x1
     }

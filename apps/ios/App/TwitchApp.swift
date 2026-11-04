@@ -75,6 +75,7 @@ struct RootView: View {
   @Environment(SessionStore.self) private var session
   @Environment(LaunchStore.self) private var launch
   @Environment(Router.self) private var router
+  @Environment(MyChannelStore.self) private var myChannel
   @State private var isSplashVisible = true
 
   var body: some View {
@@ -83,7 +84,10 @@ struct RootView: View {
       .logOutFailureAlert(session)
       .onOpenURL { router.open($0) }
       .onChange(of: session.phase) { old, new in
-        if RootScreen.resetsNavigation(from: old, to: new) { router.reset() }
+        if RootScreen.resetsNavigation(from: old, to: new) {
+          router.reset()
+          myChannel.reset()
+        }
       }
       .task { await launch.run() }
       .task { await session.run() }
@@ -119,13 +123,16 @@ struct SignedInRoot: View {
   @Environment(Router.self) private var router
   @Environment(SessionStore.self) private var session
 
-  static let tabs = [
+  static let leadingTabs = [
     TabBarItem(
       tab: AppTab.home,
       title: HomeTab.title,
       glyph: .symbol(outline: "house", filled: "house.fill"),
       accessibilityIdentifier: "root.home"
     ),
+  ]
+
+  static let trailingTabs = [
     TabBarItem(
       tab: AppTab.profile,
       title: ProfileText.tabTitle,
@@ -153,9 +160,22 @@ struct SignedInRoot: View {
       .toolbar(.hidden, for: .tabBar)
       .tag(AppTab.profile)
     }
+    .fullScreenCover(isPresented: $router.isShowingStreamManager) {
+      NavigationStack {
+        StreamManagerScreen { router.isShowingStreamManager = false }
+      }
+    }
     .safeAreaInset(edge: .bottom, spacing: 0) {
       if router.isTabBarVisible {
-        TabBar(selection: $router.selectedTab, items: Self.tabs)
+        TabBar(
+          selection: $router.selectedTab,
+          leading: Self.leadingTabs,
+          create: TabBarCreate(
+            label: ProfileText.streamManagerTitle,
+            accessibilityIdentifier: "root.create"
+          ) { router.create() },
+          trailing: Self.trailingTabs
+        )
       }
     }
   }

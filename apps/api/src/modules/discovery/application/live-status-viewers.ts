@@ -4,24 +4,30 @@ export type ViewerCountReader = (
   channelIds: readonly string[],
 ) => Promise<ReadonlyMap<string, number>>;
 
-export const withViewerCounts = ({
-  statuses,
-  viewerCounts,
-  onViewerCountFailure,
-}: {
-  statuses: LiveStatusReader;
+export type ViewerCountSource = {
   viewerCounts: ViewerCountReader;
   onViewerCountFailure: (error: unknown) => void;
-}): LiveStatusReader => ({
+};
+
+export const readViewerCounts = (
+  { viewerCounts, onViewerCountFailure }: ViewerCountSource,
+  channelIds: readonly string[],
+): Promise<ReadonlyMap<string, number> | undefined> =>
+  viewerCounts(channelIds).catch((error: unknown) => {
+    onViewerCountFailure(error);
+    return undefined;
+  });
+
+export const withViewerCounts = ({
+  statuses,
+  ...source
+}: { statuses: LiveStatusReader } & ViewerCountSource): LiveStatusReader => ({
   read: async (channelIds) => {
     const read = await statuses.read(channelIds);
     const liveChannelIds = read
       .filter(({ startedAt }) => startedAt !== undefined)
       .map(({ channelId }) => channelId);
-    const counts = await viewerCounts(liveChannelIds).catch((error: unknown) => {
-      onViewerCountFailure(error);
-      return undefined;
-    });
+    const counts = await readViewerCounts(source, liveChannelIds);
     if (counts === undefined) {
       return read;
     }

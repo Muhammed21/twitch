@@ -191,6 +191,16 @@
         }
       }
     },
+    "streamManager.close" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close"
+          }
+        }
+      }
+    },
     "streamManager.copy" : {
       "localizations" : {
         "en" : {

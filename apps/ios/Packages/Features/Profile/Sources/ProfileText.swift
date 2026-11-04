@@ -18,6 +18,8 @@ public enum ProfileText {
   static let editStreamInfo = LocalizedStringResource("editStreamInfo.navigationTitle", bundle: .module)
   static let cancel = LocalizedStringResource("editStreamInfo.cancel", bundle: .module)
   static let done = LocalizedStringResource("editStreamInfo.done", bundle: .module)
+  static let close = LocalizedStringResource("streamManager.close", bundle: .module)
+  public static var streamManagerTitle: String { String(localized: "profile.streamManager", bundle: .module) }
   public static var tabTitle: String { String(localized: "profile.tab", bundle: .module) }
   static let masked = "••••••••••••••••"
 
