@@ -47,7 +47,7 @@ public final class MyChannelStore {
   }
 
   public static func remaining(in draft: String) -> Int {
-    maxTitleLength - draft.count
+    maxTitleLength - draft.trimmingCharacters(in: .whitespacesAndNewlines).count
   }
 
   public func load() async {

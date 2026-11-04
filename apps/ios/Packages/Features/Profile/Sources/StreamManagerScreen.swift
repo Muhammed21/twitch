@@ -118,6 +118,7 @@ struct EditStreamInfoSheet: View {
   @Environment(\.dismiss) private var dismiss
   @State private var draft: String
   @State private var isSaving = false
+  @State private var saveFailed = false
 
   init(initialTitle: String) {
     _draft = State(initialValue: initialTitle)
@@ -139,6 +140,12 @@ struct EditStreamInfoSheet: View {
           .padding(LayoutRole.composerPadding.points)
           .background(ColorRole.surfaceSecondary.color, in: RoundedRectangle(cornerRadius: LayoutRole.composerRadius.points))
           .accessibilityIdentifier("editStreamInfo.title")
+        if saveFailed {
+          Text(ProfileText.notice(.titleFailed))
+            .font(TextRole.body.font)
+            .foregroundStyle(ColorRole.textSecondary.color)
+            .accessibilityIdentifier("editStreamInfo.notice")
+        }
         Spacer(minLength: 0)
       }
       .padding(LayoutRole.screenInset.points)
@@ -160,9 +167,12 @@ struct EditStreamInfoSheet: View {
 
   private func save() {
     isSaving = true
+    saveFailed = false
     Task {
-      if await store.rename(to: draft) { dismiss() }
+      let saved = await store.rename(to: draft)
+      saveFailed = !saved
       isSaving = false
+      if saved { dismiss() }
     }
   }
 }

@@ -194,10 +194,11 @@ struct MyChannelStoreTests {
     #expect(store.notice == .titleFailed)
   }
 
-  @Test("compte les caractères restants du titre en graphèmes", arguments: [
+  @Test("compte les caractères restants du titre en graphèmes, sans les espaces retirés par l'API", arguments: [
     ("", 140),
     ("Fun Gaming Session", 122),
     ("café 👨‍👩‍👧", 134),
+    (" \n" + String(repeating: "a", count: 140) + " ", 0),
   ])
   func remaining(draft: String, expected: Int) {
     #expect(MyChannelStore.remaining(in: draft) == expected)
