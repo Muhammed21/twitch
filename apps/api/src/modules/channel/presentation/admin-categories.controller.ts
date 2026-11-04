@@ -1,4 +1,4 @@
-import { Body, Controller, Inject, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, HttpCode, Inject, Param, Post, UseGuards } from "@nestjs/common";
 import { createZodDto, ZodResponse } from "nestjs-zod";
 import { z } from "zod";
 
@@ -13,7 +13,12 @@ import {
   requiredScopeGuard,
 } from "../../../platform/authentication.ts";
 import { ProblemException } from "../../../platform/problem.ts";
-import type { CategoryCreationError, CategoryView } from "../application/category-admin.ts";
+import type {
+  CategoryCreationError,
+  CategoryMergeError,
+  CategoryRetirementError,
+  CategoryView,
+} from "../application/category-admin.ts";
 
 export const CATEGORY_ADMIN = Symbol("CATEGORY_ADMIN");
 
@@ -25,6 +30,15 @@ export type CategoryAdmin = {
     slug: string;
     name: string;
   }) => Promise<Result<CategoryView, CategoryCreationError>>;
+  readonly merge: (request: {
+    actorId: string;
+    sourceSlug: string;
+    targetSlug: string;
+  }) => Promise<Result<CategoryView, CategoryMergeError>>;
+  readonly retire: (request: {
+    actorId: string;
+    slug: string;
+  }) => Promise<Result<CategoryView, CategoryRetirementError>>;
 };
 
 class Category extends responseDto(responses.Category) {}
@@ -33,8 +47,16 @@ class CreateCategoryRequest extends createZodDto(
   z.strictObject({ slug: z.string(), name: z.string() }),
 ) {}
 
-const PROBLEMS: Readonly<Record<CategoryCreationError, () => ProblemException>> = {
+class MergeCategoryRequest extends createZodDto(z.strictObject({ targetSlug: z.string() })) {}
+
+const PROBLEMS: Readonly<
+  Record<
+    CategoryCreationError | CategoryMergeError | CategoryRetirementError,
+    () => ProblemException
+  >
+> = {
   forbidden: () => new ProblemException({ status: 403, title: "Action non autorisée" }),
+  category_not_found: () => new ProblemException({ status: 404, title: "Catégorie introuvable" }),
   invalid_slug: () =>
     new ProblemException({
       status: 422,
@@ -48,6 +70,20 @@ const PROBLEMS: Readonly<Record<CategoryCreationError, () => ProblemException>> 
       detail: "Un nom compte de 1 à 50 caractères.",
     }),
   slug_taken: () => new ProblemException({ status: 409, title: "Slug de catégorie déjà pris" }),
+  invalid_merge: () =>
+    new ProblemException({
+      status: 409,
+      title: "Fusion impossible",
+      detail: "La source et la cible sont deux catégories distinctes et actives.",
+    }),
+  category_inactive: () =>
+    new ProblemException({ status: 409, title: "Catégorie déjà fusionnée ou retirée" }),
+  category_in_use: () =>
+    new ProblemException({
+      status: 409,
+      title: "Catégorie encore utilisée",
+      detail: "Une chaîne utilise cette catégorie : fusionne-la dans une autre.",
+    }),
 };
 
 const unwrap = <Error extends keyof typeof PROBLEMS>(
@@ -73,5 +109,32 @@ export class AdminCategoriesController {
     return unwrap(
       await this.admin.create({ actorId: identity.userId, slug: body.slug, name: body.name }),
     );
+  }
+
+  @Post(":slug/merge")
+  @HttpCode(200)
+  @ZodResponse({ status: 200, type: Category })
+  async merge(
+    @Param("slug") slug: string,
+    @Body() body: MergeCategoryRequest,
+    @CurrentIdentity() identity: AccessTokenIdentity,
+  ): Promise<CategoryView> {
+    return unwrap(
+      await this.admin.merge({
+        actorId: identity.userId,
+        sourceSlug: slug,
+        targetSlug: body.targetSlug,
+      }),
+    );
+  }
+
+  @Post(":slug/retire")
+  @HttpCode(200)
+  @ZodResponse({ status: 200, type: Category })
+  async retire(
+    @Param("slug") slug: string,
+    @CurrentIdentity() identity: AccessTokenIdentity,
+  ): Promise<CategoryView> {
+    return unwrap(await this.admin.retire({ actorId: identity.userId, slug }));
   }
 }

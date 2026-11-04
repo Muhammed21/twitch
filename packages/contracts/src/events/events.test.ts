@@ -119,6 +119,7 @@ describe("channel.metadata.updated", () => {
 const SESSION_ID = "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d";
 
 const CATEGORY_ID = "7c6d5e4f-3a2b-4c1d-8e9f-0a1b2c3d4e5f";
+const OTHER_CATEGORY_ID = "8d7e6f5a-4b3c-4d2e-9f0a-1b2c3d4e5f6a";
 
 describe("channel.category.created", () => {
   const makeCreated = (overrides: Record<string, unknown> = {}) => ({
@@ -154,6 +155,56 @@ describe("channel.category.created", () => {
     ["sans nom", makeCreated({ name: undefined })],
   ])("refuse un event %s", (_name, payload) => {
     expect(events.channel.channelCategoryCreated.payload.safeParse(payload).success).toBe(false);
+  });
+});
+
+describe("channel.category.merged", () => {
+  const makeMerged = (overrides: Record<string, unknown> = {}) => ({
+    sourceCategoryId: CATEGORY_ID,
+    targetCategoryId: OTHER_CATEGORY_ID,
+    ...overrides,
+  });
+
+  it("porte son nom et sa version", () => {
+    expect(events.channel.channelCategoryMerged).toMatchObject({
+      name: "channel.category.merged",
+      version: 1,
+    });
+  });
+
+  it("décode la catégorie fusionnée et sa cible", () => {
+    expect(events.channel.channelCategoryMerged.payload.parse(makeMerged())).toEqual(makeMerged());
+  });
+
+  it.each([
+    ["sans source", makeMerged({ sourceCategoryId: undefined })],
+    ["avec une source qui n'est pas un UUID", makeMerged({ sourceCategoryId: "jeux" })],
+    ["sans cible", makeMerged({ targetCategoryId: undefined })],
+    ["avec une cible qui n'est pas un UUID", makeMerged({ targetCategoryId: "jeux" })],
+  ])("refuse un event %s", (_name, payload) => {
+    expect(events.channel.channelCategoryMerged.payload.safeParse(payload).success).toBe(false);
+  });
+});
+
+describe("channel.category.retired", () => {
+  it("porte son nom et sa version", () => {
+    expect(events.channel.channelCategoryRetired).toMatchObject({
+      name: "channel.category.retired",
+      version: 1,
+    });
+  });
+
+  it("décode la catégorie retirée", () => {
+    expect(
+      events.channel.channelCategoryRetired.payload.parse({ categoryId: CATEGORY_ID }),
+    ).toEqual({ categoryId: CATEGORY_ID });
+  });
+
+  it.each([
+    ["sans catégorie", {}],
+    ["avec une catégorie qui n'est pas un UUID", { categoryId: "jeux" }],
+  ])("refuse un event %s", (_name, payload) => {
+    expect(events.channel.channelCategoryRetired.payload.safeParse(payload).success).toBe(false);
   });
 });
 
