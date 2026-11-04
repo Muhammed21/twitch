@@ -5,6 +5,7 @@ import { describe, expect, it, onTestFinished, vi } from "vitest";
 
 import { realtime } from "@repo/contracts";
 
+import { createLocalTokenBuckets } from "../application/local-token-buckets.ts";
 import { createMessageSender } from "../application/message-sender.ts";
 import type { ChatterProfiles, RoomDirectory } from "../application/ports.ts";
 import { createRoomRegistry } from "../application/room-registry.ts";
@@ -55,7 +56,7 @@ const startServer = async ({
     },
     chatters,
     rooms,
-    messages: createMessageSender(),
+    messages: createMessageSender(createLocalTokenBuckets()),
     saturation: SATURATION_LIMITS,
     adapter: LocalAdapter,
   });

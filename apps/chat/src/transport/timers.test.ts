@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { createLocalTokenBuckets } from "../application/local-token-buckets.ts";
 import { createMessageSender } from "../application/message-sender.ts";
 import { createRoomRegistry } from "../application/room-registry.ts";
 import { startChatServer } from "./chat-server.ts";
@@ -20,7 +21,7 @@ describe("arrêt du chat", () => {
       log: () => undefined,
       chatters: { displayNameOf: async () => "Alice", sanctionsOf: async () => [] },
       rooms: createRoomRegistry({ find: async () => undefined }),
-      messages: createMessageSender(),
+      messages: createMessageSender(createLocalTokenBuckets()),
       saturation: SATURATION_LIMITS,
       adapter: LocalAdapter,
     });

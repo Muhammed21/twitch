@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { io, type Socket } from "socket.io-client";
 import { describe, expect, it, onTestFinished } from "vitest";
 
+import { createLocalTokenBuckets } from "../application/local-token-buckets.ts";
 import { createMessageSender } from "../application/message-sender.ts";
 import { createRoomRegistry } from "../application/room-registry.ts";
 import type { RoomState } from "../domain/decide.ts";
@@ -23,7 +24,7 @@ const startServer = async (room: RoomState) => {
     log: () => undefined,
     chatters: { displayNameOf: async () => "Alice", sanctionsOf: async () => [] },
     rooms: createRoomRegistry({ find: async () => room }),
-    messages: createMessageSender(),
+    messages: createMessageSender(createLocalTokenBuckets()),
     saturation: SATURATION_LIMITS,
     adapter: LocalAdapter,
   });

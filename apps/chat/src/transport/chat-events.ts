@@ -86,7 +86,7 @@ export const bindChatEvents = ({
       rooms.leave(channelId);
     };
 
-    const send = (payload: unknown, ack: unknown) => {
+    const send = async (payload: unknown, ack: unknown) => {
       const parsed = RealtimeChatSend.safeParse(payload);
       if (!parsed.success || !isAck(ack)) {
         onRejectedEvent();
@@ -99,7 +99,12 @@ export const bindChatEvents = ({
         ack({ reason: "not_joined" });
         return;
       }
-      const sent = messages.send({ chatter: socket.data.chatter, room, body, now: new Date() });
+      const sent = await messages.send({
+        chatter: socket.data.chatter,
+        room,
+        body,
+        now: new Date(),
+      });
       if (!sent.ok) {
         ack({ reason: sent.error });
         return;
