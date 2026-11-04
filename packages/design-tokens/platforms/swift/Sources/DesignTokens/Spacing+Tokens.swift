@@ -32,6 +32,8 @@ public enum Spacing {
     public static let x20: CGFloat = 20
     /// Avatar de l'onglet Profile, relevé sur l'app iOS Twitch (24 pt).
     public static let x24: CGFloat = 24
+    /// Écart entre les onglets Categories et Live Channels de Browse, relevé sur l'app iOS Twitch (32 pt).
+    public static let x32: CGFloat = 32
     /// Hauteur du champ de recherche de catégorie, relevée sur l'app iOS Twitch (36 pt).
     public static let x36: CGFloat = 36
     /// Retrait du contenu de l'accueil, relevé sur l'app iOS Twitch (40 pt).

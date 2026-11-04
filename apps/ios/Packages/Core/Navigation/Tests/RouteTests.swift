@@ -89,6 +89,30 @@ struct RouterTabTests {
     #expect(try router.profilePath == [.channel(ChannelSlug("marie_curie"))])
   }
 
+  @Test("l'onglet Browse a sa propre pile, distincte de Home et de Profile")
+  func browseStack() throws {
+    let router = Router()
+    router.selectedTab = .browse
+    try router.push(.channel(ChannelSlug("ada_lovelace")))
+
+    #expect(try router.browsePath == [.channel(ChannelSlug("ada_lovelace"))])
+    #expect(router.path.isEmpty)
+    #expect(router.profilePath.isEmpty)
+    #expect(!router.isTabBarVisible)
+  }
+
+  @Test("reset vide aussi la pile de Browse")
+  func resetBrowse() throws {
+    let router = Router()
+    router.selectedTab = .browse
+    try router.push(.channel(ChannelSlug("ada_lovelace")))
+
+    router.reset()
+
+    #expect(router.selectedTab == .home)
+    #expect(router.browsePath.isEmpty)
+  }
+
   @Test("la barre d'onglets se masque quand une page de chaîne couvre l'onglet sélectionné")
   func tabBarHiddenOverChannel() throws {
     let router = Router()

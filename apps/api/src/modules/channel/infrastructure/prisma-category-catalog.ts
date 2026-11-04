@@ -19,11 +19,15 @@ const {
 
 type Transaction = Parameters<Parameters<ChannelPrisma["$transaction"]>[0]>[0];
 
-type LockedRow = { readonly id: string; readonly status: CategoryStatus };
+type LockedRow = {
+  readonly id: string;
+  readonly status: CategoryStatus;
+  readonly imageKey: string | null;
+};
 
 const lockCategories = (tx: Transaction, ids: readonly string[]) =>
   tx.$queryRaw<LockedRow[]>`
-    SELECT "id"::text AS "id", "status"::text AS "status"
+    SELECT "id"::text AS "id", "status"::text AS "status", "imageKey"
     FROM "channel"."ChannelCategory"
     WHERE "id" = ANY(${[...ids]}::uuid[])
     ORDER BY "id"
@@ -129,6 +133,7 @@ export const prismaCategoryCatalog = (prisma: ChannelPrisma): CategoryCatalog =>
       if (!isActive(locked, categoryId)) {
         return { ok: false, error: "category_inactive" } as const;
       }
+      const replacedImageKey = locked.find((row) => row.id === categoryId)?.imageKey ?? null;
       const updated = await tx.channelCategory.update({
         where: { id: categoryId },
         data: { imageKey },
@@ -149,7 +154,7 @@ export const prismaCategoryCatalog = (prisma: ChannelPrisma): CategoryCatalog =>
           occurredAt,
         },
       });
-      return { ok: true, value: updated } as const;
+      return { ok: true, value: { category: updated, replacedImageKey } } as const;
     }),
 });
 

@@ -94,7 +94,7 @@ export const prismaCategoryProjection = (prisma: DiscoveryPrisma): CategoryProje
       `;
       const rows = await tx.$queryRaw<CategoryView[]>`
         SELECT "categoryId"::text AS "categoryId", "slug", "name", "status"::text AS "status",
-               "mergedIntoId"::text AS "mergedIntoId"
+               "mergedIntoId"::text AS "mergedIntoId", "imageKey"
         FROM "discovery"."DiscoveryCategoryView"
         WHERE "categoryId" = ${categoryId}::uuid
         FOR UPDATE

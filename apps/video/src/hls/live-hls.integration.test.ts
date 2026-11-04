@@ -10,12 +10,14 @@ import { inMemoryVideoStore } from "../control-plane/in-memory-video-store.ts";
 import { makeVideoChannel } from "../control-plane/testing/video-store.contract.ts";
 import { startHttpServer } from "../http/http-server.ts";
 import { createPublishGate } from "../ingest/publish-gate.ts";
+import { extractFrame, FFMPEG_THUMBNAIL_ARGS } from "../media/frame-extractor.ts";
 import { createLivePipeline } from "../media/live-pipeline.ts";
 import { FFMPEG_FMP4_ARGS, startPackaging } from "../media/packager.ts";
 import { startRtmpServer } from "../rtmp/rtmp-server.ts";
 import { concatBytes } from "../segmenter/bytes.ts";
 import { createHlsRegistry } from "./hls-registry.ts";
 import { hlsFragmentSink } from "./hls-sink.ts";
+import { createThumbnails } from "./thumbnails.ts";
 
 const RETENTION_MS = 500;
 
@@ -88,6 +90,16 @@ const startService = async () => {
       blockingTimeoutMs: 18_000,
       liveSessionOf: async (channelId) => (await store.liveSessionOf(channelId))?.id,
       fallbackBandwidth: 6_000_000,
+      thumbnailOf: createThumbnails({
+        extract: extractFrame({
+          command: { file: "ffmpeg", args: FFMPEG_THUMBNAIL_ARGS },
+          timeoutMs: 10_000,
+          maxOutputBytes: 1024 * 1024,
+        }),
+        ttlMs: 30_000,
+        maxConcurrent: 2,
+        now: Date.now,
+      }).of,
     },
   });
   onTestFinished(() => http.close());
@@ -157,7 +169,7 @@ const codecsOf = async (input: string, bytes: Uint8Array = new Uint8Array(0)) =>
 
 describe("publication ffmpeg réelle jusqu'à la lecture HLS (ADR 0031, §5 et §6)", () => {
   it(
-    "sert la playlist du canal, ses segments lisibles, puis 404 après la fin du live",
+    "sert la playlist du canal, ses segments lisibles et sa vignette, puis 404 après la fin du live",
     { timeout: 60_000 },
     async () => {
       const { channel, rtmpPort, httpPort, get } = await startService();
@@ -199,6 +211,12 @@ describe("publication ffmpeg réelle jusqu'à la lecture HLS (ADR 0031, §5 et �
         await codecsOf(`http://127.0.0.1:${httpPort}/hls/channels/${channel.id}/master.m3u8`),
       ).toEqual(["aac", "h264"]);
 
+      const thumbnail = await get(`/hls/channels/${channel.id}/thumbnail.jpg`);
+      expect(thumbnail.headers.get("content-type")).toBe("image/jpeg");
+      expect(await codecsOf("pipe:0", new Uint8Array(await thumbnail.arrayBuffer()))).toEqual([
+        "mjpeg",
+      ]);
+
       await published;
       const ended = await eventually(async () => {
         const playlist = await (await get(String(mediaUri))).text();
@@ -212,6 +230,7 @@ describe("publication ffmpeg réelle jusqu'à la lecture HLS (ADR 0031, §5 et �
       expect(ended).toBeDefined();
       expect(gone?.status).toBe(404);
       expect((await get(`/hls/channels/${channel.id}/master.m3u8`)).status).toBe(404);
+      expect((await get(`/hls/channels/${channel.id}/thumbnail.jpg`)).status).toBe(404);
     },
   );
 });

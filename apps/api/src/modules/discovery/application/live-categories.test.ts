@@ -15,12 +15,13 @@ const makeCategory = (overrides: Partial<CategoryView> = {}): CategoryView => ({
   name: "Just Chatting",
   status: "active",
   mergedIntoId: null,
+  imageKey: null,
   ...overrides,
 });
 
 const CATEGORIES: readonly CategoryView[] = [
   makeCategory(),
-  makeCategory({ categoryId: IRL, slug: "irl", name: "IRL" }),
+  makeCategory({ categoryId: IRL, slug: "irl", name: "IRL", imageKey: "images/category/irl.webp" }),
   makeCategory({
     categoryId: TALK,
     slug: "talk",
@@ -65,7 +66,7 @@ const fixedLives = (items: readonly ListedLive[]) => {
 };
 
 describe("catégorie de chaque live", () => {
-  it("donne à un live le slug et le nom de sa catégorie", async () => {
+  it("donne à un live le slug, le nom et la pochette de sa catégorie", async () => {
     const { lives } = fixedLives([makeLive(1, JUST_CHATTING)]);
 
     const page = await withLiveCategories({ lives, categories: categoryReader() })({
@@ -73,10 +74,14 @@ describe("catégorie de chaque live", () => {
       limit: 20,
     });
 
-    expect(page.items[0]?.category).toEqual({ slug: "just-chatting", name: "Just Chatting" });
+    expect(page.items[0]?.category).toEqual({
+      slug: "just-chatting",
+      name: "Just Chatting",
+      imageKey: null,
+    });
   });
 
-  it("donne à un live d'une catégorie fusionnée la catégorie cible", async () => {
+  it("donne à un live d'une catégorie fusionnée la catégorie cible, avec sa pochette", async () => {
     const { lives } = fixedLives([makeLive(1, TALK)]);
 
     const page = await withLiveCategories({ lives, categories: categoryReader() })({
@@ -84,7 +89,11 @@ describe("catégorie de chaque live", () => {
       limit: 20,
     });
 
-    expect(page.items[0]?.category).toEqual({ slug: "irl", name: "IRL" });
+    expect(page.items[0]?.category).toEqual({
+      slug: "irl",
+      name: "IRL",
+      imageKey: "images/category/irl.webp",
+    });
   });
 
   it.each([

@@ -25,6 +25,7 @@ struct TwitchApp: App {
         .environment(stores.session)
         .environment(stores.launch)
         .environment(stores.home)
+        .environment(stores.browse)
         .environment(stores.router)
         .environment(stores.player)
         .environment(stores.channelPlayback)
@@ -131,6 +132,12 @@ struct SignedInRoot: View {
       glyph: .mask(outline: .homeOutline, filled: .homeFilled),
       accessibilityIdentifier: "root.home"
     ),
+    TabBarItem(
+      tab: AppTab.browse,
+      title: BrowseText.tabTitle,
+      glyph: .mask(outline: .browseOutline, filled: .browseFilled),
+      accessibilityIdentifier: "root.browse"
+    ),
   ]
 
   static let trailingTabs = [
@@ -150,6 +157,11 @@ struct SignedInRoot: View {
       }
       .toolbar(.hidden, for: .tabBar)
       .tag(AppTab.home)
+      NavigationStack(path: $router.browsePath) {
+        BrowseScreen().withRouteDestinations()
+      }
+      .toolbar(.hidden, for: .tabBar)
+      .tag(AppTab.browse)
       NavigationStack(path: $router.profilePath) {
         ProfileScreen(account: account) { slug in
           router.push(.channel(slug))
@@ -231,6 +243,7 @@ struct Stores {
   let session: SessionStore
   let launch: LaunchStore
   let home: HomeStore
+  let browse: BrowseStore
   let router: Router
   let player: PlayerController
   let channelPlayback: ChannelPlayback
@@ -280,6 +293,7 @@ enum Composition {
       session: sessionStore,
       launch: LaunchStore(source: BootstrapClient(apiBaseURL: configuration.apiBaseURL, transport: transport), currentVersion: currentVersion),
       home: HomeStore(directory: LiveDirectoryClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
+      browse: BrowseStore(directory: CategoryDirectoryClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
       router: Router(),
       player: player,
       channelPlayback: channelPlayback,

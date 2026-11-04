@@ -25,7 +25,14 @@ export const withLiveCategories =
         const resolved = live.categoryId === null ? null : resolveCategory(views, live.categoryId);
         return resolved === null
           ? live
-          : { ...live, category: { slug: resolved.slug, name: resolved.name } };
+          : {
+              ...live,
+              category: {
+                slug: resolved.slug,
+                name: resolved.name,
+                imageKey: resolved.imageKey,
+              },
+            };
       }),
     };
   };

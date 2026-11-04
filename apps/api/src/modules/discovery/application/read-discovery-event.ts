@@ -37,6 +37,7 @@ const {
   channelCategoryCreated,
   channelCategoryMerged,
   channelCategoryRetired,
+  channelCategoryUpdated,
 } = events.channel;
 const { streamStarted, streamEnded } = events.stream;
 
@@ -76,6 +77,15 @@ export const DISCOVERY_EVENT_READERS: Readonly<
     kind: "category-retired",
     categoryId,
   })),
+  [channelCategoryUpdated.name]: reader(
+    channelCategoryUpdated,
+    ({ categoryId, name, imageKey }) => ({
+      kind: "category-updated",
+      categoryId,
+      name,
+      imageKey,
+    }),
+  ),
   [streamStarted.name]: reader(streamStarted, ({ channelId, sessionId, startedAt }) => ({
     kind: "stream-started",
     channelId,

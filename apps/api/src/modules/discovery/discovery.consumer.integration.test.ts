@@ -131,6 +131,7 @@ const withDiscoveryModule = async (
         streamConsumerRedis,
         viewerCounts,
         logSink: (line) => logs.push(line),
+        images: { imageUrlOf: (key) => `https://images.test/${key}` },
       }),
     ],
   }).compile();
@@ -530,7 +531,7 @@ describe("reconstruction de la projection depuis les outbox (ADR 0003, ADR 0034)
     expect(report.events).toBeGreaterThanOrEqual(history.length);
   });
 
-  it("projette les catégories et la catégorie d'une chaîne, puis les reconstruit à l'identique", async () => {
+  it("projette les catégories, leur pochette et la catégorie d'une chaîne, puis les reconstruit à l'identique", async () => {
     const channelId = randomUUID();
     const sourceId = randomUUID();
     const targetId = randomUUID();
@@ -547,6 +548,12 @@ describe("reconstruction de la projection depuis les outbox (ADR 0003, ADR 0034)
         occurredAt: new Date(),
         name: "channel.category.created",
         payload: { categoryId: targetId, slug: `cible-${suffix}`, name: "Cible" },
+      },
+      {
+        id: randomUUID(),
+        occurredAt: new Date(),
+        name: "channel.category.updated",
+        payload: { categoryId: targetId, name: "Cible", imageKey: "images/category/cible.webp" },
       },
       {
         id: randomUUID(),
@@ -581,6 +588,7 @@ describe("reconstruction de la projection depuis les outbox (ADR 0003, ADR 0034)
             name: "Cible",
             status: "active",
             mergedIntoId: null,
+            imageKey: "images/category/cible.webp",
           },
           {
             categoryId: sourceId,
@@ -588,6 +596,7 @@ describe("reconstruction de la projection depuis les outbox (ADR 0003, ADR 0034)
             name: "Source",
             status: "merged",
             mergedIntoId: targetId,
+            imageKey: null,
           },
         ]),
       );

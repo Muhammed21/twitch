@@ -212,7 +212,7 @@ describe("catalogue des catégories dans channel (ADR 0045)", () => {
     });
   });
 
-  it("pose la pochette d'une catégorie active, avec channel.category.updated, et la refuse une fois retirée", async () => {
+  it("pose la pochette d'une catégorie active, avec channel.category.updated, rend celle qu'elle remplace, et la refuse une fois retirée", async () => {
     const category = await seedCategory();
     const imageKey = `images/category/${randomUUID()}.webp`;
     const outboxEventId = randomUUID();
@@ -223,6 +223,13 @@ describe("catalogue des catégories dans channel (ADR 0045)", () => {
       outboxEventId,
       occurredAt: NOW,
     });
+    const replacement = `images/category/${randomUUID()}.webp`;
+    const replaced = await catalog.changeImage({
+      categoryId: category.id,
+      imageKey: replacement,
+      outboxEventId: randomUUID(),
+      occurredAt: NOW,
+    });
     await catalog.retire({ categoryId: category.id, outboxEventId: randomUUID(), occurredAt: NOW });
     const afterRetire = await catalog.changeImage({
       categoryId: category.id,
@@ -231,8 +238,14 @@ describe("catalogue des catégories dans channel (ADR 0045)", () => {
       occurredAt: NOW,
     });
 
-    expect(changed).toEqual({ ok: true, value: { ...category, imageKey } });
-    expect(await catalog.findBySlug(category.slug)).toMatchObject({ imageKey });
+    expect(changed).toEqual({
+      ok: true,
+      value: { category: { ...category, imageKey }, replacedImageKey: null },
+    });
+    expect(replaced).toEqual({
+      ok: true,
+      value: { category: { ...category, imageKey: replacement }, replacedImageKey: imageKey },
+    });
     expect(afterRetire).toEqual({ ok: false, error: "category_inactive" });
     expect(await outboxEvent(outboxEventId)).toMatchObject({
       name: "channel.category.updated",
