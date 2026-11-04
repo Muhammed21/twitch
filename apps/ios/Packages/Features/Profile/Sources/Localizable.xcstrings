@@ -291,16 +291,6 @@
         }
       }
     },
-    "streamManager.obs" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recommended OBS Settings"
-          }
-        }
-      }
-    },
     "streamManager.resetKey" : {
       "localizations" : {
         "en" : {
@@ -367,6 +357,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Title"
+          }
+        }
+      }
+    },
+    "streamManager.widget.obs" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OBS Settings"
+          }
+        }
+      }
+    },
+    "streamManager.widget.streamInfo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stream Info"
+          }
+        }
+      }
+    },
+    "streamManager.widget.streamKey" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stream Key"
           }
         }
       }

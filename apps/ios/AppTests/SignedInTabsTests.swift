@@ -21,7 +21,7 @@ struct SignedInTabsTests {
 
   @Test("Home prend la maison au trait, pleine quand l'onglet est actif ; Profile prend l'avatar")
   func glyphs() {
-    #expect(tabs.map(\.glyph) == [.symbol(outline: "house", filled: "house.fill"), .avatar])
+    #expect(tabs.map(\.glyph) == [.mask(outline: .homeOutline, filled: .homeFilled), .avatar])
   }
 
   @Test("l'onglet Profile garde l'identifiant root.account visé par les flows Maestro")
