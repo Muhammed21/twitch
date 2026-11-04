@@ -73,7 +73,7 @@ Le retrait d'une catégorie qu'une chaîne utilise encore est refusé par un `40
 Les routes d'administration (`/v1/admin/categories…`) exigent deux conditions cumulées, comme l'ADR 0007 :
 
 - le jeton porte le scope `admin:category.manage` ;
-- son titulaire a le rôle de plateforme `admin`, qui donne `manage` sur `Category` (ADR 0006).
+- son titulaire a le rôle de plateforme `admin`, qui donne l'action `administer` sur `Category` (ADR 0006).
 
 Le scope n'est accordé à aucun client iOS. L'en-tête `X-Acting-User` arrive avec la coquille Payload (ADR 0007).
 
