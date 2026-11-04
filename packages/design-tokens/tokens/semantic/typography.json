@@ -96,6 +96,14 @@
       },
       "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : nombre de viewers sur la miniature, hauteur de capitale 10,3 pt, soit 14 pt (parcourir/liste-chaines-live--defaut et --theme-sombre). Text style iOS subheadline (15 pt), le plus proche, pour le Dynamic Type."
     },
+    "metaText": {
+      "$type": "iosTextStyle",
+      "$value": {
+        "textStyle": "footnote",
+        "fontWeight": 400
+      },
+      "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/parcourir/liste-categories--defaut) : nombre de viewers sous le nom d'une catégorie, chiffres de 9,7 pt de haut, text style iOS footnote."
+    },
     "chatText": {
       "$type": "iosTextStyle",
       "$value": {
