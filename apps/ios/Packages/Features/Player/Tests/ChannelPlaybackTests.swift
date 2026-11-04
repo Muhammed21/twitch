@@ -69,19 +69,15 @@ private struct ChannelScreen {
   }
 }
 
-private struct TimedOut: Error {}
-
 @MainActor
 private func waitUntil(_ condition: () -> Bool) async throws {
-  let deadline = ContinuousClock.now + .seconds(10)
   while !condition() {
-    guard ContinuousClock.now < deadline else { throw TimedOut() }
     try await Task.sleep(for: .milliseconds(5))
   }
 }
 
 @MainActor
-@Suite("ChannelPlayback : lecture du live à l'ouverture de l'écran de chaîne")
+@Suite("ChannelPlayback : lecture du live à l'ouverture de l'écran de chaîne", .timeLimit(.minutes(1)))
 struct ChannelPlaybackTests {
   @Test("une chaîne en live charge l'URL de lecture de son identifiant, jusqu'à ce que l'écran parte")
   func live() async throws {

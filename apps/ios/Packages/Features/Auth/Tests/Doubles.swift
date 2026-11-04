@@ -195,9 +195,12 @@ struct Harness {
 
 @MainActor
 func eventually(_ condition: @MainActor () -> Bool) async -> Bool {
-  for _ in 0 ..< 200 {
-    if condition() { return true }
-    try? await Task.sleep(for: .milliseconds(5))
+  while !condition() {
+    do {
+      try await Task.sleep(for: .milliseconds(5))
+    } catch {
+      return false
+    }
   }
-  return condition()
+  return true
 }

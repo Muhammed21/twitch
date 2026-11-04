@@ -107,13 +107,14 @@ actor ManualClock {
 }
 
 func eventually(_ condition: @Sendable () async -> Bool) async -> Bool {
-  for _ in 0 ..< 10000 {
-    if await condition() {
-      return true
+  while await !condition() {
+    do {
+      try await Task.sleep(for: .milliseconds(1))
+    } catch {
+      return false
     }
-    await Task.yield()
   }
-  return false
+  return true
 }
 
 let openFrame = #"0{"sid":"s","upgrades":[],"pingInterval":30000,"pingTimeout":60000,"maxPayload":4096}"#

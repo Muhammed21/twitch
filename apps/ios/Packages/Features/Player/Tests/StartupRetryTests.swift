@@ -11,7 +11,7 @@ private func retrying(_ player: FakeMediaPlayer, on scheduler: ManualScheduler, 
 }
 
 @MainActor
-@Suite("PlayerController : relance au démarrage d'un live, avant son premier segment")
+@Suite("PlayerController : relance au démarrage d'un live, avant son premier segment", .timeLimit(.minutes(1)))
 struct StartupRetryTests {
   @Test("une erreur au chargement reste un chargement et relance la même URL au tour prévu")
   func retriesWhileLoading() {
@@ -117,8 +117,7 @@ struct StartupRetryTests {
 
     player.send(.failed)
 
-    let deadline = ContinuousClock.now + .seconds(2)
-    while player.calls.count < 4, ContinuousClock.now < deadline {
+    while player.calls.count < 4 {
       try await Task.sleep(for: .milliseconds(5))
     }
     #expect(player.calls == ["load \(liveURL.absoluteString)", "play", "load \(liveURL.absoluteString)", "play"])

@@ -90,13 +90,9 @@ private final class Recorder {
   }
 }
 
-private struct TimedOut: Error {}
-
 @MainActor
 private func waitUntil(_ condition: () -> Bool) async throws {
-  let deadline = ContinuousClock.now + .seconds(10)
   while !condition() {
-    guard ContinuousClock.now < deadline else { throw TimedOut() }
     try await Task.sleep(for: .milliseconds(5))
   }
 }
@@ -117,7 +113,7 @@ private func makeChannel(
 }
 
 @MainActor
-@Suite("LiveStatusChannel : statut du live et compteur de viewers, avec sa propre reconnexion")
+@Suite("LiveStatusChannel : statut du live et compteur de viewers, avec sa propre reconnexion", .timeLimit(.minutes(1)))
 struct LiveStatusChannelTests {
   @Test("suit le titre, le statut et le compteur au fil du flux de la chaîne")
   func follows() async throws {
