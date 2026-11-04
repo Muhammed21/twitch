@@ -299,6 +299,17 @@ describe("LivePage", () => {
     expect(responses.LivePage.parse(page)).toEqual(page);
   });
 
+  it("décode l'URL de la vignette d'un live, en HTTP comme en HTTPS", () => {
+    const page = {
+      items: [
+        makeLive({ thumbnailUrl: "https://video.example/hls/channels/c/thumbnail.jpg" }),
+        makeLive({ thumbnailUrl: "http://127.0.0.1:3002/hls/channels/c/thumbnail.jpg" }),
+      ],
+    };
+
+    expect(responses.LivePage.parse(page)).toEqual(page);
+  });
+
   it("décode la catégorie d'un live, avec ou sans pochette", () => {
     const page = {
       items: [
@@ -314,6 +325,16 @@ describe("LivePage", () => {
 
   it.each([
     ["sans slug", { slug: undefined }],
+    ["avec une vignette qui n'est pas une URL", { thumbnailUrl: "vignette.jpg" }],
+    ["avec une vignette hors HTTP", { thumbnailUrl: "ftp://video.example/thumbnail.jpg" }],
+    [
+      "avec une vignette d'un schéma qui finit par http",
+      { thumbnailUrl: "xhttp://v.example/t.jpg" },
+    ],
+    [
+      "avec une vignette d'un schéma qui commence par https",
+      { thumbnailUrl: "httpsx://v.example/t.jpg" },
+    ],
     ["avec une catégorie sans nom", { category: { slug: "irl" } }],
     [
       "avec une pochette qui n'est pas une URL",
