@@ -31,6 +31,7 @@ import {
   prismaCategoryAudienceStore,
   prismaLivesInCategory,
 } from "./infrastructure/prisma-category-audience.ts";
+import { prismaCategoryFollowProjection } from "./infrastructure/prisma-category-follow-projection.ts";
 import {
   type DiscoveryPrisma,
   prismaCategoryProjection,
@@ -180,6 +181,7 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
       project: projectDiscoveryEvent({
         channels: prismaLiveChannelProjection(prisma),
         categories: prismaCategoryProjection(prisma),
+        follows: prismaCategoryFollowProjection(prisma),
       }),
       logSink,
     });

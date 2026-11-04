@@ -55,6 +55,27 @@ model DiscoveryCategoryAudience {
   @@schema("discovery")
 }
 
+/// Dernière version connue de chaque paire suivie (ADR 0049 §6), projetée depuis channel.category.followed et unfollowed. Reconstructible.
+model DiscoveryCategoryFollow {
+  /// Identifiant nu d'un compte.
+  /// @personal
+  userId     String  @db.Uuid
+  categoryId String  @db.Uuid
+  following  Boolean
+  version    Int
+
+  @@id([userId, categoryId])
+  @@schema("discovery")
+}
+
+/// Nombre de paires suivies par catégorie, changé dans la transaction de la paire (ADR 0049 §6). Reconstructible.
+model DiscoveryCategoryFollowerCount {
+  categoryId    String @id @db.Uuid
+  followerCount Int
+
+  @@schema("discovery")
+}
+
 model DiscoveryProcessedEvent {
   eventId     String   @db.Uuid
   handlerName String

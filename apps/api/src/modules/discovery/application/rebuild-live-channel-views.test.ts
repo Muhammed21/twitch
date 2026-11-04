@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { applyCategoryEvent, type CategoryView } from "../domain/category-view.ts";
-import { isCategoryEvent } from "../domain/discovery-event.ts";
+import { isCategoryEvent, isCategoryFollowEvent } from "../domain/discovery-event.ts";
 import { applyDiscoveryEvent, type LiveChannelView } from "../domain/live-channel-view.ts";
 import { DISCOVERY_EVENT_READERS } from "./read-discovery-event.ts";
 import {
@@ -16,6 +16,8 @@ const SESSION_ID = "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d";
 const OWNER_ID = "4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b";
 const IRL = "0b5e4d3c-2a19-4f08-8e7d-6c5b4a392817";
 const TALK = "1c6f5e4d-3b2a-4019-9f8e-7d6c5b4a3928";
+const FOLLOWER = "6b4c1e3a-9d5f-4a0c-b132-4e7f8a9b0c1d";
+const FORMER_FOLLOWER = "2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e";
 
 const makeHistoryEvent = (
   index: number,
@@ -94,7 +96,7 @@ const decodedFrom = (events: readonly HistoryEvent[]) =>
 const consumedOneByOne = (events: readonly HistoryEvent[]): readonly LiveChannelView[] => {
   const views = decodedFrom(events).reduce<ReadonlyMap<string, LiveChannelView>>(
     (acc, decoded) =>
-      isCategoryEvent(decoded)
+      isCategoryEvent(decoded) || isCategoryFollowEvent(decoded)
         ? acc
         : new Map([
             ...acc,
@@ -137,7 +139,60 @@ const CATEGORY_HISTORY: readonly HistoryEvent[] = [
   }),
 ];
 
+const FOLLOW_HISTORY: readonly HistoryEvent[] = [
+  makeHistoryEvent(21, "channel.category.followed", {
+    userId: FOLLOWER,
+    categoryId: IRL,
+    followedAt: "2026-11-02T20:21:00.000Z",
+    version: 1,
+  }),
+  makeHistoryEvent(22, "channel.category.followed", {
+    userId: FORMER_FOLLOWER,
+    categoryId: IRL,
+    followedAt: "2026-11-02T20:22:00.000Z",
+    version: 1,
+  }),
+  makeHistoryEvent(23, "channel.category.unfollowed", {
+    userId: FORMER_FOLLOWER,
+    categoryId: IRL,
+    reason: "unfollowed",
+    version: 2,
+  }),
+];
+
 describe("reconstruction de la projection LiveChannelView", () => {
+  it("reconstruit la dernière version de chaque paire suivie (ADR 0049 §6)", async () => {
+    const { written } = await rebuildWith([...HISTORY, ...FOLLOW_HISTORY]);
+
+    expect(written[0]?.follows).toEqual([
+      { userId: FOLLOWER, categoryId: IRL, following: true, version: 1 },
+      { userId: FORMER_FOLLOWER, categoryId: IRL, following: false, version: 2 },
+    ]);
+    expect(written[0]?.views).toEqual(consumedOneByOne(HISTORY));
+    expect(written[0]?.categories).toEqual([]);
+  });
+
+  it("garde la version la plus haute d'une paire, même lue avant une plus basse", async () => {
+    const [followed, , unfollowed] = FOLLOW_HISTORY;
+    const late = makeHistoryEvent(24, "channel.category.followed", {
+      userId: FORMER_FOLLOWER,
+      categoryId: IRL,
+      followedAt: "2026-11-02T20:22:00.000Z",
+      version: 1,
+    });
+
+    const { written } = await rebuildWith(
+      [followed, unfollowed, late].filter((event) => event !== undefined),
+    );
+
+    expect(written[0]?.follows).toContainEqual({
+      userId: FORMER_FOLLOWER,
+      categoryId: IRL,
+      following: false,
+      version: 2,
+    });
+  });
+
   it("redonne la projection que les consommateurs construisent event par event", async () => {
     const { written } = await rebuildWith(HISTORY);
 
@@ -230,7 +285,7 @@ describe("reconstruction de la projection LiveChannelView", () => {
   it("vide la projection quand l'historique est vide", async () => {
     const { written, report, pages } = await rebuildWith([]);
 
-    expect(written).toEqual([{ views: [], categories: [], eventIds: [], skipped: 0 }]);
+    expect(written).toEqual([{ views: [], categories: [], follows: [], eventIds: [], skipped: 0 }]);
     expect(report).toEqual({ channels: 0, categories: 0, events: 0, skipped: 0 });
     expect(pages).toEqual([undefined]);
   });

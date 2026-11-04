@@ -2,12 +2,12 @@
 
 /// Chaîne d'un compte : une par compte, slug unique (ADR 0035).
 model Channel {
-  id        String   @id @db.Uuid
+  id         String           @id @db.Uuid
   /// @personal
-  ownerId   String   @unique @db.Uuid
+  ownerId    String           @unique @db.Uuid
   /// Dérivé du nom d'affichage.
   /// @personal
-  slug      String   @unique
+  slug       String           @unique
   title      String           @default("")
   /// Catégorie active posée par le propriétaire (ADR 0045), nulle tant qu'aucune n'est choisie.
   categoryId String?          @db.Uuid
@@ -28,19 +28,53 @@ enum ChannelCategoryStatus {
 
 /// Catalogue des catégories (ADR 0021 §3, ADR 0045) : slug immuable, fusion vers une cible, retrait d'une catégorie inutilisée.
 model ChannelCategory {
-  id           String                @id @db.Uuid
-  slug         String                @unique
+  id           String                  @id @db.Uuid
+  slug         String                  @unique
   name         String
-  status       ChannelCategoryStatus @default(active)
+  status       ChannelCategoryStatus   @default(active)
   /// Cible de la fusion quand status vaut merged.
-  mergedIntoId String?               @db.Uuid
+  mergedIntoId String?                 @db.Uuid
   /// Clé d'objet de la pochette (ADR 0044, ADR 0045 §6) ; l'URL publique se calcule à la lecture.
   imageKey     String?
   /// Libellés affichés sous la catégorie, dans l'ordre (ADR 0050).
-  tags         String[]              @default([])
-  createdAt    DateTime              @default(now())
+  tags         String[]                @default([])
+  createdAt    DateTime                @default(now())
   channels     Channel[]
+  follows      ChannelCategoryFollow[]
 
+  @@schema("channel")
+}
+
+enum ChannelCategoryFollowState {
+  following
+  not_following
+
+  @@schema("channel")
+}
+
+enum ChannelCategoryFollowEndedReason {
+  unfollowed
+  category_merged
+  category_retired
+
+  @@schema("channel")
+}
+
+/// Suivi d'une catégorie par un compte (ADR 0049) : une ligne par paire, jamais supprimée, version monotone par paire.
+model ChannelCategoryFollow {
+  /// Identifiant nu d'un compte, sans clé étrangère cross-schéma.
+  /// @personal
+  userId      String                            @db.Uuid
+  categoryId  String                            @db.Uuid
+  category    ChannelCategory                   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  state       ChannelCategoryFollowState
+  /// Début du suivi en cours, nul quand state vaut not_following.
+  followedAt  DateTime?
+  version     Int
+  endedReason ChannelCategoryFollowEndedReason?
+
+  @@id([userId, categoryId])
+  @@index([categoryId, state])
   @@schema("channel")
 }
 

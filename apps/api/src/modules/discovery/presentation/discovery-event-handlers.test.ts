@@ -10,6 +10,7 @@ const SESSION_ID = "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d";
 const EVENT_ID = "0e1d2c3b-4a59-4687-9a1b-2c3d4e5f6a7b";
 const CATEGORY_ID = "0b5e4d3c-2a19-4f08-8e7d-6c5b4a392817";
 const TARGET_CATEGORY_ID = "1c6f5e4d-3b2a-4019-9f8e-7d6c5b4a3928";
+const FOLLOWER_ID = "6b4c1e3a-9d5f-4a0c-b132-4e7f8a9b0c1d";
 
 const PAYLOADS: Readonly<Record<string, unknown>> = {
   "channel.created": { channelId: CHANNEL_ID, ownerId: OWNER_ID, slug: "streamer" },
@@ -20,6 +21,18 @@ const PAYLOADS: Readonly<Record<string, unknown>> = {
     targetCategoryId: TARGET_CATEGORY_ID,
   },
   "channel.category.retired": { categoryId: CATEGORY_ID },
+  "channel.category.followed": {
+    userId: FOLLOWER_ID,
+    categoryId: CATEGORY_ID,
+    followedAt: "2026-11-02T19:58:00.000Z",
+    version: 3,
+  },
+  "channel.category.unfollowed": {
+    userId: FOLLOWER_ID,
+    categoryId: CATEGORY_ID,
+    reason: "category_merged",
+    version: 4,
+  },
   "channel.category.updated": {
     categoryId: CATEGORY_ID,
     name: "IRL",
@@ -73,8 +86,10 @@ describe("handlers de discovery pour events.channel et events.stream", () => {
   it("traite la chaîne, ses catégories et ses sessions, et rien d'autre", () => {
     expect(Object.keys(setup().handlers).toSorted()).toEqual([
       "channel.category.created",
+      "channel.category.followed",
       "channel.category.merged",
       "channel.category.retired",
+      "channel.category.unfollowed",
       "channel.category.updated",
       "channel.created",
       "channel.metadata.updated",
@@ -107,6 +122,26 @@ describe("handlers de discovery pour events.channel et events.stream", () => {
       },
     ],
     ["channel.category.retired", { kind: "category-retired", categoryId: CATEGORY_ID }],
+    [
+      "channel.category.followed",
+      {
+        kind: "category-follow-changed",
+        userId: FOLLOWER_ID,
+        categoryId: CATEGORY_ID,
+        following: true,
+        version: 3,
+      },
+    ],
+    [
+      "channel.category.unfollowed",
+      {
+        kind: "category-follow-changed",
+        userId: FOLLOWER_ID,
+        categoryId: CATEGORY_ID,
+        following: false,
+        version: 4,
+      },
+    ],
     [
       "channel.category.updated",
       {

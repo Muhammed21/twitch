@@ -164,4 +164,21 @@ describe("routes de channel montées dans l'API", () => {
       await app.close();
     }
   });
+
+  it.each(["PUT", "DELETE"])(
+    "monte %s /v1/me/followed-categories/{slug} derrière un jeton (ADR 0049)",
+    async (method) => {
+      const { app } = await createApp({ env: process.env, logSink: () => {} });
+      await app.listen(0, "127.0.0.1");
+      try {
+        const response = await fetch(`${await app.getUrl()}/v1/me/followed-categories/x`, {
+          method,
+        });
+
+        expect(response.status).toBe(401);
+      } finally {
+        await app.close();
+      }
+    },
+  );
 });
