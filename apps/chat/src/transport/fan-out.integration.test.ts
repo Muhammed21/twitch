@@ -8,12 +8,15 @@ import { describe, expect, it, onTestFinished, vi } from "vitest";
 
 import { events } from "@repo/contracts";
 
+import { createLocalTokenBuckets } from "../application/local-token-buckets.ts";
 import { createMessageSender } from "../application/message-sender.ts";
 import { socketSanctionHandlers } from "../application/project-event.ts";
 import { createRoomRegistry } from "../application/room-registry.ts";
 import type { RoomState } from "../domain/decide.ts";
 import { createConsumerRedis } from "../infrastructure/event-consumer.ts";
+import { rateLimitKey, redisTokenBuckets } from "../infrastructure/redis-token-buckets.ts";
 import { withSettledCommands } from "../infrastructure/settled-commands.ts";
+import { sharedRateLimit } from "../infrastructure/shared-rate-limit.ts";
 import { startStreamTail } from "../infrastructure/stream-tail.ts";
 import { startChatServer } from "./chat-server.ts";
 import { readMetrics } from "./testing/metrics.ts";
@@ -48,7 +51,13 @@ const startCluster = async (room: RoomState) => {
       log: () => {},
       chatters: { displayNameOf: async () => "Alice", sanctionsOf: async () => [] },
       rooms: createRoomRegistry({ find: async () => room }),
-      messages: createMessageSender(),
+      messages: createMessageSender(
+        sharedRateLimit({
+          shared: redisTokenBuckets(await connectRedis()),
+          local: createLocalTokenBuckets(),
+          onFallback: () => {},
+        }),
+      ),
       saturation: SATURATION_LIMITS,
       adapter: await adapterOf(),
     });
@@ -178,5 +187,47 @@ describe("fan-out entre deux instances par le Redis de Compose (ADR 0022, ADR 00
 
     await closed;
     expect(revocations).toEqual([{ action: "stop" }]);
+  });
+});
+
+const makeChatterId = async () => {
+  const userId = randomUUID();
+  const redis = await connectRedis();
+  onTestFinished(async () => {
+    await redis.del(rateLimitKey(userId));
+  });
+  return userId;
+};
+
+describe("rate limit global dans le Redis de Compose (ADR 0004 §6)", () => {
+  it("limite au total un utilisateur connecté aux deux instances : le sixième message est refusé", async () => {
+    const room = makeRoom();
+    const { a, b, joinedOn } = await startCluster(room);
+    const userId = await makeChatterId();
+    const onA = await joinedOn(a.port, userId);
+    const onB = await joinedOn(b.port, userId);
+
+    expect(await say(onA, room.channelId, "troisième")).toBeUndefined();
+    expect(await say(onB, room.channelId, "quatrième")).toBeUndefined();
+    expect(await say(onA, room.channelId, "cinquième")).toBeUndefined();
+    expect(await say(onB, room.channelId, "sixième")).toEqual({ reason: "rate_limited" });
+    expect(await say(onA, room.channelId, "septième")).toEqual({ reason: "rate_limited" });
+  });
+
+  it("garde sur une seule instance la rafale de 5 et le jeton rendu après une seconde", async () => {
+    const room = makeRoom();
+    const { a, joinedOn } = await startCluster(room);
+    const socket = await joinedOn(a.port, await makeChatterId());
+    const burst = ["deuxième", "troisième", "quatrième", "cinquième", "sixième"];
+
+    const acks = await burst.reduce<Promise<readonly unknown[]>>(
+      async (previous, body) => [...(await previous), await say(socket, room.channelId, body)],
+      Promise.resolve([]),
+    );
+
+    expect(acks).toEqual([undefined, undefined, undefined, undefined, { reason: "rate_limited" }]);
+    await sleep(1000);
+    expect(await say(socket, room.channelId, "après une seconde")).toBeUndefined();
+    expect(await say(socket, room.channelId, "trop tôt")).toEqual({ reason: "rate_limited" });
   });
 });

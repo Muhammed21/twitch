@@ -6,6 +6,7 @@ import { describe, expect, it, onTestFinished, vi } from "vitest";
 
 import { events, realtime } from "@repo/contracts";
 
+import { createLocalTokenBuckets } from "./application/local-token-buckets.ts";
 import { createMessageSender } from "./application/message-sender.ts";
 import { chatEventHandlers, socketSanctionHandlers } from "./application/project-event.ts";
 import { createRoomRegistry } from "./application/room-registry.ts";
@@ -58,7 +59,7 @@ const startChat = async () => {
     log: () => {},
     chatters: redisChatterProfiles(redis),
     rooms,
-    messages: createMessageSender(),
+    messages: createMessageSender(createLocalTokenBuckets()),
     saturation: SATURATION_LIMITS,
     adapter: LocalAdapter,
   });
