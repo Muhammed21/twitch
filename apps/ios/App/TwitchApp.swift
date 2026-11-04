@@ -209,15 +209,9 @@ enum Composition {
       playback: PlaybackClient(apiBaseURL: configuration.apiBaseURL, transport: transport),
       controller: player
     )
+    let sessionStore = Self.sessionStore(configuration: configuration, session: session, transport: transport, now: now)
     return Stores(
-      session: SessionStore(
-        configuration: configuration,
-        session: session,
-        accounts: AccountClient(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
-        authenticator: SystemWebAuthenticator(),
-        randomBytes: PKCE.systemRandomBytes,
-        now: now
-      ),
+      session: sessionStore,
       launch: LaunchStore(
         source: BootstrapClient(apiBaseURL: configuration.apiBaseURL, transport: transport),
         currentVersion: currentVersion
@@ -232,7 +226,29 @@ enum Composition {
         onEnded: { player.end() },
         onLive: { channelPlayback.channelWentLive() }
       ),
-      chat: ChatSession(connector: ChatSocketConnector(chatBaseURL: chatBaseURL), tokens: session, channels: channels)
+      chat: ChatSession(
+        connector: ChatSocketConnector(chatBaseURL: chatBaseURL),
+        tokens: session,
+        channels: channels,
+        moderation: ModerationClient(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
+        viewer: { sessionStore.accountID }
+      )
+    )
+  }
+
+  private static func sessionStore(
+    configuration: OAuthConfiguration,
+    session: OAuthSession,
+    transport: ClientVersionTransport,
+    now: @escaping @Sendable () -> Date
+  ) -> SessionStore {
+    SessionStore(
+      configuration: configuration,
+      session: session,
+      accounts: AccountClient(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
+      authenticator: SystemWebAuthenticator(),
+      randomBytes: PKCE.systemRandomBytes,
+      now: now
     )
   }
 }

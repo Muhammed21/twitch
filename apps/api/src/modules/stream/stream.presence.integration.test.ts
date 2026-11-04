@@ -2,16 +2,35 @@ import { randomUUID } from "node:crypto";
 
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
+import { settledWithin, withPausedRedis } from "../../platform/testing/paused-redis.ts";
 import { createPresenceRedis, redisPresenceStore } from "./infrastructure/redis-presence-store.ts";
 
-const redis = createPresenceRedis(process.env["REDIS_URL"]);
+const urlOf = (variable: string): string => {
+  const url = process.env[variable];
+  if (url === undefined) {
+    throw new Error(`${variable} manquante : copier .env.example en .env`);
+  }
+  return url;
+};
+
+const REDIS_URL = urlOf("REDIS_URL");
+
+const UNREACHABLE_REDIS_URL = "redis://127.0.0.1:1";
+
+const DEADLINE_WITH_MARGIN_MS = 2500;
+
+const redis = createPresenceRedis(REDIS_URL);
+
+const unreachableRedis = createPresenceRedis(UNREACHABLE_REDIS_URL).on("error", () => {});
 
 beforeAll(async () => {
   await redis.connect();
+  unreachableRedis.connect().catch(() => {});
 });
 
 afterAll(() => {
   redis.destroy();
+  unreachableRedis.destroy();
 });
 
 const store = redisPresenceStore(redis);
@@ -99,5 +118,41 @@ describe("présence des viewers dans Redis (ADR 0004 §3)", () => {
     expect(ttls).toHaveLength(1);
     expect(ttls[0]).toBeGreaterThan(85);
     expect(ttls[0]).toBeLessThanOrEqual(90);
+  });
+});
+
+const deadlineExceeded = {
+  status: "rejected",
+  reason: expect.objectContaining({ message: expect.stringContaining("2000 ms") }),
+  inTime: true,
+};
+
+const whilePaused = (run: () => Promise<unknown>) =>
+  withPausedRedis(REDIS_URL, () => settledWithin(run, DEADLINE_WITH_MARGIN_MS));
+
+const unreachableStore = redisPresenceStore(unreachableRedis);
+
+describe("présence : Redis qui ne répond plus en 2 s", () => {
+  it("la lecture des compteurs échoue au lieu d'attendre", async () => {
+    expect(
+      await whilePaused(() => store.count({ channelIds: [randomUUID()], at: windowStart(70) })),
+    ).toEqual(deadlineExceeded);
+  });
+
+  it("l'enregistrement d'un heartbeat échoue au lieu d'attendre", async () => {
+    expect(
+      await whilePaused(() =>
+        store.record({ channelId: randomUUID(), viewerId: randomUUID(), at: windowStart(70) }),
+      ),
+    ).toEqual(deadlineExceeded);
+  });
+
+  it("la lecture des compteurs échoue au lieu d'attendre quand Redis est injoignable", async () => {
+    expect(
+      await settledWithin(
+        () => unreachableStore.count({ channelIds: [randomUUID()], at: windowStart(70) }),
+        DEADLINE_WITH_MARGIN_MS,
+      ),
+    ).toEqual(deadlineExceeded);
   });
 });

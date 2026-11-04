@@ -203,20 +203,79 @@ struct Unreachable: Error {}
 actor FakeChannels: ChannelRepository {
   private var failures: Int
   private var ids: [String: ChannelID]
+  private let owners: [String: UUID]
+  private let unreachable: Set<String>
   private(set) var lookups: [String] = []
 
-  init(failures: Int = 0, ids: [String: ChannelID] = [:]) {
+  init(
+    failures: Int = 0,
+    ids: [String: ChannelID] = [:],
+    owners: [String: UUID] = [:],
+    unreachable: Set<String> = []
+  ) {
     self.failures = failures
     self.ids = ids
+    self.owners = owners
+    self.unreachable = unreachable
   }
 
   func channel(withSlug slug: ChannelSlug) throws -> Channel {
     lookups.append(slug.rawValue)
+    guard !unreachable.contains(slug.rawValue) else {
+      throw Unreachable()
+    }
     guard failures == 0 else {
       failures -= 1
       throw Unreachable()
     }
-    return Channel(id: ids[slug.rawValue] ?? ChatTests.channel, slug: slug, title: "Speedrun", ownerID: UUID())
+    return Channel(
+      id: ids[slug.rawValue] ?? ChatTests.channel,
+      slug: slug,
+      title: "Speedrun",
+      ownerID: owners[slug.rawValue] ?? UUID()
+    )
+  }
+}
+
+struct TimeoutCall: Equatable {
+  let user: UUID
+  let channel: ChannelID
+  let duration: Duration
+}
+
+actor FakeModeration: ChatModeration {
+  private let error: (any Error)?
+  private let holding: Bool
+  private var held: [CheckedContinuation<Void, Never>] = []
+  private(set) var calls: [TimeoutCall] = []
+
+  init(failing error: (any Error)? = nil, holding: Bool = false) {
+    self.error = error
+    self.holding = holding
+  }
+
+  func timeout(_ user: UUID, in channel: ChannelID, for duration: Duration) async throws {
+    calls.append(TimeoutCall(user: user, channel: channel, duration: duration))
+    if holding {
+      await withCheckedContinuation { held.append($0) }
+    }
+    if let error {
+      throw error
+    }
+  }
+
+  func release() {
+    held.forEach { $0.resume() }
+    held = []
+  }
+}
+
+@MainActor
+final class TestViewer {
+  var id: UUID?
+
+  init(_ id: UUID?) {
+    self.id = id
   }
 }
 
@@ -246,6 +305,8 @@ func makeSession(
   window: Int = 300,
   jitter: @escaping @Sendable (Duration) -> Duration = { $0 },
   channels: FakeChannels = FakeChannels(),
+  moderation: FakeModeration = FakeModeration(),
+  viewer: TestViewer = TestViewer(UUID()),
   now: TestNow = TestNow(),
   log: LogBook = LogBook()
 ) -> ChatSession {
@@ -253,6 +314,8 @@ func makeSession(
     connector: connector,
     tokens: tokens,
     channels: channels,
+    moderation: moderation,
+    viewer: { viewer.id },
     window: window,
     wait: { await clock.wait($0) },
     jitter: jitter,
