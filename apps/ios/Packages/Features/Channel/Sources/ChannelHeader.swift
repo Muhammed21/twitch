@@ -27,7 +27,7 @@ public struct ChannelHeader: View {
   public var body: some View {
     let line = HeaderLine(status: channel.status, locale: locale)
     HStack(spacing: LayoutRole.dialogActionGap.points) {
-      Text(channel.title ?? "")
+      Text(ChannelText.title(channel.title, channelNotFound: channel.channelNotFound))
         .font(TextRole.dialogTitle.font)
         .foregroundStyle(ColorRole.textPrimary.color)
       if line.isLive {
@@ -55,6 +55,10 @@ public struct ChannelHeader: View {
 
 enum ChannelText {
   static var live: String { String(localized: "channel.live", bundle: .module) }
+
+  static func title(_ title: String?, channelNotFound: Bool) -> String {
+    channelNotFound ? String(localized: "channel.notFound", bundle: .module) : title ?? ""
+  }
 
   static func viewers(_ count: String) -> String {
     String(format: String(localized: "channel.viewers", bundle: .module), count)

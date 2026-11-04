@@ -33,32 +33,27 @@ private func gatedTransport(_ gate: Gate, json: String = tokenJSON(access: "acce
   }
 }
 
-private func concurrently(_ count: Int, gate: Gate,
-                          _ call: @escaping @Sendable () async throws -> String) async -> [Result<String, SessionErrorBox>]
-{
-  await withTaskGroup(of: Result<String, SessionErrorBox>.self) { group in
+private func concurrently(
+  _ count: Int,
+  on session: OAuthSession,
+  gate: Gate,
+  _ call: @escaping @Sendable (isolated OAuthSession) async throws -> String
+) async -> [Result<String, SessionErrorBox>] {
+  let arrivals = Arrivals()
+  return await withTaskGroup(of: Result<String, SessionErrorBox>.self) { group in
     for _ in 0 ..< count {
       group.addTask {
-        do { return try await .success(call()) } catch { return .failure(SessionErrorBox(error)) }
+        do { return try await .success(session.arriving(arrivals, call)) } catch { return .failure(SessionErrorBox(error)) }
       }
     }
-    try? await Task.sleep(for: .milliseconds(100))
+    await arrivals.wait(for: count)
     await gate.open()
     return await group.reduce(into: []) { $0.append($1) }
   }
 }
 
 private func firstUpdate(of session: OAuthSession) async -> SessionStatus? {
-  await withTaskGroup(of: SessionStatus?.self) { group in
-    group.addTask { await session.statusUpdates.first { _ in true } }
-    group.addTask {
-      try? await Task.sleep(for: .seconds(1))
-      return nil
-    }
-    let first = await group.next() ?? nil
-    group.cancelAll()
-    return first
-  }
+  await session.statusUpdates.first { _ in true }
 }
 
 private struct SessionErrorBox: Error, Equatable {
@@ -68,7 +63,7 @@ private struct SessionErrorBox: Error, Equatable {
   }
 }
 
-@Suite("Session OAuth et rafraîchissement")
+@Suite("Session OAuth et rafraîchissement", .timeLimit(.minutes(1)))
 struct OAuthSessionTests {
   @Test("la connexion échange le code, garde les tokens et passe à l'état connecté")
   func signIn() async throws {
@@ -117,7 +112,7 @@ struct OAuthSessionTests {
     let harness = Harness(transport: gatedTransport(gate))
     let session = harness.session
 
-    let results = await concurrently(10, gate: gate) { try await session.accessTokenRejected("access-1", at: now) }
+    let results = await concurrently(10, on: session, gate: gate) { try await $0.accessTokenRejected("access-1", at: now) }
 
     #expect(results == Array(repeating: .success("access-2"), count: 10))
     #expect(await harness.tokenCalls().count == 1)
@@ -129,7 +124,7 @@ struct OAuthSessionTests {
     let harness = Harness(transport: gatedTransport(gate))
     let session = harness.session
 
-    let results = await concurrently(10, gate: gate) { try await session.accessToken(at: expired) }
+    let results = await concurrently(10, on: session, gate: gate) { try await $0.accessToken(at: expired) }
 
     #expect(results == Array(repeating: .success("access-2"), count: 10))
     #expect(await harness.tokenCalls().count == 1)
@@ -149,7 +144,7 @@ struct OAuthSessionTests {
     let harness = Harness(transport: gatedTransport(gate, json: #"{"error":"invalid_grant"}"#, status: 400))
     let session = harness.session
 
-    let results = await concurrently(3, gate: gate) { try await session.accessTokenRejected("access-1", at: now) }
+    let results = await concurrently(3, on: session, gate: gate) { try await $0.accessTokenRejected("access-1", at: now) }
 
     let signedOut = Result<String, SessionErrorBox>.failure(SessionErrorBox(SessionError.signedOut))
     #expect(results == Array(repeating: signedOut, count: 3))
@@ -209,13 +204,17 @@ struct OAuthSessionTests {
     let harness = Harness(transport: transport)
     let session = harness.session
 
-    let refresh = Task { try await session.accessToken(at: expired) }
-    try await Task.sleep(for: .milliseconds(50))
-    let signOut = Task { try await session.signOut() }
-    try await Task.sleep(for: .milliseconds(50))
-    let readDuringSignOut = Task { try await session.accessToken(at: now) }
-    let rejectionDuringSignOut = Task { try await session.accessTokenRejected("access-2", at: now) }
-    try await Task.sleep(for: .milliseconds(50))
+    let arrivals = Arrivals()
+
+    let refresh = Task { try await session.arriving(arrivals) { try await $0.accessToken(at: expired) } }
+    await arrivals.wait(for: 1)
+    let signOut = Task { try await session.arriving(arrivals) { try await $0.signOut() } }
+    await arrivals.wait(for: 2)
+    let readDuringSignOut = Task { try await session.arriving(arrivals) { try await $0.accessToken(at: now) } }
+    let rejectionDuringSignOut = Task {
+      try await session.arriving(arrivals) { try await $0.accessTokenRejected("access-2", at: now) }
+    }
+    await arrivals.wait(for: 4)
     await gate.open()
     _ = try? await refresh.value
     try await signOut.value
@@ -231,10 +230,14 @@ struct OAuthSessionTests {
   @Test("une connexion qui se termine pendant une déconnexion attend sa fin, et la nouvelle session survit")
   func signInDuringSignOut() async throws {
     let gate = Gate()
+    let revoking = Arrivals()
+    let exchanging = Arrivals()
     let transport = FakeTransport { request in
       guard request.url == revokeURL else {
+        exchanging.arrive()
         return HTTPResponse(status: 200, body: Data(tokenJSON(access: "access-new", refresh: "refresh-new").utf8))
       }
+      revoking.arrive()
       await gate.wait()
       return HTTPResponse(status: 200, body: Data("{}".utf8))
     }
@@ -242,9 +245,9 @@ struct OAuthSessionTests {
     let session = harness.session
 
     let signOut = Task { try await session.signOut() }
-    try await Task.sleep(for: .milliseconds(50))
+    await revoking.wait(for: 1)
     let signIn = Task { try await session.signIn(code: "code", verifier: "verifier", at: now) }
-    try await Task.sleep(for: .milliseconds(50))
+    await exchanging.wait(for: 1)
     await gate.open()
     try await signOut.value
     try await signIn.value
@@ -274,10 +277,12 @@ struct OAuthSessionTests {
     let harness = Harness(transport: transport)
     let session = harness.session
 
-    let first = Task { try await session.signOut() }
-    try await Task.sleep(for: .milliseconds(50))
-    let second = Task { try await session.signOut() }
-    try await Task.sleep(for: .milliseconds(50))
+    let arrivals = Arrivals()
+
+    let first = Task { try await session.arriving(arrivals) { try await $0.signOut() } }
+    await arrivals.wait(for: 1)
+    let second = Task { try await session.arriving(arrivals) { try await $0.signOut() } }
+    await arrivals.wait(for: 2)
     await gate.open()
     try await first.value
     try await second.value

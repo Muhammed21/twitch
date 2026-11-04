@@ -21,4 +21,11 @@ struct ChannelHeaderTests {
     #expect(HeaderLine(status: .offline, locale: english) == HeaderLine(isLive: false, viewers: nil))
     #expect(HeaderLine(status: nil, locale: english) == HeaderLine(isLive: false, viewers: nil))
   }
+
+  @Test("l'en-tête montre le titre de la chaîne, ou dit qu'elle n'existe pas")
+  func title() {
+    #expect(ChannelText.title("Speedrun", channelNotFound: false) == "Speedrun")
+    #expect(ChannelText.title(nil, channelNotFound: false) == "")
+    #expect(ChannelText.title(nil, channelNotFound: true) == "This channel doesn't exist.")
+  }
 }
