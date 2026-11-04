@@ -11,6 +11,8 @@ filter:
     - ChannelsController_read
     - PlaybackController_read
     - TimeoutsController_create
+    - StreamKeyController_read
+    - ChannelsController_update
 additionalImports:
   - Foundation
 typeOverrides:
