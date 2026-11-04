@@ -24,10 +24,7 @@ const FLOOD_TEST_TIMEOUT_MS = 30_000;
 
 const BoundAddress = z.object({ port: z.int() });
 
-const UNLIMITED_SENDER: MessageSender = {
-  ...createMessageSender(),
-  send: (input) => createMessageSender().send(input),
-};
+const UNLIMITED_SENDER: MessageSender = createMessageSender({ take: async () => true });
 
 const startStallableProxy = async (targetPort: number) => {
   const links: { readonly client: TcpSocket; readonly upstream: TcpSocket }[] = [];

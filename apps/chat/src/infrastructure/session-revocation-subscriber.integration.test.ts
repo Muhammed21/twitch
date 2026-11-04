@@ -6,6 +6,7 @@ import { describe, expect, it, onTestFinished } from "vitest";
 
 import { SESSION_REVOKED_CHANNEL } from "@repo/auth-verifier";
 
+import { createLocalTokenBuckets } from "../application/local-token-buckets.ts";
 import { createMessageSender } from "../application/message-sender.ts";
 import { createRoomRegistry } from "../application/room-registry.ts";
 import { startChatServer } from "../transport/chat-server.ts";
@@ -32,7 +33,7 @@ describe("révocation de session par le Pub/Sub de Compose", () => {
       log: () => {},
       chatters: { displayNameOf: async () => "Alice", sanctionsOf: async () => [] },
       rooms: createRoomRegistry({ find: async () => undefined }),
-      messages: createMessageSender(),
+      messages: createMessageSender(createLocalTokenBuckets()),
       saturation: SATURATION_LIMITS,
       adapter: LocalAdapter,
     });

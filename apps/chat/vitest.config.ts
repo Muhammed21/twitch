@@ -14,6 +14,7 @@ export default defineConfig({
         "src/infrastructure/event-consumer.ts",
         "src/infrastructure/stream-tail.ts",
         "src/infrastructure/redis-local-view-writer.ts",
+        "src/infrastructure/redis-token-buckets.ts",
       ],
       reporter: ["text"],
       thresholds: {

@@ -13,6 +13,7 @@ export default {
     "!src/infrastructure/event-consumer.ts",
     "!src/infrastructure/stream-tail.ts",
     "!src/infrastructure/redis-local-view-writer.ts",
+    "!src/infrastructure/redis-token-buckets.ts",
   ],
   tsconfigFile: "stryker-skips-tsconfig-rewrite.json",
   thresholds: { high: 100, low: 90, break: null },

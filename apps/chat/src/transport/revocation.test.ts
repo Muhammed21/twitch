@@ -3,6 +3,7 @@ import { describe, expect, it, onTestFinished } from "vitest";
 
 import { err } from "@repo/result";
 
+import { createLocalTokenBuckets } from "../application/local-token-buckets.ts";
 import { createMessageSender } from "../application/message-sender.ts";
 import type { ChatterProfiles } from "../application/ports.ts";
 import { createRoomRegistry } from "../application/room-registry.ts";
@@ -43,7 +44,7 @@ const startServer = async ({ chatters = ALICE }: { chatters?: ChatterProfiles } 
     log: () => undefined,
     chatters,
     rooms: createRoomRegistry({ find: async () => undefined }),
-    messages: createMessageSender(),
+    messages: createMessageSender(createLocalTokenBuckets()),
     saturation: SATURATION_LIMITS,
     adapter: LocalAdapter,
   });

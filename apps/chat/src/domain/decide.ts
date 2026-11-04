@@ -1,8 +1,6 @@
 import { activeSanction, type ChatterContext } from "@repo/authorization";
-import { err, ok, type Result } from "@repo/result";
 
-const BURST = 5;
-const MILLISECONDS_PER_TOKEN = 1000;
+export const RATE_LIMIT = { burst: 5, millisecondsPerToken: 1000 } as const;
 
 export type TokenBucket = { readonly tokens: number; readonly refilledAt: Date };
 
@@ -17,62 +15,63 @@ export type AcceptedMessage = ChatMessage & {
   readonly sessionId?: string;
 };
 
-export type Rejection = "timed_out" | "banned" | "rate_limited";
+export type SanctionRejection = "timed_out" | "banned";
 
-export type Accepted = { readonly message: AcceptedMessage; readonly bucket: TokenBucket };
+export type Rejection = SanctionRejection | "rate_limited";
 
 const refill = (bucket: TokenBucket | undefined, now: Date): number =>
   bucket === undefined
-    ? BURST
+    ? RATE_LIMIT.burst
     : Math.min(
-        BURST,
-        bucket.tokens + (now.getTime() - bucket.refilledAt.getTime()) / MILLISECONDS_PER_TOKEN,
+        RATE_LIMIT.burst,
+        bucket.tokens +
+          (now.getTime() - bucket.refilledAt.getTime()) / RATE_LIMIT.millisecondsPerToken,
       );
 
 export const isBucketFull = ({ bucket, now }: { bucket: TokenBucket; now: Date }): boolean =>
-  refill(bucket, now) >= BURST;
+  refill(bucket, now) >= RATE_LIMIT.burst;
 
-const accept = ({
-  chatter,
-  room,
-  message,
-  tokens,
-  now,
-}: {
-  chatter: ChatterContext;
-  room: RoomState;
-  message: ChatMessage;
-  tokens: number;
-  now: Date;
-}): Result<Accepted, Rejection> =>
-  ok({
-    message: {
-      channelId: room.channelId,
-      authorId: chatter.userId,
-      body: message.body,
-      sentAt: now,
-      ...(room.sessionId === null ? {} : { sessionId: room.sessionId }),
-    },
-    bucket: { tokens: tokens - 1, refilledAt: now },
-  });
-
-export const decide = ({
-  chatter,
-  room,
-  message,
+export const takeToken = ({
   bucket,
   now,
 }: {
+  bucket: TokenBucket | undefined;
+  now: Date;
+}): TokenBucket | undefined => {
+  const tokens = refill(bucket, now);
+  return tokens < 1 ? undefined : { tokens: tokens - 1, refilledAt: now };
+};
+
+export const sanctionRejection = ({
+  chatter,
+  channelId,
+  now,
+}: {
+  chatter: ChatterContext;
+  channelId: string;
+  now: Date;
+}): SanctionRejection | undefined => {
+  const sanction = activeSanction({ chatter, channelId, now });
+  if (sanction === undefined) {
+    return undefined;
+  }
+  return sanction.expiresAt === null ? "banned" : "timed_out";
+};
+
+export const acceptMessage = ({
+  chatter,
+  room,
+  message,
+  now,
+}: {
   chatter: ChatterContext;
   room: RoomState;
   message: ChatMessage;
-  bucket: TokenBucket | undefined;
   now: Date;
-}): Result<Accepted, Rejection> => {
-  const sanction = activeSanction({ chatter, channelId: room.channelId, now });
-  if (sanction !== undefined) {
-    return err(sanction.expiresAt === null ? "banned" : "timed_out");
-  }
-  const tokens = refill(bucket, now);
-  return tokens < 1 ? err("rate_limited") : accept({ chatter, room, message, tokens, now });
-};
+}): AcceptedMessage => ({
+  channelId: room.channelId,
+  authorId: chatter.userId,
+  body: message.body,
+  sentAt: now,
+  ...(room.sessionId === null ? {} : { sessionId: room.sessionId }),
+});
