@@ -20,6 +20,7 @@ export const prismaProviderChannels = (prisma: StreamPrisma): ProviderChannels =
       (
         await prisma.streamChannel.findMany({
           where: { channelId: { in: [...channelIds] } },
+          take: channelIds.length,
           select: { channelId: true, providerChannelId: true },
         })
       ).map(({ channelId, providerChannelId }) => [channelId, providerChannelId]),
