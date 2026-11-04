@@ -108,9 +108,19 @@ describe("channel.metadata.updated", () => {
   });
 
   it.each([
+    ["sa catégorie", "7c6d5e4f-3a2b-4c1d-8e9f-0a1b2c3d4e5f"],
+    ["l'absence de catégorie", null],
+  ])("décode %s", (_name, categoryId) => {
+    expect(events.channel.channelMetadataUpdated.payload.parse(makeUpdate({ categoryId }))).toEqual(
+      makeUpdate({ categoryId }),
+    );
+  });
+
+  it.each([
     ["sans chaîne", makeUpdate({ channelId: undefined })],
     ["avec une chaîne qui n'est pas un UUID", makeUpdate({ channelId: "chaine-1" })],
     ["sans titre", makeUpdate({ title: undefined })],
+    ["avec une catégorie qui n'est pas un UUID", makeUpdate({ categoryId: "jeux" })],
   ])("refuse un event %s", (_name, payload) => {
     expect(events.channel.channelMetadataUpdated.payload.safeParse(payload).success).toBe(false);
   });
@@ -183,6 +193,37 @@ describe("channel.category.merged", () => {
     ["avec une cible qui n'est pas un UUID", makeMerged({ targetCategoryId: "jeux" })],
   ])("refuse un event %s", (_name, payload) => {
     expect(events.channel.channelCategoryMerged.payload.safeParse(payload).success).toBe(false);
+  });
+});
+
+describe("channel.category.updated", () => {
+  const makeUpdated = (overrides: Record<string, unknown> = {}) => ({
+    categoryId: CATEGORY_ID,
+    name: "Just Chatting",
+    imageKey: "images/category/3a4b5c6d-7e8f-4a0b-9c1d-2e3f4a5b6c7d.webp",
+    ...overrides,
+  });
+
+  it("porte son nom et sa version", () => {
+    expect(events.channel.channelCategoryUpdated).toMatchObject({
+      name: "channel.category.updated",
+      version: 1,
+    });
+  });
+
+  it.each([
+    ["avec sa pochette", makeUpdated()],
+    ["sans pochette", makeUpdated({ imageKey: null })],
+  ])("décode la catégorie %s", (_name, updated) => {
+    expect(events.channel.channelCategoryUpdated.payload.parse(updated)).toEqual(updated);
+  });
+
+  it.each([
+    ["sans catégorie", makeUpdated({ categoryId: undefined })],
+    ["sans nom", makeUpdated({ name: undefined })],
+    ["sans clé de pochette", makeUpdated({ imageKey: undefined })],
+  ])("refuse un changement %s", (_name, updated) => {
+    expect(events.channel.channelCategoryUpdated.payload.safeParse(updated).success).toBe(false);
   });
 });
 

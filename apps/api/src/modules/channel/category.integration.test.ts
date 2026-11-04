@@ -10,12 +10,18 @@ import {
   parseCategoryName,
   parseCategorySlug,
 } from "./domain/category.ts";
-import { prismaCategoryCatalog } from "./infrastructure/prisma-category-catalog.ts";
+import {
+  prismaCategoryCatalog,
+  prismaCategorySearch,
+} from "./infrastructure/prisma-category-catalog.ts";
+import { prismaChannelDirectory } from "./infrastructure/prisma-channel-directory.ts";
 
 const NOW = new Date("2026-11-04T12:00:00.000Z");
 
 const prisma = createContextClient({ context: "channel", env: process.env });
 const catalog = prismaCategoryCatalog(prisma);
+const directory = prismaChannelDirectory(prisma);
+const search = prismaCategorySearch(prisma);
 
 afterAll(async () => {
   await prisma.$disconnect();
@@ -53,7 +59,7 @@ const seedCategory = async () => {
   return created.value;
 };
 
-const seedChannelIn = async (categoryId: string) => {
+const seedChannelIn = async (categoryId: string | null) => {
   const id = randomUUID();
   await prisma.channel.create({
     data: { id, ownerId: randomUUID(), slug: `test_${id.slice(0, 8)}`, categoryId },
@@ -79,7 +85,7 @@ describe("catalogue des catégories dans channel (ADR 0045)", () => {
 
     expect(created).toEqual({
       ok: true,
-      value: { id: categoryId, slug, name: "Just Chatting", status: "active" },
+      value: { id: categoryId, slug, name: "Just Chatting", status: "active", imageKey: null },
     });
     expect(
       await prisma.channelCategory.findUnique({
@@ -204,5 +210,105 @@ describe("catalogue des catégories dans channel (ADR 0045)", () => {
       version: 1,
       payload: { categoryId: category.id },
     });
+  });
+
+  it("pose la pochette d'une catégorie active, avec channel.category.updated, et la refuse une fois retirée", async () => {
+    const category = await seedCategory();
+    const imageKey = `images/category/${randomUUID()}.webp`;
+    const outboxEventId = randomUUID();
+
+    const changed = await catalog.changeImage({
+      categoryId: category.id,
+      imageKey,
+      outboxEventId,
+      occurredAt: NOW,
+    });
+    await catalog.retire({ categoryId: category.id, outboxEventId: randomUUID(), occurredAt: NOW });
+    const afterRetire = await catalog.changeImage({
+      categoryId: category.id,
+      imageKey,
+      outboxEventId: randomUUID(),
+      occurredAt: NOW,
+    });
+
+    expect(changed).toEqual({ ok: true, value: { ...category, imageKey } });
+    expect(await catalog.findBySlug(category.slug)).toMatchObject({ imageKey });
+    expect(afterRetire).toEqual({ ok: false, error: "category_inactive" });
+    expect(await outboxEvent(outboxEventId)).toMatchObject({
+      name: "channel.category.updated",
+      version: 1,
+      payload: { categoryId: category.id, name: category.name, imageKey },
+    });
+  });
+});
+
+describe("catégorie posée sur une chaîne (ADR 0045, §5)", () => {
+  it("pose une catégorie active, avec l'état complet dans channel.metadata.updated", async () => {
+    const category = await seedCategory();
+    const channelId = await seedChannelIn(null);
+    const outboxEventId = randomUUID();
+
+    const outcome = await directory.updateMetadata({
+      channelId,
+      categoryId: category.id,
+      outboxEventId,
+      occurredAt: NOW,
+    });
+
+    expect(outcome).toMatchObject({
+      ok: true,
+      value: { id: channelId, category: { id: category.id, slug: category.slug } },
+    });
+    expect(await outboxEvent(outboxEventId)).toMatchObject({
+      name: "channel.metadata.updated",
+      payload: { channelId, title: "", categoryId: category.id },
+    });
+  });
+
+  it("refuse une catégorie retirée, sans event", async () => {
+    const category = await seedCategory();
+    await catalog.retire({ categoryId: category.id, outboxEventId: randomUUID(), occurredAt: NOW });
+    const channelId = await seedChannelIn(null);
+    const outboxEventId = randomUUID();
+
+    const outcome = await directory.updateMetadata({
+      channelId,
+      categoryId: category.id,
+      outboxEventId,
+      occurredAt: NOW,
+    });
+
+    expect(outcome).toEqual({ ok: false, error: "category_unavailable" });
+    expect(await outboxEvent(outboxEventId)).toBeNull();
+  });
+
+  it("retire la catégorie d'une chaîne", async () => {
+    const category = await seedCategory();
+    const channelId = await seedChannelIn(category.id);
+    const outboxEventId = randomUUID();
+
+    const outcome = await directory.updateMetadata({
+      channelId,
+      categoryId: null,
+      outboxEventId,
+      occurredAt: NOW,
+    });
+
+    expect(outcome).toMatchObject({ ok: true, value: { id: channelId, category: null } });
+    expect(await outboxEvent(outboxEventId)).toMatchObject({ payload: { categoryId: null } });
+  });
+});
+
+describe("recherche dans le catalogue (ADR 0045, §5)", () => {
+  it("trouve les catégories actives dont le nom contient le texte, sans tenir compte de la casse", async () => {
+    const active = await seedCategory();
+    const retired = await seedCategory();
+    await catalog.retire({ categoryId: retired.id, outboxEventId: randomUUID(), occurredAt: NOW });
+
+    const found = await search.search({ nameContains: active.slug.toUpperCase(), limit: 10 });
+    const notFound = await search.search({ nameContains: retired.slug, limit: 10 });
+
+    expect(found).toEqual([{ id: active.id, slug: active.slug, name: active.name }]);
+    expect(notFound).toEqual([]);
   });
 });

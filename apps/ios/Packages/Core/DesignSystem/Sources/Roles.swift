@@ -10,6 +10,7 @@ public enum TextRole: Sendable {
   case body
   case chatMessage
   case chatAuthor
+  case chatComposer
   case title
   case tabLabel
   case widgetTitle
@@ -26,8 +27,9 @@ public enum TextRole: Sendable {
     case .dialogMessage: .dialogMessage
     case .display: .displayText
     case .body: .bodyText
-    case .chatMessage: .supportingText
-    case .chatAuthor: .actionLabel
+    case .chatMessage: .chatText
+    case .chatAuthor: .chatAuthorText
+    case .chatComposer: .supportingText
     case .title: .titleText
     case .tabLabel: .tabLabel
     case .widgetTitle: .actionLabel
@@ -57,6 +59,9 @@ public enum LayoutRole: Sendable {
   case dialogRadius
   case chatInset
   case chatRowGap
+  case chatUnreadGap
+  case chatUnreadLabelGap
+  case chatUnreadLineWidth
   case composerHeight
   case composerPadding
   case composerRadius
@@ -116,6 +121,9 @@ public enum LayoutRole: Sendable {
     case .dialogRadius: Radius.xxl
     case .chatInset: Spacing.x8
     case .chatRowGap: Spacing.x20
+    case .chatUnreadGap: Spacing.x2
+    case .chatUnreadLabelGap: Spacing.x4
+    case .chatUnreadLineWidth: Spacing.x1
     case .composerHeight: Spacing.x40
     case .composerPadding: Spacing.x12
     case .composerRadius: Radius.lg

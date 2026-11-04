@@ -2,7 +2,7 @@ import type { z } from "zod";
 
 import { events } from "@repo/contracts";
 
-import type { DiscoveryEvent } from "../domain/live-channel-view.ts";
+import type { DiscoveryEvent } from "../domain/discovery-event.ts";
 
 export type PublishedEvent = {
   readonly id: string;
@@ -31,7 +31,13 @@ const reader =
     return payload.success ? toEvent(payload.data, event) : null;
   };
 
-const { channelCreated, channelMetadataUpdated } = events.channel;
+const {
+  channelCreated,
+  channelMetadataUpdated,
+  channelCategoryCreated,
+  channelCategoryMerged,
+  channelCategoryRetired,
+} = events.channel;
 const { streamStarted, streamEnded } = events.stream;
 
 export const DISCOVERY_EVENT_READERS: Readonly<
@@ -44,13 +50,32 @@ export const DISCOVERY_EVENT_READERS: Readonly<
   })),
   [channelMetadataUpdated.name]: reader(
     channelMetadataUpdated,
-    ({ channelId, title }, { occurredAt }) => ({
-      kind: "title-changed",
+    ({ channelId, title, categoryId }, { occurredAt }) => ({
+      kind: "metadata-changed",
       channelId,
       title,
+      categoryId,
       changedAt: occurredAt,
     }),
   ),
+  [channelCategoryCreated.name]: reader(channelCategoryCreated, ({ categoryId, slug, name }) => ({
+    kind: "category-created",
+    categoryId,
+    slug,
+    name,
+  })),
+  [channelCategoryMerged.name]: reader(
+    channelCategoryMerged,
+    ({ sourceCategoryId, targetCategoryId }) => ({
+      kind: "category-merged",
+      categoryId: sourceCategoryId,
+      targetCategoryId,
+    }),
+  ),
+  [channelCategoryRetired.name]: reader(channelCategoryRetired, ({ categoryId }) => ({
+    kind: "category-retired",
+    categoryId,
+  })),
   [streamStarted.name]: reader(streamStarted, ({ channelId, sessionId, startedAt }) => ({
     kind: "stream-started",
     channelId,

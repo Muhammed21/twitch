@@ -107,11 +107,25 @@ describe("Channel", () => {
     });
   });
 
+  it("décode la catégorie de la chaîne", () => {
+    const category = {
+      id: "7c6d5e4f-3a2b-4c1d-8e9f-0a1b2c3d4e5f",
+      slug: "just-chatting",
+      name: "Just Chatting",
+    };
+
+    expect(responses.Channel.parse(makeChannel({ category }))).toEqual(makeChannel({ category }));
+  });
+
   it.each([
     ["avec un identifiant qui n'est pas un UUID", { id: "chaine-1" }],
     ["sans slug", { slug: undefined }],
     ["sans titre", { title: undefined }],
     ["avec un propriétaire qui n'est pas un UUID", { ownerId: "moi" }],
+    [
+      "avec une catégorie sans nom",
+      { category: { id: "7c6d5e4f-3a2b-4c1d-8e9f-0a1b2c3d4e5f", slug: "irl" } },
+    ],
   ])("refuse une chaîne %s", (_name, overrides) => {
     expect(responses.Channel.safeParse(makeChannel(overrides)).success).toBe(false);
   });
@@ -147,8 +161,47 @@ describe("Category", () => {
     ["sans slug", { slug: undefined }],
     ["sans nom", { name: undefined }],
     ["sans état", { status: undefined }],
+    ["avec une pochette qui n'est pas une URL", { imageUrl: "jc.webp" }],
   ])("refuse une catégorie %s", (_name, overrides) => {
     expect(responses.Category.safeParse(makeCategory(overrides)).success).toBe(false);
+  });
+
+  it("décode une catégorie avec sa pochette", () => {
+    const category = makeCategory({
+      imageUrl: "https://images.twitch.local/images/category/jc.webp",
+    });
+
+    expect(responses.Category.parse(category)).toEqual(category);
+  });
+});
+
+describe("CategoryCatalog", () => {
+  const makeSummary = (overrides: Record<string, unknown> = {}) => ({
+    id: "7c6d5e4f-3a2b-4c1d-8e9f-0a1b2c3d4e5f",
+    slug: "just-chatting",
+    name: "Just Chatting",
+    ...overrides,
+  });
+
+  it("décode les catégories proposées, chacune avec son slug et son nom", () => {
+    const catalog = { categories: [makeSummary(), makeSummary({ slug: "irl", name: "IRL" })] };
+
+    expect(responses.CategoryCatalog.parse(catalog)).toEqual(catalog);
+  });
+
+  it("garde un champ ajouté plus tard par le serveur", () => {
+    expect(
+      responses.CategoryCatalog.parse({ categories: [makeSummary({ imageUrl: "https://x" })] }),
+    ).toMatchObject({ categories: [{ imageUrl: "https://x" }] });
+  });
+
+  it.each([
+    ["sans liste", {}],
+    ["avec une catégorie sans slug", { categories: [makeSummary({ slug: undefined })] }],
+    ["avec une catégorie sans nom", { categories: [makeSummary({ name: undefined })] }],
+    ["avec un identifiant qui n'est pas un UUID", { categories: [makeSummary({ id: "irl" })] }],
+  ])("refuse un catalogue %s", (_name, catalog) => {
+    expect(responses.CategoryCatalog.safeParse(catalog).success).toBe(false);
   });
 });
 
@@ -245,6 +298,19 @@ describe("LivePage", () => {
     expect(responses.LivePage.parse(page)).toEqual(page);
   });
 
+  it("décode la catégorie d'un live, avec ou sans pochette", () => {
+    const page = {
+      items: [
+        makeLive({ category: { slug: "irl", name: "IRL" } }),
+        makeLive({
+          category: { slug: "art", name: "Art", imageUrl: "https://cdn.twitch.local/art.webp" },
+        }),
+      ],
+    };
+
+    expect(responses.LivePage.parse(page)).toEqual(page);
+  });
+
   it.each([
     ["sans slug", { slug: undefined }],
     ["avec une vignette qui n'est pas une URL", { thumbnailUrl: "vignette.jpg" }],
@@ -257,12 +323,54 @@ describe("LivePage", () => {
       "avec une vignette d'un schéma qui commence par https",
       { thumbnailUrl: "httpsx://v.example/t.jpg" },
     ],
+    ["avec une catégorie sans nom", { category: { slug: "irl" } }],
+    [
+      "avec une pochette qui n'est pas une URL",
+      { category: { slug: "irl", name: "IRL", imageUrl: "art" } },
+    ],
     ["avec un démarrage qui n'est pas une date ISO", { startedAt: "hier soir" }],
     ["avec un identifiant de chaîne qui n'est pas un UUID", { channelId: "42" }],
     ["avec un nombre de viewers négatif", { viewerCount: -1 }],
     ["avec un nombre de viewers fractionnaire", { viewerCount: 1.5 }],
   ])("refuse un live %s", (_name, overrides) => {
     expect(responses.LivePage.safeParse({ items: [makeLive(overrides)] }).success).toBe(false);
+  });
+});
+
+describe("BrowseCategoryList", () => {
+  const makeBrowseCategory = (overrides: Record<string, unknown> = {}) => ({
+    slug: "just-chatting",
+    name: "Just Chatting",
+    liveCount: 3,
+    ...overrides,
+  });
+
+  it("décode les catégories en live, avec leurs viewers et leur pochette", () => {
+    const list = {
+      items: [
+        makeBrowseCategory({ viewerCount: 1200, imageUrl: "https://cdn.twitch.local/jc.webp" }),
+        makeBrowseCategory({ slug: "irl", name: "IRL", liveCount: 1, viewerCount: 0 }),
+      ],
+    };
+
+    expect(responses.BrowseCategoryList.parse(list)).toEqual(list);
+  });
+
+  it("décode une catégorie dont le nombre de viewers n'a pas pu être lu", () => {
+    const list = { items: [makeBrowseCategory()] };
+
+    expect(responses.BrowseCategoryList.parse(list)).toEqual(list);
+  });
+
+  it.each([
+    ["sans live", { liveCount: 0 }],
+    ["sans nom", { name: undefined }],
+    ["avec un nombre de viewers négatif", { viewerCount: -1 }],
+    ["avec une pochette qui n'est pas une URL", { imageUrl: "jc.webp" }],
+  ])("refuse une catégorie %s", (_name, overrides) => {
+    expect(
+      responses.BrowseCategoryList.safeParse({ items: [makeBrowseCategory(overrides)] }).success,
+    ).toBe(false);
   });
 });
 

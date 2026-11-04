@@ -9,7 +9,7 @@ import { createContextClient } from "@repo/db";
 
 import { createApp } from "../../create-app.ts";
 import { buildOpenApiDocument } from "../../openapi/build-document.ts";
-import { livePageQuery } from "./infrastructure/prisma-live-reader.ts";
+import { livePageQuery, prismaLiveReader } from "./infrastructure/prisma-live-reader.ts";
 import { encodeLiveCursor } from "./presentation/live-cursor.ts";
 
 const urlOf = (variable: string): string => {
@@ -180,6 +180,52 @@ describe("GET /v1/lives (jalon A3)", () => {
           thumbnailUrl: `${urlOf("VIDEO_PLAYBACK_BASE_URL").replace(/\/$/, "")}/hls/channels/${providerChannelId}/thumbnail.jpg`,
         },
         asListed(withoutChannel),
+      ]);
+    } finally {
+      await cleanUp();
+    }
+  });
+
+  it("donne à un live la catégorie de sa chaîne", async () => {
+    const category = {
+      categoryId: randomUUID(),
+      slug: `cat-${randomUUID().slice(0, 8)}`,
+      name: "Cat",
+    };
+    await discovery.discoveryCategoryView.create({ data: category });
+    const live = await seedLiveView({ minute: 90 });
+    await discovery.discoveryLiveChannelView.update({
+      where: { channelId: live.channelId },
+      data: { categoryId: category.categoryId },
+    });
+    try {
+      expect((await page("?limit=1")).items).toEqual([
+        { ...asListed(live), category: { slug: category.slug, name: "Cat" } },
+      ]);
+    } finally {
+      await cleanUp();
+      await discovery.discoveryCategoryView.delete({ where: { categoryId: category.categoryId } });
+    }
+  });
+
+  it("filtre une page par catégorie, avec et sans curseur", async () => {
+    const categoryId = randomUUID();
+    const first = await seedLiveView({ minute: 80 });
+    await seedLiveView({ minute: 79 });
+    const last = await seedLiveView({ minute: 78 });
+    await discovery.discoveryLiveChannelView.updateMany({
+      where: { channelId: { in: [first.channelId, last.channelId] } },
+      data: { categoryId },
+    });
+    const reader = prismaLiveReader(discovery);
+    const channelsOf = async (after: { startedAt: Date; channelId: string } | undefined) =>
+      (await reader.page({ after, take: 10, categoryIds: [categoryId] })).map(
+        ({ channelId }) => channelId,
+      );
+    try {
+      expect(await channelsOf(undefined)).toEqual([first.channelId, last.channelId]);
+      expect(await channelsOf({ startedAt: inTheFuture(80), channelId: first.channelId })).toEqual([
+        last.channelId,
       ]);
     } finally {
       await cleanUp();

@@ -212,6 +212,7 @@ describe("projection LiveChannelView de discovery (ADR 0003, §6)", () => {
           slug,
           title: "Speedrun",
           titleChangedAt: expect.any(Date),
+          categoryId: null,
           liveSessionId: sessionId,
           liveStartedAt: startedAt,
           lastEndedAt: null,
@@ -530,6 +531,78 @@ describe("reconstruction de la projection depuis les outbox (ADR 0003, ADR 0034)
     expect(report.events).toBeGreaterThanOrEqual(history.length);
   });
 
+  it("projette les catégories et la catégorie d'une chaîne, puis les reconstruit à l'identique", async () => {
+    const channelId = randomUUID();
+    const sourceId = randomUUID();
+    const targetId = randomUUID();
+    const suffix = randomUUID().slice(0, 8);
+    const history: readonly OutboxEvent[] = [
+      {
+        id: randomUUID(),
+        occurredAt: new Date(),
+        name: "channel.category.created",
+        payload: { categoryId: sourceId, slug: `source-${suffix}`, name: "Source" },
+      },
+      {
+        id: randomUUID(),
+        occurredAt: new Date(),
+        name: "channel.category.created",
+        payload: { categoryId: targetId, slug: `cible-${suffix}`, name: "Cible" },
+      },
+      {
+        id: randomUUID(),
+        occurredAt: new Date(),
+        name: "channel.metadata.updated",
+        payload: { channelId, title: "Speedrun", categoryId: sourceId },
+      },
+      {
+        id: randomUUID(),
+        occurredAt: new Date(),
+        name: "channel.category.merged",
+        payload: { sourceCategoryId: sourceId, targetCategoryId: targetId },
+      },
+    ];
+    for (const event of history) {
+      await appendToHistory("channel", event);
+    }
+    const categoryViews = () =>
+      discovery.discoveryCategoryView.findMany({
+        where: { categoryId: { in: [sourceId, targetId] } },
+        orderBy: { name: "asc" },
+      });
+    await withDiscoveryModule(async () => {
+      for (const event of history) {
+        await publish("events.channel", event);
+      }
+      await eventually(async () =>
+        expect(await categoryViews()).toEqual([
+          {
+            categoryId: targetId,
+            slug: `cible-${suffix}`,
+            name: "Cible",
+            status: "active",
+            mergedIntoId: null,
+          },
+          {
+            categoryId: sourceId,
+            slug: `source-${suffix}`,
+            name: "Source",
+            status: "merged",
+            mergedIntoId: targetId,
+          },
+        ]),
+      );
+      await eventually(async () =>
+        expect(await viewOf(channelId)).toMatchObject({ categoryId: sourceId }),
+      );
+    });
+    const built = { channel: await viewOf(channelId), categories: await categoryViews() };
+
+    await rebuild();
+
+    expect({ channel: await viewOf(channelId), categories: await categoryViews() }).toEqual(built);
+  });
+
   it("retire une chaîne qu'aucun event des outbox ne décrit", async () => {
     const channelId = randomUUID();
     await discovery.discoveryLiveChannelView.create({ data: { channelId, slug: slugFor() } });
@@ -593,10 +666,12 @@ describe("reconstruction de la projection depuis les outbox (ADR 0003, ADR 0034)
             slug: null,
             title: "Reconstruit",
             titleChangedAt: null,
+            categoryId: null,
             live: null,
             lastEndedAt: null,
           },
         ],
+        categories: [],
         eventIds: [],
         skipped: 0,
       };

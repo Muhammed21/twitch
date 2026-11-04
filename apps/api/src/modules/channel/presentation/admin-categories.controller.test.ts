@@ -11,6 +11,7 @@ import type { CategoryView } from "../application/category-admin.ts";
 import {
   AdminCategoriesController,
   CATEGORY_ADMIN,
+  CATEGORY_IMAGE_URL,
   type CategoryAdmin,
 } from "./admin-categories.controller.ts";
 
@@ -35,7 +36,18 @@ const JUST_CHATTING: CategoryView = {
   slug: "just-chatting",
   name: "Just Chatting",
   status: "active",
+  imageKey: null,
 };
+
+const JUST_CHATTING_RESPONSE = {
+  id: JUST_CHATTING.id,
+  slug: "just-chatting",
+  name: "Just Chatting",
+  status: "active",
+};
+
+const IMAGE_KEY = "images/category/3a4b5c6d-7e8f-4a0b-9c1d-2e3f4a5b6c7d.webp";
+const UPLOAD_ID = "9e8f7a6b-5c4d-4e3f-8a2b-1c0d9e8f7a6b";
 
 type Calls = { readonly name: string; readonly request: unknown }[];
 
@@ -47,6 +59,7 @@ const ANSWERS: Answers = {
   create: ok(JUST_CHATTING),
   merge: ok(JUST_CHATTING),
   retire: ok(JUST_CHATTING),
+  image: ok({ ...JUST_CHATTING, imageKey: IMAGE_KEY }),
 };
 
 const recordingAdmin = (answers: Answers) => {
@@ -63,6 +76,10 @@ const recordingAdmin = (answers: Answers) => {
     retire: async (request) => {
       calls.push({ name: "retire", request });
       return answers.retire;
+    },
+    image: async (request) => {
+      calls.push({ name: "image", request });
+      return answers.image;
     },
   };
   return { admin, calls };
@@ -85,7 +102,10 @@ const withAdmin = async (
       }),
     ],
     controllers: [AdminCategoriesController],
-    providers: [{ provide: CATEGORY_ADMIN, useValue: admin }],
+    providers: [
+      { provide: CATEGORY_ADMIN, useValue: admin },
+      { provide: CATEGORY_IMAGE_URL, useValue: (key: string) => `https://images.test/${key}` },
+    ],
   }).compile();
   const app = configureApp(moduleRef.createNestApplication({ logger: false }));
   await app.listen(0, "127.0.0.1");
@@ -96,9 +116,16 @@ const withAdmin = async (
   }
 };
 
-const post = (url: string, { body, token = true }: { body?: unknown; token?: boolean } = {}) =>
+const post = (
+  url: string,
+  {
+    body,
+    token = true,
+    method = "POST",
+  }: { body?: unknown; token?: boolean; method?: string } = {},
+) =>
   fetch(url, {
-    method: "POST",
+    method,
     headers: {
       "content-type": "application/json",
       ...(token ? { authorization: "Bearer jeton" } : {}),
@@ -114,7 +141,7 @@ describe("POST /v1/admin/categories", () => {
       });
 
       expect(response.status).toBe(201);
-      expect(await response.json()).toEqual(JUST_CHATTING);
+      expect(await response.json()).toEqual(JUST_CHATTING_RESPONSE);
       expect(calls).toEqual([
         {
           name: "create",
@@ -184,7 +211,7 @@ describe("POST /v1/admin/categories/{slug}/merge", () => {
       const response = await post(`${base}/irl/merge`, { body: { targetSlug: "just-chatting" } });
 
       expect(response.status).toBe(200);
-      expect(await response.json()).toEqual(JUST_CHATTING);
+      expect(await response.json()).toEqual(JUST_CHATTING_RESPONSE);
       expect(calls).toEqual([
         {
           name: "merge",
@@ -240,7 +267,7 @@ describe("POST /v1/admin/categories/{slug}/retire", () => {
       const response = await post(`${base}/just-chatting/retire`);
 
       expect(response.status).toBe(200);
-      expect(await response.json()).toEqual(retired);
+      expect(await response.json()).toEqual({ ...JUST_CHATTING_RESPONSE, status: "retired" });
       expect(calls).toEqual([
         { name: "retire", request: { actorId: ADMIN_ID, slug: "just-chatting" } },
       ]);
@@ -274,6 +301,76 @@ describe("POST /v1/admin/categories/{slug}/retire", () => {
 
       expect(response.status).toBe(status);
       expect(await response.json()).toMatchObject({ status, ...problem });
+    });
+  });
+});
+
+describe("PUT /v1/admin/categories/{slug}/image", () => {
+  const put = (base: string, options: { body?: unknown; token?: boolean } = {}) =>
+    post(`${base}/just-chatting/image`, {
+      body: { uploadId: UPLOAD_ID },
+      ...options,
+      method: "PUT",
+    });
+
+  it("pose la pochette envoyée par l'identité du jeton, et rend son URL publique", async () => {
+    await withAdmin({}, async (base, calls) => {
+      const response = await put(base);
+
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({
+        ...JUST_CHATTING_RESPONSE,
+        imageUrl: `https://images.test/${IMAGE_KEY}`,
+      });
+      expect(calls).toEqual([
+        {
+          name: "image",
+          request: { actorId: ADMIN_ID, slug: "just-chatting", uploadId: UPLOAD_ID },
+        },
+      ]);
+    });
+  });
+
+  it("répond 403 sans le scope admin:category.manage", async () => {
+    await withAdmin({ scopes: ["openid"] }, async (base, calls) => {
+      expect((await put(base)).status).toBe(403);
+      expect(calls).toEqual([]);
+    });
+  });
+
+  it.each([
+    ["forbidden", 403, { title: "Action non autorisée" }],
+    ["category_not_found", 404, { title: "Catégorie introuvable" }],
+    ["category_inactive", 409, { title: "Catégorie déjà fusionnée ou retirée" }],
+    [
+      "too_small",
+      422,
+      {
+        title: "Image trop petite",
+        detail: "Une image de catégorie mesure au moins 285 × 380 pixels.",
+      },
+    ],
+    ["upload_not_found", 422, { title: "Envoi introuvable" }],
+    ["too_large", 422, { title: "Image trop lourde" }],
+    ["unsupported_type", 422, { title: "Type d'image refusé" }],
+    ["too_many_pixels", 422, { title: "Image trop grande" }],
+  ] as const)("répond au refus %s par un %i", async (error, status, problem) => {
+    await withAdmin({ answers: { image: err(error) } }, async (base) => {
+      const response = await put(base);
+
+      expect(response.status).toBe(status);
+      expect(await response.json()).toMatchObject({ status, ...problem });
+    });
+  });
+
+  it.each([
+    ["sans envoi", {}],
+    ["avec un envoi qui n'est pas un UUID", { uploadId: "photo" }],
+    ["avec un champ inconnu", { uploadId: UPLOAD_ID, imageKey: IMAGE_KEY }],
+  ])("répond 400 pour un corps %s", async (_name, body) => {
+    await withAdmin({}, async (base, calls) => {
+      expect((await put(base, { body })).status).toBe(400);
+      expect(calls).toEqual([]);
     });
   });
 });

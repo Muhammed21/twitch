@@ -15,6 +15,7 @@ const makeLive = (index: number): LiveListItem => ({
   slug: `chaine_${index}`,
   title: `Live ${index}`,
   startedAt: at(60 - index),
+  categoryId: null,
 });
 
 const LIVES = [1, 2, 3, 4, 5].map(makeLive);
@@ -25,11 +26,19 @@ const positionOf = ({ startedAt, channelId }: LiveListItem): LivePosition => ({
 });
 
 const inMemoryReader = (lives: readonly LiveListItem[]) => {
-  const requests: { after: LivePosition | undefined; take: number }[] = [];
+  const requests: {
+    after: LivePosition | undefined;
+    take: number;
+    categoryIds?: readonly string[];
+  }[] = [];
   return {
     requests,
     reader: {
-      page: async (request: { after: LivePosition | undefined; take: number }) => {
+      page: async (request: {
+        after: LivePosition | undefined;
+        take: number;
+        categoryIds?: readonly string[];
+      }) => {
         requests.push(request);
         const start =
           request.after === undefined
@@ -84,6 +93,15 @@ describe("liste des lives de discovery", () => {
     await listLives(reader)({ after, limit: 2 });
 
     expect(requests).toEqual([{ after, take: 3 }]);
+  });
+
+  it("transmet au lecteur les catégories dont les lives sont demandés", async () => {
+    const { reader, requests } = inMemoryReader(LIVES);
+    const categoryIds = ["0b5e4d3c-2a19-4f08-8e7d-6c5b4a392817"];
+
+    await listLives(reader)({ after: undefined, limit: 2, categoryIds });
+
+    expect(requests).toEqual([{ after: undefined, take: 3, categoryIds }]);
   });
 
   it("rend une page vide quand aucun live ne suit", async () => {

@@ -1,7 +1,7 @@
 import { type LogSink, writeLog } from "../../../platform/logging.ts";
 import type { StreamHandler } from "../../../platform/stream-consumer.ts";
 import { DISCOVERY_EVENT_READERS } from "../application/read-discovery-event.ts";
-import type { DiscoveryEvent } from "../domain/live-channel-view.ts";
+import type { DiscoveryEvent } from "../domain/discovery-event.ts";
 
 export const discoveryEventHandlers = ({
   project,

@@ -1,26 +1,15 @@
 import { Controller, Get, Inject, Query } from "@nestjs/common";
 import { createZodDto, ZodResponse } from "nestjs-zod";
-import { z } from "zod";
+import type { z } from "zod";
 
-import { responses } from "@repo/contracts";
+import type { responses } from "@repo/contracts";
 
-import { responseDto } from "../../../openapi/response-dto.ts";
 import type { ListLives } from "../application/list-lives.ts";
-import { encodeLiveCursor, LiveCursor } from "./live-cursor.ts";
+import { LivePage, LivesQuerySchema, toLivePage } from "./live-page-response.ts";
 
 export const LIST_LIVES = Symbol("LIST_LIVES");
 
-const DEFAULT_LIMIT = 20;
-const MAX_LIMIT = 50;
-
-class LivesQuery extends createZodDto(
-  z.object({
-    cursor: LiveCursor.optional(),
-    limit: z.coerce.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT),
-  }),
-) {}
-
-class LivePage extends responseDto(responses.LivePage) {}
+class LivesQuery extends createZodDto(LivesQuerySchema) {}
 
 @Controller("lives")
 export class LivesController {
@@ -29,17 +18,6 @@ export class LivesController {
   @Get()
   @ZodResponse({ status: 200, type: LivePage })
   async list(@Query() query: LivesQuery): Promise<z.input<typeof responses.LivePage>> {
-    const { items, next } = await this.listLives({ after: query.cursor, limit: query.limit });
-    return {
-      items: items.map(({ channelId, slug, title, startedAt, viewerCount, thumbnailUrl }) => ({
-        channelId,
-        slug,
-        title,
-        startedAt: startedAt.toISOString(),
-        ...(viewerCount === undefined ? {} : { viewerCount }),
-        ...(thumbnailUrl === undefined ? {} : { thumbnailUrl }),
-      })),
-      ...(next === undefined ? {} : { nextCursor: encodeLiveCursor(next) }),
-    };
+    return toLivePage(await this.listLives({ after: query.cursor, limit: query.limit }));
   }
 }

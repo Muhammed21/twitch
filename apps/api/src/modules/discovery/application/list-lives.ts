@@ -5,11 +5,18 @@ export type LiveListItem = {
   readonly slug: string;
   readonly title: string;
   readonly startedAt: Date;
+  readonly categoryId: string | null;
+};
+
+export type ListedCategory = {
+  readonly slug: string;
+  readonly name: string;
 };
 
 export type ListedLive = LiveListItem & {
   readonly viewerCount?: number;
   readonly thumbnailUrl?: string;
+  readonly category?: ListedCategory;
 };
 
 export type ThumbnailUrlReader = (
@@ -22,7 +29,11 @@ export type LivePosition = {
 };
 
 export interface LiveReader {
-  page(input: { after: LivePosition | undefined; take: number }): Promise<readonly LiveListItem[]>;
+  page(input: {
+    after: LivePosition | undefined;
+    take: number;
+    categoryIds?: readonly string[];
+  }): Promise<readonly LiveListItem[]>;
 }
 
 export type LivesPage = {
@@ -30,15 +41,18 @@ export type LivesPage = {
   readonly next: LivePosition | undefined;
 };
 
-export type ListLives = (request: {
-  after: LivePosition | undefined;
-  limit: number;
-}) => Promise<LivesPage>;
+export type LivesRequest = {
+  readonly after: LivePosition | undefined;
+  readonly limit: number;
+  readonly categoryIds?: readonly string[];
+};
+
+export type ListLives = (request: LivesRequest) => Promise<LivesPage>;
 
 export const listLives =
   (reader: LiveReader): ListLives =>
-  async ({ after, limit }) => {
-    const lives = await reader.page({ after, take: limit + 1 });
+  async ({ after, limit, categoryIds }) => {
+    const lives = await reader.page({ after, take: limit + 1, categoryIds });
     const items = lives.slice(0, limit);
     const last = items.at(-1);
     return {
