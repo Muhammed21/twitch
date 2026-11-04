@@ -31,6 +31,16 @@
         }
       }
     },
+    "home.live.viewers" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ viewers"
+          }
+        }
+      }
+    },
     "home.retry" : {
       "localizations" : {
         "en" : {

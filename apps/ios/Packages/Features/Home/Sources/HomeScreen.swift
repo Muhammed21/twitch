@@ -60,11 +60,12 @@ public struct HomeScreen: View {
 
 private struct LiveRow: View {
   let live: LiveChannel
+  @Environment(\.locale) private var locale
 
   var body: some View {
     LiveCard(
       badge: HomeCardText.liveBadge,
-      viewers: nil,
+      viewers: HomeCardText.viewers(live.viewers, locale: locale),
       name: live.slug.rawValue,
       title: live.title,
       category: nil
@@ -76,6 +77,12 @@ private struct LiveRow: View {
 
 public enum HomeCardText {
   public static var liveBadge: String { String(localized: "home.live.badge", bundle: .module) }
+
+  public static func viewers(_ count: ViewerCount?, locale: Locale) -> String? {
+    count.map {
+      String(format: String(localized: "home.live.viewers", bundle: .module), $0.value.formatted(.number.notation(.compactName).locale(locale)))
+    }
+  }
 }
 
 public enum HomeTab {
