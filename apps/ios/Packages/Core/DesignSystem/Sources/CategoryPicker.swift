@@ -16,32 +16,48 @@ public enum CategoryPickerStyle {
 
 public struct CategoryCover: View {
   private let width: CGFloat
+  private let url: URL?
 
-  public init(width: CGFloat) {
+  public init(width: CGFloat, url: URL?) {
     self.width = width
+    self.url = url
   }
 
   public var body: some View {
     CategoryPickerStyle.coverPlaceholder.color
       .frame(width: width, height: CategoryPickerStyle.coverHeight(forWidth: width))
+      .overlay {
+        if let url {
+          AsyncImage(url: url) { phase in
+            if let image = phase.image {
+              image.resizable().scaledToFill()
+            } else {
+              CategoryPickerStyle.coverPlaceholder.color
+            }
+          }
+        }
+      }
+      .clipped()
       .accessibilityHidden(true)
   }
 }
 
 public struct CategoryCard: View {
   private let name: String
+  private let coverURL: URL?
   private let clearLabel: String
   private let onClear: () -> Void
 
-  public init(name: String, clearLabel: String, onClear: @escaping () -> Void) {
+  public init(name: String, coverURL: URL?, clearLabel: String, onClear: @escaping () -> Void) {
     self.name = name
+    self.coverURL = coverURL
     self.clearLabel = clearLabel
     self.onClear = onClear
   }
 
   public var body: some View {
     HStack(alignment: .top, spacing: LayoutRole.categoryCardTextGap.points) {
-      CategoryCover(width: LayoutRole.categoryCardCoverWidth.points)
+      CategoryCover(width: LayoutRole.categoryCardCoverWidth.points, url: coverURL)
       Text(name)
         .font(TextRole.categoryName.font)
         .foregroundStyle(CategoryPickerStyle.name.color)
@@ -66,14 +82,16 @@ public struct CategoryCard: View {
 
 public struct CategoryResultRow: View {
   private let name: String
+  private let coverURL: URL?
 
-  public init(name: String) {
+  public init(name: String, coverURL: URL?) {
     self.name = name
+    self.coverURL = coverURL
   }
 
   public var body: some View {
     HStack(alignment: .top, spacing: LayoutRole.categoryResultTextGap.points) {
-      CategoryCover(width: LayoutRole.categoryResultCoverWidth.points)
+      CategoryCover(width: LayoutRole.categoryResultCoverWidth.points, url: coverURL)
       Text(name)
         .font(TextRole.categoryName.font)
         .foregroundStyle(CategoryPickerStyle.name.color)
