@@ -125,6 +125,33 @@ describe("projection du suivi d'une catégorie dans discovery (ADR 0049 §6)", (
     expect(await pairOf(userId, categoryId)).toEqual({ following: false, version: 2 });
   });
 
+  const v1 = { following: true, version: 1 } as const;
+  const v2 = { following: false, version: 2 } as const;
+  const v3 = { following: true, version: 3 } as const;
+
+  it.each([
+    ["v1, v2, v3", [v1, v2, v3]],
+    ["v1, v3, v2", [v1, v3, v2]],
+    ["v2, v1, v3", [v2, v1, v3]],
+    ["v2, v3, v1", [v2, v3, v1]],
+    ["v3, v1, v2", [v3, v1, v2]],
+    ["v3, v2, v1", [v3, v2, v1]],
+  ])(
+    "converge vers le dernier état et un seul follower dans l'ordre %s",
+    async (_order, received) => {
+      const userId = randomUUID();
+      const categoryId = randomUUID();
+
+      await received.reduce(
+        (previous, event) => previous.then(() => project({ userId, categoryId, ...event })),
+        Promise.resolve(),
+      );
+
+      expect(await pairOf(userId, categoryId)).toEqual({ following: true, version: 3 });
+      expect(await followerCountOf(categoryId)).toBe(1);
+    },
+  );
+
   it("compte une seule fois les events simultanés d'une même paire", async () => {
     const userId = randomUUID();
     const categoryId = randomUUID();
@@ -198,6 +225,32 @@ describe("reconstruction du suivi depuis l'outbox de channel (ADR 0049 §6, ADR 
 
     expect(await pairOf(follower, categoryId)).toEqual({ following: true, version: 1 });
     expect(await pairOf(former, categoryId)).toEqual({ following: false, version: 2 });
+    expect(await followerCountOf(categoryId)).toBe(1);
+  });
+
+  it("ignore ensuite, par son identifiant, un event que la reconstruction a replié", async () => {
+    const categoryId = randomUUID();
+    const userId = randomUUID();
+    const eventId = randomUUID();
+    const occurredAt = new Date();
+    await channelDb.channelOutbox.create({
+      data: {
+        id: eventId,
+        name: "channel.category.followed",
+        version: 1,
+        payload: { userId, categoryId, followedAt: occurredAt.toISOString(), version: 1 },
+        occurredAt,
+        publishedAt: occurredAt,
+      },
+    });
+
+    await rebuildDiscoveryProjection({
+      pool: outboxPool,
+      prisma: createContextClient({ context: "discovery", env: process.env }),
+    });
+    await project({ eventId, userId, categoryId, following: false, version: 2 });
+
+    expect(await pairOf(userId, categoryId)).toEqual({ following: true, version: 1 });
     expect(await followerCountOf(categoryId)).toBe(1);
   });
 });
