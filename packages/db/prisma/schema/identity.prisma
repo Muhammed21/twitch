@@ -16,6 +16,8 @@ model IdentityUser {
   emailVerified    Boolean                     @default(false)
   /// @personal
   image            String?
+  /// @personal
+  bio              String?
   /// @not-personal
   twoFactorEnabled Boolean?                    @default(false)
   createdAt        DateTime                    @default(now())
