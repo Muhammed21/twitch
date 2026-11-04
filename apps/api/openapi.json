@@ -253,6 +253,46 @@
         ]
       }
     },
+    "/v1/categories/catalog": {
+      "get": {
+        "operationId": "CategoryCatalogController_read",
+        "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryCatalog"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erreur au format RFC 9457",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "CategoryCatalog"
+        ]
+      }
+    },
     "/v1/channels/{id}/stream-key": {
       "get": {
         "operationId": "StreamKeyController_read",
@@ -624,6 +664,26 @@
         ],
         "additionalProperties": {}
       },
+      "CategorySummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name"
+        ],
+        "additionalProperties": {}
+      },
       "Channel": {
         "type": "object",
         "properties": {
@@ -638,6 +698,9 @@
           },
           "ownerId": {
             "$ref": "#/components/schemas/Uuid"
+          },
+          "category": {
+            "$ref": "#/components/schemas/CategorySummary"
           }
         },
         "required": [
@@ -648,16 +711,25 @@
         ],
         "additionalProperties": {}
       },
+      "CategoryChoice": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          }
+        },
+        "additionalProperties": false
+      },
       "UpdateChannelRequest": {
         "type": "object",
         "properties": {
           "title": {
             "type": "string"
+          },
+          "category": {
+            "$ref": "#/components/schemas/CategoryChoice"
           }
         },
-        "required": [
-          "title"
-        ],
         "additionalProperties": false
       },
       "CreateCategoryRequest": {
@@ -723,6 +795,21 @@
           "targetSlug"
         ],
         "additionalProperties": false
+      },
+      "CategoryCatalog": {
+        "type": "object",
+        "properties": {
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategorySummary"
+            }
+          }
+        },
+        "required": [
+          "categories"
+        ],
+        "additionalProperties": {}
       },
       "StreamKey": {
         "type": "object",
