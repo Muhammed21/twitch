@@ -23,6 +23,13 @@ public final class SessionStore {
   public private(set) var hasLogOutFailure = false
   public private(set) var isGreetingNewAccount = false
 
+  public var accountID: UUID? {
+    guard case let .signedIn(account) = phase else {
+      return nil
+    }
+    return account?.id
+  }
+
   private let configuration: OAuthConfiguration
   private let session: OAuthSession
   private let accounts: any AccountRepository

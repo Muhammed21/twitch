@@ -14,6 +14,20 @@ public struct ChatList: View {
       LazyVStack(alignment: .leading, spacing: LayoutRole.chatRowGap.points) {
         ForEach(session.messages, id: \.id) { message in
           ChatRow(line: ChatLine(message, locale: locale, timeZone: timeZone))
+            .contextMenu {
+              if session.canTimeOut(message.author) {
+                Button(ChatText.timeOutAction, systemImage: "clock") {
+                  Task { await session.timeOut(message.author) }
+                }
+                .accessibilityIdentifier("chat.moderation.timeOut")
+              }
+            }
+        }
+        if let notice = session.moderationNotice {
+          Text(ChatText.moderation(notice))
+            .font(TextRole.chatMessage.font)
+            .foregroundStyle(ColorRole.textSecondary.color)
+            .accessibilityIdentifier("chat.moderation.notice")
         }
         if let notice = ChatNotice.text(for: session.status) {
           Text(notice)

@@ -18,6 +18,12 @@ public final class ChatSession {
     case signedOut
   }
 
+  public enum ModerationNotice: Equatable, Sendable {
+    case timedOut(String)
+    case forbidden
+    case failed(String)
+  }
+
   private enum Ending {
     case cancelled
     case unauthorized(token: String, lived: Bool)
@@ -28,13 +34,18 @@ public final class ChatSession {
   private static let maxDelaySeconds = 30
   private static let batchInterval = Duration.milliseconds(100)
   private static let livedAfter: TimeInterval = 30
+  private static let timeoutDuration = Duration.seconds(600)
 
   public private(set) var messages: [ChatMessage] = []
   public private(set) var status = Status.connecting
+  public private(set) var moderationNotice: ModerationNotice?
+  private var moderator: UUID?
 
   @ObservationIgnored private let connector: any ChatConnector
   @ObservationIgnored private let tokens: any AccessTokenProvider
   @ObservationIgnored private let channels: any ChannelRepository
+  @ObservationIgnored private let moderation: any ChatModeration
+  @ObservationIgnored private let viewer: @Sendable () async -> UUID?
   @ObservationIgnored private let window: Int
   @ObservationIgnored private let wait: Wait
   @ObservationIgnored private let jitter: Jitter
@@ -49,6 +60,8 @@ public final class ChatSession {
     connector: any ChatConnector,
     tokens: any AccessTokenProvider,
     channels: any ChannelRepository,
+    moderation: any ChatModeration,
+    viewer: @escaping @Sendable () async -> UUID?,
     window: Int = 300,
     wait: @escaping Wait = { try await Task.sleep(for: $0) },
     jitter: @escaping Jitter = { $0 * Double.random(in: 0.5 ... 1) },
@@ -58,6 +71,8 @@ public final class ChatSession {
     self.connector = connector
     self.tokens = tokens
     self.channels = channels
+    self.moderation = moderation
+    self.viewer = viewer
     self.window = window
     self.wait = wait
     self.jitter = jitter
@@ -68,10 +83,13 @@ public final class ChatSession {
   public func run(_ slug: ChannelSlug) async {
     messages = []
     batch = []
+    moderator = nil
+    moderationNotice = nil
     status = .connecting
     var failures = 0
     while !Task.isCancelled {
       if let found = try? await channels.channel(withSlug: slug) {
+        moderator = await viewer() == found.ownerID ? found.ownerID : nil
         await run(in: found.id)
         return
       }
@@ -123,6 +141,27 @@ public final class ChatSession {
       return nil
     }
     return try? await connection.send(body, in: channel)
+  }
+
+  public func canTimeOut(_ author: ChatAuthor) -> Bool {
+    guard let moderator else {
+      return false
+    }
+    return author.id != moderator
+  }
+
+  public func timeOut(_ author: ChatAuthor) async {
+    guard canTimeOut(author), let channel else {
+      return
+    }
+    do {
+      try await moderation.timeout(author.id, in: channel, for: Self.timeoutDuration)
+      moderationNotice = .timedOut(author.displayName)
+    } catch let problem as ServiceProblem where problem.status == 403 {
+      moderationNotice = .forbidden
+    } catch {
+      moderationNotice = .failed(author.displayName)
+    }
   }
 
   private func attempt(in channel: ChannelID, rejectedToken: String?) async -> Ending {

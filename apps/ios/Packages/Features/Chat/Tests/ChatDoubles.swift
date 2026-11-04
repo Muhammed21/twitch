@@ -203,20 +203,59 @@ struct Unreachable: Error {}
 actor FakeChannels: ChannelRepository {
   private var failures: Int
   private var ids: [String: ChannelID]
+  private let owners: [String: UUID]
+  private let unreachable: Set<String>
   private(set) var lookups: [String] = []
 
-  init(failures: Int = 0, ids: [String: ChannelID] = [:]) {
+  init(
+    failures: Int = 0,
+    ids: [String: ChannelID] = [:],
+    owners: [String: UUID] = [:],
+    unreachable: Set<String> = []
+  ) {
     self.failures = failures
     self.ids = ids
+    self.owners = owners
+    self.unreachable = unreachable
   }
 
   func channel(withSlug slug: ChannelSlug) throws -> Channel {
     lookups.append(slug.rawValue)
+    guard !unreachable.contains(slug.rawValue) else {
+      throw Unreachable()
+    }
     guard failures == 0 else {
       failures -= 1
       throw Unreachable()
     }
-    return Channel(id: ids[slug.rawValue] ?? ChatTests.channel, slug: slug, title: "Speedrun", ownerID: UUID())
+    return Channel(
+      id: ids[slug.rawValue] ?? ChatTests.channel,
+      slug: slug,
+      title: "Speedrun",
+      ownerID: owners[slug.rawValue] ?? UUID()
+    )
+  }
+}
+
+struct TimeoutCall: Equatable {
+  let user: UUID
+  let channel: ChannelID
+  let duration: Duration
+}
+
+actor FakeModeration: ChatModeration {
+  private let error: (any Error)?
+  private(set) var calls: [TimeoutCall] = []
+
+  init(failing error: (any Error)? = nil) {
+    self.error = error
+  }
+
+  func timeout(_ user: UUID, in channel: ChannelID, for duration: Duration) throws {
+    calls.append(TimeoutCall(user: user, channel: channel, duration: duration))
+    if let error {
+      throw error
+    }
   }
 }
 
@@ -246,6 +285,8 @@ func makeSession(
   window: Int = 300,
   jitter: @escaping @Sendable (Duration) -> Duration = { $0 },
   channels: FakeChannels = FakeChannels(),
+  moderation: FakeModeration = FakeModeration(),
+  viewer: UUID? = UUID(),
   now: TestNow = TestNow(),
   log: LogBook = LogBook()
 ) -> ChatSession {
@@ -253,6 +294,8 @@ func makeSession(
     connector: connector,
     tokens: tokens,
     channels: channels,
+    moderation: moderation,
+    viewer: { viewer },
     window: window,
     wait: { await clock.wait($0) },
     jitter: jitter,

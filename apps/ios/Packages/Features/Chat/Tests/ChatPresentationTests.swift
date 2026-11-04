@@ -160,3 +160,23 @@ struct ChatNoticeTests {
     #expect(ChatNotice.text(for: .live) == nil)
   }
 }
+
+@Suite("Avis de modération dans le chat")
+struct ModerationNoticeTests {
+  @Test(
+    "le chat confirme un timeout ou dit pourquoi il a échoué",
+    arguments: [
+      (ChatSession.ModerationNotice.timedOut("yahway_810"), "yahway_810 is timed out for 10 minutes."),
+      (.forbidden, "You can't time out users in this chat."),
+      (.failed("yahway_810"), "Couldn't time out yahway_810."),
+    ]
+  )
+  func notice(notice: ChatSession.ModerationNotice, expected: String) {
+    #expect(ChatText.moderation(notice) == expected)
+  }
+
+  @Test("l'action du menu dit la durée du timeout")
+  func action() {
+    #expect(ChatText.timeOutAction == "Timeout for 10 minutes")
+  }
+}

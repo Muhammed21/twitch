@@ -21,6 +21,46 @@
         }
       }
     },
+    "chat.moderation.failed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't time out %@."
+          }
+        }
+      }
+    },
+    "chat.moderation.forbidden" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can't time out users in this chat."
+          }
+        }
+      }
+    },
+    "chat.moderation.timeOut" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timeout for 10 minutes"
+          }
+        }
+      }
+    },
+    "chat.moderation.timedOut" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is timed out for 10 minutes."
+          }
+        }
+      }
+    },
     "chat.rejection.banned" : {
       "localizations" : {
         "en" : {
