@@ -64,6 +64,19 @@ struct MyChannelClientTests {
     #expect(request.headers["Authorization"] == "Bearer access-1")
   }
 
+  @Test("refuse une URL d'ingest invalide, sans montrer la clé dans l'erreur")
+  func rejectsMalformedIngestURL() async throws {
+    let transport = FakeTransport(json: #"{"streamKey":"\#(secret)","ingestUrl":""}"#)
+
+    let error = await #expect(throws: (any Error).self) {
+      try await makeClient(transport).streamKey(of: channelID)
+    }
+
+    let rendered = try String(describing: #require(error))
+    #expect(!rendered.contains(secret))
+    #expect(!String(reflecting: error).contains(secret))
+  }
+
   @Test("change le titre de la chaîne et rend la chaîne à jour")
   func renames() async throws {
     let transport = FakeTransport(
