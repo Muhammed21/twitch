@@ -16,27 +16,37 @@ struct Refused: Error, CustomStringConvertible {
   var description: String { "refusé pour la clé \(secret)" }
 }
 
-struct RenameCall: Equatable {
+let honorOfKings = ChannelCategory(
+  id: CategoryID(UUID(uuidString: "1c9e4a52-7d3b-4f8e-a6b1-2d5c8e9f0a13") ?? UUID()),
+  name: "Honor of Kings"
+)
+let justChatting = ChannelCategory(
+  id: CategoryID(UUID(uuidString: "7a2b3c4d-5e6f-4a1b-8c9d-0e1f2a3b4c5d") ?? UUID()),
+  name: "Just Chatting"
+)
+
+struct UpdateCall: Equatable {
   let channel: ChannelID
   let title: String
+  let category: CategoryChange
 }
 
 actor FakeMyChannel: MyChannelRepository {
   private let owned: Result<OwnedChannel?, any Error>
   private let key: Result<StreamKey, any Error>
-  private let renamed: Result<Channel, any Error>?
+  private let updated: Result<Channel, any Error>?
   private let rotated: Result<StreamKey, any Error>
-  private(set) var renames: [RenameCall] = []
+  private(set) var updates: [UpdateCall] = []
 
   init(
     owned: Result<OwnedChannel?, any Error>,
     key: Result<StreamKey, any Error> = .success(StreamKey(secret, ingestURL: ingestURL)),
-    renamed: Result<Channel, any Error>? = nil,
+    updated: Result<Channel, any Error>? = nil,
     rotated: Result<StreamKey, any Error> = .success(StreamKey(rotatedSecret, ingestURL: ingestURL))
   ) {
     self.owned = owned
     self.key = key
-    self.renamed = renamed
+    self.updated = updated
     self.rotated = rotated
   }
 
@@ -52,12 +62,17 @@ actor FakeMyChannel: MyChannelRepository {
     try rotated.get()
   }
 
-  func rename(_ channel: ChannelID, to title: String) throws -> Channel {
-    renames.append(RenameCall(channel: channel, title: title))
-    guard let renamed else {
-      return try Channel(id: channel, slug: ChannelSlug("viewer_de_test"), title: title, ownerID: ownerID)
+  func update(_ channel: ChannelID, title: String, category: CategoryChange) throws -> Channel {
+    updates.append(UpdateCall(channel: channel, title: title, category: category))
+    guard let updated else {
+      return try Channel(id: channel, slug: ChannelSlug("viewer_de_test"), title: title, ownerID: ownerID, category: Self.chosen(category))
     }
-    return try renamed.get()
+    return try updated.get()
+  }
+
+  private static func chosen(_ change: CategoryChange) -> ChannelCategory? {
+    guard case let .set(id) = change else { return nil }
+    return [honorOfKings, justChatting].first { $0.id == id }
   }
 }
 
@@ -86,7 +101,7 @@ actor HeldKey: MyChannelRepository {
     return StreamKey(secret, ingestURL: ingestURL)
   }
 
-  func rename(_ channel: ChannelID, to title: String) throws -> Channel {
+  func update(_ channel: ChannelID, title: String, category _: CategoryChange) throws -> Channel {
     try Channel(id: channel, slug: ChannelSlug("viewer_de_test"), title: title, ownerID: ownerID)
   }
 
@@ -121,7 +136,7 @@ actor HeldRotation: MyChannelRepository {
     StreamKey(secret, ingestURL: ingestURL)
   }
 
-  func rename(_ channel: ChannelID, to title: String) throws -> Channel {
+  func update(_ channel: ChannelID, title: String, category _: CategoryChange) throws -> Channel {
     try Channel(id: channel, slug: ChannelSlug("viewer_de_test"), title: title, ownerID: ownerID)
   }
 
@@ -155,9 +170,10 @@ actor HeldRotation: MyChannelRepository {
 
 struct FakeChannels: ChannelRepository {
   let title: String
+  let category: ChannelCategory?
 
   func channel(withSlug slug: ChannelSlug) throws -> Channel {
-    Channel(id: channelID, slug: slug, title: title, ownerID: ownerID)
+    Channel(id: channelID, slug: slug, title: title, ownerID: ownerID, category: category)
   }
 }
 
