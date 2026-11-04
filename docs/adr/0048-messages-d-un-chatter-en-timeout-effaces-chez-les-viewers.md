@@ -1,6 +1,6 @@
 # 0048 — Les messages d'un chatter mis en timeout sont effacés chez les viewers par un événement temps réel, émis par chaque instance à ses propres sockets
 
-- Statut : Proposé
+- Statut : Accepté
 - Date : 2026-11-04
 - Décideurs : Muhammed Cavus
 
