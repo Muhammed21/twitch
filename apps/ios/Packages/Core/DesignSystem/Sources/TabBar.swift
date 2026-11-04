@@ -1,12 +1,12 @@
 import SwiftUI
 
 public enum TabBarGlyph: Equatable, Sendable {
-  case symbol(outline: String, filled: String)
+  case mask(outline: Glyph, filled: Glyph)
   case avatar
 
-  public func systemName(isSelected: Bool) -> String? {
+  public func mask(isSelected: Bool) -> Glyph? {
     switch self {
-    case let .symbol(outline, filled): isSelected ? filled : outline
+    case let .mask(outline, filled): isSelected ? filled : outline
     case .avatar: nil
     }
   }
@@ -102,9 +102,7 @@ private struct CreateButton: View {
 
   var body: some View {
     Button(action: create.action) {
-      Image(systemName: "plus")
-        .resizable()
-        .scaledToFit()
+      Glyph.plus.image
         .frame(width: LayoutRole.createGlyphSize.points, height: LayoutRole.createGlyphSize.points)
         .foregroundStyle(TabBarCreateStyle.foreground.color)
         .frame(width: LayoutRole.createButtonWidth.points, height: LayoutRole.createButtonHeight.points)
@@ -136,11 +134,8 @@ private struct TabBarCell<Tab: Hashable>: View {
   }
 
   @ViewBuilder private var glyph: some View {
-    if let systemName = item.glyph.systemName(isSelected: isSelected) {
-      Image(systemName: systemName)
-        .resizable()
-        .scaledToFit()
-        .frame(width: LayoutRole.tabGlyphSize.points, height: LayoutRole.tabGlyphSize.points)
+    if let mask = item.glyph.mask(isSelected: isSelected) {
+      mask.image
         .accessibilityHidden(true)
     } else {
       DefaultAvatar(
@@ -163,7 +158,7 @@ struct DefaultAvatar: View {
     Circle()
       .fill(ColorRole.avatarDefault.color)
       .overlay {
-        Image(systemName: "person")
+        Glyph.avatarPerson.image
           .resizable()
           .scaledToFit()
           .foregroundStyle(ColorRole.onAvatarDefault.color)

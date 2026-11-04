@@ -7,5 +7,7 @@ export const Me = z
     id: Uuid,
     name: z.string(),
     email: z.string(),
+    bio: z.string().optional(),
+    lastLiveAt: z.iso.datetime().optional(),
   })
   .meta({ id: "Me" });
