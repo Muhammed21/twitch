@@ -54,18 +54,7 @@ public struct LiveCard: View {
     Rectangle()
       .fill(LiveCardStyle.placeholder.color)
       .aspectRatio(16 / 9, contentMode: .fit)
-      .overlay {
-        if let url = preview.url {
-          AsyncImage(url: url) { phase in
-            if let image = phase.image {
-              image.resizable().scaledToFill()
-            } else {
-              LiveCardStyle.placeholder.color
-            }
-          }
-          .id(preview)
-        }
-      }
+      .overlay { LivePreviewImage(preview: preview) }
       .clipped()
       .overlay(alignment: .topLeading) {
         MediaLabel(text: badge, font: .liveBadge, foreground: LiveCardStyle.badgeForeground, background: LiveCardStyle.badgeBackground)
