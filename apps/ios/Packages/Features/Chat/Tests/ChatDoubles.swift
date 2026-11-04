@@ -145,6 +145,7 @@ actor TestClock {
 
   private let held: Set<Duration>
   private var sleepers: [Sleeper] = []
+  private var released: [Duration] = []
   private(set) var waited: [Duration] = []
 
   init(holding held: Set<Duration> = [batchInterval]) {
@@ -154,6 +155,10 @@ actor TestClock {
   func wait(_ duration: Duration) async {
     waited.append(duration)
     guard held.contains(duration) else {
+      return
+    }
+    if let index = released.firstIndex(of: duration) {
+      released.remove(at: index)
       return
     }
     await withCheckedContinuation { sleepers.append(Sleeper(duration: duration, continuation: $0)) }
@@ -169,6 +174,10 @@ actor TestClock {
 
   func fire(_ duration: Duration) {
     let due = sleepers.filter { $0.duration == duration }
+    guard !due.isEmpty else {
+      released.append(duration)
+      return
+    }
     sleepers.removeAll { $0.duration == duration }
     due.forEach { $0.continuation.resume() }
   }
