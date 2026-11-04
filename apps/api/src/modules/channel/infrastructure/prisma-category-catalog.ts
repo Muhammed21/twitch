@@ -173,6 +173,6 @@ export const prismaCategorySearch = (prisma: ChannelPrisma): CategorySearch => (
       },
       orderBy: [{ name: "asc" }, { id: "asc" }],
       take: limit,
-      select: { id: true, slug: true, name: true },
+      select: { id: true, slug: true, name: true, imageKey: true },
     }),
 });

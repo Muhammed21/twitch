@@ -14,7 +14,8 @@
     },
     "test:integration": {
       "dependsOn": ["^generate"],
-      "cache": false
+      "cache": false,
+      "passThroughEnv": ["INTEGRATION_S3_ENDPOINT"]
     },
     "generate": {
       "dependsOn": ["^generate"],

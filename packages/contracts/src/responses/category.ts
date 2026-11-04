@@ -17,6 +17,7 @@ export const CategorySummary = z
     id: Uuid,
     slug: z.string(),
     name: z.string(),
+    imageUrl: z.url().optional(),
   })
   .meta({ id: "CategorySummary" });
 
