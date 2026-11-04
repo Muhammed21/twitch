@@ -58,6 +58,10 @@
   --typography-live-badge-weight: 600;
   --typography-viewer-count-font: -apple-system-subheadline;
   --typography-viewer-count-weight: 400;
+  --typography-chat-text-font: -apple-system-caption1;
+  --typography-chat-text-weight: 400;
+  --typography-chat-author-text-font: -apple-system-caption1;
+  --typography-chat-author-text-weight: 500;
   --spacing-x1: 1px;
   --spacing-x2: 2px;
   --spacing-x3: 3px;
