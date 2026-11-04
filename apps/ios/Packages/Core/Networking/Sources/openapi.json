@@ -423,6 +423,70 @@
         ]
       }
     },
+    "/v1/me/followed-categories/{slug}": {
+      "put": {
+        "operationId": "FollowedCategoriesController_follow",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "default": {
+            "description": "Erreur au format RFC 9457",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "FollowedCategories"
+        ]
+      },
+      "delete": {
+        "operationId": "FollowedCategoriesController_unfollow",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "default": {
+            "description": "Erreur au format RFC 9457",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "FollowedCategories"
+        ]
+      }
+    },
     "/v1/channels/{id}/stream-key": {
       "get": {
         "operationId": "StreamKeyController_read",

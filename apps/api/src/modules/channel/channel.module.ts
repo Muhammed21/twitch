@@ -19,6 +19,7 @@ import {
   mergeCategory,
   retireCategory,
 } from "./application/category-admin.ts";
+import { followCategory, unfollowCategory } from "./application/category-follow.ts";
 import { searchCategories } from "./application/category-search.ts";
 import { getChannel, updateChannel } from "./application/channel-queries.ts";
 import { createChannelForAccount } from "./application/create-channel-for-account.ts";
@@ -26,6 +27,7 @@ import {
   prismaCategoryCatalog,
   prismaCategorySearch,
 } from "./infrastructure/prisma-category-catalog.ts";
+import { prismaCategoryFollows } from "./infrastructure/prisma-category-follows.ts";
 import { prismaChannelDirectory } from "./infrastructure/prisma-channel-directory.ts";
 import {
   type ChannelPrisma,
@@ -47,6 +49,11 @@ import {
   GET_CHANNEL,
   UPDATE_CHANNEL,
 } from "./presentation/channels.controller.ts";
+import {
+  FOLLOW_CATEGORY,
+  FollowedCategoriesController,
+  UNFOLLOW_CATEGORY,
+} from "./presentation/followed-categories.controller.ts";
 import { identityEventHandlers } from "./presentation/identity-event-handlers.ts";
 
 export type { ChannelPrisma } from "./infrastructure/prisma-channel-registry.ts";
@@ -103,9 +110,19 @@ export class ChannelModule implements OnModuleInit, OnModuleDestroy {
           }),
       }),
     };
+    const categoryFollows = {
+      follows: prismaCategoryFollows(dependencies.prisma),
+      newId: randomUUID,
+      now: () => new Date(),
+    };
     return {
       module: ChannelModule,
-      controllers: [ChannelsController, AdminCategoriesController, CategoryCatalogController],
+      controllers: [
+        ChannelsController,
+        AdminCategoriesController,
+        CategoryCatalogController,
+        FollowedCategoriesController,
+      ],
       providers: [
         { provide: CHANNEL_DEPENDENCIES, useValue: dependencies },
         { provide: GET_CHANNEL, useValue: getChannel(directory) },
@@ -124,6 +141,8 @@ export class ChannelModule implements OnModuleInit, OnModuleDestroy {
           provide: SEARCH_CATEGORIES,
           useValue: searchCategories(prismaCategorySearch(dependencies.prisma)),
         },
+        { provide: FOLLOW_CATEGORY, useValue: followCategory(categoryFollows) },
+        { provide: UNFOLLOW_CATEGORY, useValue: unfollowCategory(categoryFollows) },
       ],
     };
   }
