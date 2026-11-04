@@ -24,6 +24,16 @@ struct AppConfigurationTests {
     #expect(version == info["CFBundleShortVersionString"] as? String)
   }
 
+  @Test("pointe vers le serveur de chat local")
+  func chatBaseURL() {
+    #expect(Composition.chatBaseURL(info: info)?.absoluteString == "http://127.0.0.1:3001")
+  }
+
+  @Test("refuse une adresse de chat absente ou sans hôte", arguments: [[:], ["CHAT_BASE_URL": ""], ["CHAT_BASE_URL": "chat"]])
+  func invalidChatBaseURL(info: [String: String]) {
+    #expect(Composition.chatBaseURL(info: info) == nil)
+  }
+
   @Test("déclare le schéma d'URL twitch de la redirection OAuth")
   func urlScheme() {
     let types = info["CFBundleURLTypes"] as? [[String: Any]] ?? []

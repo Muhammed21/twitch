@@ -34,6 +34,7 @@ public final class ChatSession {
 
   @ObservationIgnored private let connector: any ChatConnector
   @ObservationIgnored private let tokens: any AccessTokenProvider
+  @ObservationIgnored private let channels: any ChannelRepository
   @ObservationIgnored private let window: Int
   @ObservationIgnored private let wait: Wait
   @ObservationIgnored private let jitter: Jitter
@@ -47,6 +48,7 @@ public final class ChatSession {
   public init(
     connector: any ChatConnector,
     tokens: any AccessTokenProvider,
+    channels: any ChannelRepository,
     window: Int = 300,
     wait: @escaping Wait = { try await Task.sleep(for: $0) },
     jitter: @escaping Jitter = { $0 * Double.random(in: 0.5 ... 1) },
@@ -55,11 +57,31 @@ public final class ChatSession {
   ) {
     self.connector = connector
     self.tokens = tokens
+    self.channels = channels
     self.window = window
     self.wait = wait
     self.jitter = jitter
     self.now = now
     self.log = log
+  }
+
+  public func run(_ slug: ChannelSlug) async {
+    messages = []
+    batch = []
+    status = .connecting
+    var failures = 0
+    while !Task.isCancelled {
+      if let found = try? await channels.channel(withSlug: slug) {
+        await run(in: found.id)
+        return
+      }
+      guard !Task.isCancelled else {
+        return
+      }
+      status = .reconnecting
+      try? await wait(jitter(Self.delay(after: failures)))
+      failures += 1
+    }
   }
 
   public func run(in channel: ChannelID) async {
