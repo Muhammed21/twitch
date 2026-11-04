@@ -30,7 +30,7 @@ public final class CategorySearch {
     } catch {
       answer = .failed
     }
-    guard request == latest else { return }
+    guard request == latest, !Task.isCancelled else { return }
     phase = answer
   }
 }

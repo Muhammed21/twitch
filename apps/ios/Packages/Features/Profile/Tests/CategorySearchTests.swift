@@ -39,6 +39,24 @@ private actor HeldCatalog: CategoryCatalog {
   }
 }
 
+private actor SlowCatalog: CategoryCatalog {
+  private var asked = false
+  private var waiter: CheckedContinuation<Void, Never>?
+
+  func categories(matching _: String) async throws -> [ChannelCategory] {
+    asked = true
+    waiter?.resume()
+    waiter = nil
+    try await Task.sleep(for: .seconds(60))
+    return []
+  }
+
+  func untilAsked() async {
+    guard !asked else { return }
+    await withCheckedContinuation { waiter = $0 }
+  }
+}
+
 @MainActor
 @Suite("Recherche d'une catégorie pour Edit Stream Info")
 struct CategorySearchTests {
@@ -60,6 +78,19 @@ struct CategorySearchTests {
     await search.search("legends")
 
     #expect(search.phase == .failed)
+  }
+
+  @Test("une recherche annulée, par une nouvelle frappe ou en quittant l'écran, n'affiche pas d'échec")
+  func cancelledSearch() async {
+    let catalog = SlowCatalog()
+    let search = CategorySearch(catalog: catalog)
+
+    let running = Task { await search.search("leg") }
+    await catalog.untilAsked()
+    running.cancel()
+    await running.value
+
+    #expect(search.phase == .loading)
   }
 
   @Test("ignore la réponse d'un texte déjà remplacé par un plus récent")
