@@ -77,9 +77,11 @@ Les routes d'administration (`/v1/admin/categories…`) exigent deux conditions 
 
 Le scope n'est accordé à aucun client iOS. L'en-tête `X-Acting-User` arrive avec la coquille Payload (ADR 0007).
 
+En dev, le seed crée un client OAuth d'administration autorisé à demander `admin:category.manage`, et un compte qui a le rôle de plateforme `admin`. On appelle ainsi les routes d'administration à la main. Leurs identifiants vivent dans le seed et dans `.env.example`.
+
 ### 5. Catégorie d'une chaîne
 
-Le propriétaire, ou un éditeur, pose la catégorie par `PATCH /v1/channels/{id}` avec `categoryId` (UUID d'une catégorie `active`, ou `null` pour la retirer). `channel.metadata.updated` porte alors l'état complet des métadonnées : `{ channelId, title, categoryId }`. Le champ s'ajoute à la version 1 sans la casser, car le payload d'un event est un `looseObject` qui garde un champ inconnu. Le catalogue des catégories actives, que l'app lit pour proposer un choix, est servi par `channel` sur `GET /v1/categories/catalog`.
+Le propriétaire, ou un éditeur, pose la catégorie par `PATCH /v1/channels/{id}` avec `categoryId` (UUID d'une catégorie `active`, ou `null` pour la retirer). `channel.metadata.updated` porte alors l'état complet des métadonnées : `{ channelId, title, categoryId }`. Le champ s'ajoute à la version 1 sans la casser, car le payload d'un event est un `looseObject` qui garde un champ inconnu. Le catalogue des catégories actives, que l'app lit pour proposer un choix, est servi par `channel` sur `GET /v1/categories/catalog`. Il se filtre par nom pour l'écran de recherche de catégorie (`docs/reference-ui/creer/recherche-categorie--resultats-clavier-ouvert.png`).
 
 ### 6. Pochette
 
@@ -108,7 +110,7 @@ La catégorie porte une clé d'objet optionnelle. L'image passe par la brique d'
 
 1. `channel` : agrégat `Category`, administration, `Channel.categoryId`, events.
 2. `discovery` : projection du catalogue, catégorie de chaque live, `GET /v1/categories` et `GET /v1/categories/{slug}/lives`.
-3. Seed de dev : dix catégories, et une catégorie posée sur chaque chaîne de démo.
+3. Seed de dev : dix catégories, une catégorie posée sur chaque chaîne de démo, un client OAuth d'administration et un compte `admin`.
 
 ## Liens
 
