@@ -1,7 +1,11 @@
 import { type DynamicModule, Module } from "@nestjs/common";
 
 import type { AuthzRedis } from "./authz/authz-context.ts";
-import { type ChannelPrisma, ChannelModule } from "./modules/channel/channel.module.ts";
+import {
+  type ChannelPrisma,
+  ChannelModule,
+  createOwnedChannelReader,
+} from "./modules/channel/channel.module.ts";
 import { DiscoveryModule, type DiscoveryPrisma } from "./modules/discovery/discovery.module.ts";
 import {
   createCurrentAccountReader,
@@ -80,6 +84,7 @@ export class AppModule {
         MobileModule.register({
           featureFlags: createFeatureFlags(mobile.featureFlags),
           readProfile: createCurrentAccountReader(identity.prisma),
+          ownedChannel: createOwnedChannelReader(channel.prisma),
           minSupportedVersion: mobile.minSupportedVersion,
           logSink: platform.logSink,
         }),

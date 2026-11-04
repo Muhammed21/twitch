@@ -56,6 +56,18 @@ const seedPublicClient = async ({
   return clientId;
 };
 
+const seedChannel = async (ownerId: string) => {
+  const channel = { id: randomUUID(), slug: `viewer_${randomUUID().slice(0, 8)}` };
+  await asMigrator((client) =>
+    client.query(`INSERT INTO "channel"."Channel" ("id", "ownerId", "slug") VALUES ($1, $2, $3)`, [
+      channel.id,
+      ownerId,
+      channel.slug,
+    ]),
+  );
+  return channel;
+};
+
 const sessionCookieOf = async (base: string) => {
   const response = await fetch(`${base}/auth/sign-up/email`, {
     method: "POST",
@@ -839,6 +851,20 @@ describe("identity : caractérisation OAuth de l'ADR 0026, contre le vrai better
           email: expect.stringMatching(/^oauth-.+@twitch\.local$/),
         },
       });
+    });
+  });
+
+  it("rend la chaîne du compte dans le profil de GET /v1/mobile/bootstrap", async () => {
+    await withApi(async (base) => {
+      const { tokens } = await signIn(base);
+      const { userId } = identityOf(tokens.access_token);
+      const channel = await seedChannel(userId);
+
+      const response = await fetch(`${base}/v1/mobile/bootstrap`, {
+        headers: { authorization: `Bearer ${tokens.access_token}` },
+      });
+
+      expect(await response.json()).toMatchObject({ profile: { id: userId, channel } });
     });
   });
 

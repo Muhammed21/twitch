@@ -688,12 +688,31 @@
           },
           "email": {
             "type": "string"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/OwnedChannel"
           }
         },
         "required": [
           "id",
           "name",
           "email"
+        ],
+        "additionalProperties": {}
+      },
+      "OwnedChannel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "slug": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "slug"
         ],
         "additionalProperties": {}
       },

@@ -194,6 +194,15 @@ describe("LivePage", () => {
   });
 });
 
+const CHANNEL_ID = "9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69";
+
+const makeProfile = (overrides: Record<string, unknown> = {}) => ({
+  id: "4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b",
+  name: "Viewer",
+  email: "viewer@twitch.local",
+  ...overrides,
+});
+
 describe("MobileBootstrap", () => {
   const makeBootstrap = (overrides: Record<string, unknown> = {}) => ({
     minSupportedVersion: "1.4.0",
@@ -217,6 +226,17 @@ describe("MobileBootstrap", () => {
     expect(responses.MobileBootstrap.parse(bootstrap)).toEqual(bootstrap);
   });
 
+  it("décode la chaîne du profil", () => {
+    const profile = {
+      id: "4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b",
+      name: "Viewer",
+      email: "viewer@twitch.local",
+      channel: { id: "9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69", slug: "viewer" },
+    };
+
+    expect(responses.MobileBootstrap.parse(makeBootstrap({ profile })).profile).toEqual(profile);
+  });
+
   it("décode une version minimale à plusieurs chiffres par composant", () => {
     expect(
       responses.MobileBootstrap.parse(makeBootstrap({ minSupportedVersion: "10.12.103" }))
@@ -236,6 +256,11 @@ describe("MobileBootstrap", () => {
     ["une version minimale avec un préfixe", { minSupportedVersion: "v1.4.0" }],
     ["un flag session_replay qui n'est pas booléen", { flags: { session_replay: "oui" } }],
     ["sans flags", { flags: undefined }],
+    ["une chaîne de profil sans slug", { profile: makeProfile({ channel: { id: CHANNEL_ID } }) }],
+    [
+      "une chaîne de profil dont l'identifiant n'est pas un UUID",
+      { profile: makeProfile({ channel: { id: "c1", slug: "viewer" } }) },
+    ],
   ])("refuse %s", (_name, overrides) => {
     expect(responses.MobileBootstrap.safeParse(makeBootstrap(overrides)).success).toBe(false);
   });

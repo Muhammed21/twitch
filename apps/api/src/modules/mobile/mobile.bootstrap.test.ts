@@ -10,7 +10,7 @@ import { buildOpenApiDocument } from "../../openapi/build-document.ts";
 import type { AccessTokenVerifier } from "../../platform/authentication.ts";
 import { configureApp } from "../../platform/configure-app.ts";
 import { PlatformModule } from "../../platform/platform.module.ts";
-import type { FeatureFlags, ReadProfile } from "./application/read-bootstrap.ts";
+import type { FeatureFlags, FindOwnedChannel, ReadProfile } from "./application/read-bootstrap.ts";
 import { MobileModule } from "./mobile.module.ts";
 
 const USER_ID = "4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b";
@@ -37,6 +37,12 @@ const PROFILE = { id: USER_ID, name: "Viewer de test", email: "viewer@twitch.loc
 const existingProfile: ReadProfile = async (userId) =>
   userId === USER_ID ? ok(PROFILE) : err("account_not_found");
 
+const CHANNEL = { id: "9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69", slug: "viewer_de_test" };
+
+const withoutChannel: FindOwnedChannel = async () => null;
+
+const channelOfUser: FindOwnedChannel = async (ownerId) => (ownerId === USER_ID ? CHANNEL : null);
+
 const makeFeatureFlags = (
   evaluation: () => Promise<Readonly<Record<string, unknown>>>,
 ): FeatureFlags & { readonly evaluatedFor: readonly string[] } => {
@@ -57,7 +63,8 @@ const withBootstrap = async (
   {
     featureFlags = flagsEvaluatedAs({}),
     readProfile = existingProfile,
-  }: { featureFlags?: FeatureFlags; readProfile?: ReadProfile },
+    ownedChannel = withoutChannel,
+  }: { featureFlags?: FeatureFlags; readProfile?: ReadProfile; ownedChannel?: FindOwnedChannel },
   run: (
     get: (headers?: Record<string, string>) => Promise<Response>,
     logs: readonly Readonly<Record<string, unknown>>[],
@@ -77,6 +84,7 @@ const withBootstrap = async (
       MobileModule.register({
         featureFlags,
         readProfile,
+        ownedChannel,
         minSupportedVersion: "1.4.0",
         logSink,
       }),
@@ -124,6 +132,18 @@ describe("GET /v1/mobile/bootstrap (ADR 0009, ADR 0012)", () => {
       });
       expect(featureFlags.evaluatedFor).toEqual([USER_ID]);
       expect(logs).toEqual([]);
+    });
+  });
+
+  it("rend la chaîne dont l'utilisateur du jeton est propriétaire, dans son profil", async () => {
+    await withBootstrap({ ownedChannel: channelOfUser }, async (get) => {
+      const response = await get(authenticated);
+
+      expect(response.status).toBe(200);
+      expect(responses.MobileBootstrap.parse(await response.json()).profile).toEqual({
+        ...PROFILE,
+        channel: CHANNEL,
+      });
     });
   });
 
@@ -219,6 +239,7 @@ describe("GET /v1/mobile/bootstrap (ADR 0009, ADR 0012)", () => {
         MobileModule.register({
           featureFlags: flagsEvaluatedAs({}),
           readProfile: existingProfile,
+          ownedChannel: withoutChannel,
           minSupportedVersion: "1.4.0",
           logSink: () => {},
         }),
