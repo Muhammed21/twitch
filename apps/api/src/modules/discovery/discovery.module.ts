@@ -12,7 +12,7 @@ import type { Pool } from "pg";
 import { errorDetails, type LogSink, writeLog } from "../../platform/logging.ts";
 import { startPeriodicJob } from "../../platform/periodic-job.ts";
 import { startStreamConsumer, type StreamConsumerRedis } from "../../platform/stream-consumer.ts";
-import { listLives } from "./application/list-lives.ts";
+import { listLives, withLiveViewerCounts } from "./application/list-lives.ts";
 import { createLiveStatusHub, type LiveStatusHub } from "./application/live-status-hub.ts";
 import { type ViewerCountReader, withViewerCounts } from "./application/live-status-viewers.ts";
 import { projectDiscoveryEvent } from "./application/project-discovery-event.ts";
@@ -99,7 +99,19 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
           ),
         },
         { provide: LIVE_STATUS_HEARTBEAT_MS, useValue: LIVE_STATUS_HEARTBEAT_INTERVAL_MS },
-        { provide: LIST_LIVES, useValue: listLives(prismaLiveReader(dependencies.prisma)) },
+        {
+          provide: LIST_LIVES,
+          useValue: withLiveViewerCounts({
+            lives: listLives(prismaLiveReader(dependencies.prisma)),
+            viewerCounts: dependencies.viewerCounts,
+            onViewerCountFailure: (error) =>
+              writeLog(dependencies.logSink, {
+                level: "error",
+                msg: "lecture du nombre de viewers de la liste des lives en échec",
+                ...errorDetails(error),
+              }),
+          }),
+        },
       ],
     };
   }
