@@ -51,6 +51,23 @@ struct MyChannelStoreTests {
     #expect(store.streamKey?.revealed == secret)
   }
 
+  @Test("oublie la chaîne, le titre et la clé à la fin de session, puis recharge celle du compte suivant")
+  func resetsAtSessionEnd() async throws {
+    let store = try makeStore(FakeMyChannel(owned: .success(makeOwnedChannel())))
+    await store.load()
+    await store.revealKey()
+
+    store.reset()
+
+    #expect(store.phase == .loading)
+    #expect(store.title.isEmpty)
+    #expect(store.streamKey == nil)
+
+    await store.loadIfNeeded()
+
+    #expect(try store.phase == .ready(makeOwnedChannel()))
+  }
+
   @Test("dit que le compte n'a pas encore de chaîne")
   func noChannelYet() async {
     let store = makeStore(FakeMyChannel(owned: .success(nil)))

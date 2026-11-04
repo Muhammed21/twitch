@@ -75,6 +75,7 @@ struct RootView: View {
   @Environment(SessionStore.self) private var session
   @Environment(LaunchStore.self) private var launch
   @Environment(Router.self) private var router
+  @Environment(MyChannelStore.self) private var myChannel
   @State private var isSplashVisible = true
 
   var body: some View {
@@ -83,7 +84,10 @@ struct RootView: View {
       .logOutFailureAlert(session)
       .onOpenURL { router.open($0) }
       .onChange(of: session.phase) { old, new in
-        if RootScreen.resetsNavigation(from: old, to: new) { router.reset() }
+        if RootScreen.resetsNavigation(from: old, to: new) {
+          router.reset()
+          myChannel.reset()
+        }
       }
       .task { await launch.run() }
       .task { await session.run() }
