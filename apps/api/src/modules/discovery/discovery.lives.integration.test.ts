@@ -9,6 +9,7 @@ import { createContextClient } from "@repo/db";
 
 import { createApp } from "../../create-app.ts";
 import { buildOpenApiDocument } from "../../openapi/build-document.ts";
+import { categoryAudienceRefresh } from "./discovery.module.ts";
 import { livePageQuery, prismaLiveReader } from "./infrastructure/prisma-live-reader.ts";
 import { encodeLiveCursor } from "./presentation/live-cursor.ts";
 
@@ -125,6 +126,9 @@ afterAll(async () => {
 const cleanUp = () =>
   discovery.discoveryLiveChannelView.deleteMany({ where: { channelId: { in: seeded } } });
 
+const coverUrl = (key: string) =>
+  `${(process.env.S3_PUBLIC_BASE_URL ?? "").replace(/\/$/, "")}/${key}`;
+
 describe("GET /v1/lives (jalon A3)", () => {
   it("liste les lives en cours dont le slug est connu, du plus récent au plus ancien, puis par chaîne", async () => {
     const latest = await seedLiveView({ minute: 30 });
@@ -186,11 +190,12 @@ describe("GET /v1/lives (jalon A3)", () => {
     }
   });
 
-  it("donne à un live la catégorie de sa chaîne", async () => {
+  it("donne à un live la catégorie de sa chaîne, avec sa pochette", async () => {
     const category = {
       categoryId: randomUUID(),
       slug: `cat-${randomUUID().slice(0, 8)}`,
       name: "Cat",
+      imageKey: "images/category/cat.webp",
     };
     await discovery.discoveryCategoryView.create({ data: category });
     const live = await seedLiveView({ minute: 90 });
@@ -200,7 +205,14 @@ describe("GET /v1/lives (jalon A3)", () => {
     });
     try {
       expect((await page("?limit=1")).items).toEqual([
-        { ...asListed(live), category: { slug: category.slug, name: "Cat" } },
+        {
+          ...asListed(live),
+          category: {
+            slug: category.slug,
+            name: "Cat",
+            imageUrl: coverUrl("images/category/cat.webp"),
+          },
+        },
       ]);
     } finally {
       await cleanUp();
@@ -418,6 +430,89 @@ describe("lives d'une catégorie", () => {
       await cleanUp();
       await discovery.discoveryCategoryView.deleteMany({
         where: { categoryId: { in: [target.categoryId, source.categoryId] } },
+      });
+    }
+  });
+});
+
+type BrowsedItem = ReturnType<typeof responses.BrowseCategory.parse>;
+
+const browseAll = async (cursor?: string): Promise<readonly BrowsedItem[]> => {
+  const query = cursor === undefined ? "?limit=2" : `?limit=2&cursor=${cursor}`;
+  const response = await fetch(`${state.url}/v1/categories${query}`);
+  expect(response.status).toBe(200);
+  const { items, nextCursor } = responses.BrowseCategoryList.parse(await response.json());
+  return nextCursor === undefined ? items : [...items, ...(await browseAll(nextCursor))];
+};
+
+describe("catégories de Browse (ADR 0047)", () => {
+  it("classe l'audience calculée par lots, fusions suivies, même par deux calculs simultanés, et la pagine par curseur sans doublon", async () => {
+    const suffix = randomUUID().slice(0, 8);
+    const target = {
+      categoryId: randomUUID(),
+      slug: `cible-${suffix}`,
+      name: "Cible",
+      imageKey: "images/category/cible.webp",
+    };
+    const other = { categoryId: randomUUID(), slug: `autre-${suffix}`, name: "Autre" };
+    const source = {
+      categoryId: randomUUID(),
+      slug: `source-${suffix}`,
+      name: "Source",
+      status: "merged" as const,
+      mergedIntoId: target.categoryId,
+    };
+    const retired = {
+      categoryId: randomUUID(),
+      slug: `retiree-${suffix}`,
+      name: "Retirée",
+      status: "retired" as const,
+    };
+    const categories = [target, other, source, retired];
+    await discovery.discoveryCategoryView.createMany({ data: categories });
+    await Promise.all(
+      [target, source, other, retired].map(async ({ categoryId }, index) => {
+        const live = await seedLiveView({ minute: 70 + index });
+        await discovery.discoveryLiveChannelView.update({
+          where: { channelId: live.channelId },
+          data: { categoryId },
+        });
+      }),
+    );
+    try {
+      const refresh = categoryAudienceRefresh({
+        prisma: discovery,
+        viewerCounts: async () => new Map(),
+        batchSize: 1,
+      });
+      await Promise.all([refresh(), refresh()]);
+
+      const browsed = await browseAll();
+      const slugs = browsed.map(({ slug }) => slug);
+
+      expect(browsed).toContainEqual({
+        slug: target.slug,
+        name: "Cible",
+        imageUrl: coverUrl("images/category/cible.webp"),
+        liveCount: 2,
+        viewerCount: 0,
+      });
+      expect(browsed).toContainEqual({
+        slug: other.slug,
+        name: "Autre",
+        liveCount: 1,
+        viewerCount: 0,
+      });
+      expect(slugs).not.toContain(source.slug);
+      expect(slugs).not.toContain(retired.slug);
+      expect(new Set(slugs).size).toBe(slugs.length);
+    } finally {
+      await cleanUp();
+      await discovery.discoveryCategoryAudience.deleteMany({
+        where: { categoryId: { in: categories.map(({ categoryId }) => categoryId) } },
+      });
+      await discovery.discoveryCategoryView.deleteMany({
+        where: { categoryId: { in: categories.map(({ categoryId }) => categoryId) } },
       });
     }
   });

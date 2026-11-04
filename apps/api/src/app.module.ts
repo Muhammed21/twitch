@@ -112,6 +112,7 @@ export class AppModule {
           viewerCounts: createViewerCountReader(stream.presenceRedis),
           thumbnailUrls: createThumbnailUrlReader(stream),
           logSink: platform.logSink,
+          images: imageBrick,
         }),
         MobileModule.register({
           featureFlags: createFeatureFlags(mobile.featureFlags),

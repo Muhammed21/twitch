@@ -11,6 +11,7 @@ export type LiveListItem = {
 export type ListedCategory = {
   readonly slug: string;
   readonly name: string;
+  readonly imageKey: string | null;
 };
 
 export type ListedLive = LiveListItem & {

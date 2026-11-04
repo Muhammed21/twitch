@@ -1,5 +1,5 @@
 import type { AuthzContext } from "@repo/authorization";
-import { err, type Result } from "@repo/result";
+import { err, ok, type Result } from "@repo/result";
 
 import type { FinalizeImage, ImageRejection } from "../../../platform/images/finalize-image.ts";
 import {
@@ -47,6 +47,11 @@ export type CategoryImageChange = {
   readonly occurredAt: Date;
 };
 
+export type CategoryImageChanged = {
+  readonly category: CategoryView;
+  readonly replacedImageKey: string | null;
+};
+
 export interface CategoryCatalog {
   findBySlug(slug: string): Promise<CategoryView | null>;
   create(creation: CategoryCreation): Promise<Result<CategoryView, "slug_taken">>;
@@ -54,7 +59,9 @@ export interface CategoryCatalog {
   retire(
     retirement: CategoryRetirement,
   ): Promise<Result<CategoryView, "category_inactive" | "category_in_use">>;
-  changeImage(change: CategoryImageChange): Promise<Result<CategoryView, "category_inactive">>;
+  changeImage(
+    change: CategoryImageChange,
+  ): Promise<Result<CategoryImageChanged, "category_inactive">>;
 }
 
 type Dependencies = {
@@ -170,7 +177,13 @@ export const changeCategoryImage =
     finalizeImage,
     newId,
     now,
-  }: Dependencies & { finalizeImage: FinalizeImage }) =>
+    discardImage,
+    onDiscardFailure,
+  }: Dependencies & {
+    finalizeImage: FinalizeImage;
+    discardImage: (key: string) => Promise<void>;
+    onDiscardFailure: (failure: { imageKey: string; error: unknown }) => void;
+  }) =>
   async ({
     actorId,
     slug,
@@ -194,10 +207,20 @@ export const changeCategoryImage =
     if (!image.ok) {
       return image;
     }
-    return catalog.changeImage({
+    const changed = await catalog.changeImage({
       categoryId: category.id,
       imageKey: image.value.key,
       outboxEventId: newId(),
       occurredAt: now(),
     });
+    if (!changed.ok) {
+      return changed;
+    }
+    const { replacedImageKey } = changed.value;
+    if (replacedImageKey !== null) {
+      await discardImage(replacedImageKey).catch((error: unknown) =>
+        onDiscardFailure({ imageKey: replacedImageKey, error }),
+      );
+    }
+    return ok(changed.value.category);
   };

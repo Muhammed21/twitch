@@ -35,7 +35,21 @@ model DiscoveryCategoryView {
   name         String                  @default("")
   status       DiscoveryCategoryStatus @default(active)
   mergedIntoId String?                 @db.Uuid
+  /// Clé de la pochette, portée par channel.category.updated (ADR 0045 §6). L'URL est calculée à la lecture.
+  imageKey     String?
 
+  @@schema("discovery")
+}
+
+/// Audience d'une catégorie qui a au moins un live, recalculée toutes les 15 s par un job (ADR 0047). Reconstructible.
+model DiscoveryCategoryAudience {
+  /// Catégorie active, fusions suivies.
+  categoryId  String   @id @db.Uuid
+  liveCount   Int
+  viewerCount Int
+  refreshedAt DateTime
+
+  @@index([viewerCount(sort: Desc), liveCount(sort: Desc), categoryId])
   @@schema("discovery")
 }
 

@@ -10,6 +10,7 @@ import type {
   LivePosition,
   LivesRequest,
 } from "../application/list-lives.ts";
+import { CATEGORY_IMAGE_URL } from "./category-image-url.ts";
 import { encodeLiveCursor } from "./live-cursor.ts";
 import { LIST_LIVES, LivesController } from "./lives.controller.ts";
 
@@ -44,7 +45,10 @@ const withLives = async (
       }),
     ],
     controllers: [LivesController],
-    providers: [{ provide: LIST_LIVES, useValue: listLives }],
+    providers: [
+      { provide: LIST_LIVES, useValue: listLives },
+      { provide: CATEGORY_IMAGE_URL, useValue: (key: string) => `https://images.test/${key}` },
+    ],
   }).compile();
   const app = configureApp(moduleRef.createNestApplication({ logger: false }));
   await app.listen(0, "127.0.0.1");
@@ -56,13 +60,17 @@ const withLives = async (
 };
 
 describe("GET /v1/lives", () => {
-  it("donne à chaque live sa catégorie quand il en a une", async () => {
+  it("donne à chaque live sa catégorie quand il en a une, avec sa pochette si elle existe", async () => {
     const categorized = makeLive({
       categoryId: "1c6f5e4d-3b2a-4019-9f8e-7d6c5b4a3928",
-      category: { slug: "irl", name: "IRL" },
+      category: { slug: "irl", name: "IRL", imageKey: "images/category/irl.webp" },
       viewerCount: 12,
     });
-    await withLives([categorized, makeLive()], async (base, requests) => {
+    const withoutCover = makeLive({
+      categoryId: "3e8b7a6f-5d4c-4b3b-9b0a-9f8e7d6c5b4a",
+      category: { slug: "art", name: "Art", imageKey: null },
+    });
+    await withLives([categorized, withoutCover, makeLive()], async (base, requests) => {
       const body = await (await fetch(`${base}?limit=3`)).json();
 
       const live = {
@@ -72,7 +80,19 @@ describe("GET /v1/lives", () => {
         startedAt: STARTED_AT.toISOString(),
       };
       expect(body).toEqual({
-        items: [{ ...live, viewerCount: 12, category: { slug: "irl", name: "IRL" } }, live],
+        items: [
+          {
+            ...live,
+            viewerCount: 12,
+            category: {
+              slug: "irl",
+              name: "IRL",
+              imageUrl: "https://images.test/images/category/irl.webp",
+            },
+          },
+          { ...live, category: { slug: "art", name: "Art" } },
+          live,
+        ],
       });
       expect(requests).toEqual([{ after: undefined, limit: 3 }]);
     });

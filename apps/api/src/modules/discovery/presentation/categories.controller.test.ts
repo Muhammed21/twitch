@@ -5,9 +5,16 @@ import { buildOpenApiDocument } from "../../../openapi/build-document.ts";
 import { rejectingVerifier } from "../../../platform/authentication.ts";
 import { configureApp } from "../../../platform/configure-app.ts";
 import { PlatformModule } from "../../../platform/platform.module.ts";
+import type { BrowseCategories, BrowsePage } from "../application/category-audience.ts";
 import type { ListCategoryLives } from "../application/category-reads.ts";
 import type { ListedLive, LivesPage } from "../application/list-lives.ts";
-import { CategoriesController, LIST_CATEGORY_LIVES } from "./categories.controller.ts";
+import {
+  BROWSE_CATEGORIES,
+  CategoriesController,
+  LIST_CATEGORY_LIVES,
+} from "./categories.controller.ts";
+import { encodeAudienceCursor } from "./category-cursor.ts";
+import { CATEGORY_IMAGE_URL } from "./category-image-url.ts";
 import { encodeLiveCursor } from "./live-cursor.ts";
 
 const CHANNEL_ID = "6f1c2d3e-4a5b-4c6d-8e7f-9a0b1c2d3e4f";
@@ -24,23 +31,32 @@ const makeLive = (overrides: Partial<ListedLive> = {}): ListedLive => ({
 
 const IRL_LIVE = makeLive({
   categoryId: "1c6f5e4d-3b2a-4019-9f8e-7d6c5b4a3928",
-  category: { slug: "irl", name: "IRL" },
+  category: { slug: "irl", name: "IRL", imageKey: "images/category/irl.webp" },
   viewerCount: 12,
 });
 
-type Calls = { categoryLives: Parameters<ListCategoryLives>[0][] };
+type Calls = {
+  categoryLives: Parameters<ListCategoryLives>[0][];
+  browse: Parameters<BrowseCategories>[0][];
+};
 
 const withControllers = async (
   {
     categoryPage = { items: [], next: undefined },
     found = true,
+    browsePage = { items: [], next: undefined },
   }: {
     categoryPage?: LivesPage;
     found?: boolean;
+    browsePage?: BrowsePage;
   },
   run: (base: string, calls: Calls, document: () => unknown) => Promise<void>,
 ) => {
-  const calls: Calls = { categoryLives: [] };
+  const calls: Calls = { categoryLives: [], browse: [] };
+  const browseCategories: BrowseCategories = async (request) => {
+    calls.browse.push(request);
+    return browsePage;
+  };
   const listCategoryLives: ListCategoryLives = async (request) => {
     calls.categoryLives.push(request);
     return found ? { ok: true, value: categoryPage } : { ok: false, error: "category_not_found" };
@@ -54,7 +70,11 @@ const withControllers = async (
       }),
     ],
     controllers: [CategoriesController],
-    providers: [{ provide: LIST_CATEGORY_LIVES, useValue: listCategoryLives }],
+    providers: [
+      { provide: LIST_CATEGORY_LIVES, useValue: listCategoryLives },
+      { provide: BROWSE_CATEGORIES, useValue: browseCategories },
+      { provide: CATEGORY_IMAGE_URL, useValue: (key: string) => `https://images.test/${key}` },
+    ],
   }).compile();
   const app = configureApp(moduleRef.createNestApplication({ logger: false }));
   await app.listen(0, "127.0.0.1");
@@ -64,6 +84,100 @@ const withControllers = async (
     await app.close();
   }
 };
+
+const IRL_AUDIENCE = {
+  categoryId: "1c6f5e4d-3b2a-4019-9f8e-7d6c5b4a3928",
+  slug: "irl",
+  name: "IRL",
+  liveCount: 2,
+  viewerCount: 70,
+  imageKey: "images/category/irl.webp",
+};
+
+const ART_AUDIENCE = {
+  categoryId: "3e8b7a6f-5d4c-4b3b-9b0a-9f8e7d6c5b4a",
+  slug: "art",
+  name: "Art",
+  liveCount: 1,
+  viewerCount: 3,
+  imageKey: null,
+};
+
+describe("GET /v1/categories", () => {
+  it("rend une page de catégories en live avec leur pochette, sans jeton, avec le curseur suivant", async () => {
+    const next = { viewerCount: 70, liveCount: 2, categoryId: IRL_AUDIENCE.categoryId };
+    const browsePage = { items: [IRL_AUDIENCE, ART_AUDIENCE], next };
+    await withControllers({ browsePage }, async (base, calls) => {
+      const response = await fetch(`${base}/categories`);
+
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({
+        items: [
+          {
+            slug: "irl",
+            name: "IRL",
+            imageUrl: "https://images.test/images/category/irl.webp",
+            liveCount: 2,
+            viewerCount: 70,
+          },
+          { slug: "art", name: "Art", liveCount: 1, viewerCount: 3 },
+        ],
+        nextCursor: encodeAudienceCursor(next),
+      });
+      expect(calls.browse).toEqual([{ after: undefined, limit: 20 }]);
+    });
+  });
+
+  it("lit la page après le curseur, à la taille demandée, sans curseur sur la dernière", async () => {
+    const after = { viewerCount: 0, liveCount: 1, categoryId: IRL_AUDIENCE.categoryId };
+    await withControllers({}, async (base, calls) => {
+      const response = await fetch(
+        `${base}/categories?limit=5&cursor=${encodeAudienceCursor(after)}`,
+      );
+
+      expect(await response.json()).toEqual({ items: [] });
+      expect(calls.browse).toEqual([{ after, limit: 5 }]);
+    });
+  });
+
+  it.each([
+    ["un curseur illisible", "cursor=abc"],
+    [
+      "un curseur aux compteurs négatifs",
+      `cursor=${encodeAudienceCursor({ viewerCount: -1, liveCount: 1, categoryId: "1c6f5e4d-3b2a-4019-9f8e-7d6c5b4a3928" })}`,
+    ],
+    [
+      "un curseur au-delà d'un entier de la base",
+      `cursor=${encodeAudienceCursor({ viewerCount: 2_147_483_648, liveCount: 1, categoryId: "1c6f5e4d-3b2a-4019-9f8e-7d6c5b4a3928" })}`,
+    ],
+    ["une limite hors bornes", "limit=51"],
+  ])("refuse %s", async (_name, query) => {
+    await withControllers({}, async (base, calls) => {
+      expect((await fetch(`${base}/categories?${query}`)).status).toBe(400);
+      expect(calls.browse).toEqual([]);
+    });
+  });
+
+  it("accepte un curseur au plus grand entier de la base", async () => {
+    const after = { viewerCount: 2_147_483_647, liveCount: 1, categoryId: IRL_AUDIENCE.categoryId };
+    await withControllers({}, async (base, calls) => {
+      await fetch(`${base}/categories?cursor=${encodeAudienceCursor(after)}`);
+
+      expect(calls.browse).toEqual([{ after, limit: 20 }]);
+    });
+  });
+
+  it("figure dans l'OpenAPI avec BrowseCategoryList", async () => {
+    await withControllers({}, async (_base, _calls, document) => {
+      const text = JSON.stringify(document());
+
+      expect(text).toContain(
+        '"/v1/categories":{"get":{"operationId":"CategoriesController_browse"',
+      );
+      expect(text).toContain('"$ref":"#/components/schemas/BrowseCategoryList"');
+    });
+  });
+});
 
 describe("GET /v1/categories/{slug}/lives", () => {
   it("rend les lives de la catégorie avec leur catégorie, et le curseur suivant", async () => {
@@ -80,7 +194,11 @@ describe("GET /v1/categories/{slug}/lives", () => {
             title: "Speedrun",
             startedAt: STARTED_AT.toISOString(),
             viewerCount: 12,
-            category: { slug: "irl", name: "IRL" },
+            category: {
+              slug: "irl",
+              name: "IRL",
+              imageUrl: "https://images.test/images/category/irl.webp",
+            },
           },
         ],
         nextCursor: encodeLiveCursor(next),

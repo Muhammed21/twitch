@@ -4,6 +4,7 @@ import { responses } from "@repo/contracts";
 
 import { responseDto } from "../../../openapi/response-dto.ts";
 import type { LivesPage } from "../application/list-lives.ts";
+import { type CategoryImageUrl, withImageUrl } from "./category-image-url.ts";
 import { encodeLiveCursor, LiveCursor } from "./live-cursor.ts";
 
 const DEFAULT_LIMIT = 20;
@@ -16,7 +17,10 @@ export const LivesQuerySchema = z.object({
 
 export class LivePage extends responseDto(responses.LivePage) {}
 
-export const toLivePage = ({ items, next }: LivesPage): z.input<typeof responses.LivePage> => ({
+export const toLivePage = (
+  { items, next }: LivesPage,
+  imageUrlOf: CategoryImageUrl,
+): z.input<typeof responses.LivePage> => ({
   items: items.map(
     ({ channelId, slug, title, startedAt, viewerCount, thumbnailUrl, category }) => ({
       channelId,
@@ -25,7 +29,7 @@ export const toLivePage = ({ items, next }: LivesPage): z.input<typeof responses
       startedAt: startedAt.toISOString(),
       viewerCount,
       thumbnailUrl,
-      category,
+      category: category === undefined ? undefined : withImageUrl(category, imageUrlOf),
     }),
   ),
   ...(next === undefined ? {} : { nextCursor: encodeLiveCursor(next) }),
