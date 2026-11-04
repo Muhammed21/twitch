@@ -1,6 +1,7 @@
 import Domain
 import Foundation
 import Observation
+import SwiftUI
 
 @MainActor
 @Observable
@@ -12,10 +13,10 @@ public final class ChannelPresence {
     let isLive: Bool
     let isForeground: Bool
 
-    public init(slug: ChannelSlug, status: LiveStatus?, isForeground: Bool) {
+    public init(slug: ChannelSlug, status: LiveStatus?, scenePhase: ScenePhase) {
       self.slug = slug
       isLive = Self.isLive(status)
-      self.isForeground = isForeground
+      isForeground = scenePhase != .background
     }
 
     private static func isLive(_ status: LiveStatus?) -> Bool {

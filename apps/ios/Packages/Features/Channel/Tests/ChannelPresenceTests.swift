@@ -1,6 +1,7 @@
 import Channel
 import Domain
 import Foundation
+import SwiftUI
 import Testing
 
 private let channelID = ChannelID(UUID(uuidString: "7a1c3e5f-2b4d-4c6e-8f10-3a5b7c9d1e2f")!)
@@ -88,8 +89,8 @@ private func makePresence(
 }
 
 @MainActor
-private func watching(_ status: LiveStatus?, isForeground: Bool = true) throws -> ChannelPresence.Watching {
-  try ChannelPresence.Watching(slug: jeanDupont(), status: status, isForeground: isForeground)
+private func watching(_ status: LiveStatus?, scenePhase: ScenePhase = .active) throws -> ChannelPresence.Watching {
+  try ChannelPresence.Watching(slug: jeanDupont(), status: status, scenePhase: scenePhase)
 }
 
 @MainActor
@@ -123,7 +124,7 @@ struct ChannelPresenceTests {
     let cases: [ChannelPresence.Watching] = try [
       watching(.offline),
       watching(nil),
-      watching(viewers(3), isForeground: false),
+      watching(viewers(3), scenePhase: .background),
     ]
 
     for watched in cases {
@@ -213,16 +214,17 @@ struct ChannelPresenceTests {
     #expect(await reporter.reports == [channelID])
   }
 
-  @Test("le compteur de viewers qui bouge ne relance pas la présence, la fin du live ou l'arrière-plan si")
+  @Test("le compteur de viewers qui bouge ou un passage inactif (Centre de contrôle) ne relance pas la présence, la fin du live ou l'arrière-plan si")
   func watchingIdentity() throws {
     #expect(try watching(viewers(3)) == watching(viewers(4)))
     #expect(try watching(viewers(3)) == watching(.live(viewers: nil)))
     #expect(try watching(viewers(3)) != watching(.offline))
-    #expect(try watching(viewers(3)) != watching(viewers(3), isForeground: false))
+    #expect(try watching(viewers(3)) != watching(viewers(3), scenePhase: .background))
+    #expect(try watching(viewers(3)) == watching(viewers(3), scenePhase: .inactive))
     #expect(try watching(viewers(3)) != ChannelPresence.Watching(
       slug: ChannelSlug("autre_chaine"),
       status: viewers(3),
-      isForeground: true
+      scenePhase: .active
     ))
   }
 }

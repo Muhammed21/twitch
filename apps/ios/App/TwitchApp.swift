@@ -148,7 +148,7 @@ struct ChannelScreen: View {
   @Environment(\.scenePhase) private var scenePhase
 
   private var watching: ChannelPresence.Watching {
-    ChannelPresence.Watching(slug: slug, status: liveStatus.status, isForeground: scenePhase == .active)
+    ChannelPresence.Watching(slug: slug, status: liveStatus.status, scenePhase: scenePhase)
   }
 
   var body: some View {
