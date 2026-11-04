@@ -44,6 +44,14 @@ jobs:
           sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)" && xcodebuild -version
           echo "build=$(xcodebuild -version | awk '/Build version/ { print $3 }')" >> "$GITHUB_OUTPUT"
 
+      # Démarré tôt : le boot se fait pendant les caches, l'installation et les lints.
+      - name: Simulateur
+        run: |
+          simulator=$(xcrun simctl list devices available --json \
+            | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | startswith("iPhone"))][0].udid')
+          echo "SIMULATOR=$simulator" >> "$GITHUB_ENV"
+          xcrun simctl boot "$simulator"
+
       # Restaurés avant tout build : hashFiles ne doit pas lire Packages/.build.
       - id: swiftpm-cache
         uses: actions/cache/restore@v4
@@ -113,12 +121,6 @@ jobs:
 
       - name: Le lanceur Maestro de la CI ne relance que le pilote non prêt
         run: maestro/check-ci-test.sh
-
-      - name: Simulateur
-        run: |
-          simulator=$(xcrun simctl list devices available --json \
-            | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | startswith("iPhone"))][0].udid')
-          echo "SIMULATOR=$simulator" >> "$GITHUB_ENV"
 
       - name: Tests (Swift Testing)
         working-directory: apps/ios/Packages
