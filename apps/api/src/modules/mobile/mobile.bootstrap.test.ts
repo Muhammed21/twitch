@@ -147,6 +147,22 @@ describe("GET /v1/mobile/bootstrap (ADR 0009, ADR 0012)", () => {
     });
   });
 
+  it("rend la bio et le début du dernier live en date ISO, dans le profil", async () => {
+    const readProfile: ReadProfile = async () =>
+      ok({ ...PROFILE, bio: "Speedrun", lastLiveAt: new Date("2026-11-03T20:15:00.000Z") });
+
+    await withBootstrap({ readProfile }, async (get) => {
+      const response = await get(authenticated);
+
+      expect(response.status).toBe(200);
+      expect((await response.json()).profile).toEqual({
+        ...PROFILE,
+        bio: "Speedrun",
+        lastLiveAt: "2026-11-03T20:15:00.000Z",
+      });
+    });
+  });
+
   it.each([
     ["un jeton invalide", { authorization: `Bearer ${INVALID_TOKEN}` }],
     ["un en-tête Authorization qui n'est pas Bearer", { authorization: "Basic dXNlcjpwYXNz" }],
