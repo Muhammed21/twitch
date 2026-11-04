@@ -129,6 +129,11 @@
           "$value": "{core.color.indigo.50}",
           "$description": "Couleur de pseudo dans le chat, attribuée à un auteur d'après son identifiant."
         }
+      },
+      "unread": {
+        "$type": "color",
+        "$value": "{core.color.red.43}",
+        "$description": "Filet et libellé « New » qui séparent les messages lus des non lus dans le chat."
       }
     },
     "navigation": {
