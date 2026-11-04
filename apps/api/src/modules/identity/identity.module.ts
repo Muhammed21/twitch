@@ -1,10 +1,14 @@
 import { type DynamicModule, Inject, Module, type OnModuleDestroy } from "@nestjs/common";
 
-import { getCurrentAccount } from "./application/get-current-account.ts";
+import { changeBio } from "./application/change-bio.ts";
+import { getCurrentAccount, type LastLiveOf } from "./application/get-current-account.ts";
 import type { IdentityPrisma } from "./infrastructure/better-auth.ts";
-import { prismaAccountDirectory } from "./infrastructure/prisma-account-directory.ts";
+import {
+  prismaAccountDirectory,
+  prismaBioStore,
+} from "./infrastructure/prisma-account-directory.ts";
 import type { IdentityRedis } from "./infrastructure/redis-session-revocation.ts";
-import { GET_CURRENT_ACCOUNT, MeController } from "./presentation/me.controller.ts";
+import { CHANGE_BIO, GET_CURRENT_ACCOUNT, MeController } from "./presentation/me.controller.ts";
 export {
   createIdentityRedis,
   type IdentityRedis,
@@ -19,8 +23,15 @@ export {
   type IdentityPrisma,
 } from "./infrastructure/better-auth.ts";
 
-export const createCurrentAccountReader = (prisma: IdentityPrisma) =>
-  getCurrentAccount(prismaAccountDirectory(prisma));
+export type { LastLiveOf } from "./application/get-current-account.ts";
+
+export const createCurrentAccountReader = ({
+  prisma,
+  lastLiveOf,
+}: {
+  prisma: IdentityPrisma;
+  lastLiveOf: LastLiveOf;
+}) => getCurrentAccount({ directory: prismaAccountDirectory(prisma), lastLiveOf });
 
 const IDENTITY_PRISMA = Symbol("IDENTITY_PRISMA");
 const IDENTITY_REDIS = Symbol("IDENTITY_REDIS");
@@ -35,9 +46,11 @@ export class IdentityModule implements OnModuleDestroy {
   static register({
     prisma,
     redis,
+    lastLiveOf,
   }: {
     prisma: IdentityPrisma;
     redis: IdentityRedis;
+    lastLiveOf: LastLiveOf;
   }): DynamicModule {
     return {
       module: IdentityModule,
@@ -45,8 +58,9 @@ export class IdentityModule implements OnModuleDestroy {
       providers: [
         {
           provide: GET_CURRENT_ACCOUNT,
-          useValue: createCurrentAccountReader(prisma),
+          useValue: createCurrentAccountReader({ prisma, lastLiveOf }),
         },
+        { provide: CHANGE_BIO, useValue: changeBio(prismaBioStore(prisma)) },
         { provide: IDENTITY_PRISMA, useValue: prisma },
         { provide: IDENTITY_REDIS, useValue: redis },
       ],

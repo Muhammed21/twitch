@@ -14,6 +14,8 @@ export const Profile = z
     id: Uuid,
     name: z.string(),
     email: z.string(),
+    bio: z.string().optional(),
+    lastLiveAt: z.iso.datetime().optional(),
     channel: OwnedChannel.optional(),
   })
   .meta({ id: "Profile" });

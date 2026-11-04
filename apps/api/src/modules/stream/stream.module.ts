@@ -65,6 +65,8 @@ export const createViewerCountReader =
   (channelIds: readonly string[]): Promise<ReadonlyMap<string, number>> =>
     redisPresenceStore(presenceRedis).count({ channelIds, at: new Date() });
 
+export { prismaLastLiveOf as createLastLiveReader } from "./infrastructure/prisma-stream-sessions.ts";
+
 export const RECONCILIATION_INTERVAL_MS = 60_000;
 export const viewerCountSampleDelayMs = (): number => nextSampleDelayMs(new Date());
 
