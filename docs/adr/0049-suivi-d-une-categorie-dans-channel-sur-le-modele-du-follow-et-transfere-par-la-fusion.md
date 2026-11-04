@@ -9,7 +9,7 @@
 
 La page d'une catégorie de l'app iOS reçoit l'en-tête de Twitch : pochette, nom, viewers, tags et bouton Follow. Sur Twitch, ce bouton suit la **catégorie**, pas une chaîne, et le nombre de followers de la catégorie s'affiche dans l'en-tête.
 
-L'ADR 0020 décrit le follow d'une chaîne : une ligne par paire, un état, une version monotone par paire, des events par l'outbox, et une règle de convergence pour chaque consommateur. Il ne dit rien d'une catégorie. L'ADR 0021 (§3) place le catalogue des catégories dans `channel`. L'ADR 0045 fixe leur cycle de vie : une catégorie fusionnée garde son slug, qui mène à la cible, et une catégorie retirée répond `404`. L'ADR 0047 fait servir l'audience des catégories par `discovery`. L'ADR 0050 fait servir l'en-tête de la catégorie par `discovery`, sur `GET /v1/categories/{slug}`.
+L'ADR 0020 décrit le follow d'une chaîne : une ligne par paire, un état, une version monotone par paire, des events par l'outbox, et une règle de convergence pour chaque consommateur. Il ne dit rien d'une catégorie. L'ADR 0021 (§3) place le catalogue des catégories dans `channel`. L'ADR 0045 fixe leur cycle de vie : une catégorie fusionnée garde son slug, qui mène à la cible, et une catégorie retirée répond `404`. L'ADR 0047 fait servir l'audience des catégories par `discovery`. L'[ADR 0050](0050-tags-d-une-categorie-poses-par-l-administration-et-lus-par-discovery.md) fait servir l'en-tête de la catégorie par `discovery`, sur `GET /v1/categories/{slug}`.
 
 Plusieurs points ne sont couverts par aucun ADR :
 
@@ -110,7 +110,7 @@ La transaction du retrait (ADR 0045 §3) clôt les suivis de la catégorie : `no
 - `DiscoveryCategoryFollow { userId, categoryId, following, version }` garde la dernière version appliquée par paire ;
 - `DiscoveryCategoryFollowerCount { categoryId, followerCount }` change dans la même transaction, seulement quand l'état de la paire change.
 
-`GET /v1/categories/{slug}` (ADR 0050) ajoute à l'en-tête `followerCount` et, si un jeton est présent, `isFollowing`. Le jeton est optionnel : sans jeton, `isFollowing` est absent. Le slug d'une catégorie fusionnée rend l'en-tête de la cible.
+`GET /v1/categories/{slug}` ([ADR 0050](0050-tags-d-une-categorie-poses-par-l-administration-et-lus-par-discovery.md)) ajoute à l'en-tête `followerCount` et, si un jeton est présent, `isFollowing`. Le jeton est optionnel : sans jeton, `isFollowing` est absent. Le slug d'une catégorie fusionnée rend l'en-tête de la cible.
 
 Ces deux tables se reconstruisent par `discovery:rebuild`, depuis l'outbox de `channel` (ADR 0041).
 
@@ -156,7 +156,7 @@ Quand `identity.account.deleted` existera, `channel` clôt les suivis de catégo
 1. `channel` : migration (enums, table `ChannelCategoryFollow`, unique `(userId, categoryId)`, index `(categoryId, state)`), contrats des deux events, cas d'usage `followCategory` et `unfollowCategory`, `PUT` et `DELETE /v1/me/followed-categories/{slug}`.
 2. `channel` : transfert dans `merge`, clôture dans `retire`, events par paire.
 3. `discovery` : projection des paires et du compteur, handler, reconstruction.
-4. `discovery` : `followerCount` et `isFollowing` dans `GET /v1/categories/{slug}`, une fois la route de l'ADR 0050 en place.
+4. `discovery` : `followerCount` et `isFollowing` dans `GET /v1/categories/{slug}`, une fois la route de l'[ADR 0050](0050-tags-d-une-categorie-poses-par-l-administration-et-lus-par-discovery.md) en place.
 
 ## Liens
 
@@ -165,5 +165,5 @@ Quand `identity.account.deleted` existera, `channel` clôt les suivis de catégo
 - ADR 0045 : fusion et retrait d'une catégorie, que le suivi accompagne.
 - ADR 0041 : l'outbox de `channel`, historique d'où la projection se reconstruit.
 - ADR 0047 : audience des catégories servie par `discovery`.
-- ADR 0050 : en-tête de la catégorie servi par `discovery`, qui reçoit `followerCount` et `isFollowing`.
+- [ADR 0050](0050-tags-d-une-categorie-poses-par-l-administration-et-lus-par-discovery.md) : en-tête de la catégorie servi par `discovery`, qui reçoit `followerCount` et `isFollowing`.
 - ADR 0002 : les modules ne se parlent que par events.

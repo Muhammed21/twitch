@@ -137,6 +137,7 @@ const withDiscoveryModule = async (
         channelConsumerRedis,
         streamConsumerRedis,
         viewerCounts,
+        thumbnailUrls: async () => new Map(),
         logSink: (line) => logs.push(line),
         images: { imageUrlOf: (key) => `https://images.test/${key}` },
       }),
