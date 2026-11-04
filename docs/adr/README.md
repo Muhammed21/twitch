@@ -12,7 +12,7 @@ Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes
 | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ------------ |
 | [0001](0001-provider-video-manage.md)                                                                     | Provider vidéo managé plutôt qu'ingest auto-hébergé                                                                     | Accepté — IVS remplacé par 0031                                        | Vidéo        |
 | [0002](0002-monolithe-modulaire-hexagonal.md)                                                             | Monolithe modulaire hexagonal plutôt que microservices                                                                  | Accepté                                                                | API          |
-| [0003](0003-decoupage-bounded-contexts.md)                                                                | Découpage en 8 bounded contexts                                                                                         | Accepté                                                                | API          |
+| [0003](0003-decoupage-bounded-contexts.md)                                                                | Découpage en 8 bounded contexts                                                                                         | Accepté — consommations d'events de `discovery` amendées par 0049      | API          |
 | [0004](0004-chat-process-separe-topologie-temps-reel.md)                                                  | Chat en process séparé, topologie temps réel à trois canaux                                                             | Accepté — transport remplacé par 0022                                  | Chat         |
 | [0005](0005-strategie-tokens-et-sessions.md)                                                              | Stratégie de tokens et de sessions (better-auth)                                                                        | Accepté                                                                | Auth         |
 | [0006](0006-autorisation-scopee-par-chaine.md)                                                            | Modèle d'autorisation scopé par chaîne (RBAC/ABAC)                                                                      | Accepté                                                                | Auth         |
@@ -59,6 +59,7 @@ Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes
 | [0047](0047-audience-des-categories-agregee-par-un-job-et-lue-par-curseur.md)                             | L'audience des catégories est agrégée par un job périodique, et Browse la lit par curseur                               | Accepté                                                                | Discovery    |
 | [0048](0048-messages-d-un-chatter-en-timeout-effaces-chez-les-viewers.md)                                 | Les messages d'un chatter mis en timeout sont effacés chez les viewers, émis par chaque instance à ses sockets          | Accepté                                                                | Chat         |
 | [0049](0049-suivi-d-une-categorie-dans-channel-sur-le-modele-du-follow-et-transfere-par-la-fusion.md)     | Le suivi d'une catégorie vit dans `channel` sur le modèle du follow, la fusion le transfère, et `discovery` le projette | Accepté                                                                | Channel      |
+| [0050](0050-tags-d-une-categorie-poses-par-l-administration-et-lus-par-discovery.md)                      | Les tags d'une catégorie sont posés par l'administration dans `channel`, et lus par `discovery`                         | Accepté                                                                | Channel      |
 
 ## Dépendances principales
 
@@ -100,6 +101,7 @@ Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes
 0008 ── 0047 (audience des catégories agrégée par un job, Browse lu par curseur)
 0004, 0022, 0024, 0027, 0032 ── 0048 (messages d'un chatter en timeout effacés chez les viewers)
 0020, 0021, 0041, 0045 ── 0049 (suivi d'une catégorie dans channel, transféré par la fusion, projeté par discovery ; amende 0003)
+0021, 0045, 0047 ── 0050 (tags d'une catégorie posés par l'administration, lus par discovery)
 ```
 
 ## Points ouverts

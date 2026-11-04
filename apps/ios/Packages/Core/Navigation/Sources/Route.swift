@@ -19,6 +19,7 @@ public enum Route: Hashable, Sendable {
 
 public enum AppTab: Hashable, Sendable {
   case home
+  case browse
   case profile
 }
 
@@ -27,6 +28,7 @@ public enum AppTab: Hashable, Sendable {
 public final class Router {
   public var selectedTab: AppTab = .home
   public var path: [Route] = []
+  public var browsePath: [Route] = []
   public var profilePath: [Route] = []
   public var isShowingStreamManager = false
 
@@ -35,6 +37,7 @@ public final class Router {
   public var isTabBarVisible: Bool {
     switch selectedTab {
     case .home: path.isEmpty
+    case .browse: browsePath.isEmpty
     case .profile: profilePath.isEmpty
     }
   }
@@ -42,6 +45,7 @@ public final class Router {
   public func push(_ route: Route) {
     switch selectedTab {
     case .home: path.append(route)
+    case .browse: browsePath.append(route)
     case .profile: profilePath.append(route)
     }
   }
@@ -54,6 +58,7 @@ public final class Router {
     isShowingStreamManager = false
     selectedTab = .home
     path = []
+    browsePath = []
     profilePath = []
   }
 
