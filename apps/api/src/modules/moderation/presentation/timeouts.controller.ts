@@ -3,10 +3,11 @@ import { createZodDto, ZodResponse } from "nestjs-zod";
 import { z } from "zod";
 
 import type { AccessTokenIdentity } from "@repo/auth-verifier";
-import { responses, Uuid } from "@repo/contracts";
+import { responses } from "@repo/contracts";
 import type { Result } from "@repo/result";
 
 import { responseDto } from "../../../openapi/response-dto.ts";
+import { BodyAccountId } from "../../../platform/account-id.ts";
 import { AccessTokenGuard, CurrentIdentity } from "../../../platform/authentication.ts";
 import { pathChannelIdOf } from "../../../platform/channel-id.ts";
 import { ProblemException } from "../../../platform/problem.ts";
@@ -26,7 +27,7 @@ export type TimeoutUser = (
 class Timeout extends responseDto(responses.Timeout) {}
 
 class TimeoutUserRequest extends createZodDto(
-  z.strictObject({ userId: Uuid, durationSeconds: z.int() }),
+  z.strictObject({ userId: BodyAccountId, durationSeconds: z.int() }),
 ) {}
 
 type TimeoutView = z.input<typeof responses.Timeout>;

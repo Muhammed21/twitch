@@ -110,6 +110,19 @@ describe("POST /v1/channels/{id}/timeouts", () => {
     });
   });
 
+  it("sanctionne le compte sous son identifiant en minuscules quand son UUID arrive en majuscules", async () => {
+    await withTimeouts(TIMED_OUT, async (base, requests) => {
+      const response = await postTimeout(base, {
+        body: { userId: VIEWER_ID.toUpperCase(), durationSeconds: 600 },
+      });
+
+      expect(response.status).toBe(201);
+      expect(requests).toEqual([
+        { actorId: ACTOR_ID, channelId: CHANNEL_ID, targetId: VIEWER_ID, durationSeconds: 600 },
+      ]);
+    });
+  });
+
   it("répond 401 sans jeton, sans rien sanctionner", async () => {
     await withTimeouts(TIMED_OUT, async (base, requests) => {
       const response = await postTimeout(base, { token: false });
