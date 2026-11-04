@@ -60,6 +60,7 @@ Chaque page de `docs/`, une ligne chacune : titre, [mode](README.md#carte), stat
 - [0046 — Les glyphes d'interface sont des masques extraits des captures](adr/0046-glyphes-d-interface-extraits-des-captures-en-masques.md) — _explanation · Accepté_ — D'où viennent les glyphes d'interface, et comment les rend-on sans les redessiner ?
 - [0047 — L'audience des catégories est agrégée par un job périodique, et Browse la lit par curseur](adr/0047-audience-des-categories-agregee-par-un-job-et-lue-par-curseur.md) — _explanation · Accepté_ — Comment classer les catégories par audience sans que chaque requête de Browse lise tous les lives en cours ?
 - [0048 — Les messages d'un chatter mis en timeout sont effacés chez les viewers par un événement temps réel, émis par chaque instance à ses propres sockets](adr/0048-messages-d-un-chatter-en-timeout-effaces-chez-les-viewers.md) — _explanation · Accepté_ — Par quel chemin un effacement arrive-t-il à chaque viewer du salon, et avec quelles garanties ?
+- [0050 — Les tags d'une catégorie sont posés par l'administration dans `channel`, et lus par `discovery`](adr/0050-tags-d-une-categorie-poses-par-l-administration-et-lus-par-discovery.md) — _explanation · Proposé_ — Qui pose les tags d'une catégorie, sous quelle forme et dans quelle limite, et comment arrivent-ils dans les lectures de `discovery` ?
 - [Décisions d'architecture (ADR)](adr/README.md) — _reference_ — Registre des décisions structurantes du projet. Format MADR.
 
 ## Spikes — recherche bornée
