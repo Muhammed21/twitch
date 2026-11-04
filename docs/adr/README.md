@@ -100,7 +100,7 @@ Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes
 0036, 0037, 0040 ── 0046 (glyphes d'interface extraits des captures en masques, amende 0036 §6)
 0008 ── 0047 (audience des catégories agrégée par un job, Browse lu par curseur)
 0004, 0022, 0024, 0027, 0032 ── 0048 (messages d'un chatter en timeout effacés chez les viewers)
-0020, 0021, 0041, 0045 ── 0049 (suivi d'une catégorie dans channel, transféré par la fusion, projeté par discovery ; amende 0003)
+0020, 0021, 0041, 0045, 0050 ── 0049 (suivi d'une catégorie dans channel, transféré par la fusion, projeté par discovery ; amende 0003)
 0021, 0045, 0047 ── 0050 (tags d'une catégorie posés par l'administration, lus par discovery)
 ```
 
