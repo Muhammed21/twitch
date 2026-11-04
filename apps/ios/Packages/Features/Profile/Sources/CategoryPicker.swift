@@ -11,7 +11,7 @@ struct CategoryField: View {
         .font(TextRole.display.font)
         .foregroundStyle(ColorRole.textPrimary.color)
       if let chosen {
-        CategoryCard(name: chosen.name, clearLabel: String(localized: ProfileText.removeCategory)) {
+        CategoryCard(name: chosen.name, coverURL: chosen.imageURL, clearLabel: String(localized: ProfileText.removeCategory)) {
           self.chosen = nil
         }
         .accessibilityIdentifier("editStreamInfo.category")
@@ -112,7 +112,7 @@ struct CategorySearchScreen: View {
           chosen = category
           dismiss()
         } label: {
-          CategoryResultRow(name: category.name)
+          CategoryResultRow(name: category.name, coverURL: category.imageURL)
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("categorySearch.result")
