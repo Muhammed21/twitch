@@ -44,6 +44,24 @@ public struct BrowseCategory: Equatable, Sendable {
   }
 }
 
+public struct CategoryCursor: Hashable, Sendable {
+  public let rawValue: String
+
+  public init(_ rawValue: String) {
+    self.rawValue = rawValue
+  }
+}
+
+public struct CategoryPage: Equatable, Sendable {
+  public let categories: [BrowseCategory]
+  public let nextCursor: CategoryCursor?
+
+  public init(categories: [BrowseCategory], nextCursor: CategoryCursor?) {
+    self.categories = categories
+    self.nextCursor = nextCursor
+  }
+}
+
 public protocol CategoryDirectory: Sendable {
-  func categories() async throws -> [BrowseCategory]
+  func categories(after cursor: CategoryCursor?) async throws -> CategoryPage
 }

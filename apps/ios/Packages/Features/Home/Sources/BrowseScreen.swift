@@ -37,20 +37,22 @@ private struct CategoryGrid: View {
 
   var body: some View {
     ScrollView {
-      LazyVGrid(columns: columns, alignment: .leading, spacing: LayoutRole.categoryRowGap.points) {
-        ForEach(store.categories, id: \.slug) { category in
-          CategoryTile(
-            name: category.name,
-            viewers: BrowseText.viewers(category.viewers, locale: locale),
-            coverURL: category.imageURL
-          )
-          .accessibilityIdentifier("browse.category.\(category.slug.rawValue)")
+      LazyVStack(spacing: 0) {
+        LazyVGrid(columns: columns, alignment: .leading, spacing: LayoutRole.categoryRowGap.points) {
+          ForEach(store.categories, id: \.slug) { category in
+            CategoryTile(
+              name: category.name,
+              viewers: BrowseText.viewers(category.viewers, locale: locale),
+              coverURL: category.imageURL
+            )
+            .accessibilityIdentifier("browse.category.\(category.slug.rawValue)")
+          }
         }
+        .padding(LayoutRole.screenInset.points)
+        footer
       }
-      .padding(LayoutRole.screenInset.points)
-      footer
     }
-    .refreshable { await store.load() }
+    .refreshable { await store.loadFirstPage() }
   }
 
   @ViewBuilder private var footer: some View {
@@ -63,10 +65,14 @@ private struct CategoryGrid: View {
           .font(TextRole.body.font)
           .foregroundStyle(ColorRole.textSecondary.color)
         Button(BrowseText.retry) {
-          Task { await store.load() }
+          Task { await store.retry() }
         }
         .buttonStyle(ActionButtonStyle(.secondary))
       }
+    case .loaded(hasMore: true):
+      ProgressView()
+        .frame(maxWidth: .infinity)
+        .task { await store.loadNextPage() }
     case .loaded where store.categories.isEmpty:
       Text(BrowseText.empty)
         .font(TextRole.body.font)
