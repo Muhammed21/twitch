@@ -76,6 +76,11 @@
         "$value": "32px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : écart entre les onglets Categories et Live Channels de Browse (parcourir/liste-categories--defaut)."
       },
+      "36": {
+        "$type": "dimension",
+        "$value": "36px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : hauteur du champ de recherche de catégorie, 106 px à @3x (creer/recherche-categorie--resultats-clavier-ouvert)."
+      },
       "40": {
         "$type": "dimension",
         "$value": "40px",
@@ -105,6 +110,11 @@
         "$type": "dimension",
         "$value": "72px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : largeur du bouton « + » en pilule de la barre d'onglets, 216 px à @3x (profil/menu-compte--defaut)."
+      },
+      "75": {
+        "$type": "dimension",
+        "$value": "75px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : largeur de la pochette d'une catégorie dans les résultats de recherche, 225 px à @3x (creer/recherche-categorie--resultats-clavier-ouvert)."
       },
       "88": {
         "$type": "dimension",
