@@ -4,6 +4,7 @@ import {
   type LiveListItem,
   type LivePosition,
   listLives,
+  withLiveThumbnails,
   withLiveViewerCounts,
 } from "./list-lives.ts";
 
@@ -177,5 +178,78 @@ describe("liste des lives avec le nombre de viewers", () => {
 
     expect(await lives(FIRST_PAGE)).toEqual({ items: [], next: undefined });
     expect(viewerCounts.reads).toEqual([]);
+  });
+});
+
+const thumbnailUrlOf = (index: number) =>
+  `http://127.0.0.1:3002/hls/channels/${String(index).padStart(2, "0")}/thumbnail.jpg`;
+
+const makeThumbnailUrls = (urls: ReadonlyMap<string, string>) => {
+  const reads: (readonly string[])[] = [];
+  return {
+    reads,
+    read: async (channelIds: readonly string[]) => {
+      reads.push(channelIds);
+      return new Map([...urls].filter(([channelId]) => channelIds.includes(channelId)));
+    },
+  };
+};
+
+describe("liste des lives avec leur vignette", () => {
+  it("ajoute à chaque live de la page l'URL de sa vignette, quand sa chaîne a un canal vidéo", async () => {
+    const { reader } = inMemoryReader(LIVES);
+    const thumbnailUrls = makeThumbnailUrls(
+      new Map([
+        [makeLive(1).channelId, thumbnailUrlOf(1)],
+        [makeLive(3).channelId, thumbnailUrlOf(3)],
+      ]),
+    );
+    const lives = withLiveThumbnails({
+      lives: listLives(reader),
+      thumbnailUrls: thumbnailUrls.read,
+      onThumbnailFailure: () => {},
+    });
+
+    expect(await lives(FIRST_PAGE)).toStrictEqual({
+      items: [
+        { ...makeLive(1), thumbnailUrl: thumbnailUrlOf(1) },
+        makeLive(2),
+        { ...makeLive(3), thumbnailUrl: thumbnailUrlOf(3) },
+      ],
+      next: positionOf(makeLive(3)),
+    });
+    expect(thumbnailUrls.reads).toEqual([[1, 2, 3].map((index) => makeLive(index).channelId)]);
+  });
+
+  it("rend la page sans vignette, et signale l'échec, quand les canaux vidéo sont illisibles", async () => {
+    const { reader } = inMemoryReader(LIVES);
+    const failure = new Error("base injoignable");
+    const failures: unknown[] = [];
+    const lives = withLiveThumbnails({
+      lives: listLives(reader),
+      thumbnailUrls: async () => {
+        throw failure;
+      },
+      onThumbnailFailure: (error) => failures.push(error),
+    });
+
+    expect(await lives(FIRST_PAGE)).toEqual({
+      items: [makeLive(1), makeLive(2), makeLive(3)],
+      next: positionOf(makeLive(3)),
+    });
+    expect(failures).toEqual([failure]);
+  });
+
+  it("ne lit aucune vignette pour une page vide", async () => {
+    const { reader } = inMemoryReader([]);
+    const thumbnailUrls = makeThumbnailUrls(new Map());
+    const lives = withLiveThumbnails({
+      lives: listLives(reader),
+      thumbnailUrls: thumbnailUrls.read,
+      onThumbnailFailure: () => {},
+    });
+
+    expect(await lives(FIRST_PAGE)).toEqual({ items: [], next: undefined });
+    expect(thumbnailUrls.reads).toEqual([]);
   });
 });

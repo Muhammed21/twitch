@@ -12,7 +12,12 @@ import type { Pool } from "pg";
 import { errorDetails, type LogSink, writeLog } from "../../platform/logging.ts";
 import { startPeriodicJob } from "../../platform/periodic-job.ts";
 import { startStreamConsumer, type StreamConsumerRedis } from "../../platform/stream-consumer.ts";
-import { listLives, withLiveViewerCounts } from "./application/list-lives.ts";
+import {
+  listLives,
+  type ThumbnailUrlReader,
+  withLiveThumbnails,
+  withLiveViewerCounts,
+} from "./application/list-lives.ts";
 import { createLiveStatusHub, type LiveStatusHub } from "./application/live-status-hub.ts";
 import { type ViewerCountReader, withViewerCounts } from "./application/live-status-viewers.ts";
 import { projectDiscoveryEvent } from "./application/project-discovery-event.ts";
@@ -65,6 +70,7 @@ type DiscoveryDependencies = {
   channelConsumerRedis: StreamConsumerRedis;
   streamConsumerRedis: StreamConsumerRedis;
   viewerCounts: ViewerCountReader;
+  thumbnailUrls: ThumbnailUrlReader;
   logSink: LogSink;
 };
 
@@ -102,7 +108,16 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
         {
           provide: LIST_LIVES,
           useValue: withLiveViewerCounts({
-            lives: listLives(prismaLiveReader(dependencies.prisma)),
+            lives: withLiveThumbnails({
+              lives: listLives(prismaLiveReader(dependencies.prisma)),
+              thumbnailUrls: dependencies.thumbnailUrls,
+              onThumbnailFailure: (error) =>
+                writeLog(dependencies.logSink, {
+                  level: "error",
+                  msg: "lecture des vignettes de la liste des lives en échec",
+                  ...errorDetails(error),
+                }),
+            }),
             viewerCounts: dependencies.viewerCounts,
             onViewerCountFailure: (error) =>
               writeLog(dependencies.logSink, {

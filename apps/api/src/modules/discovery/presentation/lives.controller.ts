@@ -31,12 +31,13 @@ export class LivesController {
   async list(@Query() query: LivesQuery): Promise<z.input<typeof responses.LivePage>> {
     const { items, next } = await this.listLives({ after: query.cursor, limit: query.limit });
     return {
-      items: items.map(({ channelId, slug, title, startedAt, viewerCount }) => ({
+      items: items.map(({ channelId, slug, title, startedAt, viewerCount, thumbnailUrl }) => ({
         channelId,
         slug,
         title,
         startedAt: startedAt.toISOString(),
         ...(viewerCount === undefined ? {} : { viewerCount }),
+        ...(thumbnailUrl === undefined ? {} : { thumbnailUrl }),
       })),
       ...(next === undefined ? {} : { nextCursor: encodeLiveCursor(next) }),
     };

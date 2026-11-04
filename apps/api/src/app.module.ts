@@ -18,6 +18,7 @@ import { createFeatureFlags, MobileModule } from "./modules/mobile/mobile.module
 import { ModerationModule, type ModerationPrisma } from "./modules/moderation/moderation.module.ts";
 import {
   createLastLiveReader,
+  createThumbnailUrlReader,
   createViewerCountReader,
   type PresenceRedis,
   StreamModule,
@@ -109,6 +110,7 @@ export class AppModule {
         DiscoveryModule.register({
           ...discovery,
           viewerCounts: createViewerCountReader(stream.presenceRedis),
+          thumbnailUrls: createThumbnailUrlReader(stream),
           logSink: platform.logSink,
         }),
         MobileModule.register({

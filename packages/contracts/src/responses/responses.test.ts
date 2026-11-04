@@ -234,8 +234,29 @@ describe("LivePage", () => {
     expect(responses.LivePage.parse(page)).toEqual(page);
   });
 
+  it("décode l'URL de la vignette d'un live, en HTTP comme en HTTPS", () => {
+    const page = {
+      items: [
+        makeLive({ thumbnailUrl: "https://video.example/hls/channels/c/thumbnail.jpg" }),
+        makeLive({ thumbnailUrl: "http://127.0.0.1:3002/hls/channels/c/thumbnail.jpg" }),
+      ],
+    };
+
+    expect(responses.LivePage.parse(page)).toEqual(page);
+  });
+
   it.each([
     ["sans slug", { slug: undefined }],
+    ["avec une vignette qui n'est pas une URL", { thumbnailUrl: "vignette.jpg" }],
+    ["avec une vignette hors HTTP", { thumbnailUrl: "ftp://video.example/thumbnail.jpg" }],
+    [
+      "avec une vignette d'un schéma qui finit par http",
+      { thumbnailUrl: "xhttp://v.example/t.jpg" },
+    ],
+    [
+      "avec une vignette d'un schéma qui commence par https",
+      { thumbnailUrl: "httpsx://v.example/t.jpg" },
+    ],
     ["avec un démarrage qui n'est pas une date ISO", { startedAt: "hier soir" }],
     ["avec un identifiant de chaîne qui n'est pas un UUID", { channelId: "42" }],
     ["avec un nombre de viewers négatif", { viewerCount: -1 }],
