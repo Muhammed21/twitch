@@ -1,17 +1,22 @@
 appId: com.muhammedcavus.twitch
 ---
-- launchApp:
-    clearState: true
-    clearKeychain: true
-- extendedWaitUntil:
-    visible:
-      id: welcome.logIn
-    timeout: 30000
-- tapOn:
-    id: welcome.logIn
-- extendedWaitUntil:
-    visible: Username
-    timeout: 30000
+# La feuille web de connexion reste parfois blanche sur le simulateur de la CI, alors que l'API a
+# servi /login : une relance complète de l'app la débloque.
+- retry:
+    maxRetries: 1
+    commands:
+      - launchApp:
+          clearState: true
+          clearKeychain: true
+      - extendedWaitUntil:
+          visible:
+            id: welcome.logIn
+          timeout: 30000
+      - tapOn:
+          id: welcome.logIn
+      - extendedWaitUntil:
+          visible: Username
+          timeout: 30000
 - tapOn: Username
 - inputText: viewer@twitch.local
 - pressKey: Enter
