@@ -15,16 +15,25 @@ struct Refused: Error, CustomStringConvertible {
   var description: String { "refusé pour la clé \(secret)" }
 }
 
+struct RenameCall: Equatable {
+  let channel: ChannelID
+  let title: String
+}
+
 actor FakeMyChannel: MyChannelRepository {
   private let owned: Result<OwnedChannel?, any Error>
   private let key: Result<StreamKey, any Error>
+  private let renamed: Result<Channel, any Error>?
+  private(set) var renames: [RenameCall] = []
 
   init(
     owned: Result<OwnedChannel?, any Error>,
-    key: Result<StreamKey, any Error> = .success(StreamKey(secret, ingestURL: ingestURL))
+    key: Result<StreamKey, any Error> = .success(StreamKey(secret, ingestURL: ingestURL)),
+    renamed: Result<Channel, any Error>? = nil
   ) {
     self.owned = owned
     self.key = key
+    self.renamed = renamed
   }
 
   func ownedChannel() throws -> OwnedChannel? {
@@ -36,7 +45,11 @@ actor FakeMyChannel: MyChannelRepository {
   }
 
   func rename(_ channel: ChannelID, to title: String) throws -> Channel {
-    try Channel(id: channel, slug: ChannelSlug("viewer_de_test"), title: title, ownerID: ownerID)
+    renames.append(RenameCall(channel: channel, title: title))
+    guard let renamed else {
+      return try Channel(id: channel, slug: ChannelSlug("viewer_de_test"), title: title, ownerID: ownerID)
+    }
+    return try renamed.get()
   }
 }
 

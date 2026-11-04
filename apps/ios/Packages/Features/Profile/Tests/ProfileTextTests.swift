@@ -17,10 +17,12 @@ struct ProfileTextTests {
   }
 
   @Test(
-    "un avis pour la copie de la clé et pour la clé illisible",
+    "un avis pour la copie de la clé, la clé illisible, et le titre enregistré ou refusé",
     arguments: [
       (MyChannelStore.Notice.keyCopied, "Stream key copied."),
       (.keyUnavailable, "Couldn't load your stream key."),
+      (.titleSaved, "Stream info updated successfully."),
+      (.titleFailed, "Couldn't update your stream info."),
     ]
   )
   func notices(notice: MyChannelStore.Notice, text: String) {
