@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { Uuid } from "../conventions/schemas.ts";
+import { CategorySummary } from "./category.ts";
 
 export const Channel = z
   .looseObject({
@@ -8,5 +9,6 @@ export const Channel = z
     slug: z.string(),
     title: z.string(),
     ownerId: Uuid,
+    category: CategorySummary.optional(),
   })
   .meta({ id: "Channel" });
