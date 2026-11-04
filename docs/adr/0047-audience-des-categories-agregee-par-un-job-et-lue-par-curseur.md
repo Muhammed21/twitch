@@ -1,6 +1,6 @@
 # 0047 — L'audience des catégories est agrégée par un job périodique, et Browse la lit par curseur
 
-- Statut : Proposé
+- Statut : Accepté
 - Date : 2026-11-04
 - Décideurs : Muhammed Cavus
 
