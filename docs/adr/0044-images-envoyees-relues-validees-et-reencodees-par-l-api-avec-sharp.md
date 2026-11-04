@@ -1,6 +1,6 @@
 # 0044 — Les images envoyées montent par URL présignée, puis l'API les relit, les valide et les réencode avec sharp
 
-- Statut : Proposé
+- Statut : Accepté
 - Date : 2026-11-04
 - Décideurs : Muhammed Cavus
 - Amende : ADR 0008 (§4 : l'API relit dans le stockage objet le binaire d'une image envoyée)
@@ -108,7 +108,7 @@ L'identité du déposant est portée par la clé : aucune table d'envois. Les d�
 - **Type réel lu dans les octets**, jamais dans l'extension ni dans `Content-Type` : JPEG, PNG ou WebP. HEIC est refusé : l'app convertit en JPEG avant l'envoi.
 - **Pixels décodés plafonnés** (`limitInputPixels`). Les dimensions minimales et maximales dépendent de l'usage.
 - **Sortie unique par usage**, en WebP. Les métadonnées sont retirées et l'orientation EXIF appliquée avant le retrait.
-- **Valeurs proposées, à confirmer** :
+- **Valeurs par usage** :
 
 | Usage      | Poids max | Dimensions min | Sortie                       |
 | ---------- | --------- | -------------- | ---------------------------- |
