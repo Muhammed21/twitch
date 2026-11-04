@@ -24,7 +24,7 @@ struct LiveList<Header: View>: View {
         header
         ForEach(store.lives, id: \.session.channelID) { live in
           NavigationLink(value: Route.channel(live.slug)) {
-            LiveRow(live: live)
+            LiveRow(live: live, generation: store.thumbnailGeneration)
           }
           .buttonStyle(.plain)
         }
@@ -70,6 +70,7 @@ struct LiveList<Header: View>: View {
 
 private struct LiveRow: View {
   let live: LiveChannel
+  let generation: Int
   @Environment(\.locale) private var locale
 
   var body: some View {
@@ -78,7 +79,8 @@ private struct LiveRow: View {
       viewers: HomeCardText.viewers(live.viewers, locale: locale),
       name: live.slug.rawValue,
       title: live.title,
-      category: nil
+      category: nil,
+      preview: LivePreview(url: live.thumbnailURL, generation: generation)
     )
     .accessibilityElement(children: .combine)
     .accessibilityIdentifier("home.live.\(live.slug.rawValue)")
