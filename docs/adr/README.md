@@ -53,7 +53,7 @@ Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes
 | [0041](0041-les-outbox-historique-lisible-pour-reconstruire-une-projection.md)                            | Les outbox de `channel` et `stream` sont un historique lisible pour reconstruire une projection                | Accepté                                                            | Données      |
 | [0042](0042-ip-du-client-par-un-nombre-de-proxys-de-confiance-et-limite-de-debit-redis.md)                | L'IP du client se lit par un nombre de proxys de confiance, et la limite de débit HTTP compte dans Redis       | Accepté                                                            | API          |
 | [0043](0043-seau-de-rate-limit-du-chat-dans-redis-et-repli-sur-le-seau-local.md)                          | Le seau de rate limit du chat vit dans Redis, et se replie sur le seau local de l'instance                     | Accepté                                                            | Chat         |
-| [0044](0044-categorie-fusion-qui-reaffecte-les-chaines-et-retrait-refuse-tant-qu-une-chaine-l-utilise.md) | Une catégorie fusionnée réaffecte ses chaînes, et une catégorie n'est retirée qu'une fois inutilisée           | Proposé                                                            | Channel      |
+| [0045](0045-categorie-fusion-qui-reaffecte-les-chaines-et-retrait-refuse-tant-qu-une-chaine-l-utilise.md) | Une catégorie fusionnée réaffecte ses chaînes, et une catégorie n'est retirée qu'une fois inutilisée           | Proposé                                                            | Channel      |
 
 ## Dépendances principales
 
@@ -89,7 +89,7 @@ Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes
 0003, 0025, 0034 ── 0041 (outbox de channel et stream lues pour reconstruire une projection, amende 0025 §3)
 0004, 0008, 0028 ── 0042 (IP du client par proxys de confiance, limite de débit HTTP dans Redis)
 0004, 0005, 0008, 0022 ── 0043 (seau de rate limit du chat dans Redis, repli sur le seau local)
-0006, 0007, 0021, 0041 ── 0044 (cycle de vie d'une catégorie : fusion qui réaffecte, retrait d'une catégorie inutilisée)
+0006, 0007, 0021, 0041 ── 0045 (cycle de vie d'une catégorie : fusion qui réaffecte, retrait d'une catégorie inutilisée)
 ```
 
 ## Points ouverts

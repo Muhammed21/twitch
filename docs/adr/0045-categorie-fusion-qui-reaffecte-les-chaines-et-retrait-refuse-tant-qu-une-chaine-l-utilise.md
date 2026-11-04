@@ -1,4 +1,4 @@
-# 0044 — Une catégorie fusionnée réaffecte ses chaînes, et une catégorie n'est retirée qu'une fois inutilisée
+# 0045 — Une catégorie fusionnée réaffecte ses chaînes, et une catégorie n'est retirée qu'une fois inutilisée
 
 - Statut : Proposé
 - Date : 2026-11-04
@@ -83,7 +83,7 @@ Le propriétaire, ou un éditeur, pose la catégorie par `PATCH /v1/channels/{id
 
 ### 6. Pochette
 
-La catégorie porte une clé d'objet optionnelle, attachée par une route d'administration. Elle passe par la brique d'envoi d'image présigné, et l'URL publique est calculée à la lecture. `channel.category.created` porte la pochette quand elle existe. Son changement publie `channel.category.updated { categoryId, name, imageKey }`.
+La catégorie porte une clé d'objet optionnelle. L'image passe par la brique d'envoi d'image (ADR 0044) : l'administrateur envoie le fichier par `POST /v1/images/uploads` avec `purpose: "category"`, puis une route d'administration de la catégorie appelle `finalizeImage({ uploadId, purpose: "category", userId })` et stocke la clé rendue. L'URL publique est calculée à la lecture. `channel.category.created` porte la pochette quand elle existe. Son changement publie `channel.category.updated { categoryId, name, imageKey }`.
 
 ## Conséquences
 
@@ -115,4 +115,5 @@ La catégorie porte une clé d'objet optionnelle, attachée par une route d'admi
 - ADR 0021 : place le catalogue dans `channel` et nomme ses events.
 - ADR 0007 : administration par l'API, scopes du compte de service, mise en avant dans Payload.
 - ADR 0006 : rôle de plateforme `admin`.
+- ADR 0044 : brique d'envoi d'image qui produit la clé de la pochette.
 - ADR 0041 : projections de `discovery` reconstruites depuis les outbox.
