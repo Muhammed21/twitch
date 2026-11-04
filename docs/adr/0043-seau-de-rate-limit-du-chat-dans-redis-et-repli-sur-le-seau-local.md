@@ -67,7 +67,7 @@ La clé expire quand le seau serait redevenu plein : un seau absent vaut un seau
 
 ### 2. Le repli
 
-Le seau partagé a 200 ms pour répondre, comme la liste de révocation au handshake. Au-delà, ou si la commande échoue, le message est décidé par le seau local de l'instance, aux mêmes seuils. Le seau local n'est débité que pendant un repli ; ses seaux redevenus pleins sont oubliés toutes les 10 s.
+Le seau partagé a 200 ms pour répondre, comme la liste de révocation au handshake. Au-delà, ou si la commande échoue, le message est décidé par le seau local de l'instance, aux mêmes seuils. Le seau local n'est débité que pendant un repli. Une commande partie vers Redis n'est pas annulée : si elle s'exécute après le délai, elle débite aussi le seau partagé. Les seaux locaux redevenus pleins sont oubliés toutes les 10 s.
 
 Un repli est journalisé (`rate limit partagé injoignable, seau local`), sauf quand le client Redis est hors ligne : la connexion journalise déjà la panne.
 
@@ -88,6 +88,7 @@ Inchangé : un message refusé reçoit l'ack `{ reason: "rate_limited" }`, sans 
 - Chaque message coûte une commande Redis sur le chemin de l'ack.
 - Pendant une panne, la limite est celle de chaque instance, et un utilisateur sur N instances a N seaux.
 - Le passage au seau local repart d'un seau plein : jusqu'à 5 messages de plus à l'entrée d'une panne.
+- Redis lent mais en ligne : un message décidé par le seau local après le délai est aussi débité dans le seau partagé, quand l'`EVAL` s'exécute. La limite est plus stricte, jamais plus large.
 - L'algorithme du seau est écrit deux fois, en TypeScript dans le domaine et en Lua dans le script.
 
 ### Risques et mitigations
