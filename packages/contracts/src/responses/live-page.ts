@@ -8,6 +8,7 @@ export const Live = z
     slug: z.string(),
     title: z.string(),
     startedAt: z.iso.datetime(),
+    viewerCount: z.int().min(0).optional(),
   })
   .meta({ id: "Live" });
 

@@ -1,8 +1,11 @@
+import type { ViewerCountReader } from "./live-status-viewers.ts";
+
 export type LiveListItem = {
   readonly channelId: string;
   readonly slug: string;
   readonly title: string;
   readonly startedAt: Date;
+  readonly viewerCount?: number;
 };
 
 export type LivePosition = {
@@ -37,5 +40,40 @@ export const listLives =
         lives.length > limit && last !== undefined
           ? { startedAt: last.startedAt, channelId: last.channelId }
           : undefined,
+    };
+  };
+
+export type ListLives = (request: {
+  after: LivePosition | undefined;
+  limit: number;
+}) => Promise<LivesPage>;
+
+export const withLiveViewerCounts =
+  ({
+    lives,
+    viewerCounts,
+    onViewerCountFailure,
+  }: {
+    lives: ListLives;
+    viewerCounts: ViewerCountReader;
+    onViewerCountFailure: (error: unknown) => void;
+  }): ListLives =>
+  async (request) => {
+    const page = await lives(request);
+    if (page.items.length === 0) {
+      return page;
+    }
+    const counts = await viewerCounts(page.items.map(({ channelId }) => channelId)).catch(
+      (error: unknown) => {
+        onViewerCountFailure(error);
+        return undefined;
+      },
+    );
+    if (counts === undefined) {
+      return page;
+    }
+    return {
+      ...page,
+      items: page.items.map((live) => ({ ...live, viewerCount: counts.get(live.channelId) ?? 0 })),
     };
   };

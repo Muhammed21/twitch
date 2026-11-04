@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { type LiveListItem, type LivePosition, listLives } from "./list-lives.ts";
+import {
+  type LiveListItem,
+  type LivePosition,
+  listLives,
+  withLiveViewerCounts,
+} from "./list-lives.ts";
 
 const at = (minute: number): Date => new Date(Date.UTC(2026, 10, 2, 20, minute));
 
@@ -87,5 +92,95 @@ describe("liste des lives de discovery", () => {
       items: [],
       next: undefined,
     });
+  });
+});
+
+const makeViewerCounts = (counts: ReadonlyMap<string, number>) => {
+  const reads: (readonly string[])[] = [];
+  return {
+    reads,
+    read: async (channelIds: readonly string[]) => {
+      reads.push(channelIds);
+      return new Map(
+        channelIds.flatMap((channelId) => {
+          const count = counts.get(channelId);
+          return count === undefined ? [] : [[channelId, count] as const];
+        }),
+      );
+    },
+  };
+};
+
+const FIRST_PAGE = { after: undefined, limit: 3 };
+
+describe("liste des lives avec le nombre de viewers", () => {
+  it("ajoute à chaque live de la page son nombre de viewers, zéro quand personne ne regarde", async () => {
+    const { reader } = inMemoryReader(LIVES);
+    const viewerCounts = makeViewerCounts(
+      new Map([
+        [makeLive(1).channelId, 12],
+        [makeLive(3).channelId, 4],
+      ]),
+    );
+    const lives = withLiveViewerCounts({
+      lives: listLives(reader),
+      viewerCounts: viewerCounts.read,
+      onViewerCountFailure: () => {},
+    });
+
+    expect(await lives(FIRST_PAGE)).toEqual({
+      items: [
+        { ...makeLive(1), viewerCount: 12 },
+        { ...makeLive(2), viewerCount: 0 },
+        { ...makeLive(3), viewerCount: 4 },
+      ],
+      next: positionOf(makeLive(3)),
+    });
+  });
+
+  it("lit les compteurs des seuls lives de la page, en une lecture", async () => {
+    const { reader } = inMemoryReader(LIVES);
+    const viewerCounts = makeViewerCounts(new Map());
+    const lives = withLiveViewerCounts({
+      lives: listLives(reader),
+      viewerCounts: viewerCounts.read,
+      onViewerCountFailure: () => {},
+    });
+
+    await lives(FIRST_PAGE);
+
+    expect(viewerCounts.reads).toEqual([[1, 2, 3].map((index) => makeLive(index).channelId)]);
+  });
+
+  it("rend la page sans nombre de viewers, et signale l'échec, quand les compteurs sont illisibles", async () => {
+    const { reader } = inMemoryReader(LIVES);
+    const failure = new Error("redis injoignable");
+    const failures: unknown[] = [];
+    const lives = withLiveViewerCounts({
+      lives: listLives(reader),
+      viewerCounts: async () => {
+        throw failure;
+      },
+      onViewerCountFailure: (error) => failures.push(error),
+    });
+
+    expect(await lives(FIRST_PAGE)).toEqual({
+      items: [makeLive(1), makeLive(2), makeLive(3)],
+      next: positionOf(makeLive(3)),
+    });
+    expect(failures).toEqual([failure]);
+  });
+
+  it("ne lit aucun compteur pour une page vide", async () => {
+    const { reader } = inMemoryReader([]);
+    const viewerCounts = makeViewerCounts(new Map());
+    const lives = withLiveViewerCounts({
+      lives: listLives(reader),
+      viewerCounts: viewerCounts.read,
+      onViewerCountFailure: () => {},
+    });
+
+    expect(await lives(FIRST_PAGE)).toEqual({ items: [], next: undefined });
+    expect(viewerCounts.reads).toEqual([]);
   });
 });
