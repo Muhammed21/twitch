@@ -3,11 +3,12 @@ import { createZodDto, ZodResponse } from "nestjs-zod";
 import { z } from "zod";
 
 import type { AccessTokenIdentity } from "@repo/auth-verifier";
-import { responses, Uuid } from "@repo/contracts";
+import { responses } from "@repo/contracts";
 import type { Result } from "@repo/result";
 
 import { responseDto } from "../../../openapi/response-dto.ts";
 import { AccessTokenGuard, CurrentIdentity } from "../../../platform/authentication.ts";
+import { pathChannelIdOf } from "../../../platform/channel-id.ts";
 import { ProblemException } from "../../../platform/problem.ts";
 import type { ChannelView, TitleUpdateError } from "../application/channel-queries.ts";
 import { MAX_TITLE_LENGTH } from "../domain/channel-title.ts";
@@ -65,12 +66,13 @@ export class ChannelsController {
     @Body() body: UpdateChannelRequest,
     @CurrentIdentity() identity: AccessTokenIdentity,
   ): Promise<ChannelView> {
-    if (!Uuid.safeParse(id).success) {
+    const channelId = pathChannelIdOf(id);
+    if (channelId === undefined) {
       throw channelNotFound();
     }
     const updated = await this.updateTitle({
       actorId: identity.userId,
-      channelId: id,
+      channelId,
       title: body.title,
     });
     if (!updated.ok) {

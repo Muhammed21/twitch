@@ -2,9 +2,10 @@ import { Controller, Get, Header, Inject, Param } from "@nestjs/common";
 import { createZodDto, ZodResponse } from "nestjs-zod";
 import { z } from "zod";
 
-import { responses, Uuid } from "@repo/contracts";
+import { responses } from "@repo/contracts";
 
 import { responseDto } from "../../../openapi/response-dto.ts";
+import { PathChannelId } from "../../../platform/channel-id.ts";
 import { ProblemException } from "../../../platform/problem.ts";
 import type { GetPlayback, Playback as ChannelPlayback } from "../application/playback.ts";
 
@@ -12,7 +13,7 @@ export const GET_PLAYBACK = Symbol("GET_PLAYBACK");
 
 class Playback extends responseDto(responses.Playback) {}
 
-class PlaybackParams extends createZodDto(z.object({ channelId: Uuid })) {}
+class PlaybackParams extends createZodDto(z.object({ channelId: PathChannelId })) {}
 
 @Controller("channels")
 export class PlaybackController {

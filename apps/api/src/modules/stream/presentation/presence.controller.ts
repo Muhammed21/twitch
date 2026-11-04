@@ -7,6 +7,7 @@ import type { AccessTokenIdentity } from "@repo/auth-verifier";
 import { Uuid } from "@repo/contracts";
 
 import { CurrentIdentity, OptionalAccessTokenGuard } from "../../../platform/authentication.ts";
+import { PathChannelId } from "../../../platform/channel-id.ts";
 import { CLIENT_IP_OF, type ClientIpOf } from "../../../platform/client-ip.ts";
 import { InvalidRequestException } from "../../../platform/problem.ts";
 import { tooManyRequests } from "../../../platform/rate-limit.ts";
@@ -18,7 +19,7 @@ export type RecordPresence = (heartbeat: { channelId: string; viewerId: string }
 
 const AnonymousHeartbeat = z.object({ viewerId: Uuid });
 
-class PresenceParams extends createZodDto(z.object({ channelId: Uuid })) {}
+class PresenceParams extends createZodDto(z.object({ channelId: PathChannelId })) {}
 
 class PresenceRequest extends createZodDto(z.object({ viewerId: Uuid.optional() })) {}
 

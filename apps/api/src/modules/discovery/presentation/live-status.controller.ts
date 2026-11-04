@@ -4,9 +4,10 @@ import type { Request, Response } from "express";
 import { createZodDto } from "nestjs-zod";
 import { z } from "zod";
 
-import { responses, Uuid } from "@repo/contracts";
+import { responses } from "@repo/contracts";
 
 import { responseDto } from "../../../openapi/response-dto.ts";
+import { PathChannelId } from "../../../platform/channel-id.ts";
 import { ProblemException } from "../../../platform/problem.ts";
 import type { ChannelLiveStatus, LiveStatusHub } from "../application/live-status-hub.ts";
 
@@ -21,7 +22,7 @@ const SSE_HEADERS = {
 
 class LiveStatus extends responseDto(responses.LiveStatus) {}
 
-class LiveStatusParams extends createZodDto(z.object({ channelId: Uuid })) {}
+class LiveStatusParams extends createZodDto(z.object({ channelId: PathChannelId })) {}
 
 const toLiveStatus = ({
   channelId,
