@@ -1,4 +1,4 @@
-# 0047 — Les messages d'un chatter mis en timeout sont effacés chez les viewers par un événement temps réel, émis par chaque instance à ses propres sockets
+# 0048 — Les messages d'un chatter mis en timeout sont effacés chez les viewers par un événement temps réel, émis par chaque instance à ses propres sockets
 
 - Statut : Proposé
 - Date : 2026-11-04
