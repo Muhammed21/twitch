@@ -1,5 +1,6 @@
 import { createClient } from "redis";
 
+import { withRedisDeadline } from "../../../platform/redis-deadline.ts";
 import type { PresenceStore } from "../application/presence.ts";
 import { presenceWindow } from "../domain/presence-window.ts";
 
@@ -18,7 +19,9 @@ const presenceKey = (channelId: string, window: number): string =>
 export const redisPresenceStore = (redis: PresenceRedis): PresenceStore => ({
   record: async ({ channelId, viewerId, at }) => {
     const key = presenceKey(channelId, presenceWindow(at));
-    await redis.multi().pfAdd(key, viewerId).expire(key, WINDOW_TTL_SECONDS).exec();
+    await withRedisDeadline(
+      redis.multi().pfAdd(key, viewerId).expire(key, WINDOW_TTL_SECONDS).exec(),
+    );
   },
   count: async ({ channelIds, at }) => {
     const window = presenceWindow(at);
@@ -26,7 +29,7 @@ export const redisPresenceStore = (redis: PresenceRedis): PresenceStore => ({
     channelIds.forEach((channelId) => {
       pipeline.pfCount([presenceKey(channelId, window), presenceKey(channelId, window - 1)]);
     });
-    const counts = await pipeline.exec();
+    const counts = await withRedisDeadline(pipeline.exec());
     return new Map(channelIds.map((channelId, index) => [channelId, Number(counts[index])]));
   },
 });
