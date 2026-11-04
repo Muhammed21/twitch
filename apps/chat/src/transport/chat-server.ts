@@ -19,6 +19,7 @@ import {
   type ChatIo,
   type ChatSession,
   type ChatSocket,
+  roomOf,
   SATURATED_ROOM,
 } from "./chat-events.ts";
 import { createHistogram, renderMetrics } from "./metrics.ts";
@@ -307,6 +308,7 @@ export const startChatServer = async ({
         socket.data = withSanctions(socket.data, [sanction]);
       }
     });
+    io.local.to(roomOf(channelId)).emit("chat:user_cleared", { channelId, userId });
   };
 
   const guarded = (socket: ChatSocket) => ({

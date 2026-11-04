@@ -38,6 +38,13 @@ const baseSchema = z.object({
     .regex(/^\d+$/)
     .transform(Number)
     .pipe(z.int().max(MAX_TRUSTED_PROXIES)),
+  S3_ENDPOINT: z.url({ protocol: /^https?$/ }),
+  S3_PUBLIC_ENDPOINT: z.url({ protocol: /^https?$/ }).optional(),
+  S3_REGION: z.string().min(1),
+  S3_BUCKET: z.string().min(1),
+  S3_ACCESS_KEY_ID: z.string().min(1),
+  S3_SECRET_ACCESS_KEY: z.string().min(1),
+  S3_PUBLIC_BASE_URL: z.url({ protocol: /^https?$/ }),
 });
 
 const envSchema = baseSchema.and(videoSchema).and(featureFlagsSchema);
@@ -62,6 +69,16 @@ export const parseVariables = <T>(
   return parsed.data;
 };
 
+export type ImageStorageConfig = {
+  readonly endpoint: string;
+  readonly publicEndpoint: string;
+  readonly region: string;
+  readonly bucket: string;
+  readonly accessKeyId: string;
+  readonly secretAccessKey: string;
+  readonly publicBaseUrl: string;
+};
+
 export type AppConfig = {
   readonly port: number;
   readonly databaseUrlHealth: string;
@@ -75,6 +92,7 @@ export type AppConfig = {
   readonly featureFlags: FeatureFlagsConfig;
   readonly mobileMinSupportedVersion: string;
   readonly trustedProxyCount: number;
+  readonly images: ImageStorageConfig;
 };
 
 export const loadEnv = (env: Readonly<Record<string, string | undefined>>): AppConfig => {
@@ -106,5 +124,14 @@ export const loadEnv = (env: Readonly<Record<string, string | undefined>>): AppC
           },
     mobileMinSupportedVersion: variables.MOBILE_MIN_SUPPORTED_VERSION,
     trustedProxyCount: variables.API_TRUSTED_PROXY_COUNT,
+    images: {
+      endpoint: variables.S3_ENDPOINT,
+      publicEndpoint: variables.S3_PUBLIC_ENDPOINT ?? variables.S3_ENDPOINT,
+      region: variables.S3_REGION,
+      bucket: variables.S3_BUCKET,
+      accessKeyId: variables.S3_ACCESS_KEY_ID,
+      secretAccessKey: variables.S3_SECRET_ACCESS_KEY,
+      publicBaseUrl: variables.S3_PUBLIC_BASE_URL,
+    },
   };
 };

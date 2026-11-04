@@ -132,7 +132,7 @@ jobs:
       - run: ./docker/up.sh
       - run: pnpm migrate
       - name: Install ffmpeg and ffprobe for apps/video integration tests
-        run: command -v ffprobe || (sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg)
+        uses: ./.github/actions/ffmpeg
       - run: pnpm test:integration
       - if: always()
         run: docker compose down -v
@@ -153,7 +153,7 @@ jobs:
           fi
       - name: Install ffmpeg to publish to apps/video from the host
         if: steps.changes.outputs.run == 'true'
-        run: command -v ffmpeg || (sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg)
+        uses: ./.github/actions/ffmpeg
       - if: steps.changes.outputs.run == 'true'
         run: ./docker/tests/infra.test.sh
 

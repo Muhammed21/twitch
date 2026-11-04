@@ -10,7 +10,9 @@ import { createIdentityRedis } from "../modules/identity/identity.module.ts";
 import { createPresenceRedis } from "../modules/stream/stream.module.ts";
 import { rejectingVerifier } from "../platform/authentication.ts";
 import { configureApp } from "../platform/configure-app.ts";
+import { memoryImageStorage } from "../platform/images/testing/memory-image-storage.ts";
 import { createStreamConsumerRedis } from "../platform/stream-consumer.ts";
+import { memoryWindowCounter } from "../platform/testing/memory-window-counter.ts";
 import { buildOpenApiDocument } from "./build-document.ts";
 
 const OUTPUT = new URL("../../openapi.json", import.meta.url);
@@ -62,6 +64,11 @@ const app = configureApp(
         streamConsumerRedis: createStreamConsumerRedis(),
       },
       mobile: { featureFlags: { provider: "defaults" }, minSupportedVersion: "0.0.0" },
+      images: {
+        storage: memoryImageStorage().storage,
+        publicBaseUrl: "http://openapi.invalid",
+        counter: memoryWindowCounter().counter,
+      },
     }),
     { logger: false },
   ),
