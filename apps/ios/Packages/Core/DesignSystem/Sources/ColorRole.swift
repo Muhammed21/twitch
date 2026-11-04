@@ -23,6 +23,7 @@ public enum ColorRole: Equatable, Sendable {
   case border
   case avatarDefault
   case onAvatarDefault
+  case liveIndicator
 
   public var color: Color {
     switch self {
@@ -46,6 +47,7 @@ public enum ColorRole: Equatable, Sendable {
     case .border: .borderSubtle
     case .avatarDefault: .avatarDefault
     case .onAvatarDefault: .avatarOnDefault
+    case .liveIndicator: .indicatorLive
     }
   }
 

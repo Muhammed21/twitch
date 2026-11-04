@@ -29,6 +29,7 @@
   --color-border-subtle: #d9d9d9;
   --color-avatar-default: #bfff00;
   --color-avatar-on-default: #000000;
+  --color-indicator-live: #eb0400;
   --typography-display-text-font: -apple-system-headline;
   --typography-display-text-weight: 600;
   --typography-heading-text-font: -apple-system-subheadline;
@@ -49,6 +50,8 @@
   --typography-dialog-message-weight: 400;
   --typography-tab-label-font: -apple-system-caption2;
   --typography-tab-label-weight: 500;
+  --typography-meta-text-font: -apple-system-footnote;
+  --typography-meta-text-weight: 400;
   --spacing-x1: 1px;
   --spacing-x2: 2px;
   --spacing-x3: 3px;
@@ -63,6 +66,7 @@
   --spacing-x16: 16px;
   --spacing-x20: 20px;
   --spacing-x24: 24px;
+  --spacing-x32: 32px;
   --spacing-x40: 40px;
   --spacing-x44: 44px;
   --spacing-x49: 49px;
@@ -106,5 +110,6 @@
     --color-border-subtle: #2d2d2f;
     --color-avatar-default: #bfff00;
     --color-avatar-on-default: #000000;
+    --color-indicator-live: #eb0400;
   }
 }

@@ -156,6 +156,13 @@
         "$value": "{core.color.neutral.0}",
         "$description": "Glyphe posé sur l'avatar par défaut."
       }
+    },
+    "indicator": {
+      "live": {
+        "$type": "color",
+        "$value": "{core.color.red.50}",
+        "$description": "Point rouge devant le nombre de viewers d'une catégorie en live, identique dans les deux thèmes (parcourir/liste-categories--defaut et --theme-sombre, mesuré #ec1817 et #ed1918)."
+      }
     }
   }
 }

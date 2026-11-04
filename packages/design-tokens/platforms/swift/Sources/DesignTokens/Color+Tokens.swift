@@ -193,6 +193,13 @@ public extension Color {
             ? UIColor(red: 0, green: 0, blue: 0, alpha: 1)
             : UIColor(red: 0, green: 0, blue: 0, alpha: 1)
     })
+    /// Point rouge devant le nombre de viewers d'une catégorie en live, identique dans les deux thèmes (parcourir/liste-categories--defaut et --theme-sombre, mesuré #ec1817 et #ed1918).
+    /// clair #EB0400 · sombre #EB0400
+    static let indicatorLive = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.922, green: 0.016, blue: 0, alpha: 1)
+            : UIColor(red: 0.922, green: 0.016, blue: 0, alpha: 1)
+    })
 
     /// Valeurs fixes par thème, réservées aux contextes sans traits et aux tests (ADR 0019 §2.2).
     enum Static {
@@ -250,5 +257,7 @@ public extension Color {
         public static let avatarDefaultDark = Color(.sRGB, red: 0.749, green: 1, blue: 0, opacity: 1)
         public static let avatarOnDefaultLight = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 1)
         public static let avatarOnDefaultDark = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 1)
+        public static let indicatorLiveLight = Color(.sRGB, red: 0.922, green: 0.016, blue: 0, opacity: 1)
+        public static let indicatorLiveDark = Color(.sRGB, red: 0.922, green: 0.016, blue: 0, opacity: 1)
     }
 }

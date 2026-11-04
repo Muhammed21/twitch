@@ -70,6 +70,11 @@
       "$value": "{core.dimension.24}",
       "$description": "Avatar de l'onglet Profile, relevé sur l'app iOS Twitch (24 pt)."
     },
+    "x32": {
+      "$type": "dimension",
+      "$value": "{core.dimension.32}",
+      "$description": "Écart entre les onglets Categories et Live Channels de Browse, relevé sur l'app iOS Twitch (32 pt)."
+    },
     "x40": {
       "$type": "dimension",
       "$value": "{core.dimension.40}",

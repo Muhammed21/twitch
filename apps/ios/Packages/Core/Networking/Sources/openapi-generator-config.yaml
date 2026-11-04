@@ -14,6 +14,7 @@ filter:
     - StreamKeyController_read
     - ChannelsController_update
     - PresenceController_record
+    - CategoriesController_browse
 additionalImports:
   - Foundation
 typeOverrides:

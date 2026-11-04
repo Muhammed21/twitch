@@ -24,4 +24,6 @@ public extension Font {
     static let dialogMessage = Font.body.weight(.regular)
     /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : libellés de la barre d'onglets, hauteur de capitale 7 pt et « Home » large de 27 pt, soit 10 pt medium (profil/menu-compte--defaut). Text style iOS caption2 (11 pt), le plus proche, pour le Dynamic Type.
     static let tabLabel = Font.caption2.weight(.medium)
+    /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/parcourir/liste-categories--defaut) : nombre de viewers sous le nom d'une catégorie, chiffres de 9,7 pt de haut, text style iOS footnote.
+    static let metaText = Font.footnote.weight(.regular)
 }
