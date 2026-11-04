@@ -20,6 +20,9 @@ public enum TextRole: Sendable {
   case cardDetail
   case liveBadge
   case viewerCount
+  case categoryName
+  case fieldHint
+  case fieldText
 
   public var font: Font {
     switch self {
@@ -41,6 +44,9 @@ public enum TextRole: Sendable {
     case .cardDetail: .supportingText
     case .liveBadge: .liveBadge
     case .viewerCount: .viewerCount
+    case .categoryName: .actionLabel
+    case .fieldHint: .hintText
+    case .fieldText: .supportingText
     }
   }
 }
@@ -101,6 +107,15 @@ public enum LayoutRole: Sendable {
   case profileNameTop
   case profileBioTop
   case profileHeaderBottom
+  case categoryCardCoverWidth
+  case categoryCardRadius
+  case categoryCardBorderWidth
+  case categoryCardTextGap
+  case categoryResultCoverWidth
+  case categoryResultGap
+  case categoryResultTextGap
+  case categorySearchFieldHeight
+  case categorySearchFieldRadius
   case widgetInset
   case widgetGap
   case widgetHeaderHeight
@@ -179,6 +194,15 @@ public enum LayoutRole: Sendable {
     case .profileNameTop: Spacing.x8
     case .profileBioTop: Spacing.x20
     case .profileHeaderBottom: Spacing.x16
+    case .categoryCardCoverWidth: Spacing.x72
+    case .categoryCardRadius: Radius.xl
+    case .categoryCardBorderWidth: Spacing.x1
+    case .categoryCardTextGap: Spacing.x16
+    case .categoryResultCoverWidth: Spacing.x75
+    case .categoryResultGap: Spacing.x16
+    case .categoryResultTextGap: Spacing.x8
+    case .categorySearchFieldHeight: Spacing.x36
+    case .categorySearchFieldRadius: Radius.lg
     case .widgetInset: Spacing.x14
     case .widgetGap: Spacing.x8
     case .widgetHeaderHeight: Spacing.x40

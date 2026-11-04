@@ -9,6 +9,15 @@ public struct HomeScreen: View {
   public init() {}
 
   public var body: some View {
+    LiveList(store: store)
+      .toolbar(.hidden, for: .navigationBar)
+  }
+}
+
+struct LiveList: View {
+  let store: HomeStore
+
+  var body: some View {
     ScrollView {
       LazyVStack(alignment: .leading, spacing: 0) {
         ForEach(store.lives, id: \.session.channelID) { live in
@@ -22,7 +31,6 @@ public struct HomeScreen: View {
       }
     }
     .background(ColorRole.background.color.ignoresSafeArea())
-    .toolbar(.hidden, for: .navigationBar)
     .refreshable { await store.loadFirstPage() }
     .task {
       if store.phase == .idle { await store.loadFirstPage() }

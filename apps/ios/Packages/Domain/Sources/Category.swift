@@ -65,3 +65,7 @@ public struct CategoryPage: Equatable, Sendable {
 public protocol CategoryDirectory: Sendable {
   func categories(after cursor: CategoryCursor?) async throws -> CategoryPage
 }
+
+public protocol CategoryLives: Sendable {
+  func lives(in category: CategorySlug, after cursor: LiveCursor?) async throws -> LivePage
+}
