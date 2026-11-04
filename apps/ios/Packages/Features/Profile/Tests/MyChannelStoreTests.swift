@@ -215,6 +215,18 @@ struct MyChannelStoreTests {
     #expect(log.entries == ["my channel: stream key not read (status 403)"])
   }
 
+  @Test("journalise le titre refusé par son statut")
+  func logsRenameRefusalByStatus() async throws {
+    let log = LogBook()
+    let problem = ServiceProblem(type: "about:blank", title: "Refus", status: 422, detail: "titre refusé")
+    let store = try makeStore(FakeMyChannel(owned: .success(makeOwnedChannel()), renamed: .failure(problem)), log: log)
+    await store.load()
+
+    _ = await store.rename(to: "Nouveau titre")
+
+    #expect(log.entries == ["my channel: title not saved (status 422)"])
+  }
+
   @Test("la clé n'apparaît dans aucun log, sur aucun chemin")
   func keyNeverLogged() async throws {
     let log = LogBook()
