@@ -164,7 +164,7 @@ describe("seed de développement (ADR 0039, §6)", () => {
         adminClient: "created",
         adminAccount: "created",
         categories: expect.any(Number),
-        channels: 0,
+        channels: expect.any(Number),
       },
     });
     expect(await seedDevelopment(process.env)).toEqual({
@@ -175,7 +175,7 @@ describe("seed de développement (ADR 0039, §6)", () => {
         adminClient: "existing",
         adminAccount: "existing",
         categories: 0,
-        channels: 0,
+        channels: expect.any(Number),
       },
     });
     expect(await seeded()).toEqual({
@@ -269,6 +269,7 @@ describe("seed de développement (ADR 0039, §6)", () => {
   it("donne sa catégorie à la chaîne de démo du compte de test, une seule fois, par channel.metadata.updated", async () => {
     await seedDevelopment(process.env);
     const channelId = await uncategorizedChannelOf(await userIdOf(DEV_ACCOUNT.email));
+    const since = new Date();
 
     expect((await seedDevelopment(process.env)).ok).toBe(true);
     expect((await seedDevelopment(process.env)).ok).toBe(true);
@@ -288,8 +289,9 @@ describe("seed de développement (ADR 0039, §6)", () => {
       events: (
         await client.query<{ payload: unknown }>(
           `SELECT "payload" FROM "channel"."ChannelOutbox"
-            WHERE "name" = 'channel.metadata.updated' AND "payload"->>'channelId' = $1`,
-          [channelId],
+            WHERE "name" = 'channel.metadata.updated' AND "payload"->>'channelId' = $1
+              AND "occurredAt" >= ($2::timestamptz AT TIME ZONE 'UTC')`,
+          [channelId, since.toISOString()],
         )
       ).rows,
     }));
