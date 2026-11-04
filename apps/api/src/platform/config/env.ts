@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const SERVICE_SECRET_MIN_LENGTH = 32;
+const MAX_TRUSTED_PROXIES = 10;
 
 const videoSchema = z.discriminatedUnion("VIDEO_PROVIDER", [
   z.object({ VIDEO_PROVIDER: z.literal("fake") }),
@@ -32,6 +33,11 @@ const baseSchema = z.object({
   SMTP_PORT: z.coerce.number().int().min(1).max(65_535),
   SMTP_FROM: z.string().min(1).default("Twitch <no-reply@twitch.local>"),
   MOBILE_MIN_SUPPORTED_VERSION: z.string().regex(/^\d+\.\d+\.\d+$/),
+  API_TRUSTED_PROXY_COUNT: z
+    .string()
+    .regex(/^\d+$/)
+    .transform(Number)
+    .pipe(z.int().max(MAX_TRUSTED_PROXIES)),
 });
 
 const envSchema = baseSchema.and(videoSchema).and(featureFlagsSchema);
@@ -68,6 +74,7 @@ export type AppConfig = {
   readonly video: VideoProviderConfig;
   readonly featureFlags: FeatureFlagsConfig;
   readonly mobileMinSupportedVersion: string;
+  readonly trustedProxyCount: number;
 };
 
 export const loadEnv = (env: Readonly<Record<string, string | undefined>>): AppConfig => {
@@ -98,5 +105,6 @@ export const loadEnv = (env: Readonly<Record<string, string | undefined>>): AppC
             apiKey: variables.POSTHOG_PROJECT_API_KEY,
           },
     mobileMinSupportedVersion: variables.MOBILE_MIN_SUPPORTED_VERSION,
+    trustedProxyCount: variables.API_TRUSTED_PROXY_COUNT,
   };
 };

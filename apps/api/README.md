@@ -11,21 +11,22 @@ API NestJS 11 (ADR 0002, 0009). Architecture et découpage : [plan de l'API](../
 | `pnpm test:integration` | Sondes contre la base locale migrée (`pnpm infra:up` puis `pnpm migrate`)                                                                                                                                                                                                              |
 | `pnpm seed:dev`         | Enregistre le client iOS `twitch-ios-dev` (`twitch://oauth/callback`) et le compte `viewer_dev` (`viewer@twitch.local`) / `twitch-dev-password` ; idempotent, refusé si `BETTER_AUTH_URL` ne vise pas la machine locale (loopback, ou son adresse réseau pour tester depuis un iPhone) |
 
-| Variable                  | Rôle                                                                                                                                                        |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `API_PORT`                | Port d'écoute, 3000 par défaut                                                                                                                              |
-| `DATABASE_URL_HEALTH`     | Rôle `app_health`, lecture de la version du schéma, requis                                                                                                  |
-| `DATABASE_URL_IDENTITY`   | Rôle `app_identity`, tables de better-auth, requis                                                                                                          |
-| `DATABASE_URL_CHANNEL`    | Rôle `app_channel`, chaînes et attributions, requis                                                                                                         |
-| `DATABASE_URL_STREAM`     | Rôle `app_stream`, sessions de diffusion, requis                                                                                                            |
-| `DATABASE_URL_MODERATION` | Rôle `app_moderation`, sanctions, requis                                                                                                                    |
-| `BETTER_AUTH_SECRET`      | Secret de better-auth, au moins 32 caractères, requis                                                                                                       |
-| `BETTER_AUTH_URL`         | URL publique de l'API, origine de confiance de better-auth, requis                                                                                          |
-| `REDIS_URL`               | Redis (`redis://` ou `rediss://`) : liste de révocation des sessions et Pub/Sub, requis                                                                     |
-| `VIDEO_WEBHOOK_SECRET`    | Secret partagé des webhooks du provider vidéo (ADR 0031), au moins 32 caractères, requis                                                                    |
-| `VIDEO_PLAYBACK_BASE_URL` | Base publique (`http` ou `https`) des playlists HLS d'`apps/video`, requis                                                                                  |
-| `SMTP_HOST`, `SMTP_PORT`  | Serveur SMTP des e-mails (codes de vérification), sans authentification ni TLS : Mailpit en local ; un relais authentifié arrive avec l'hébergement. Requis |
-| `SMTP_FROM`               | Expéditeur des e-mails, `Twitch <no-reply@twitch.local>` par défaut                                                                                         |
+| Variable                  | Rôle                                                                                                                                                             |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `API_PORT`                | Port d'écoute, 3000 par défaut                                                                                                                                   |
+| `API_TRUSTED_PROXY_COUNT` | Nombre de reverse proxys de confiance devant l'API, de 0 à 10, requis : à 0, l'IP du client est celle de la connexion et `X-Forwarded-For` est ignoré (ADR 0042) |
+| `DATABASE_URL_HEALTH`     | Rôle `app_health`, lecture de la version du schéma, requis                                                                                                       |
+| `DATABASE_URL_IDENTITY`   | Rôle `app_identity`, tables de better-auth, requis                                                                                                               |
+| `DATABASE_URL_CHANNEL`    | Rôle `app_channel`, chaînes et attributions, requis                                                                                                              |
+| `DATABASE_URL_STREAM`     | Rôle `app_stream`, sessions de diffusion, requis                                                                                                                 |
+| `DATABASE_URL_MODERATION` | Rôle `app_moderation`, sanctions, requis                                                                                                                         |
+| `BETTER_AUTH_SECRET`      | Secret de better-auth, au moins 32 caractères, requis                                                                                                            |
+| `BETTER_AUTH_URL`         | URL publique de l'API, origine de confiance de better-auth, requis                                                                                               |
+| `REDIS_URL`               | Redis (`redis://` ou `rediss://`) : liste de révocation des sessions et Pub/Sub, requis                                                                          |
+| `VIDEO_WEBHOOK_SECRET`    | Secret partagé des webhooks du provider vidéo (ADR 0031), au moins 32 caractères, requis                                                                         |
+| `VIDEO_PLAYBACK_BASE_URL` | Base publique (`http` ou `https`) des playlists HLS d'`apps/video`, requis                                                                                       |
+| `SMTP_HOST`, `SMTP_PORT`  | Serveur SMTP des e-mails (codes de vérification), sans authentification ni TLS : Mailpit en local ; un relais authentifié arrive avec l'hébergement. Requis      |
+| `SMTP_FROM`               | Expéditeur des e-mails, `Twitch <no-reply@twitch.local>` par défaut                                                                                              |
 
 Une variable invalide arrête le démarrage avec le nom de la variable, jamais sa valeur.
 
@@ -159,6 +160,14 @@ Un webhook de fin perdu laisse un live fantôme : `reconcileStreamSessions` le r
 - une session plus récente attend la réconciliation suivante, le temps que le provider la liste ;
 - si le provider ou la base ne répond pas, rien n'est clos : l'échec est journalisé (`réconciliation en échec`) et la réconciliation suivante réessaie ;
 - `FakeLiveVideoProvider` liste les sessions dont il a lu le webhook de démarrage, et non celui de fin, depuis le démarrage du process.
+
+## Limite de débit (ADR 0042)
+
+Le limiteur de `platform/rate-limit.ts` compte dans Redis par fenêtre fixe, sous `ratelimit:<nom>:<sujet>:<fenêtre>` (`INCR` et `PEXPIRE` en un `EVAL`). Une requête refusée reçoit `429` RFC 9457 avec `Retry-After`. L'IP du client vient de `platform/client-ip.ts`.
+
+| Route                                    | Limites                                                         |
+| ---------------------------------------- | --------------------------------------------------------------- |
+| `POST /v1/channels/{channelId}/presence` | 4 heartbeats par minute par (IP, chaîne) ; 60 par minute par IP |
 
 ## Modération (ADR 0006)
 

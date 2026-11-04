@@ -1,5 +1,7 @@
 import Auth
 import Channel
+import Chat
+import ChatTransport
 import DesignSystem
 import Domain
 import Foundation
@@ -24,6 +26,7 @@ struct TwitchApp: App {
         .environment(stores.player)
         .environment(stores.channelPlayback)
         .environment(stores.liveStatus)
+        .environment(stores.chat)
     }
   }
 }
@@ -109,8 +112,6 @@ struct RootView: View {
 
 struct SignedInRoot: View {
   @Environment(Router.self) private var router
-  @Environment(ChannelPlayback.self) private var channelPlayback
-  @Environment(LiveStatusChannel.self) private var liveStatus
   @State private var isShowingAccount = false
 
   var body: some View {
@@ -128,19 +129,33 @@ struct SignedInRoot: View {
         .navigationDestination(for: Route.self) { route in
           switch route {
           case let .channel(slug):
-            VStack(alignment: .leading, spacing: 0) {
-              PlayerSurface()
-              ChannelHeader()
-              Spacer(minLength: 0)
-            }
-            .navigationTitle(slug.rawValue)
-            .navigationBarTitleDisplayMode(.inline)
-            .task(id: slug) { await channelPlayback.open(slug) }
-            .task(id: slug) { await liveStatus.run(slug) }
+            ChannelScreen(slug: slug)
           }
         }
     }
     .sheet(isPresented: $isShowingAccount) { SignedInScreen() }
+  }
+}
+
+struct ChannelScreen: View {
+  let slug: ChannelSlug
+
+  @Environment(ChannelPlayback.self) private var channelPlayback
+  @Environment(LiveStatusChannel.self) private var liveStatus
+  @Environment(ChatSession.self) private var chat
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 0) {
+      PlayerSurface()
+      ChannelHeader()
+      ChatList()
+      ChatComposer()
+    }
+    .navigationTitle(slug.rawValue)
+    .navigationBarTitleDisplayMode(.inline)
+    .task(id: slug) { await channelPlayback.open(slug) }
+    .task(id: slug) { await liveStatus.run(slug) }
+    .task(id: slug) { await chat.run(slug) }
   }
 }
 
@@ -152,12 +167,20 @@ struct Stores {
   let player: PlayerController
   let channelPlayback: ChannelPlayback
   let liveStatus: LiveStatusChannel
+  let chat: ChatSession
 }
 
 @MainActor
 enum Composition {
   nonisolated static func clientVersion(info: [String: Any]) -> String? {
     info["CFBundleShortVersionString"] as? String
+  }
+
+  nonisolated static func chatBaseURL(info: [String: Any]) -> URL? {
+    guard let value = info["CHAT_BASE_URL"] as? String, let url = URL(string: value), url.host() != nil else {
+      return nil
+    }
+    return url
   }
 
   static func stores(info: [String: Any]) -> Stores {
@@ -169,6 +192,9 @@ enum Composition {
     }
     guard let version = clientVersion(info: info), let currentVersion = try? AppVersion(version) else {
       fatalError("Info.plist : CFBundleShortVersionString manquant ou mal formé.")
+    }
+    guard let chatBaseURL = chatBaseURL(info: info) else {
+      fatalError("Info.plist : CHAT_BASE_URL manquant ou mal formé.")
     }
     let transport = ClientVersionTransport(wrapping: URLSessionHTTPTransport(), version: version)
     let session = OAuthSession(
@@ -205,7 +231,8 @@ enum Composition {
         source: LiveStatusClient(apiBaseURL: configuration.apiBaseURL, transport: URLSessionLineTransport()),
         onEnded: { player.end() },
         onLive: { channelPlayback.channelWentLive() }
-      )
+      ),
+      chat: ChatSession(connector: ChatSocketConnector(chatBaseURL: chatBaseURL), tokens: session, channels: channels)
     )
   }
 }

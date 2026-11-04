@@ -8,6 +8,7 @@ import { createRoomRegistry } from "../application/room-registry.ts";
 import type { RoomState } from "../domain/decide.ts";
 import { startChatServer } from "./chat-server.ts";
 import { createHistogram, renderMetrics } from "./metrics.ts";
+import { LocalAdapter } from "./testing/local-adapter.ts";
 import { readMetrics } from "./testing/metrics.ts";
 import { SATURATION_LIMITS } from "./testing/saturation.ts";
 import { makeTokenAuthority } from "./testing/tokens.ts";
@@ -24,6 +25,7 @@ const startServer = async (room: RoomState) => {
     rooms: createRoomRegistry({ find: async () => room }),
     messages: createMessageSender(),
     saturation: SATURATION_LIMITS,
+    adapter: LocalAdapter,
   });
   onTestFinished(() => server.close());
 
@@ -122,6 +124,20 @@ describe("métriques du chat (ADR 0004, ADR 0027 §3)", () => {
     expect(metrics.get("chat_rooms_loaded")).toBe(1);
     expect(metrics.get("chat_messages_total")).toBe(4);
     expect(metrics.get("chat_deliveries_total")).toBe(1 + 2 + 3 + 3);
+  });
+
+  it("ne compte en livraison que les messages de chat", async () => {
+    const room = makeRoom();
+    const { server, joined } = await startServer(room);
+    const alice = await joined("alice");
+    const revoked = new Promise<void>((resolve) => {
+      alice.once("disconnect", () => resolve());
+    });
+
+    server.revokeSessions(["sid-1"]);
+    await revoked;
+
+    expect((await readMetrics(server.port)).get("chat_deliveries_total")).toBe(1);
   });
 
   it("compte les trames rejetées", async () => {

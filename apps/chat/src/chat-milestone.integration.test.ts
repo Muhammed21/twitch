@@ -7,7 +7,7 @@ import { describe, expect, it, onTestFinished, vi } from "vitest";
 import { events, realtime } from "@repo/contracts";
 
 import { createMessageSender } from "./application/message-sender.ts";
-import { chatEventHandlers } from "./application/project-event.ts";
+import { chatEventHandlers, socketSanctionHandlers } from "./application/project-event.ts";
 import { createRoomRegistry } from "./application/room-registry.ts";
 import { createConsumerRedis, startEventConsumer } from "./infrastructure/event-consumer.ts";
 import { redisLocalViewWriter } from "./infrastructure/redis-local-view-writer.ts";
@@ -18,7 +18,9 @@ import {
   roomKey,
   sanctionsKey,
 } from "./infrastructure/redis-local-views.ts";
+import { startStreamTail } from "./infrastructure/stream-tail.ts";
 import { startChatServer } from "./transport/chat-server.ts";
+import { LocalAdapter } from "./transport/testing/local-adapter.ts";
 import { readMetrics } from "./transport/testing/metrics.ts";
 import { SATURATION_LIMITS } from "./transport/testing/saturation.ts";
 import { makeTokenAuthority } from "./transport/testing/tokens.ts";
@@ -58,6 +60,7 @@ const startChat = async () => {
     rooms,
     messages: createMessageSender(),
     saturation: SATURATION_LIMITS,
+    adapter: LocalAdapter,
   });
   onTestFinished(() => server.close());
   const consumer = startEventConsumer({
@@ -68,8 +71,6 @@ const startChat = async () => {
     handlers: chatEventHandlers({
       views: redisLocalViewWriter(redis),
       rooms,
-      sockets: server,
-      metrics: server,
       log: () => {},
     }),
     claimIdleMs: 30_000,
@@ -77,6 +78,17 @@ const startChat = async () => {
     onError: () => {},
   });
   onTestFinished(() => consumer.stop());
+  const sanctionTail = startStreamTail({
+    redis: await connectRedis(),
+    stream: streams.moderation,
+    handlers: socketSanctionHandlers({ sockets: server, metrics: server, log: () => {} }),
+    blockMs: 50,
+    onError: () => {},
+  });
+  onTestFinished(() => sanctionTail.stop());
+  await vi.waitFor(() => {
+    expect(sanctionTail.isTailing()).toBe(true);
+  });
 
   const publish = async (
     stream: string,

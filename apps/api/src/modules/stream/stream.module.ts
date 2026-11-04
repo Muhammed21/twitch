@@ -10,9 +10,11 @@ import {
 } from "@nestjs/common";
 
 import { type AuthzRedis, createAuthzContext } from "../../authz/authz-context.ts";
+import { CLIENT_IP_OF, clientIpOf } from "../../platform/client-ip.ts";
 import type { VideoProviderConfig } from "../../platform/config/env.ts";
 import { errorDetails, type LogSink, writeLog } from "../../platform/logging.ts";
 import { startPeriodicJob } from "../../platform/periodic-job.ts";
+import { redisWindowCounter } from "../../platform/redis-window-counter.ts";
 import { startStreamConsumer, type StreamConsumerRedis } from "../../platform/stream-consumer.ts";
 import type { LiveVideoProviderPort } from "./application/live-video-provider.ts";
 import { getPlayback } from "./application/playback.ts";
@@ -43,6 +45,7 @@ import { type PresenceRedis, redisPresenceStore } from "./infrastructure/redis-p
 import { videoServiceProvider } from "./infrastructure/video-service-provider.ts";
 import { channelEventHandlers } from "./presentation/channel-event-handlers.ts";
 import { GET_PLAYBACK, PlaybackController } from "./presentation/playback.controller.ts";
+import { PRESENCE_RATE_LIMIT, presenceRateLimit } from "./presentation/presence-rate-limit.ts";
 import { PresenceController, RECORD_PRESENCE } from "./presentation/presence.controller.ts";
 import {
   GET_STREAM_KEY,
@@ -80,6 +83,7 @@ type StreamDependencies = {
   authzRedis: AuthzRedis;
   consumerRedis: StreamConsumerRedis;
   presenceRedis: PresenceRedis;
+  trustedProxyCount: number;
   logSink: LogSink;
   reconciliationIntervalMs?: number;
   viewerCountSampleIntervalMs?: number | (() => number);
@@ -100,8 +104,15 @@ export class StreamModule implements OnModuleInit, OnModuleDestroy {
   constructor(@Inject(STREAM_DEPENDENCIES) private readonly dependencies: ModuleState) {}
 
   static register(dependencies: StreamDependencies): DynamicModule {
-    const { prisma, webhookSecret, playbackBaseUrl, video, authzRedis, presenceRedis } =
-      dependencies;
+    const {
+      prisma,
+      webhookSecret,
+      playbackBaseUrl,
+      video,
+      authzRedis,
+      presenceRedis,
+      trustedProxyCount,
+    } = dependencies;
     const provider =
       video.provider === "fake"
         ? fakeLiveVideoProvider({ webhookSecret })
@@ -169,6 +180,14 @@ export class StreamModule implements OnModuleInit, OnModuleDestroy {
             now: () => new Date(),
           }),
         },
+        {
+          provide: PRESENCE_RATE_LIMIT,
+          useValue: presenceRateLimit({
+            counter: redisWindowCounter(presenceRedis),
+            now: () => new Date(),
+          }),
+        },
+        { provide: CLIENT_IP_OF, useValue: clientIpOf(trustedProxyCount) },
       ],
     };
   }

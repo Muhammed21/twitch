@@ -81,7 +81,7 @@ export const startHttpServer = async ({
       return;
     }
     if (request.method === "GET" && target.pathname.startsWith("/hls/")) {
-      void routeHls({ playback: hls, pathname: target.pathname }).then(
+      void routeHls({ playback: hls, pathname: target.pathname, query: target.searchParams }).then(
         (reply) => sendHls(response, reply),
         () => sendProblem(response, { title: "Erreur interne", status: 500 }),
       );

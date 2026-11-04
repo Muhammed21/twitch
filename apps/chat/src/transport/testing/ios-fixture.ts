@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { createMessageSender } from "../../application/message-sender.ts";
 import { createRoomRegistry } from "../../application/room-registry.ts";
 import { startChatServer } from "../chat-server.ts";
+import { LocalAdapter } from "./local-adapter.ts";
 import { SATURATION_LIMITS } from "./saturation.ts";
 import { makeTokenAuthority } from "./tokens.ts";
 
@@ -23,6 +24,7 @@ const server = await startChatServer({
   }),
   messages: createMessageSender(),
   saturation: SATURATION_LIMITS,
+  adapter: LocalAdapter,
 });
 
 const fixture = {

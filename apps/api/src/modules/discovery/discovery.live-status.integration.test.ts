@@ -144,6 +144,24 @@ describe("GET /v1/channels/{channelId}/live-status sur l'API assemblée", () => 
     }
   });
 
+  it("refuse en 429 le cinquième heartbeat d'une IP sur une chaîne dans la minute, compté dans Redis", async () => {
+    const channelId = randomUUID();
+    const heartbeat = () =>
+      fetch(`${state.url}/v1/channels/${channelId}/presence`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ viewerId: randomUUID() }),
+      });
+    const accepted = await Promise.all([heartbeat(), heartbeat(), heartbeat(), heartbeat()]);
+
+    const refused = await heartbeat();
+
+    expect(accepted.map(({ status }) => status)).toEqual([204, 204, 204, 204]);
+    expect(refused.status).toBe(429);
+    expect(Number(refused.headers.get("retry-after"))).toBeGreaterThanOrEqual(1);
+    expect(Number(refused.headers.get("retry-after"))).toBeLessThanOrEqual(60);
+  });
+
   it("envoie un commentaire SSE toutes les 15 secondes pour garder la connexion ouverte", async () => {
     const channelId = await seedChannelView({ live: false });
     const aborting = new AbortController();

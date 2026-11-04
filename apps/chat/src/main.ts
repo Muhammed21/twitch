@@ -1,12 +1,13 @@
 import { once } from "node:events";
 import { hostname } from "node:os";
 
+import { createAdapter } from "@socket.io/redis-adapter";
 import { createClient } from "redis";
 
 import { createAccessTokenVerifier } from "@repo/auth-verifier";
 
 import { createMessageSender } from "./application/message-sender.ts";
-import { chatEventHandlers } from "./application/project-event.ts";
+import { chatEventHandlers, socketSanctionHandlers } from "./application/project-event.ts";
 import { createRoomRegistry } from "./application/room-registry.ts";
 import { loadEnv } from "./config/env.ts";
 import { createConsumerRedis, startEventConsumer } from "./infrastructure/event-consumer.ts";
@@ -15,15 +16,19 @@ import { redisLocalViewWriter } from "./infrastructure/redis-local-view-writer.t
 import { redisChatterProfiles, redisRoomDirectory } from "./infrastructure/redis-local-views.ts";
 import { redisRevokedSessions } from "./infrastructure/redis-revoked-sessions.ts";
 import { subscribeToSessionRevocations } from "./infrastructure/session-revocation-subscriber.ts";
+import { unlessOffline, withSettledCommands } from "./infrastructure/settled-commands.ts";
+import { startStreamTail } from "./infrastructure/stream-tail.ts";
 import { type ChatLog, startChatServer } from "./transport/chat-server.ts";
 
 const BUCKET_SWEEP_INTERVAL_MS = 10_000;
 const REVALIDATION_INTERVAL_MS = 5 * 60_000;
 const SHUTDOWN_SPREAD_MS = 30_000;
 const EVENT_STREAMS = ["events.channel", "events.stream", "events.identity", "events.moderation"];
+const SANCTION_STREAM = "events.moderation";
 const CONSUMER_GROUP = "chat";
 const CLAIM_IDLE_MS = 30_000;
 const BLOCK_MS = 1000;
+const FAN_OUT_KEY = "chat";
 
 const log: ChatLog = (entry) => {
   process.stdout.write(`${JSON.stringify({ time: new Date().toISOString(), ...entry })}\n`);
@@ -48,14 +53,41 @@ try {
   );
   revocationRedis.on("error", revocationConnection.onError);
   revocationRedis.on("ready", revocationConnection.onReady);
+  const fanOutPublisher = createClient({
+    url: config.redisUrl,
+    name: "chat-fan-out",
+    disableOfflineQueue: true,
+  });
+  const fanOutSubscriber = fanOutPublisher.duplicate({
+    name: "chat-fan-out-subscriber",
+    disableOfflineQueue: false,
+  });
+  const sanctionRedis = createConsumerRedis(config.redisUrl);
+  const sanctionConnection = redisConnectionLog((entry) => log({ ...entry, client: "sanctions" }));
+  sanctionRedis.on("error", sanctionConnection.onError);
+  sanctionRedis.on("ready", sanctionConnection.onReady);
+  const fanOutConnection = redisConnectionLog((entry) => log({ ...entry, client: "fan-out" }));
+  [fanOutPublisher, fanOutSubscriber].forEach((client) => {
+    client.on("error", fanOutConnection.onError);
+    client.on("ready", fanOutConnection.onReady);
+  });
   redis.connect().catch(() => {});
   consumerRedis.connect().catch(() => {});
   revocationRedis.connect().catch(() => {});
+  fanOutPublisher.connect().catch(() => {});
+  fanOutSubscriber.connect().catch(() => {});
+  sanctionRedis.connect().catch(() => {});
   const destroyRedis = () => {
+    sanctionRedis.destroy();
     redis.destroy();
     consumerRedis.destroy();
     revocationRedis.destroy();
+    fanOutPublisher.destroy();
+    fanOutSubscriber.destroy();
   };
+  const logFanOutFailure = unlessOffline((error) =>
+    log({ level: "error", msg: "commande de fan-out en échec", error: messageOf(error) }),
+  );
   const messages = createMessageSender();
   const rooms = createRoomRegistry(redisRoomDirectory(redis));
   const server = await startChatServer({
@@ -69,6 +101,11 @@ try {
     rooms,
     messages,
     saturation: config.saturation,
+    adapter: createAdapter(
+      withSettledCommands(fanOutPublisher, logFanOutFailure),
+      withSettledCommands(fanOutSubscriber, logFanOutFailure),
+      { key: FAN_OUT_KEY },
+    ),
   }).catch((error: unknown) => {
     destroyRedis();
     throw error;
@@ -81,8 +118,6 @@ try {
     handlers: chatEventHandlers({
       views: redisLocalViewWriter(redis),
       rooms,
-      sockets: server,
-      metrics: server,
       log,
     }),
     claimIdleMs: CLAIM_IDLE_MS,
@@ -92,6 +127,20 @@ try {
         level: "error",
         msg: "consommation d'event en échec",
         stream,
+        entryId,
+        error: String(error),
+      }),
+  });
+  const sanctionTail = startStreamTail({
+    redis: sanctionRedis,
+    stream: SANCTION_STREAM,
+    handlers: socketSanctionHandlers({ sockets: server, metrics: server, log }),
+    blockMs: BLOCK_MS,
+    onError: ({ entryId, error }) =>
+      log({
+        level: "error",
+        msg: "application de sanction en échec",
+        stream: SANCTION_STREAM,
         entryId,
         error: String(error),
       }),
@@ -118,7 +167,7 @@ try {
   await server.close({ spreadMs: SHUTDOWN_SPREAD_MS });
   clearInterval(sweep);
   clearInterval(revalidation);
-  await consumer.stop();
+  await Promise.all([consumer.stop(), sanctionTail.stop()]);
   destroyRedis();
   log({ level: "info", msg: "chat arrêté" });
 } catch (error) {

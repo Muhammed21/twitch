@@ -27,36 +27,44 @@ const { streamStarted, streamEnded } = events.stream;
 const { accountRegistered } = events.identity;
 const { userTimedOut } = events.moderation;
 
+const handlerFor =
+  (log: ChatLog) =>
+  <T>(
+    contract: EventContract<T>,
+    apply: (payload: T, occurredAt: Date) => Promise<void> | void,
+  ): ChatEventHandler =>
+  async ({ name, version, occurredAt, payload }) => {
+    if (version !== contract.version) {
+      throw new Error(`${name} version ${version} non gérée`);
+    }
+    const parsed = contract.payload.safeParse(payload);
+    if (!parsed.success) {
+      log({ level: "error", msg: "event écarté : payload hors contrat", event: name });
+      return;
+    }
+    await apply(parsed.data, occurredAt);
+  };
+
+const sanctionOf = ({
+  userId,
+  channelId,
+  expiresAt,
+}: {
+  userId: string;
+  channelId: string;
+  expiresAt: string;
+}) => ({ userId, channelId, expiresAt: new Date(expiresAt) });
+
 export const chatEventHandlers = ({
   views,
   rooms,
-  sockets,
-  metrics,
   log,
 }: {
   views: LocalViewWriter;
   rooms: Pick<RoomRegistry, "refresh">;
-  sockets: SanctionedSockets;
-  metrics: SanctionMetrics;
   log: ChatLog;
 }): Readonly<Record<string, ChatEventHandler>> => {
-  const handle =
-    <T>(
-      contract: EventContract<T>,
-      apply: (payload: T, occurredAt: Date) => Promise<void>,
-    ): ChatEventHandler =>
-    async ({ name, version, occurredAt, payload }) => {
-      if (version !== contract.version) {
-        throw new Error(`${name} version ${version} non gérée`);
-      }
-      const parsed = contract.payload.safeParse(payload);
-      if (!parsed.success) {
-        log({ level: "error", msg: "event écarté : payload hors contrat", event: name });
-        return;
-      }
-      await apply(parsed.data, occurredAt);
-    };
-
+  const handle = handlerFor(log);
   return {
     [channelCreated.name]: handle(channelCreated, ({ channelId }) => views.openRoom(channelId)),
     [streamStarted.name]: handle(streamStarted, async ({ channelId, sessionId }) => {
@@ -68,14 +76,23 @@ export const chatEventHandlers = ({
     [accountRegistered.name]: handle(accountRegistered, ({ accountId, displayName }) =>
       views.registerChatter({ userId: accountId, displayName }),
     ),
-    [userTimedOut.name]: handle(
-      userTimedOut,
-      async ({ userId, channelId, expiresAt }, occurredAt) => {
-        const sanction = { userId, channelId, expiresAt: new Date(expiresAt) };
-        await views.sanctionChatter(sanction);
-        sockets.sanction(sanction);
-        metrics.sanctionApplied(occurredAt);
-      },
+    [userTimedOut.name]: handle(userTimedOut, (payload) =>
+      views.sanctionChatter(sanctionOf(payload)),
     ),
   };
 };
+
+export const socketSanctionHandlers = ({
+  sockets,
+  metrics,
+  log,
+}: {
+  sockets: SanctionedSockets;
+  metrics: SanctionMetrics;
+  log: ChatLog;
+}): Readonly<Record<string, ChatEventHandler>> => ({
+  [userTimedOut.name]: handlerFor(log)(userTimedOut, (payload, occurredAt) => {
+    sockets.sanction(sanctionOf(payload));
+    metrics.sanctionApplied(occurredAt);
+  }),
+});

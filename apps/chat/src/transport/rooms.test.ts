@@ -10,6 +10,7 @@ import type { ChatterProfiles, RoomDirectory } from "../application/ports.ts";
 import { createRoomRegistry } from "../application/room-registry.ts";
 import type { RoomState } from "../domain/decide.ts";
 import { startChatServer } from "./chat-server.ts";
+import { LocalAdapter } from "./testing/local-adapter.ts";
 import { SATURATION_LIMITS } from "./testing/saturation.ts";
 import { makeTokenAuthority } from "./testing/tokens.ts";
 
@@ -56,6 +57,7 @@ const startServer = async ({
     rooms,
     messages: createMessageSender(),
     saturation: SATURATION_LIMITS,
+    adapter: LocalAdapter,
   });
   onTestFinished(() => server.close());
 
@@ -230,6 +232,37 @@ describe("salons et diffusion", () => {
 
     expect(await send(alice, channelId)).toEqual({ reason: "not_joined" });
     expect(logs).toContainEqual({ msg: "événement en échec", error: "Error: Redis injoignable" });
+  });
+});
+
+describe("identifiant de chaîne en majuscules", () => {
+  it("accepte puis diffuse en minuscules le message d'un client qui écrit l'identifiant en majuscules", async () => {
+    const room = makeOfflineRoom();
+    const { connectAs } = await startServer({ directory: listDirectory([room]) });
+    const alice = await connectAs(ALICE);
+    const bob = await connectAs(BOB);
+    await joinAndSync(alice, room.channelId.toUpperCase());
+    await joinAndSync(bob, room.channelId);
+    const atBob = nextMessage(bob);
+
+    expect(await send(alice, room.channelId.toUpperCase())).toBeUndefined();
+
+    expect(realtime.RealtimeChatMessage.parse(await atBob)).toMatchObject({
+      channelId: room.channelId,
+      author: { id: ALICE },
+    });
+  });
+
+  it("fait sortir du salon le client qui le quitte avec l'identifiant en majuscules", async () => {
+    const room = makeOfflineRoom();
+    const { connectAs, rooms } = await startServer({ directory: listDirectory([room]) });
+    const alice = await connectAs(ALICE);
+    await joinAndSync(alice, room.channelId);
+
+    alice.emit("room:leave", { channelId: room.channelId.toUpperCase() });
+
+    expect(await send(alice, room.channelId)).toEqual({ reason: "not_joined" });
+    expect(rooms.loadedCount()).toBe(0);
   });
 });
 

@@ -116,6 +116,55 @@ public extension Color {
             ? UIColor(red: 0, green: 0, blue: 0, alpha: 0.6)
             : UIColor(red: 0, green: 0, blue: 0, alpha: 0.6)
     })
+    /// Couleur de pseudo dans le chat, attribuée à un auteur d'après son identifiant.
+    /// clair #006BD2 · sombre #4DA3FF
+    static let chatNameBlue = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.302, green: 0.639, blue: 1, alpha: 1)
+            : UIColor(red: 0, green: 0.42, blue: 0.824, alpha: 1)
+    })
+    /// Couleur de pseudo dans le chat, attribuée à un auteur d'après son identifiant.
+    /// clair #007D00 · sombre #3CC23C
+    static let chatNameGreen = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.235, green: 0.761, blue: 0.235, alpha: 1)
+            : UIColor(red: 0, green: 0.49, blue: 0, alpha: 1)
+    })
+    /// Couleur de pseudo dans le chat, attribuée à un auteur d'après son identifiant.
+    /// clair #872DDF · sombre #B57BFF
+    static let chatNamePurple = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.71, green: 0.482, blue: 1, alpha: 1)
+            : UIColor(red: 0.529, green: 0.176, blue: 0.875, alpha: 1)
+    })
+    /// Couleur de pseudo dans le chat, attribuée à un auteur d'après son identifiant.
+    /// clair #C92309 · sombre #FF6B5A
+    static let chatNameRed = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 1, green: 0.42, blue: 0.353, alpha: 1)
+            : UIColor(red: 0.788, green: 0.137, blue: 0.035, alpha: 1)
+    })
+    /// Couleur de pseudo dans le chat, attribuée à un auteur d'après son identifiant.
+    /// clair #A72B2D · sombre #F08C8C
+    static let chatNameMaroon = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.941, green: 0.549, blue: 0.549, alpha: 1)
+            : UIColor(red: 0.655, green: 0.169, blue: 0.176, alpha: 1)
+    })
+    /// Couleur de pseudo dans le chat, attribuée à un auteur d'après son identifiant.
+    /// clair #347274 · sombre #5FB8BA
+    static let chatNameTeal = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.373, green: 0.722, blue: 0.729, alpha: 1)
+            : UIColor(red: 0.204, green: 0.447, blue: 0.455, alpha: 1)
+    })
+    /// Couleur de pseudo dans le chat, attribuée à un auteur d'après son identifiant.
+    /// clair #615EC8 · sombre #9C9AFF
+    static let chatNameIndigo = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.612, green: 0.604, blue: 1, alpha: 1)
+            : UIColor(red: 0.38, green: 0.369, blue: 0.784, alpha: 1)
+    })
 
     /// Valeurs fixes par thème, réservées aux contextes sans traits et aux tests (ADR 0019 §2.2).
     enum Static {
@@ -151,5 +200,19 @@ public extension Color {
         public static let dangerOnDangerDark = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 1)
         public static let overlayScrimLight = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 0.6)
         public static let overlayScrimDark = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 0.6)
+        public static let chatNameBlueLight = Color(.sRGB, red: 0, green: 0.42, blue: 0.824, opacity: 1)
+        public static let chatNameBlueDark = Color(.sRGB, red: 0.302, green: 0.639, blue: 1, opacity: 1)
+        public static let chatNameGreenLight = Color(.sRGB, red: 0, green: 0.49, blue: 0, opacity: 1)
+        public static let chatNameGreenDark = Color(.sRGB, red: 0.235, green: 0.761, blue: 0.235, opacity: 1)
+        public static let chatNamePurpleLight = Color(.sRGB, red: 0.529, green: 0.176, blue: 0.875, opacity: 1)
+        public static let chatNamePurpleDark = Color(.sRGB, red: 0.71, green: 0.482, blue: 1, opacity: 1)
+        public static let chatNameRedLight = Color(.sRGB, red: 0.788, green: 0.137, blue: 0.035, opacity: 1)
+        public static let chatNameRedDark = Color(.sRGB, red: 1, green: 0.42, blue: 0.353, opacity: 1)
+        public static let chatNameMaroonLight = Color(.sRGB, red: 0.655, green: 0.169, blue: 0.176, opacity: 1)
+        public static let chatNameMaroonDark = Color(.sRGB, red: 0.941, green: 0.549, blue: 0.549, opacity: 1)
+        public static let chatNameTealLight = Color(.sRGB, red: 0.204, green: 0.447, blue: 0.455, opacity: 1)
+        public static let chatNameTealDark = Color(.sRGB, red: 0.373, green: 0.722, blue: 0.729, opacity: 1)
+        public static let chatNameIndigoLight = Color(.sRGB, red: 0.38, green: 0.369, blue: 0.784, opacity: 1)
+        public static let chatNameIndigoDark = Color(.sRGB, red: 0.612, green: 0.604, blue: 1, opacity: 1)
     }
 }

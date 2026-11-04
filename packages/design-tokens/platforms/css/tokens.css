@@ -18,6 +18,13 @@
   --color-danger-default: #fe504d;
   --color-danger-on-danger: #000000;
   --color-overlay-scrim: #00000099;
+  --color-chat-name-blue: #006bd2;
+  --color-chat-name-green: #007d00;
+  --color-chat-name-purple: #872ddf;
+  --color-chat-name-red: #c92309;
+  --color-chat-name-maroon: #a72b2d;
+  --color-chat-name-teal: #347274;
+  --color-chat-name-indigo: #615ec8;
   --typography-display-text-font: -apple-system-headline;
   --typography-display-text-weight: 600;
   --typography-heading-text-font: -apple-system-subheadline;
@@ -77,5 +84,12 @@
     --color-danger-default: #fe504d;
     --color-danger-on-danger: #000000;
     --color-overlay-scrim: #00000099;
+    --color-chat-name-blue: #4da3ff;
+    --color-chat-name-green: #3cc23c;
+    --color-chat-name-purple: #b57bff;
+    --color-chat-name-red: #ff6b5a;
+    --color-chat-name-maroon: #f08c8c;
+    --color-chat-name-teal: #5fb8ba;
+    --color-chat-name-indigo: #9c9aff;
   }
 }

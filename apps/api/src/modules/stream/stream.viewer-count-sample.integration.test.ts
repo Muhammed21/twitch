@@ -190,6 +190,7 @@ const withStreamModule = async (
         authzRedis,
         consumerRedis,
         presenceRedis: modulePresenceRedis,
+        trustedProxyCount: 0,
         logSink,
         viewerCountSampleIntervalMs: TEST_INTERVAL_MS,
       }),
