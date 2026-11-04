@@ -157,7 +157,24 @@
         "$description": "Glyphe posé sur l'avatar par défaut."
       }
     },
+    "live": {
+      "badge": {
+        "$type": "color",
+        "$value": "{core.color.red.50}",
+        "$description": "Fond du badge LIVE d'une carte de live, identique dans les deux thèmes."
+      },
+      "onBadge": {
+        "$type": "color",
+        "$value": "{core.color.neutral.100}",
+        "$description": "Libellé « LIVE » posé sur le badge."
+      }
+    },
     "media": {
+      "onOverlay": {
+        "$type": "color",
+        "$value": "{core.color.neutral.100}",
+        "$description": "Texte posé sur le voile color.overlay.scrim au-dessus d'une miniature : nombre de viewers d'une carte de live."
+      },
       "background": {
         "$type": "color",
         "$value": "{core.color.neutral.0}",

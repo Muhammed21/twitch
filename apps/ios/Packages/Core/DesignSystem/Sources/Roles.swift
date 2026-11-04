@@ -13,6 +13,10 @@ public enum TextRole: Sendable {
   case title
   case tabLabel
   case widgetTitle
+  case channelName
+  case cardDetail
+  case liveBadge
+  case viewerCount
 
   public var font: Font {
     switch self {
@@ -27,6 +31,10 @@ public enum TextRole: Sendable {
     case .title: .titleText
     case .tabLabel: .tabLabel
     case .widgetTitle: .actionLabel
+    case .channelName: .displayText
+    case .cardDetail: .supportingText
+    case .liveBadge: .liveBadge
+    case .viewerCount: .viewerCount
     }
   }
 }
@@ -78,6 +86,17 @@ public enum LayoutRole: Sendable {
   case dockGap
   case dockRingWidth
   case dockRingGap
+  case mediaInset
+  case liveBadgePadding
+  case liveBadgeHeight
+  case liveBadgeRadius
+  case cardInset
+  case cardInfoTop
+  case cardInfoBottom
+  case cardAvatarSize
+  case cardAvatarGlyphInset
+  case cardAvatarGap
+  case cardLineGap
 
   public var points: CGFloat {
     switch self {
@@ -127,6 +146,17 @@ public enum LayoutRole: Sendable {
     case .dockGap: Spacing.x16
     case .dockRingWidth: Spacing.x2
     case .dockRingGap: Spacing.x3
+    case .mediaInset: Spacing.x8
+    case .liveBadgePadding: Spacing.x5
+    case .liveBadgeHeight: Spacing.x20
+    case .liveBadgeRadius: Radius.md
+    case .cardInset: Spacing.x16
+    case .cardInfoTop: Spacing.x8
+    case .cardInfoBottom: Spacing.x16
+    case .cardAvatarSize: Spacing.x44
+    case .cardAvatarGlyphInset: Spacing.x10
+    case .cardAvatarGap: Spacing.x8
+    case .cardLineGap: Spacing.x2
     }
   }
 }

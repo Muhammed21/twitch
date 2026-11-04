@@ -66,6 +66,20 @@ private let widgetMeasures: [(LayoutRole, CGFloat)] = [
   (.dockRingGap, 3),
 ]
 
+private let liveCardMeasures: [(LayoutRole, CGFloat)] = [
+  (.mediaInset, 8),
+  (.liveBadgePadding, 5),
+  (.liveBadgeHeight, 20),
+  (.liveBadgeRadius, 4),
+  (.cardInset, 16),
+  (.cardInfoTop, 8),
+  (.cardInfoBottom, 16),
+  (.cardAvatarSize, 44),
+  (.cardAvatarGlyphInset, 10),
+  (.cardAvatarGap, 8),
+  (.cardLineGap, 2),
+]
+
 @Suite("Rôles de texte, de mise en page et de bouton")
 struct RolesTests {
   @Test("les catégories et le slogan de l'accueil sont en largeTitle gras, les boutons en headline gras")
@@ -133,6 +147,19 @@ struct RolesTests {
   @Test("le titre d'un widget est en headline gras")
   func widgetTextRoles() {
     #expect(TextRole.widgetTitle.font == Font.headline.weight(.bold))
+  }
+
+  @Test("les mesures d'une carte de live relevées sur parcourir/liste-chaines-live--defaut", arguments: liveCardMeasures)
+  func liveCardLayoutRoles(role: LayoutRole, points: CGFloat) {
+    #expect(role.points == points)
+  }
+
+  @Test("une carte de live : nom en headline semibold, titre et catégorie en body, badge et viewers en subheadline")
+  func liveCardTextRoles() {
+    #expect(TextRole.channelName.font == Font.headline.weight(.semibold))
+    #expect(TextRole.cardDetail.font == Font.body.weight(.regular))
+    #expect(TextRole.liveBadge.font == Font.subheadline.weight(.semibold))
+    #expect(TextRole.viewerCount.font == Font.subheadline.weight(.regular))
   }
 
   @Test("le nom du compte en tête du menu est en title2 gras")

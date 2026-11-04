@@ -58,6 +58,12 @@ struct ColorRoleTests {
       (ColorRole.onAvatarDefault, ColorScheme.dark, "000000"),
       (ColorRole.mediaBackground, ColorScheme.light, "000000"),
       (ColorRole.mediaBackground, ColorScheme.dark, "000000"),
+      (ColorRole.liveBadge, ColorScheme.light, "EB0400"),
+      (ColorRole.liveBadge, ColorScheme.dark, "EB0400"),
+      (ColorRole.onLiveBadge, ColorScheme.light, "FFFFFF"),
+      (ColorRole.onLiveBadge, ColorScheme.dark, "FFFFFF"),
+      (ColorRole.onMedia, ColorScheme.light, "FFFFFF"),
+      (ColorRole.onMedia, ColorScheme.dark, "FFFFFF"),
     ]
   )
   func resolvesToken(role: ColorRole, scheme: ColorScheme, expected: String) {
