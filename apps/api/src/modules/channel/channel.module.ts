@@ -12,14 +12,21 @@ import {
 import { type AuthzRedis, createAuthzContext } from "../../authz/authz-context.ts";
 import { errorDetails, type LogSink, writeLog } from "../../platform/logging.ts";
 import { startStreamConsumer, type StreamConsumerRedis } from "../../platform/stream-consumer.ts";
+import { createCategory } from "./application/category-admin.ts";
 import { getChannel, updateChannelTitle } from "./application/channel-queries.ts";
 import { createChannelForAccount } from "./application/create-channel-for-account.ts";
+import { prismaCategoryCatalog } from "./infrastructure/prisma-category-catalog.ts";
 import { prismaChannelDirectory } from "./infrastructure/prisma-channel-directory.ts";
 import {
   type ChannelPrisma,
   prismaChannelRegistry,
 } from "./infrastructure/prisma-channel-registry.ts";
 import { redisOwnerAssignmentsCache } from "./infrastructure/redis-owner-assignments-cache.ts";
+import {
+  AdminCategoriesController,
+  CATEGORY_ADMIN,
+  type CategoryAdmin,
+} from "./presentation/admin-categories.controller.ts";
 import {
   ChannelsController,
   GET_CHANNEL,
@@ -52,9 +59,21 @@ export class ChannelModule implements OnModuleInit, OnModuleDestroy {
 
   static register(dependencies: ChannelDependencies): DynamicModule {
     const directory = prismaChannelDirectory(dependencies.prisma);
+    const authz = createAuthzContext({
+      prisma: dependencies.prisma,
+      redis: dependencies.authzRedis,
+      now: () => new Date(),
+    });
+    const categories = {
+      catalog: prismaCategoryCatalog(dependencies.prisma),
+      authz,
+      newId: randomUUID,
+      now: () => new Date(),
+    };
+    const categoryAdmin: CategoryAdmin = { create: createCategory(categories) };
     return {
       module: ChannelModule,
-      controllers: [ChannelsController],
+      controllers: [ChannelsController, AdminCategoriesController],
       providers: [
         { provide: CHANNEL_DEPENDENCIES, useValue: dependencies },
         { provide: GET_CHANNEL, useValue: getChannel(directory) },
@@ -62,15 +81,12 @@ export class ChannelModule implements OnModuleInit, OnModuleDestroy {
           provide: UPDATE_CHANNEL_TITLE,
           useValue: updateChannelTitle({
             directory,
-            authz: createAuthzContext({
-              prisma: dependencies.prisma,
-              redis: dependencies.authzRedis,
-              now: () => new Date(),
-            }),
+            authz,
             newId: randomUUID,
             now: () => new Date(),
           }),
         },
+        { provide: CATEGORY_ADMIN, useValue: categoryAdmin },
       ],
     };
   }

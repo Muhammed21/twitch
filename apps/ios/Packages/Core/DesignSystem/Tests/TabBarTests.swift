@@ -21,4 +21,10 @@ struct TabBarTests {
     #expect(TabBarGlyph.foreground(isSelected: true) == .navigationActive)
     #expect(TabBarGlyph.foreground(isSelected: false) == .textPrimary)
   }
+
+  @Test("le bouton « + » est une pilule grise à glyphe de texte, comme sur profil/menu-compte--defaut")
+  func createButtonColors() {
+    #expect(TabBarCreateStyle.background == .surfaceSecondary)
+    #expect(TabBarCreateStyle.foreground == .textPrimary)
+  }
 }

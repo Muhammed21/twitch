@@ -94,6 +94,29 @@ struct MyChannelClientTests {
     #expect(body == ["title": "Speedrun du dimanche"])
   }
 
+  @Test("remplace la clé de stream par une nouvelle, avec le jeton du propriétaire")
+  func rotatesStreamKey() async throws {
+    let transport = FakeTransport(json: #"{"streamKey":"live_nouvelle","ingestUrl":"rtmp://127.0.0.1:1935/live"}"#)
+
+    let key = try await makeClient(transport).rotateStreamKey(of: channelID)
+
+    #expect(key.revealed == "live_nouvelle")
+    #expect(key.ingestURL == URL(string: "rtmp://127.0.0.1:1935/live"))
+    let request = try #require(await transport.requests.first)
+    #expect(request.method == "POST")
+    #expect(try request.url == #require(streamKeyURL).appendingPathComponent("rotate"))
+    #expect(request.headers["Authorization"] == "Bearer access-1")
+  }
+
+  @Test("remonte le problème du serveur quand la rotation est refusée", arguments: [403, 404])
+  func rotationRefused(status: Int) async {
+    let transport = FakeTransport(status: status, json: refusal(status))
+
+    await #expect(throws: ServiceProblem(type: "about:blank", title: "Refus", status: status, detail: nil)) {
+      try await makeClient(transport).rotateStreamKey(of: channelID)
+    }
+  }
+
   @Test("remonte le problème du serveur quand la clé est refusée", arguments: [403, 404])
   func streamKeyRefused(status: Int) async {
     let transport = FakeTransport(status: status, json: refusal(status))

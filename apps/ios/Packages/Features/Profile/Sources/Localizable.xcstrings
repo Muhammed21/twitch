@@ -191,6 +191,16 @@
         }
       }
     },
+    "streamManager.close" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close"
+          }
+        }
+      }
+    },
     "streamManager.copy" : {
       "localizations" : {
         "en" : {
@@ -231,6 +241,26 @@
         }
       }
     },
+    "streamManager.notice.keyRotated" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stream key reset. Update it in your streaming software."
+          }
+        }
+      }
+    },
+    "streamManager.notice.keyRotationFailed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't reset your stream key."
+          }
+        }
+      }
+    },
     "streamManager.notice.keyUnavailable" : {
       "localizations" : {
         "en" : {
@@ -267,6 +297,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Recommended OBS Settings"
+          }
+        }
+      }
+    },
+    "streamManager.resetKey" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset"
+          }
+        }
+      }
+    },
+    "streamManager.resetKey.message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your current key will stop working right away."
+          }
+        }
+      }
+    },
+    "streamManager.resetKey.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset your stream key?"
           }
         }
       }
