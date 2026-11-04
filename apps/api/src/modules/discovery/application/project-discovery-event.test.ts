@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest";
 
+import type { CategoryView } from "../domain/category-view.ts";
 import type { LiveChannelView } from "../domain/live-channel-view.ts";
-import { type LiveChannelProjection, projectDiscoveryEvent } from "./project-discovery-event.ts";
+import {
+  type CategoryProjection,
+  type LiveChannelProjection,
+  projectDiscoveryEvent,
+} from "./project-discovery-event.ts";
 
 const CHANNEL_ID = "6f1c2d3e-4a5b-4c6d-8e7f-9a0b1c2d3e4f";
+const CATEGORY_ID = "0b5e4d3c-2a19-4f08-8e7d-6c5b4a392817";
 const EVENT_ID = "0e1d2c3b-4a59-4687-9a1b-2c3d4e5f6a7b";
 
 const UNKNOWN_CHANNEL: LiveChannelView = {
@@ -11,31 +17,69 @@ const UNKNOWN_CHANNEL: LiveChannelView = {
   slug: null,
   title: "",
   titleChangedAt: null,
+  categoryId: null,
   live: null,
   lastEndedAt: null,
 };
 
-const inMemoryProjection = () => {
-  const updates: { eventId: string; channelId: string; result: LiveChannelView }[] = [];
-  const projection: LiveChannelProjection = {
+const ACTIVE_CATEGORY: CategoryView = {
+  categoryId: CATEGORY_ID,
+  slug: "irl",
+  name: "IRL",
+  status: "active",
+  mergedIntoId: null,
+};
+
+const inMemoryProjections = () => {
+  const channelUpdates: { eventId: string; channelId: string; result: LiveChannelView }[] = [];
+  const categoryUpdates: { eventId: string; categoryId: string; result: CategoryView }[] = [];
+  const channels: LiveChannelProjection = {
     update: async ({ eventId, channelId, change }) => {
-      updates.push({ eventId, channelId, result: change(UNKNOWN_CHANNEL) });
+      channelUpdates.push({ eventId, channelId, result: change(UNKNOWN_CHANNEL) });
     },
   };
-  return { projection, updates };
+  const categories: CategoryProjection = {
+    update: async ({ eventId, categoryId, change }) => {
+      categoryUpdates.push({ eventId, categoryId, result: change(ACTIVE_CATEGORY) });
+    },
+  };
+  return {
+    project: projectDiscoveryEvent({ channels, categories }),
+    channelUpdates,
+    categoryUpdates,
+  };
 };
 
 describe("projection d'un event de discovery", () => {
   it("met à jour la vue de la chaîne de l'event, sous l'identifiant de l'event", async () => {
-    const { projection, updates } = inMemoryProjection();
+    const { project, channelUpdates, categoryUpdates } = inMemoryProjections();
 
-    await projectDiscoveryEvent(projection)({
+    await project({
       eventId: EVENT_ID,
       event: { kind: "channel-created", channelId: CHANNEL_ID, slug: "chaine" },
     });
 
-    expect(updates).toEqual([
+    expect(channelUpdates).toEqual([
       { eventId: EVENT_ID, channelId: CHANNEL_ID, result: { ...UNKNOWN_CHANNEL, slug: "chaine" } },
     ]);
+    expect(categoryUpdates).toEqual([]);
+  });
+
+  it("met à jour la vue de la catégorie de l'event, sous l'identifiant de l'event", async () => {
+    const { project, channelUpdates, categoryUpdates } = inMemoryProjections();
+
+    await project({
+      eventId: EVENT_ID,
+      event: { kind: "category-retired", categoryId: CATEGORY_ID },
+    });
+
+    expect(categoryUpdates).toEqual([
+      {
+        eventId: EVENT_ID,
+        categoryId: CATEGORY_ID,
+        result: { ...ACTIVE_CATEGORY, status: "retired" },
+      },
+    ]);
+    expect(channelUpdates).toEqual([]);
   });
 });

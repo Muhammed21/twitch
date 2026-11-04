@@ -21,6 +21,26 @@
         }
       }
     },
+    "chat.feed.unread" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New"
+          }
+        }
+      }
+    },
+    "chat.feed.welcome" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welcome to the chat room!"
+          }
+        }
+      }
+    },
     "chat.message.deleted" : {
       "localizations" : {
         "en" : {

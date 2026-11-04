@@ -26,6 +26,9 @@ private let logOutDialogMeasures: [(LayoutRole, CGFloat)] = [
 private let chatMeasures: [(LayoutRole, CGFloat)] = [
   (.chatInset, 8),
   (.chatRowGap, 20),
+  (.chatUnreadGap, 2),
+  (.chatUnreadLabelGap, 4),
+  (.chatUnreadLineWidth, 1),
   (.composerHeight, 40),
   (.composerPadding, 12),
   (.composerRadius, 6),
@@ -45,13 +48,24 @@ private let tabBarMeasures: [(LayoutRole, CGFloat)] = [
   (.tabBarTopInset, 8),
   (.tabLabelGap, 2),
   (.tabIconSize, 24),
-  (.tabGlyphSize, 20),
-  (.avatarGlyphInset, 5),
+  (.avatarGlyphInset, 4),
   (.createButtonWidth, 72),
   (.createButtonHeight, 40),
-  (.createGlyphSize, 14),
+  (.createGlyphSize, 16),
   (.avatarRingWidth, 2),
   (.avatarRingGap, 1),
+]
+
+private let widgetMeasures: [(LayoutRole, CGFloat)] = [
+  (.widgetInset, 14),
+  (.widgetGap, 8),
+  (.widgetHeaderHeight, 40),
+  (.widgetHeaderPadding, 8),
+  (.widgetRadius, 4),
+  (.dockButtonSize, 44),
+  (.dockGap, 16),
+  (.dockRingWidth, 2),
+  (.dockRingGap, 3),
 ]
 
 private let liveCardMeasures: [(LayoutRole, CGFloat)] = [
@@ -127,6 +141,16 @@ struct RolesTests {
     #expect(TextRole.tabLabel.font == Font.caption2.weight(.medium))
   }
 
+  @Test("les mesures du Stream Manager à widgets relevées sur creer/gestionnaire-diffusion--widget-actions-rapides", arguments: widgetMeasures)
+  func widgetLayoutRoles(role: LayoutRole, points: CGFloat) {
+    #expect(role.points == points)
+  }
+
+  @Test("le titre d'un widget est en headline gras")
+  func widgetTextRoles() {
+    #expect(TextRole.widgetTitle.font == Font.headline.weight(.bold))
+  }
+
   @Test("les mesures d'une carte de live relevées sur parcourir/liste-chaines-live--defaut", arguments: liveCardMeasures)
   func liveCardLayoutRoles(role: LayoutRole, points: CGFloat) {
     #expect(role.points == points)
@@ -145,10 +169,15 @@ struct RolesTests {
     #expect(TextRole.title.font == Font.title2.weight(.bold))
   }
 
-  @Test("un message du chat est en body régulier, son auteur en headline gras")
+  @Test("un message du chat est en caption 12 pt, son auteur en caption medium, comme sur chat/chat-chaine--defaut")
   func chatTextRoles() {
-    #expect(TextRole.chatMessage.font == Font.body.weight(.regular))
-    #expect(TextRole.chatAuthor.font == Font.headline.weight(.bold))
+    #expect(TextRole.chatMessage.font == Font.caption.weight(.regular))
+    #expect(TextRole.chatAuthor.font == Font.caption.weight(.medium))
+  }
+
+  @Test("le champ « Send chat » reste en body 17 pt, comme sur chat/chat-chaine--defaut")
+  func chatComposerTextRole() {
+    #expect(TextRole.chatComposer.font == Font.body.weight(.regular))
   }
 
   @Test("le bouton principal sur l'accent est blanc à libellé noir, le secondaire violet clair à libellé blanc")

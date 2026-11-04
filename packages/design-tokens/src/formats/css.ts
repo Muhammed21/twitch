@@ -13,6 +13,7 @@ const SAFARI_SYSTEM_FONTS: Readonly<Record<string, string>> = {
   subheadline: "-apple-system-subheadline",
   body: "-apple-system-body",
   footnote: "-apple-system-footnote",
+  caption: "-apple-system-caption1",
   caption2: "-apple-system-caption2",
 };
 

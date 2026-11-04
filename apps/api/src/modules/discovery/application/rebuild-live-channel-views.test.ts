@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { applyCategoryEvent, type CategoryView } from "../domain/category-view.ts";
+import { isCategoryEvent } from "../domain/discovery-event.ts";
 import { applyDiscoveryEvent, type LiveChannelView } from "../domain/live-channel-view.ts";
 import { DISCOVERY_EVENT_READERS } from "./read-discovery-event.ts";
 import {
@@ -12,6 +14,8 @@ const CHANNEL_A = "6f1c2d3e-4a5b-4c6d-8e7f-9a0b1c2d3e4f";
 const CHANNEL_B = "7a2d3e4f-5b6c-4d7e-9f80-a1b2c3d4e5f6";
 const SESSION_ID = "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d";
 const OWNER_ID = "4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b";
+const IRL = "0b5e4d3c-2a19-4f08-8e7d-6c5b4a392817";
+const TALK = "1c6f5e4d-3b2a-4019-9f8e-7d6c5b4a3928";
 
 const makeHistoryEvent = (
   index: number,
@@ -81,17 +85,57 @@ const rebuildWith = async (events: readonly HistoryEvent[], pageSize = 2) => {
   return { report, written, pages };
 };
 
-const consumedOneByOne = (events: readonly HistoryEvent[]): readonly LiveChannelView[] => {
-  const views = events.reduce<ReadonlyMap<string, LiveChannelView>>((acc, event) => {
+const decodedFrom = (events: readonly HistoryEvent[]) =>
+  events.flatMap((event) => {
     const decoded = DISCOVERY_EVENT_READERS[event.name]?.(event);
-    if (decoded === undefined || decoded === null) {
-      return acc;
-    }
-    const { channelId } = decoded;
-    return new Map([...acc, [channelId, applyDiscoveryEvent(acc.get(channelId) ?? null, decoded)]]);
-  }, new Map());
+    return decoded === undefined || decoded === null ? [] : [decoded];
+  });
+
+const consumedOneByOne = (events: readonly HistoryEvent[]): readonly LiveChannelView[] => {
+  const views = decodedFrom(events).reduce<ReadonlyMap<string, LiveChannelView>>(
+    (acc, decoded) =>
+      isCategoryEvent(decoded)
+        ? acc
+        : new Map([
+            ...acc,
+            [decoded.channelId, applyDiscoveryEvent(acc.get(decoded.channelId) ?? null, decoded)],
+          ]),
+    new Map(),
+  );
   return [...views.values()];
 };
+
+const categoriesConsumedOneByOne = (events: readonly HistoryEvent[]): readonly CategoryView[] => {
+  const views = decodedFrom(events).reduce<ReadonlyMap<string, CategoryView>>(
+    (acc, decoded) =>
+      isCategoryEvent(decoded)
+        ? new Map([
+            ...acc,
+            [decoded.categoryId, applyCategoryEvent(acc.get(decoded.categoryId) ?? null, decoded)],
+          ])
+        : acc,
+    new Map(),
+  );
+  return [...views.values()];
+};
+
+const CATEGORY_HISTORY: readonly HistoryEvent[] = [
+  makeHistoryEvent(11, "channel.category.created", { categoryId: IRL, slug: "irl", name: "IRL" }),
+  makeHistoryEvent(12, "channel.category.created", {
+    categoryId: TALK,
+    slug: "talk",
+    name: "Talk",
+  }),
+  makeHistoryEvent(13, "channel.metadata.updated", {
+    channelId: CHANNEL_A,
+    title: "Speedrun",
+    categoryId: IRL,
+  }),
+  makeHistoryEvent(14, "channel.category.merged", {
+    sourceCategoryId: IRL,
+    targetCategoryId: TALK,
+  }),
+];
 
 describe("reconstruction de la projection LiveChannelView", () => {
   it("redonne la projection que les consommateurs construisent event par event", async () => {
@@ -100,6 +144,18 @@ describe("reconstruction de la projection LiveChannelView", () => {
     expect(written).toHaveLength(1);
     expect(written[0]?.views).toEqual(consumedOneByOne(HISTORY));
     expect(written[0]?.views).toHaveLength(2);
+  });
+
+  it("reconstruit les catégories et la catégorie de chaque chaîne", async () => {
+    const events = [...HISTORY, ...CATEGORY_HISTORY];
+
+    const { written, report } = await rebuildWith(events);
+
+    expect(written[0]?.views).toEqual(consumedOneByOne(events));
+    expect(written[0]?.categories).toEqual(categoriesConsumedOneByOne(events));
+    expect(written[0]?.categories).toHaveLength(2);
+    expect(written[0]?.eventIds).toEqual(events.map((event) => event.id));
+    expect(report).toEqual({ channels: 2, categories: 2, events: 9, skipped: 0 });
   });
 
   it("lit tout l'historique, page après page, jusqu'à une page incomplète", async () => {
@@ -135,7 +191,7 @@ describe("reconstruction de la projection LiveChannelView", () => {
 
     expect(written[0]?.views).toEqual(consumedOneByOne(HISTORY));
     expect(written[0]?.eventIds).not.toContain(other.id);
-    expect(report).toEqual({ channels: 2, events: 5, skipped: 0 });
+    expect(report).toEqual({ channels: 2, categories: 0, events: 5, skipped: 0 });
   });
 
   it("écarte et compte un event hors contrat, sans le marquer traité", async () => {
@@ -144,7 +200,7 @@ describe("reconstruction de la projection LiveChannelView", () => {
     const { written, report } = await rebuildWith([...HISTORY, malformed]);
 
     expect(written[0]?.eventIds).not.toContain(malformed.id);
-    expect(report).toEqual({ channels: 2, events: 5, skipped: 1 });
+    expect(report).toEqual({ channels: 2, categories: 0, events: 5, skipped: 1 });
   });
 
   it("s'arrête sans rien écrire sur une version d'event qu'il ne gère pas", async () => {
@@ -168,14 +224,14 @@ describe("reconstruction de la projection LiveChannelView", () => {
     const { report } = await rebuildWith(events, 500);
 
     expect(performance.now() - startedAt).toBeLessThan(1000);
-    expect(report).toEqual({ channels: 20_000, events: 20_000, skipped: 0 });
+    expect(report).toEqual({ channels: 20_000, categories: 0, events: 20_000, skipped: 0 });
   });
 
   it("vide la projection quand l'historique est vide", async () => {
     const { written, report, pages } = await rebuildWith([]);
 
-    expect(written).toEqual([{ views: [], eventIds: [], skipped: 0 }]);
-    expect(report).toEqual({ channels: 0, events: 0, skipped: 0 });
+    expect(written).toEqual([{ views: [], categories: [], eventIds: [], skipped: 0 }]);
+    expect(report).toEqual({ channels: 0, categories: 0, events: 0, skipped: 0 });
     expect(pages).toEqual([undefined]);
   });
 });

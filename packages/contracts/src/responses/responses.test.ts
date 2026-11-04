@@ -65,6 +65,12 @@ describe("Me", () => {
     expect(responses.Me.parse(makeMe())).toEqual(makeMe());
   });
 
+  it("décode la bio et la date du dernier live", () => {
+    const me = makeMe({ bio: "Speedrun le dimanche", lastLiveAt: "2026-11-03T20:15:00.000Z" });
+
+    expect(responses.Me.parse(me)).toEqual(me);
+  });
+
   it("garde un champ ajouté plus tard par le serveur", () => {
     expect(responses.Me.parse(makeMe({ avatarUrl: "https://cdn/a.png" }))).toMatchObject({
       avatarUrl: "https://cdn/a.png",
@@ -75,6 +81,8 @@ describe("Me", () => {
     ["un identifiant qui n'est pas un UUID", { id: "FWGDz5f2dSosyWpO6un25VBOMSsnkVjk" }],
     ["sans nom", { name: undefined }],
     ["sans e-mail", { email: undefined }],
+    ["une bio qui n'est pas une chaîne", { bio: 42 }],
+    ["une date de dernier live qui n'est pas une date ISO", { lastLiveAt: "hier" }],
   ])("refuse %s", (_name, overrides) => {
     expect(responses.Me.safeParse(makeMe(overrides)).success).toBe(false);
   });
@@ -99,11 +107,25 @@ describe("Channel", () => {
     });
   });
 
+  it("décode la catégorie de la chaîne", () => {
+    const category = {
+      id: "7c6d5e4f-3a2b-4c1d-8e9f-0a1b2c3d4e5f",
+      slug: "just-chatting",
+      name: "Just Chatting",
+    };
+
+    expect(responses.Channel.parse(makeChannel({ category }))).toEqual(makeChannel({ category }));
+  });
+
   it.each([
     ["avec un identifiant qui n'est pas un UUID", { id: "chaine-1" }],
     ["sans slug", { slug: undefined }],
     ["sans titre", { title: undefined }],
     ["avec un propriétaire qui n'est pas un UUID", { ownerId: "moi" }],
+    [
+      "avec une catégorie sans nom",
+      { category: { id: "7c6d5e4f-3a2b-4c1d-8e9f-0a1b2c3d4e5f", slug: "irl" } },
+    ],
   ])("refuse une chaîne %s", (_name, overrides) => {
     expect(responses.Channel.safeParse(makeChannel(overrides)).success).toBe(false);
   });
@@ -141,6 +163,36 @@ describe("Category", () => {
     ["sans état", { status: undefined }],
   ])("refuse une catégorie %s", (_name, overrides) => {
     expect(responses.Category.safeParse(makeCategory(overrides)).success).toBe(false);
+  });
+});
+
+describe("CategoryCatalog", () => {
+  const makeSummary = (overrides: Record<string, unknown> = {}) => ({
+    id: "7c6d5e4f-3a2b-4c1d-8e9f-0a1b2c3d4e5f",
+    slug: "just-chatting",
+    name: "Just Chatting",
+    ...overrides,
+  });
+
+  it("décode les catégories proposées, chacune avec son slug et son nom", () => {
+    const catalog = { categories: [makeSummary(), makeSummary({ slug: "irl", name: "IRL" })] };
+
+    expect(responses.CategoryCatalog.parse(catalog)).toEqual(catalog);
+  });
+
+  it("garde un champ ajouté plus tard par le serveur", () => {
+    expect(
+      responses.CategoryCatalog.parse({ categories: [makeSummary({ imageUrl: "https://x" })] }),
+    ).toMatchObject({ categories: [{ imageUrl: "https://x" }] });
+  });
+
+  it.each([
+    ["sans liste", {}],
+    ["avec une catégorie sans slug", { categories: [makeSummary({ slug: undefined })] }],
+    ["avec une catégorie sans nom", { categories: [makeSummary({ name: undefined })] }],
+    ["avec un identifiant qui n'est pas un UUID", { categories: [makeSummary({ id: "irl" })] }],
+  ])("refuse un catalogue %s", (_name, catalog) => {
+    expect(responses.CategoryCatalog.safeParse(catalog).success).toBe(false);
   });
 });
 
@@ -226,14 +278,69 @@ describe("LivePage", () => {
     expect(responses.LivePage.parse(page)).toEqual(page);
   });
 
+  it("décode la catégorie d'un live, avec ou sans pochette", () => {
+    const page = {
+      items: [
+        makeLive({ category: { slug: "irl", name: "IRL" } }),
+        makeLive({
+          category: { slug: "art", name: "Art", imageUrl: "https://cdn.twitch.local/art.webp" },
+        }),
+      ],
+    };
+
+    expect(responses.LivePage.parse(page)).toEqual(page);
+  });
+
   it.each([
     ["sans slug", { slug: undefined }],
+    ["avec une catégorie sans nom", { category: { slug: "irl" } }],
+    [
+      "avec une pochette qui n'est pas une URL",
+      { category: { slug: "irl", name: "IRL", imageUrl: "art" } },
+    ],
     ["avec un démarrage qui n'est pas une date ISO", { startedAt: "hier soir" }],
     ["avec un identifiant de chaîne qui n'est pas un UUID", { channelId: "42" }],
     ["avec un nombre de viewers négatif", { viewerCount: -1 }],
     ["avec un nombre de viewers fractionnaire", { viewerCount: 1.5 }],
   ])("refuse un live %s", (_name, overrides) => {
     expect(responses.LivePage.safeParse({ items: [makeLive(overrides)] }).success).toBe(false);
+  });
+});
+
+describe("BrowseCategoryList", () => {
+  const makeBrowseCategory = (overrides: Record<string, unknown> = {}) => ({
+    slug: "just-chatting",
+    name: "Just Chatting",
+    liveCount: 3,
+    ...overrides,
+  });
+
+  it("décode les catégories en live, avec leurs viewers et leur pochette", () => {
+    const list = {
+      items: [
+        makeBrowseCategory({ viewerCount: 1200, imageUrl: "https://cdn.twitch.local/jc.webp" }),
+        makeBrowseCategory({ slug: "irl", name: "IRL", liveCount: 1, viewerCount: 0 }),
+      ],
+    };
+
+    expect(responses.BrowseCategoryList.parse(list)).toEqual(list);
+  });
+
+  it("décode une catégorie dont le nombre de viewers n'a pas pu être lu", () => {
+    const list = { items: [makeBrowseCategory()] };
+
+    expect(responses.BrowseCategoryList.parse(list)).toEqual(list);
+  });
+
+  it.each([
+    ["sans live", { liveCount: 0 }],
+    ["sans nom", { name: undefined }],
+    ["avec un nombre de viewers négatif", { viewerCount: -1 }],
+    ["avec une pochette qui n'est pas une URL", { imageUrl: "jc.webp" }],
+  ])("refuse une catégorie %s", (_name, overrides) => {
+    expect(
+      responses.BrowseCategoryList.safeParse({ items: [makeBrowseCategory(overrides)] }).success,
+    ).toBe(false);
   });
 });
 
@@ -267,6 +374,18 @@ describe("MobileBootstrap", () => {
     });
 
     expect(responses.MobileBootstrap.parse(bootstrap)).toEqual(bootstrap);
+  });
+
+  it("décode la bio et la date du dernier live du profil", () => {
+    const profile = makeProfile({ bio: "Speedrun", lastLiveAt: "2026-11-03T20:15:00.000Z" });
+
+    expect(responses.MobileBootstrap.parse(makeBootstrap({ profile })).profile).toEqual(profile);
+  });
+
+  it("refuse un profil dont la date du dernier live n'est pas une date ISO", () => {
+    const profile = makeProfile({ lastLiveAt: "hier" });
+
+    expect(responses.MobileBootstrap.safeParse(makeBootstrap({ profile })).success).toBe(false);
   });
 
   it("décode la chaîne du profil", () => {
@@ -390,5 +509,34 @@ describe("Playback", () => {
     ["avec un schéma qui commence par https", { playbackUrl: "https2://video.example.test/live" }],
   ])("refuse une lecture %s", (_name, overrides) => {
     expect(responses.Playback.safeParse(makePlayback(overrides)).success).toBe(false);
+  });
+});
+
+describe("ImageUpload", () => {
+  const makeUpload = (overrides: Record<string, unknown> = {}) => ({
+    uploadId: "0b6e2f3a-1c4d-4e5f-8a9b-0c1d2e3f4a5b",
+    uploadUrl: "http://127.0.0.1:8333/twitch-local/incoming/u/avatar/0b6e?X-Amz-Signature=1",
+    headers: { "Content-Type": "image/jpeg", "Content-Length": "200000" },
+    expiresAt: "2026-11-04T12:05:00.000Z",
+    ...overrides,
+  });
+
+  it("décode l'URL de dépôt, ses en-têtes figés et son expiration", () => {
+    expect(responses.ImageUpload.parse(makeUpload())).toEqual(makeUpload());
+  });
+
+  it.each([
+    ["un identifiant qui n'est pas un UUID", { uploadId: "depot" }],
+    ["une URL de dépôt qui n'est pas une URL", { uploadUrl: "pas une url" }],
+    ["une URL de dépôt en ftp", { uploadUrl: "ftp://127.0.0.1/depot" }],
+    ["une URL de dépôt d'un schéma qui finit par http", { uploadUrl: "xhttp://127.0.0.1/depot" }],
+    [
+      "une URL de dépôt d'un schéma qui commence par https",
+      { uploadUrl: "httpsx://127.0.0.1/depot" },
+    ],
+    ["un en-tête qui n'est pas un texte", { headers: { "Content-Length": 200_000 } }],
+    ["une expiration qui n'est pas une date ISO", { expiresAt: "dans 5 minutes" }],
+  ])("refuse %s", (_name, overrides) => {
+    expect(responses.ImageUpload.safeParse(makeUpload(overrides)).success).toBe(false);
   });
 });

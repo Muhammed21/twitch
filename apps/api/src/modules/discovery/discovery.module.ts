@@ -12,7 +12,8 @@ import type { Pool } from "pg";
 import { errorDetails, type LogSink, writeLog } from "../../platform/logging.ts";
 import { startPeriodicJob } from "../../platform/periodic-job.ts";
 import { startStreamConsumer, type StreamConsumerRedis } from "../../platform/stream-consumer.ts";
-import { listLives, withLiveViewerCounts } from "./application/list-lives.ts";
+import { type ListLives, listLives, withLiveViewerCounts } from "./application/list-lives.ts";
+import { withLiveCategories } from "./application/live-categories.ts";
 import { createLiveStatusHub, type LiveStatusHub } from "./application/live-status-hub.ts";
 import { type ViewerCountReader, withViewerCounts } from "./application/live-status-viewers.ts";
 import { projectDiscoveryEvent } from "./application/project-discovery-event.ts";
@@ -23,10 +24,11 @@ import {
 import { pgOutboxHistory } from "./infrastructure/pg-outbox-history.ts";
 import {
   type DiscoveryPrisma,
+  prismaCategoryProjection,
   prismaLiveChannelProjection,
   prismaLiveChannelStore,
 } from "./infrastructure/prisma-live-channel-projection.ts";
-import { prismaLiveReader } from "./infrastructure/prisma-live-reader.ts";
+import { prismaCategoryViewReader, prismaLiveReader } from "./infrastructure/prisma-live-reader.ts";
 import { prismaLiveStatusReader } from "./infrastructure/prisma-live-status-reader.ts";
 import { discoveryEventHandlers } from "./presentation/discovery-event-handlers.ts";
 import {
@@ -68,6 +70,21 @@ type DiscoveryDependencies = {
   logSink: LogSink;
 };
 
+const listedLives = ({ prisma, viewerCounts, logSink }: DiscoveryDependencies): ListLives =>
+  withLiveCategories({
+    lives: withLiveViewerCounts({
+      lives: listLives(prismaLiveReader(prisma)),
+      viewerCounts,
+      onViewerCountFailure: (error) =>
+        writeLog(logSink, {
+          level: "error",
+          msg: "lecture du nombre de viewers de la liste des lives en échec",
+          ...errorDetails(error),
+        }),
+    }),
+    categories: prismaCategoryViewReader(prisma),
+  });
+
 @Module({})
 export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
   #consumers: readonly { stop: () => Promise<void> }[] = [];
@@ -99,19 +116,7 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
           ),
         },
         { provide: LIVE_STATUS_HEARTBEAT_MS, useValue: LIVE_STATUS_HEARTBEAT_INTERVAL_MS },
-        {
-          provide: LIST_LIVES,
-          useValue: withLiveViewerCounts({
-            lives: listLives(prismaLiveReader(dependencies.prisma)),
-            viewerCounts: dependencies.viewerCounts,
-            onViewerCountFailure: (error) =>
-              writeLog(dependencies.logSink, {
-                level: "error",
-                msg: "lecture du nombre de viewers de la liste des lives en échec",
-                ...errorDetails(error),
-              }),
-          }),
-        },
+        { provide: LIST_LIVES, useValue: listedLives(dependencies) },
       ],
     };
   }
@@ -119,7 +124,10 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
   onModuleInit(): void {
     const { prisma, channelConsumerRedis, streamConsumerRedis, logSink } = this.dependencies;
     const handlers = discoveryEventHandlers({
-      project: projectDiscoveryEvent(prismaLiveChannelProjection(prisma)),
+      project: projectDiscoveryEvent({
+        channels: prismaLiveChannelProjection(prisma),
+        categories: prismaCategoryProjection(prisma),
+      }),
       logSink,
     });
     const liveStatusTicks = startPeriodicJob({

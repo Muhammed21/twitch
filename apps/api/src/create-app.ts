@@ -18,8 +18,10 @@ import { createSmtpMailer } from "./modules/identity/infrastructure/smtp-mailer.
 import { createPresenceRedis } from "./modules/stream/stream.module.ts";
 import { type AppConfig, loadEnv } from "./platform/config/env.ts";
 import { configureApp } from "./platform/configure-app.ts";
+import { createS3ImageStorage } from "./platform/images/infrastructure/s3-image-storage.ts";
 import { errorDetails, type LogSink, stdoutSink, writeLog } from "./platform/logging.ts";
 import { useRawWebhookBodies } from "./platform/raw-webhook-body.ts";
+import { redisWindowCounter } from "./platform/redis-window-counter.ts";
 import { createStreamConsumerRedis } from "./platform/stream-consumer.ts";
 
 export const createApp = async ({
@@ -105,6 +107,11 @@ export const createApp = async ({
       mobile: {
         featureFlags: config.featureFlags,
         minSupportedVersion: config.mobileMinSupportedVersion,
+      },
+      images: {
+        storage: createS3ImageStorage(config.images),
+        publicBaseUrl: config.images.publicBaseUrl,
+        counter: redisWindowCounter(presenceRedis),
       },
     }),
     { logger: new ConsoleLogger({ json: true }), bodyParser: false },
