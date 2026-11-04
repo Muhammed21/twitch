@@ -15,10 +15,27 @@ public struct ChannelClient: ChannelRepository {
     }
     switch output {
     case let .ok(response):
-      let body = try response.body.json
-      return try Channel(id: ChannelID(body.id), slug: ChannelSlug(body.slug), title: body.title, ownerID: body.ownerId)
+      return try Channel(response.body.json)
     case let .default(_, response):
       throw try ServiceProblem(response.body.applicationProblemJson)
     }
+  }
+}
+
+extension Channel {
+  init(_ body: Components.Schemas.Channel) throws {
+    try self.init(
+      id: ChannelID(body.id),
+      slug: ChannelSlug(body.slug),
+      title: body.title,
+      ownerID: body.ownerId,
+      category: body.category.map(ChannelCategory.init)
+    )
+  }
+}
+
+extension ChannelCategory {
+  init(_ summary: Components.Schemas.CategorySummary) {
+    self.init(id: CategoryID(summary.id), name: summary.name)
   }
 }
