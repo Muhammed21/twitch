@@ -60,6 +60,14 @@ struct ChatLineTests {
     #expect(segments(of: text) { $0.foregroundColor == ColorRole.textPrimary.color } == ["valid"])
   }
 
+  @Test("un message supprimé garde son heure et son auteur, et dit « message deleted » en texte secondaire")
+  func deletedMessage() {
+    let text = ChatLine(sent(at: "2026-11-03T04:13:00Z").deleted(), locale: english, timeZone: utc).styled
+
+    #expect(String(text.characters) == "04:13 yahway_810: message deleted")
+    #expect(segments(of: text) { $0.foregroundColor == ColorRole.textSecondary.color } == ["04:13", "message deleted"])
+  }
+
   @Test("chaque auteur garde la couleur de pseudo qui lui est attribuée")
   func authorColors() throws {
     let blue = try #require(UUID(uuidString: "00000000-0000-0000-0000-000000000007"))

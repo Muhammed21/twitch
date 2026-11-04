@@ -218,6 +218,9 @@ public final class ChatSession {
         case let .message(message):
           heard = true
           receive(message)
+        case let .cleared(clearance):
+          heard = true
+          clear(clearance, in: channel)
         case .revoked(.refreshAndReconnect): return .unauthorized(token: token, lived: lived)
         case .revoked(.stop): return .final(.denied)
         case .revoked(.unknown): continue
@@ -241,6 +244,15 @@ public final class ChatSession {
       try? await wait(Self.batchInterval)
       self?.publish()
     }
+  }
+
+  private func clear(_ clearance: ChatClearance, in channel: ChannelID) {
+    guard clearance.channelID == channel else {
+      return
+    }
+    let erase = { (message: ChatMessage) in message.author.id == clearance.authorID ? message.deleted() : message }
+    batch = batch.map(erase)
+    messages = messages.map(erase)
   }
 
   private func publish() {

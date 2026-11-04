@@ -21,6 +21,16 @@
         }
       }
     },
+    "chat.message.deleted" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "message deleted"
+          }
+        }
+      }
+    },
     "chat.moderation.failed" : {
       "localizations" : {
         "en" : {
