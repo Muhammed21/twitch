@@ -4,21 +4,30 @@ import { describe, expect, it } from "vitest";
 import { rejectingVerifier } from "../../../platform/authentication.ts";
 import { configureApp } from "../../../platform/configure-app.ts";
 import { PlatformModule } from "../../../platform/platform.module.ts";
-import type { ChannelCategoryView } from "../application/channel-queries.ts";
+import type { CatalogCategory } from "../application/category-search.ts";
+import { CATEGORY_IMAGE_URL } from "./admin-categories.controller.ts";
 import {
   CategoryCatalogController,
   SEARCH_CATEGORIES,
   type SearchCategories,
 } from "./category-catalog.controller.ts";
 
-const JUST_CHATTING: ChannelCategoryView = {
+const JUST_CHATTING: CatalogCategory = {
   id: "7c6d5e4f-3a2b-4c1d-8e9f-0a1b2c3d4e5f",
   slug: "just-chatting",
   name: "Just Chatting",
+  imageKey: "images/category/jc.webp",
+};
+
+const IRL: CatalogCategory = {
+  id: "8d7e6f5a-4b3c-4d2e-9f0a-1b2c3d4e5f6a",
+  slug: "irl",
+  name: "IRL",
+  imageKey: null,
 };
 
 const withCatalog = async (
-  found: readonly ChannelCategoryView[],
+  found: readonly CatalogCategory[],
   run: (base: string, queries: (string | undefined)[]) => Promise<void>,
 ) => {
   const queries: (string | undefined)[] = [];
@@ -35,7 +44,10 @@ const withCatalog = async (
       }),
     ],
     controllers: [CategoryCatalogController],
-    providers: [{ provide: SEARCH_CATEGORIES, useValue: search }],
+    providers: [
+      { provide: SEARCH_CATEGORIES, useValue: search },
+      { provide: CATEGORY_IMAGE_URL, useValue: (key: string) => `https://images.test/${key}` },
+    ],
   }).compile();
   const app = configureApp(moduleRef.createNestApplication({ logger: false }));
   await app.listen(0, "127.0.0.1");
@@ -47,12 +59,22 @@ const withCatalog = async (
 };
 
 describe("GET /v1/categories/catalog", () => {
-  it("rend les catégories du texte cherché, sans jeton", async () => {
-    await withCatalog([JUST_CHATTING], async (base, queries) => {
+  it("rend les catégories du texte cherché avec leur pochette, sans jeton", async () => {
+    await withCatalog([JUST_CHATTING, IRL], async (base, queries) => {
       const response = await fetch(`${base}?q=just`);
 
       expect(response.status).toBe(200);
-      expect(await response.json()).toEqual({ categories: [JUST_CHATTING] });
+      expect(await response.json()).toEqual({
+        categories: [
+          {
+            id: JUST_CHATTING.id,
+            slug: "just-chatting",
+            name: "Just Chatting",
+            imageUrl: "https://images.test/images/category/jc.webp",
+          },
+          { id: IRL.id, slug: "irl", name: "IRL" },
+        ],
+      });
       expect(queries).toEqual(["just"]);
     });
   });

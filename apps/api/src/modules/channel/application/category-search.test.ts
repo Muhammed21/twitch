@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { CATALOG_PAGE_SIZE, type CategorySearch, searchCategories } from "./category-search.ts";
-import type { ChannelCategoryView } from "./channel-queries.ts";
+import {
+  CATALOG_PAGE_SIZE,
+  type CatalogCategory,
+  type CategorySearch,
+  searchCategories,
+} from "./category-search.ts";
 
-const JUST_CHATTING: ChannelCategoryView = {
+const JUST_CHATTING: CatalogCategory = {
   id: "7c6d5e4f-3a2b-4c1d-8e9f-0a1b2c3d4e5f",
   slug: "just-chatting",
   name: "Just Chatting",
+  imageKey: null,
 };
 
 const recordingSearch = () => {
