@@ -35,8 +35,24 @@ const makeEnv = (overrides: Record<string, string | undefined> = {}) => ({
   FEATURE_FLAGS_PROVIDER: "defaults",
   MOBILE_MIN_SUPPORTED_VERSION: "1.4.0",
   API_TRUSTED_PROXY_COUNT: "0",
+  S3_ENDPOINT: "http://s3:8333",
+  S3_REGION: "us-east-1",
+  S3_BUCKET: "twitch-local",
+  S3_ACCESS_KEY_ID: "dev_access_key",
+  S3_SECRET_ACCESS_KEY: "dev_secret_key",
+  S3_PUBLIC_BASE_URL: "http://127.0.0.1:8333/twitch-local",
   ...overrides,
 });
+
+const S3_STORAGE = {
+  endpoint: "http://s3:8333",
+  publicEndpoint: "http://s3:8333",
+  region: "us-east-1",
+  bucket: "twitch-local",
+  accessKeyId: "dev_access_key",
+  secretAccessKey: "dev_secret_key",
+  publicBaseUrl: "http://127.0.0.1:8333/twitch-local",
+};
 
 describe("loadEnv", () => {
   it("lit la configuration, avec le port 3000 par défaut", () => {
@@ -53,7 +69,36 @@ describe("loadEnv", () => {
       featureFlags: { provider: "defaults" },
       mobileMinSupportedVersion: "1.4.0",
       trustedProxyCount: 0,
+      images: S3_STORAGE,
     });
+  });
+
+  it("présigne les dépôts sur l'adresse publique du stockage quand elle diffère", () => {
+    expect(loadEnv(makeEnv({ S3_PUBLIC_ENDPOINT: "http://127.0.0.1:8333" })).images).toEqual({
+      ...S3_STORAGE,
+      publicEndpoint: "http://127.0.0.1:8333",
+    });
+  });
+
+  it.each([
+    ["S3_ENDPOINT", undefined],
+    ["S3_ENDPOINT", "s3:8333"],
+    ["S3_ENDPOINT", "xhttp://s3:8333"],
+    ["S3_ENDPOINT", "httpx://s3:8333"],
+    ["S3_PUBLIC_ENDPOINT", "pas une url"],
+    ["S3_PUBLIC_ENDPOINT", "ftp://127.0.0.1:8333"],
+    ["S3_PUBLIC_ENDPOINT", "xhttp://127.0.0.1:8333"],
+    ["S3_PUBLIC_ENDPOINT", "httpx://127.0.0.1:8333"],
+    ["S3_REGION", ""],
+    ["S3_BUCKET", ""],
+    ["S3_ACCESS_KEY_ID", ""],
+    ["S3_SECRET_ACCESS_KEY", ""],
+    ["S3_PUBLIC_BASE_URL", undefined],
+    ["S3_PUBLIC_BASE_URL", "ftp://images.twitch.test"],
+    ["S3_PUBLIC_BASE_URL", "xhttps://images.twitch.test"],
+    ["S3_PUBLIC_BASE_URL", "httpsx://images.twitch.test"],
+  ])("refuse %s à %j en la nommant", (name, value) => {
+    expect(() => loadEnv(makeEnv({ [name]: value }))).toThrow(name);
   });
 
   it("lit le nombre de proxys de confiance devant l'API", () => {
@@ -194,7 +239,7 @@ describe("loadEnv", () => {
 
   it("nomme toutes les variables invalides à la fois", () => {
     expect(() => loadEnv({ API_PORT: "abc" })).toThrow(
-      "Configuration invalide, variables à corriger : API_PORT, DATABASE_URL_HEALTH, BETTER_AUTH_SECRET, BETTER_AUTH_URL, REDIS_URL, VIDEO_WEBHOOK_SECRET, VIDEO_PLAYBACK_BASE_URL, SMTP_HOST, SMTP_PORT, MOBILE_MIN_SUPPORTED_VERSION, API_TRUSTED_PROXY_COUNT, VIDEO_PROVIDER, FEATURE_FLAGS_PROVIDER",
+      "Configuration invalide, variables à corriger : API_PORT, DATABASE_URL_HEALTH, BETTER_AUTH_SECRET, BETTER_AUTH_URL, REDIS_URL, VIDEO_WEBHOOK_SECRET, VIDEO_PLAYBACK_BASE_URL, SMTP_HOST, SMTP_PORT, MOBILE_MIN_SUPPORTED_VERSION, API_TRUSTED_PROXY_COUNT, S3_ENDPOINT, S3_REGION, S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_PUBLIC_BASE_URL, VIDEO_PROVIDER, FEATURE_FLAGS_PROVIDER",
     );
   });
 
