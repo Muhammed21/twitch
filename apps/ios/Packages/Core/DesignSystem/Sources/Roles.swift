@@ -10,6 +10,7 @@ public enum TextRole: Sendable {
   case body
   case chatMessage
   case chatAuthor
+  case chatComposer
   case title
   case tabLabel
   case widgetTitle
@@ -26,8 +27,9 @@ public enum TextRole: Sendable {
     case .dialogMessage: .dialogMessage
     case .display: .displayText
     case .body: .bodyText
-    case .chatMessage: .supportingText
-    case .chatAuthor: .actionLabel
+    case .chatMessage: .chatText
+    case .chatAuthor: .chatAuthorText
+    case .chatComposer: .supportingText
     case .title: .titleText
     case .tabLabel: .tabLabel
     case .widgetTitle: .actionLabel
