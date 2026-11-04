@@ -34,4 +34,6 @@ public extension Font {
     static let chatText = Font.caption.weight(.regular)
     /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/chat/chat-chaine--defaut) : pseudo « skibidisiege22: » large de 86 pt, soit 12 pt medium (85 pt en régulier, 87 pt en medium), text style iOS caption.
     static let chatAuthorText = Font.caption.weight(.medium)
+    /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/parcourir/liste-categories--defaut) : tag « IRL » sous une catégorie, capitales de 8,3 pt de haut et fût de 1,5 pt, soit 12 pt semibold, text style iOS caption.
+    static let tagText = Font.caption.weight(.semibold)
 }
