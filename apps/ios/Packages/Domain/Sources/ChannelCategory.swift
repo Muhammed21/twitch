@@ -11,10 +11,12 @@ public struct CategoryID: Hashable, Sendable {
 public struct ChannelCategory: Hashable, Sendable, Identifiable {
   public let id: CategoryID
   public let name: String
+  public let imageURL: URL?
 
-  public init(id: CategoryID, name: String) {
+  public init(id: CategoryID, name: String, imageURL: URL? = nil) {
     self.id = id
     self.name = name
+    self.imageURL = imageURL
   }
 }
 
