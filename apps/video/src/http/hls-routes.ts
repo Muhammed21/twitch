@@ -14,6 +14,7 @@ import {
   renderMasterPlaylist,
   renderMediaPlaylist,
 } from "../hls/playlist.ts";
+import type { Thumbnail } from "../hls/thumbnails.ts";
 
 export type HlsPlayback = {
   readonly find: (sessionId: string) => HlsStream | undefined;
@@ -25,6 +26,7 @@ export type HlsPlayback = {
   readonly blockingTimeoutMs: number;
   readonly liveSessionOf: (channelId: string) => Promise<string | undefined>;
   readonly fallbackBandwidth: number;
+  readonly thumbnailOf: (sessionId: string, stream: HlsStream) => Promise<Thumbnail>;
 };
 
 export type HlsReply = {
@@ -34,7 +36,7 @@ export type HlsReply = {
 };
 
 const UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
-const CHANNEL_MASTER_PATH = new RegExp(`^/hls/channels/(${UUID})/master\\.m3u8$`);
+const CHANNEL_PATH = new RegExp(`^/hls/channels/(${UUID})/(master\\.m3u8|thumbnail\\.jpg)$`);
 const HLS_PATH = new RegExp(`^/hls/(${UUID})/([^/]+)$`);
 const SEGMENT_FILE = /^(\d{1,15})\.m4s$/;
 const PART_FILE = /^(\d{1,15})\.(\d{1,6})\.m4s$/;
@@ -58,6 +60,9 @@ const problem = (status: number, title: string): HlsReply => ({
 const NOT_FOUND = problem(404, "Ressource introuvable");
 const BAD_BLOCKING_REQUEST = problem(400, "Rechargement bloquant invalide");
 const NOT_YET_AVAILABLE = problem(503, "Segment pas encore disponible");
+const THUMBNAIL_UNAVAILABLE = problem(503, "Vignette indisponible");
+
+const THUMBNAIL_HEADERS = { "content-type": "image/jpeg", "cache-control": "public, max-age=30" };
 
 const OPEN_PART_HEADERS = { "content-type": "video/mp4", "cache-control": "no-cache" };
 
@@ -173,15 +178,29 @@ const fileOf = async (
   return media(stream.segments.find((segment) => String(segment.sequence) === sequence)?.bytes);
 };
 
-const channelMaster = async (playback: HlsPlayback, channelId: string): Promise<HlsReply> => {
+const thumbnailReply = (thumbnail: Thumbnail): HlsReply => {
+  if (thumbnail.ok) {
+    return { status: 200, headers: THUMBNAIL_HEADERS, body: thumbnail.value };
+  }
+  return thumbnail.error === "not_ready" ? NOT_FOUND : THUMBNAIL_UNAVAILABLE;
+};
+
+const channelFile = async (
+  playback: HlsPlayback,
+  channelId: string,
+  file: string,
+): Promise<HlsReply> => {
   const sessionId = await playback.liveSessionOf(channelId);
   if (sessionId === undefined) {
     return NOT_FOUND;
   }
   const stream = playback.find(sessionId);
-  return stream === undefined
-    ? NOT_FOUND
-    : masterOf(stream, `/hls/${sessionId}/${MEDIA_URI}`, playback.fallbackBandwidth);
+  if (stream === undefined) {
+    return NOT_FOUND;
+  }
+  return file === "master.m3u8"
+    ? masterOf(stream, `/hls/${sessionId}/${MEDIA_URI}`, playback.fallbackBandwidth)
+    : thumbnailReply(await playback.thumbnailOf(sessionId, stream));
 };
 
 export const routeHls = async ({
@@ -193,9 +212,9 @@ export const routeHls = async ({
   readonly pathname: string;
   readonly query: URLSearchParams;
 }): Promise<HlsReply> => {
-  const channel = CHANNEL_MASTER_PATH.exec(pathname);
+  const channel = CHANNEL_PATH.exec(pathname);
   if (channel !== null) {
-    return await channelMaster(playback, String(channel[1]));
+    return await channelFile(playback, String(channel[1]), String(channel[2]));
   }
   const match = HLS_PATH.exec(pathname);
   if (match === null) {

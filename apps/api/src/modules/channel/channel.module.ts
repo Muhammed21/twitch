@@ -64,7 +64,7 @@ type ChannelDependencies = {
   authzRedis: AuthzRedis;
   consumerRedis: StreamConsumerRedis;
   logSink: LogSink;
-  images: Pick<ImageBrick, "finalizeImage" | "imageUrlOf">;
+  images: Pick<ImageBrick, "finalizeImage" | "imageUrlOf" | "storage">;
 };
 
 @Module({})
@@ -93,6 +93,14 @@ export class ChannelModule implements OnModuleInit, OnModuleDestroy {
       image: changeCategoryImage({
         ...categories,
         finalizeImage: dependencies.images.finalizeImage,
+        discardImage: (key) => dependencies.images.storage.delete(key),
+        onDiscardFailure: ({ imageKey, error }) =>
+          writeLog(dependencies.logSink, {
+            level: "error",
+            msg: "suppression de l'ancienne pochette en échec : objet orphelin",
+            imageKey,
+            ...errorDetails(error),
+          }),
       }),
     };
     return {
