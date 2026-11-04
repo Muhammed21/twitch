@@ -9,7 +9,9 @@ import type { AccessTokenVerifier } from "../../../platform/authentication.ts";
 import { configureApp } from "../../../platform/configure-app.ts";
 import { PlatformModule } from "../../../platform/platform.module.ts";
 import {
+  CHANGE_AVATAR,
   CHANGE_BIO,
+  type ChangeAvatar,
   type ChangeBio,
   GET_CURRENT_ACCOUNT,
   type GetCurrentAccount,
@@ -40,14 +42,17 @@ const withMe = async (
   {
     currentAccount = accountOf(ACCOUNT),
     changeBio = async () => ok(undefined),
-  }: { currentAccount?: GetCurrentAccount; changeBio?: ChangeBio },
+    changeAvatar = async () => ok(undefined),
+  }: { currentAccount?: GetCurrentAccount; changeBio?: ChangeBio; changeAvatar?: ChangeAvatar },
   run: (
     base: string,
     bioChanges: Parameters<ChangeBio>[0][],
     openApi: ReturnType<typeof buildOpenApiDocument>,
+    avatarChanges: Parameters<ChangeAvatar>[0][],
   ) => Promise<void>,
 ) => {
   const bioChanges: Parameters<ChangeBio>[0][] = [];
+  const avatarChanges: Parameters<ChangeAvatar>[0][] = [];
   const moduleRef = await Test.createTestingModule({
     imports: [
       PlatformModule.register({
@@ -66,12 +71,19 @@ const withMe = async (
           return changeBio(change);
         },
       },
+      {
+        provide: CHANGE_AVATAR,
+        useValue: (change: Parameters<ChangeAvatar>[0]) => {
+          avatarChanges.push(change);
+          return changeAvatar(change);
+        },
+      },
     ],
   }).compile();
   const app = configureApp(moduleRef.createNestApplication({ logger: false }));
   await app.listen(0, "127.0.0.1");
   try {
-    await run(`${await app.getUrl()}/v1/me`, bioChanges, buildOpenApiDocument(app));
+    await run(`${await app.getUrl()}/v1/me`, bioChanges, buildOpenApiDocument(app), avatarChanges);
   } finally {
     await app.close();
   }
@@ -115,6 +127,117 @@ describe("GET /v1/me", () => {
 
       expect(response.status).toBe(401);
       expect(response.headers.get("www-authenticate")).toBe('Bearer error="invalid_token"');
+    });
+  });
+});
+
+const put = (url: string, body: unknown) =>
+  fetch(url, {
+    method: "PUT",
+    headers: { "content-type": "application/json", authorization: "Bearer jeton" },
+    body: JSON.stringify(body),
+  });
+
+const AVATAR_URL =
+  "https://images.twitch.example/images/avatar/1f0e8d2c-3b4a-4c5d-8e6f-7a8b9c0d1e2f.webp";
+const UPLOAD_ID = "0b6e7a52-2f4e-4c55-9f0e-6a1d2c3b4a59";
+
+describe("avatar dans GET /v1/me", () => {
+  it("rend l'URL publique de l'avatar", async () => {
+    const currentAccount: GetCurrentAccount = async () => ok({ ...ACCOUNT, avatarUrl: AVATAR_URL });
+
+    await withMe({ currentAccount }, async (base) => {
+      expect(await (await get(base)).json()).toStrictEqual({ ...ACCOUNT, avatarUrl: AVATAR_URL });
+    });
+  });
+});
+
+describe("PUT /v1/me/avatar", () => {
+  it("confirme l'envoi en avatar de l'identité du jeton et rend le compte relu", async () => {
+    const currentAccount: GetCurrentAccount = async () => ok({ ...ACCOUNT, avatarUrl: AVATAR_URL });
+
+    await withMe({ currentAccount }, async (base, _bioChanges, _openApi, avatarChanges) => {
+      const response = await put(`${base}/avatar`, { uploadId: UPLOAD_ID });
+
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({ ...ACCOUNT, avatarUrl: AVATAR_URL });
+      expect(avatarChanges).toEqual([{ userId: USER_ID, uploadId: UPLOAD_ID }]);
+    });
+  });
+
+  it.each([
+    [
+      "upload_not_found",
+      "Envoi introuvable",
+      "Préparez un nouvel envoi : celui-ci n'existe pas ou a expiré.",
+    ],
+    ["too_large", "Image trop lourde", "Une image d'avatar pèse au plus 10 Mio."],
+    ["unsupported_type", "Type d'image refusé", "Envoyez une image JPEG, PNG ou WebP."],
+    ["too_small", "Image trop petite", "Une image d'avatar mesure au moins 256 × 256 pixels."],
+    ["too_many_pixels", "Image trop grande", "Une image compte au plus 40 millions de pixels."],
+  ] as const)(
+    "répond 422 en RFC 9457 pour une image refusée (%s)",
+    async (rejection, title, detail) => {
+      await withMe({ changeAvatar: async () => err(rejection) }, async (base) => {
+        const response = await put(`${base}/avatar`, { uploadId: UPLOAD_ID });
+
+        expect(response.status).toBe(422);
+        expect(response.headers.get("content-type")).toContain("application/problem+json");
+        expect(await response.json()).toMatchObject({ status: 422, title, detail });
+      });
+    },
+  );
+
+  it("refuse en 401 un jeton dont le compte n'existe plus", async () => {
+    await withMe({ changeAvatar: async () => err("account_not_found") }, async (base) => {
+      const response = await put(`${base}/avatar`, { uploadId: UPLOAD_ID });
+
+      expect(response.status).toBe(401);
+      expect(response.headers.get("www-authenticate")).toBe('Bearer error="invalid_token"');
+    });
+  });
+
+  it.each([
+    ["sans uploadId", {}],
+    ["avec un uploadId qui n'est pas un UUID", { uploadId: "../incoming/autre" }],
+    ["avec un champ inconnu", { uploadId: UPLOAD_ID, userId: "autre" }],
+  ])("répond 400 à un corps %s", async (_name, body) => {
+    await withMe({}, async (base, _bioChanges, _openApi, avatarChanges) => {
+      expect((await put(`${base}/avatar`, body)).status).toBe(400);
+      expect(avatarChanges).toEqual([]);
+    });
+  });
+
+  it("figure dans l'OpenAPI, avec son corps et le compte en réponse", async () => {
+    await withMe({}, async (_base, _bioChanges, openApi) => {
+      expect(openApi).toMatchObject({
+        paths: {
+          "/v1/me/avatar": {
+            put: {
+              requestBody: {
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/AvatarUploadRequest" },
+                  },
+                },
+              },
+              responses: {
+                200: {
+                  content: { "application/json": { schema: { $ref: "#/components/schemas/Me" } } },
+                },
+              },
+            },
+          },
+        },
+        components: {
+          schemas: {
+            AvatarUploadRequest: {
+              required: ["uploadId"],
+              additionalProperties: false,
+            },
+          },
+        },
+      });
     });
   });
 });

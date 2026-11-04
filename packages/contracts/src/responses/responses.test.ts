@@ -72,9 +72,15 @@ describe("Me", () => {
   });
 
   it("garde un champ ajouté plus tard par le serveur", () => {
-    expect(responses.Me.parse(makeMe({ avatarUrl: "https://cdn/a.png" }))).toMatchObject({
-      avatarUrl: "https://cdn/a.png",
-    });
+    expect(responses.Me.parse(makeMe({ pronouns: "iel" }))).toMatchObject({ pronouns: "iel" });
+  });
+
+  it("décode l'URL de l'avatar, en HTTP comme en HTTPS", () => {
+    const local = makeMe({ avatarUrl: "http://127.0.0.1:8333/twitch-local/images/avatar/a.webp" });
+    const production = makeMe({ avatarUrl: "https://images.twitch.example/images/avatar/a.webp" });
+
+    expect(responses.Me.parse(local)).toEqual(local);
+    expect(responses.Me.parse(production)).toEqual(production);
   });
 
   it.each([
@@ -83,6 +89,10 @@ describe("Me", () => {
     ["sans e-mail", { email: undefined }],
     ["une bio qui n'est pas une chaîne", { bio: 42 }],
     ["une date de dernier live qui n'est pas une date ISO", { lastLiveAt: "hier" }],
+    ["un avatar qui n'est pas une URL", { avatarUrl: "avatar.webp" }],
+    ["un avatar hors HTTP", { avatarUrl: "ftp://images.twitch.example/a.webp" }],
+    ["un avatar d'un schéma qui finit par http", { avatarUrl: "xhttp://i.example/a.webp" }],
+    ["un avatar d'un schéma qui commence par https", { avatarUrl: "httpsx://i.example/a.webp" }],
   ])("refuse %s", (_name, overrides) => {
     expect(responses.Me.safeParse(makeMe(overrides)).success).toBe(false);
   });
@@ -424,6 +434,20 @@ describe("MobileBootstrap", () => {
     const profile = makeProfile({ bio: "Speedrun", lastLiveAt: "2026-11-03T20:15:00.000Z" });
 
     expect(responses.MobileBootstrap.parse(makeBootstrap({ profile })).profile).toEqual(profile);
+  });
+
+  it("décode l'URL de l'avatar du profil", () => {
+    const profile = makeProfile({
+      avatarUrl: "https://images.twitch.example/images/avatar/a.webp",
+    });
+
+    expect(responses.MobileBootstrap.parse(makeBootstrap({ profile })).profile).toEqual(profile);
+  });
+
+  it("refuse un profil dont l'avatar n'est pas une URL HTTP", () => {
+    const profile = makeProfile({ avatarUrl: "ftp://images.twitch.example/a.webp" });
+
+    expect(responses.MobileBootstrap.safeParse(makeBootstrap({ profile })).success).toBe(false);
   });
 
   it("refuse un profil dont la date du dernier live n'est pas une date ISO", () => {

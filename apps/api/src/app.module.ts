@@ -99,7 +99,12 @@ export class AppModule {
       imports: [
         PlatformModule.register(platform),
         ImagesModule.register({ images: imageBrick, counter: images.counter }),
-        IdentityModule.register({ ...identity, lastLiveOf }),
+        IdentityModule.register({
+          ...identity,
+          lastLiveOf,
+          images: imageBrick,
+          logSink: platform.logSink,
+        }),
         ChannelModule.register({ ...channel, logSink: platform.logSink, images: imageBrick }),
         StreamModule.register({
           ...stream,
@@ -116,7 +121,11 @@ export class AppModule {
         }),
         MobileModule.register({
           featureFlags: createFeatureFlags(mobile.featureFlags),
-          readProfile: createCurrentAccountReader({ prisma: identity.prisma, lastLiveOf }),
+          readProfile: createCurrentAccountReader({
+            prisma: identity.prisma,
+            lastLiveOf,
+            imageUrlOf: imageBrick.imageUrlOf,
+          }),
           ownedChannel,
           minSupportedVersion: mobile.minSupportedVersion,
           logSink: platform.logSink,
