@@ -65,6 +65,12 @@ describe("Me", () => {
     expect(responses.Me.parse(makeMe())).toEqual(makeMe());
   });
 
+  it("décode la bio et la date du dernier live", () => {
+    const me = makeMe({ bio: "Speedrun le dimanche", lastLiveAt: "2026-11-03T20:15:00.000Z" });
+
+    expect(responses.Me.parse(me)).toEqual(me);
+  });
+
   it("garde un champ ajouté plus tard par le serveur", () => {
     expect(responses.Me.parse(makeMe({ avatarUrl: "https://cdn/a.png" }))).toMatchObject({
       avatarUrl: "https://cdn/a.png",
@@ -75,6 +81,8 @@ describe("Me", () => {
     ["un identifiant qui n'est pas un UUID", { id: "FWGDz5f2dSosyWpO6un25VBOMSsnkVjk" }],
     ["sans nom", { name: undefined }],
     ["sans e-mail", { email: undefined }],
+    ["une bio qui n'est pas une chaîne", { bio: 42 }],
+    ["une date de dernier live qui n'est pas une date ISO", { lastLiveAt: "hier" }],
   ])("refuse %s", (_name, overrides) => {
     expect(responses.Me.safeParse(makeMe(overrides)).success).toBe(false);
   });
@@ -224,6 +232,18 @@ describe("MobileBootstrap", () => {
     });
 
     expect(responses.MobileBootstrap.parse(bootstrap)).toEqual(bootstrap);
+  });
+
+  it("décode la bio et la date du dernier live du profil", () => {
+    const profile = makeProfile({ bio: "Speedrun", lastLiveAt: "2026-11-03T20:15:00.000Z" });
+
+    expect(responses.MobileBootstrap.parse(makeBootstrap({ profile })).profile).toEqual(profile);
+  });
+
+  it("refuse un profil dont la date du dernier live n'est pas une date ISO", () => {
+    const profile = makeProfile({ lastLiveAt: "hier" });
+
+    expect(responses.MobileBootstrap.safeParse(makeBootstrap({ profile })).success).toBe(false);
   });
 
   it("décode la chaîne du profil", () => {
