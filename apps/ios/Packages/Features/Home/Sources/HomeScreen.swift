@@ -9,17 +9,19 @@ public struct HomeScreen: View {
   public init() {}
 
   public var body: some View {
-    LiveList(store: store)
+    LiveList(store: store) { EmptyView() }
       .toolbar(.hidden, for: .navigationBar)
   }
 }
 
-struct LiveList: View {
+struct LiveList<Header: View>: View {
   let store: HomeStore
+  @ViewBuilder let header: Header
 
   var body: some View {
     ScrollView {
       LazyVStack(alignment: .leading, spacing: 0) {
+        header
         ForEach(store.lives, id: \.session.channelID) { live in
           NavigationLink(value: Route.channel(live.slug)) {
             LiveRow(live: live)

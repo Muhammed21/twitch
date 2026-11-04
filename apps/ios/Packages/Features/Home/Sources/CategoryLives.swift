@@ -38,27 +38,34 @@ private struct CategoryLiveDirectory: LiveDirectory {
 
 public struct CategoryLivesScreen: View {
   @Environment(CategoryLivesCatalog.self) private var catalog
+  @Environment(\.locale) private var locale
   @State private var page: CategoryLivesPage?
-  private let category: CategorySlug
-  private let name: String
+  private let heading: CategoryHeading
 
-  public init(category: CategorySlug, name: String) {
-    self.category = category
-    self.name = name
+  public init(heading: CategoryHeading) {
+    self.heading = heading
   }
 
   public var body: some View {
     Group {
       if let page {
-        LiveList(store: page.store)
+        LiveList(store: page.store) {
+          CategoryHeader(
+            name: heading.name,
+            viewers: BrowseText.viewers(heading.viewers, locale: locale),
+            coverURL: heading.imageURL,
+            tags: heading.tags
+          )
+          .padding(LayoutRole.screenInset.points)
+        }
       } else {
         ColorRole.background.color.ignoresSafeArea()
       }
     }
-    .navigationTitle(name)
+    .navigationTitle(heading.name)
     .navigationBarTitleDisplayMode(.inline)
-    .task(id: category) {
-      page = catalog.page(for: category, keeping: page)
+    .task(id: heading.slug) {
+      page = catalog.page(for: heading.slug, keeping: page)
     }
   }
 }
