@@ -131,6 +131,16 @@
         }
       }
     },
+    "profile.lastLive" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last live %@ ago"
+          }
+        }
+      }
+    },
     "profile.myChannel" : {
       "localizations" : {
         "en" : {

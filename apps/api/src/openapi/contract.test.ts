@@ -162,6 +162,7 @@ describe("document OpenAPI", () => {
       "RealtimeChatMessage",
       "RealtimeChatRejected",
       "RealtimeChatSend",
+      "RealtimeChatUserCleared",
       "RealtimeRoomJoin",
       "RealtimeRoomLeave",
       "RealtimeServerMessage",

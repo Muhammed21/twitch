@@ -58,6 +58,8 @@ struct ColorRoleTests {
       (ColorRole.onAvatarDefault, ColorScheme.dark, "000000"),
       (ColorRole.liveIndicator, ColorScheme.light, "EB0400"),
       (ColorRole.liveIndicator, ColorScheme.dark, "EB0400"),
+      (ColorRole.chatUnread, ColorScheme.light, "D80804"),
+      (ColorRole.chatUnread, ColorScheme.dark, "FF6B5A"),
       (ColorRole.mediaBackground, ColorScheme.light, "000000"),
       (ColorRole.mediaBackground, ColorScheme.dark, "000000"),
       (ColorRole.liveBadge, ColorScheme.light, "EB0400"),

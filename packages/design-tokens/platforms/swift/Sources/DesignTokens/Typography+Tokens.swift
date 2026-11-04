@@ -30,4 +30,8 @@ public extension Font {
     static let viewerCount = Font.subheadline.weight(.regular)
     /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/parcourir/liste-categories--defaut) : nombre de viewers sous le nom d'une catégorie, chiffres de 9,7 pt de haut, text style iOS footnote.
     static let metaText = Font.footnote.weight(.regular)
+    /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/chat/chat-chaine--defaut) : « Welcome to the chat room! » large de 151 pt et « 04:13 » de 30 pt, hauteur de capitale 8,8 pt, soit 12 pt régulier, text style iOS caption.
+    static let chatText = Font.caption.weight(.regular)
+    /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/chat/chat-chaine--defaut) : pseudo « skibidisiege22: » large de 86 pt, soit 12 pt medium (85 pt en régulier, 87 pt en medium), text style iOS caption.
+    static let chatAuthorText = Font.caption.weight(.medium)
 }

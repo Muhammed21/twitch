@@ -96,10 +96,20 @@
         "$value": "56px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : hauteur des lignes du menu du compte."
       },
+      "70": {
+        "$type": "dimension",
+        "$value": "70px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : hauteur de la bannière du profil sous la barre d'état, 129,3 pt depuis le haut de l'écran moins 59 pt de zone sûre (profil/menu-compte--defaut)."
+      },
       "72": {
         "$type": "dimension",
         "$value": "72px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : largeur du bouton « + » en pilule de la barre d'onglets, 216 px à @3x (profil/menu-compte--defaut)."
+      },
+      "88": {
+        "$type": "dimension",
+        "$value": "88px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : diamètre de l'avatar de l'en-tête du profil, 264 px à @3x (profil/menu-compte--defaut)."
       },
       "300": {
         "$type": "dimension",

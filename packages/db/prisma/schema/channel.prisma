@@ -34,6 +34,8 @@ model ChannelCategory {
   status       ChannelCategoryStatus @default(active)
   /// Cible de la fusion quand status vaut merged.
   mergedIntoId String?               @db.Uuid
+  /// Clé d'objet de la pochette (ADR 0044, ADR 0045 §6) ; l'URL publique se calcule à la lecture.
+  imageKey     String?
   createdAt    DateTime              @default(now())
   channels     Channel[]
 

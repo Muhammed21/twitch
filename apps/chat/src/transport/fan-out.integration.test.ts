@@ -168,6 +168,34 @@ describe("fan-out entre deux instances par le Redis de Compose (ADR 0022, ADR 00
     expect(await say(bob, room.channelId, "encore")).toEqual({ reason: "timed_out" });
   });
 
+  it("efface une seule fois les messages d'un chatter en timeout chez chaque client, chaque instance l'émettant à ses sockets", async () => {
+    const room = makeRoom();
+    const { a, b, joinedOn, timeOut } = await startCluster(room);
+    const aliceId = randomUUID();
+    await joinedOn(a.port, aliceId);
+    const carol = await joinedOn(a.port, randomUUID());
+    const bob = await joinedOn(b.port, randomUUID());
+    const cleared: unknown[] = [];
+    bob.on("chat:user_cleared", (payload: unknown) => {
+      cleared.push(payload);
+    });
+    const atBob = collectBodies(bob);
+
+    await timeOut({ userId: aliceId, channelId: room.channelId });
+    await vi.waitFor(async () => {
+      expect((await readMetrics(a.port)).get("chat_sanction_exclusion_delay_seconds_count")).toBe(
+        1,
+      );
+      expect((await readMetrics(b.port)).get("chat_sanction_exclusion_delay_seconds_count")).toBe(
+        1,
+      );
+    });
+    expect(await say(carol, room.channelId, "après le timeout")).toBeUndefined();
+
+    await vi.waitFor(() => expect(atBob).toContain("après le timeout"));
+    expect(cleared).toEqual([{ channelId: room.channelId, userId: aliceId }]);
+  });
+
   it("ne révoque que ses propres sockets, chaque instance recevant la révocation", async () => {
     const room = makeRoom();
     const { a, b, joinedOn } = await startCluster(room);

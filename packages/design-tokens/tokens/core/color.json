@@ -111,6 +111,11 @@
           "$value": "#a72b2d",
           "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : pseudo yahway_810 (chat/chat-chaine--saisie), thème clair."
         },
+        "43": {
+          "$type": "color",
+          "$value": "#d80804",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : filet et libellé du séparateur New du chat, thème clair (chat/chat-chaine--defaut). Le rouge de la charte twitch.tv (#eb0400) reste sous 4,5:1 sur le fond clair."
+        },
         "45": {
           "$type": "color",
           "$value": "#c92309",

@@ -91,6 +91,7 @@ describe("table des événements serveur", () => {
     expect(realtime.serverEvents).toEqual({
       "chat:message": realtime.RealtimeChatMessage,
       "chat:rejected": realtime.RealtimeChatRejected,
+      "chat:user_cleared": realtime.RealtimeChatUserCleared,
       "session:revoked": realtime.RealtimeSessionRevoked,
     });
   });
@@ -117,6 +118,7 @@ describe("schémas nommés", () => {
     ["RealtimeChatMessage", realtime.RealtimeChatMessage],
     ["RealtimeChatRejected", realtime.RealtimeChatRejected],
     ["RealtimeSessionRevoked", realtime.RealtimeSessionRevoked],
+    ["RealtimeChatUserCleared", realtime.RealtimeChatUserCleared],
     ["RealtimeServerMessage", realtime.RealtimeServerMessage],
   ])("publie %s sous son nom", (name, schema) => {
     expect(z.globalRegistry.get(schema)?.id).toBe(name);
@@ -214,6 +216,22 @@ describe("chat:rejected", () => {
   });
 });
 
+describe("chat:user_cleared", () => {
+  it("décode l'auteur dont les messages sont effacés du salon d'une chaîne", () => {
+    expect(
+      realtime.RealtimeChatUserCleared.parse({ channelId: CHANNEL_ID, userId: AUTHOR_ID }),
+    ).toEqual({ channelId: CHANNEL_ID, userId: AUTHOR_ID });
+  });
+
+  it.each([
+    ["sans chaîne", { userId: AUTHOR_ID }],
+    ["sans auteur", { channelId: CHANNEL_ID }],
+    ["à un auteur qui n'est pas un UUID", { channelId: CHANNEL_ID, userId: "viewer-1" }],
+  ])("refuse un effacement %s", (_name, payload) => {
+    expect(parses(realtime.RealtimeChatUserCleared, payload)).toBe(false);
+  });
+});
+
 describe("session:revoked", () => {
   it.each(["refresh_and_reconnect", "stop", "upgrade_required"])("décode l'action %s", (action) => {
     expect(realtime.RealtimeSessionRevoked.parse({ action })).toEqual({ action });
@@ -228,6 +246,7 @@ describe("RealtimeServerMessage", () => {
   it.each([
     ["chat:message", makeChatMessage()],
     ["chat:rejected", { reason: "rate_limited" }],
+    ["chat:user_cleared", { channelId: CHANNEL_ID, userId: AUTHOR_ID }],
     ["session:revoked", { action: "stop" }],
   ])("décode l'événement %s avec sa charge utile", (event, data) => {
     expect(realtime.RealtimeServerMessage.parse({ event, data })).toEqual({ event, data });

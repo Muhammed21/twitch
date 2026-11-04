@@ -26,14 +26,15 @@ Les schémas de requête restent en `z.object` strict : refuser un champ inconnu
 
 `realtime` porte les charges utiles socket.io, nommées `Realtime*` et publiées dans `components.schemas` d'`openapi.json` (ADR 0022, ADR 0024 §7). Le nom de l'événement socket.io est le discriminant.
 
-| Sens             | Événement                                       | Charge utile             |
-| ---------------- | ----------------------------------------------- | ------------------------ |
-| Client → serveur | `chat:send`                                     | `RealtimeChatSend`       |
-| Client → serveur | `room:join`                                     | `RealtimeRoomJoin`       |
-| Client → serveur | `room:leave`                                    | `RealtimeRoomLeave`      |
-| Serveur → client | `chat:message`                                  | `RealtimeChatMessage`    |
-| Serveur → client | `chat:rejected`, valeur de l'ack de `chat:send` | `RealtimeChatRejected`   |
-| Serveur → client | `session:revoked`                               | `RealtimeSessionRevoked` |
+| Sens             | Événement                                       | Charge utile              |
+| ---------------- | ----------------------------------------------- | ------------------------- |
+| Client → serveur | `chat:send`                                     | `RealtimeChatSend`        |
+| Client → serveur | `room:join`                                     | `RealtimeRoomJoin`        |
+| Client → serveur | `room:leave`                                    | `RealtimeRoomLeave`       |
+| Serveur → client | `chat:message`                                  | `RealtimeChatMessage`     |
+| Serveur → client | `chat:rejected`, valeur de l'ack de `chat:send` | `RealtimeChatRejected`    |
+| Serveur → client | `chat:user_cleared`                             | `RealtimeChatUserCleared` |
+| Serveur → client | `session:revoked`                               | `RealtimeSessionRevoked`  |
 
 - Les charges client sont strictes (`z.strictObject`) ; `clientEventSchema(event)` ne donne aucun schéma à un événement inconnu, et `apps/chat` le rejette et le compte (ADR 0022, §6). Le corps d'un message fait de 1 à 500 caractères.
 - Les charges serveur suivent les conventions des réponses. `RealtimeServerMessage` enveloppe `{ event, data }` et se termine par la variante de repli `{ event: string }`.
