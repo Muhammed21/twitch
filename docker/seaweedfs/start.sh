@@ -8,6 +8,10 @@ cat >/tmp/s3.json <<JSON
       "name": "dev",
       "credentials": [{ "accessKey": "${S3_ACCESS_KEY_ID}", "secretKey": "${S3_SECRET_ACCESS_KEY}" }],
       "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    },
+    {
+      "name": "anonymous",
+      "actions": ["Read:${S3_BUCKET}/images/*"]
     }
   ]
 }

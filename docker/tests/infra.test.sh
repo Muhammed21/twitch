@@ -76,6 +76,15 @@ echo "contenu de test" >"$TMP"
 check "écriture authentifiée dans le bucket" curl -sf --aws-sigv4 "$SIGV4" --user "$S3_ACCESS_KEY_ID:$S3_SECRET_ACCESS_KEY" -T "$TMP" "$S3_URL/$S3_BUCKET/infra-test.txt"
 check "relecture authentifiée identique" test "$(curl -sf --aws-sigv4 "$SIGV4" --user "$S3_ACCESS_KEY_ID:$S3_SECRET_ACCESS_KEY" "$S3_URL/$S3_BUCKET/infra-test.txt")" = "contenu de test"
 check_not "lecture anonyme refusée" curl -sf "$S3_URL/$S3_BUCKET/infra-test.txt"
+check "écriture authentifiée d'une image servie" curl -sf --aws-sigv4 "$SIGV4" --user "$S3_ACCESS_KEY_ID:$S3_SECRET_ACCESS_KEY" -T "$TMP" "$S3_URL/$S3_BUCKET/images/infra-test.webp"
+check "lecture anonyme autorisée sous images/" test "$(curl -sf "$S3_URL/$S3_BUCKET/images/infra-test.webp")" = "contenu de test"
+check_not "écriture anonyme refusée sous images/" curl -sf -T "$TMP" "$S3_URL/$S3_BUCKET/images/anonyme.webp"
+check_not "listage anonyme refusé" curl -sf "$S3_URL/$S3_BUCKET/?list-type=2&prefix=images/"
+incoming_ttl() {
+  echo fs.configure | compose exec -T s3 weed shell -master=localhost:9333 |
+    grep -A3 "\"/buckets/$S3_BUCKET/incoming/\"" | grep -q '"ttl": *"1d"'
+}
+check "dépôts sous incoming/ effacés au bout d'un jour" incoming_ttl
 rm -f "$TMP"
 
 echo "Mailpit"
