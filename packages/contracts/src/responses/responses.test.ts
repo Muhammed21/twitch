@@ -191,8 +191,16 @@ describe("CategoryCatalog", () => {
 
   it("garde un champ ajouté plus tard par le serveur", () => {
     expect(
-      responses.CategoryCatalog.parse({ categories: [makeSummary({ imageUrl: "https://x" })] }),
-    ).toMatchObject({ categories: [{ imageUrl: "https://x" }] });
+      responses.CategoryCatalog.parse({ categories: [makeSummary({ accentColor: "#9146ff" })] }),
+    ).toMatchObject({ categories: [{ accentColor: "#9146ff" }] });
+  });
+
+  it("rend la pochette d'une catégorie qui en a une", () => {
+    const summary = makeSummary({ imageUrl: "https://cdn.twitch.local/images/category/jc.webp" });
+
+    expect(responses.CategoryCatalog.parse({ categories: [summary] })).toEqual({
+      categories: [summary],
+    });
   });
 
   it.each([
@@ -200,6 +208,10 @@ describe("CategoryCatalog", () => {
     ["avec une catégorie sans slug", { categories: [makeSummary({ slug: undefined })] }],
     ["avec une catégorie sans nom", { categories: [makeSummary({ name: undefined })] }],
     ["avec un identifiant qui n'est pas un UUID", { categories: [makeSummary({ id: "irl" })] }],
+    [
+      "avec une pochette qui n'est pas une URL",
+      { categories: [makeSummary({ imageUrl: "jc.webp" })] },
+    ],
   ])("refuse un catalogue %s", (_name, catalog) => {
     expect(responses.CategoryCatalog.safeParse(catalog).success).toBe(false);
   });
