@@ -12,6 +12,7 @@ public enum TextRole: Sendable {
   case chatAuthor
   case title
   case tabLabel
+  case profileDetail
   case widgetTitle
   case channelName
   case cardDetail
@@ -30,6 +31,7 @@ public enum TextRole: Sendable {
     case .chatAuthor: .actionLabel
     case .title: .titleText
     case .tabLabel: .tabLabel
+    case .profileDetail: .supportingText
     case .widgetTitle: .actionLabel
     case .channelName: .displayText
     case .cardDetail: .supportingText
@@ -76,6 +78,14 @@ public enum LayoutRole: Sendable {
   case createGlyphSize
   case avatarRingWidth
   case avatarRingGap
+  case profileBannerHeight
+  case profileAvatarSize
+  case profileAvatarOverlap
+  case profileAvatarGlyphInset
+  case profileAvatarGap
+  case profileNameTop
+  case profileBioTop
+  case profileHeaderBottom
   case widgetInset
   case widgetGap
   case widgetHeaderHeight
@@ -135,6 +145,14 @@ public enum LayoutRole: Sendable {
     case .createGlyphSize: Spacing.x16
     case .avatarRingWidth: Spacing.x2
     case .avatarRingGap: Spacing.x1
+    case .profileBannerHeight: Spacing.x70
+    case .profileAvatarSize: Spacing.x88
+    case .profileAvatarOverlap: Spacing.x16
+    case .profileAvatarGlyphInset: Spacing.x20
+    case .profileAvatarGap: Spacing.x8
+    case .profileNameTop: Spacing.x8
+    case .profileBioTop: Spacing.x20
+    case .profileHeaderBottom: Spacing.x16
     case .widgetInset: Spacing.x14
     case .widgetGap: Spacing.x8
     case .widgetHeaderHeight: Spacing.x40
