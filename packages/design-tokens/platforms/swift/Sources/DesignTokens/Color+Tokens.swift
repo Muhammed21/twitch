@@ -221,6 +221,13 @@ public extension Color {
             ? UIColor(red: 1, green: 1, blue: 1, alpha: 1)
             : UIColor(red: 1, green: 1, blue: 1, alpha: 1)
     })
+    /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : fond de l'aperçu du flux du Stream Manager, mesuré #060508 (creer/gestionnaire-diffusion--widget-actions-rapides), identique dans les deux thèmes.
+    /// clair #000000 · sombre #000000
+    static let mediaBackground = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0, green: 0, blue: 0, alpha: 1)
+            : UIColor(red: 0, green: 0, blue: 0, alpha: 1)
+    })
 
     /// Valeurs fixes par thème, réservées aux contextes sans traits et aux tests (ADR 0019 §2.2).
     enum Static {
@@ -286,5 +293,7 @@ public extension Color {
         public static let liveOnBadgeDark = Color(.sRGB, red: 1, green: 1, blue: 1, opacity: 1)
         public static let mediaOnOverlayLight = Color(.sRGB, red: 1, green: 1, blue: 1, opacity: 1)
         public static let mediaOnOverlayDark = Color(.sRGB, red: 1, green: 1, blue: 1, opacity: 1)
+        public static let mediaBackgroundLight = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 1)
+        public static let mediaBackgroundDark = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 1)
     }
 }

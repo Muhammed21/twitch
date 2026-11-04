@@ -33,6 +33,7 @@
   --color-live-badge: #eb0400;
   --color-live-on-badge: #ffffff;
   --color-media-on-overlay: #ffffff;
+  --color-media-background: #000000;
   --typography-display-text-font: -apple-system-headline;
   --typography-display-text-weight: 600;
   --typography-heading-text-font: -apple-system-subheadline;
@@ -118,5 +119,6 @@
     --color-live-badge: #eb0400;
     --color-live-on-badge: #ffffff;
     --color-media-on-overlay: #ffffff;
+    --color-media-background: #000000;
   }
 }
