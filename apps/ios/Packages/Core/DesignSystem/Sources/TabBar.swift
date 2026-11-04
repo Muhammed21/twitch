@@ -143,15 +143,20 @@ private struct TabBarCell<Tab: Hashable>: View {
         .frame(width: LayoutRole.tabGlyphSize.points, height: LayoutRole.tabGlyphSize.points)
         .accessibilityHidden(true)
     } else {
-      DefaultAvatar(isRinged: isSelected)
+      DefaultAvatar(
+        diameter: LayoutRole.tabIconSize.points,
+        glyphInset: LayoutRole.avatarGlyphInset.points,
+        isRinged: isSelected
+      )
     }
   }
 }
 
-private struct DefaultAvatar: View {
-  let isRinged: Bool
+struct DefaultAvatar: View {
+  let diameter: CGFloat
+  let glyphInset: CGFloat
+  var isRinged = false
 
-  private var diameter: CGFloat { LayoutRole.tabIconSize.points }
   private var ringInset: CGFloat { LayoutRole.avatarRingWidth.points + LayoutRole.avatarRingGap.points }
 
   var body: some View {
@@ -162,7 +167,7 @@ private struct DefaultAvatar: View {
           .resizable()
           .scaledToFit()
           .foregroundStyle(ColorRole.onAvatarDefault.color)
-          .padding(LayoutRole.avatarGlyphInset.points)
+          .padding(glyphInset)
       }
       .scaleEffect(isRinged ? (diameter - 2 * ringInset) / diameter : 1)
       .overlay {
@@ -170,6 +175,7 @@ private struct DefaultAvatar: View {
           Circle().strokeBorder(ColorRole.navigationActive.color, lineWidth: LayoutRole.avatarRingWidth.points)
         }
       }
+      .frame(width: diameter, height: diameter)
       .accessibilityHidden(true)
   }
 }
