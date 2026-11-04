@@ -15,9 +15,17 @@ const variable = (name: string): string => {
   return value;
 };
 
+const publicEndpointOf = (endpoint: string) => {
+  const url = new URL(endpoint);
+  url.hostname = url.hostname === "localhost" ? "127.0.0.1" : "localhost";
+  return url.origin;
+};
+
+const PUBLIC_ENDPOINT = publicEndpointOf(variable("S3_ENDPOINT"));
+
 const storage = createS3ImageStorage({
   endpoint: variable("S3_ENDPOINT"),
-  publicEndpoint: variable("S3_ENDPOINT"),
+  publicEndpoint: PUBLIC_ENDPOINT,
   region: variable("S3_REGION"),
   bucket: variable("S3_BUCKET"),
   accessKeyId: variable("S3_ACCESS_KEY_ID"),
@@ -58,6 +66,7 @@ const deposit = async ({
     throw new Error(prepared.error);
   }
   written.push(`incoming/${userId}/avatar/${prepared.value.uploadId}`);
+  expect(new URL(prepared.value.uploadUrl).origin).toBe(PUBLIC_ENDPOINT);
   const response = await fetch(prepared.value.uploadUrl, {
     method: "PUT",
     headers: prepared.value.headers,
