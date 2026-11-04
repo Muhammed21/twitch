@@ -188,22 +188,25 @@ describe("vignette d'un canal", () => {
     expect((await get(`channels/${CHANNEL_ID}/thumbnail.jpg`)).status).toBe(404);
   });
 
-  it("répond 503 en RFC 9457 quand ffmpeg n'a pas rendu d'image", async () => {
-    const { registry, liveSessions, get } = await startPlayback({
-      thumbnailOf: async () => ({ ok: false, error: "failed" }),
-    });
-    liveSessions.set(CHANNEL_ID, SESSION_ID);
-    registry.open(SESSION_ID);
+  it.each(["failed", "busy"] as const)(
+    "répond 503 en RFC 9457 quand la vignette est %s",
+    async (error) => {
+      const { registry, liveSessions, get } = await startPlayback({
+        thumbnailOf: async () => ({ ok: false, error }),
+      });
+      liveSessions.set(CHANNEL_ID, SESSION_ID);
+      registry.open(SESSION_ID);
 
-    const response = await get(`channels/${CHANNEL_ID}/thumbnail.jpg`);
+      const response = await get(`channels/${CHANNEL_ID}/thumbnail.jpg`);
 
-    expect(response.status).toBe(503);
-    expect(await response.json()).toEqual({
-      type: "about:blank",
-      title: "Vignette indisponible",
-      status: 503,
-    });
-  });
+      expect(response.status).toBe(503);
+      expect(await response.json()).toEqual({
+        type: "about:blank",
+        title: "Vignette indisponible",
+        status: 503,
+      });
+    },
+  );
 
   it("répond 404 pour la vignette d'un identifiant de canal invalide", async () => {
     const { registry, liveSessions, get } = await startPlayback();

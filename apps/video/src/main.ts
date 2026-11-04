@@ -38,6 +38,7 @@ const HLS_FALLBACK_BANDWIDTH = 6_000_000;
 const HLS_BLOCKING_TIMEOUT_MS = 3 * HLS_OPTIONS.targetDuration * 1000;
 const HLS_ENDED_RETENTION_MS = 30_000;
 const THUMBNAIL_TTL_MS = 30_000;
+const THUMBNAIL_MAX_CONCURRENT = 2;
 const THUMBNAIL_TIMEOUT_MS = 5000;
 const THUMBNAIL_MAX_BYTES = 1024 * 1024;
 
@@ -130,6 +131,7 @@ try {
           maxOutputBytes: THUMBNAIL_MAX_BYTES,
         }),
         ttlMs: THUMBNAIL_TTL_MS,
+        maxConcurrent: THUMBNAIL_MAX_CONCURRENT,
         now: Date.now,
       }).of,
     },

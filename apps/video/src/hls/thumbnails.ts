@@ -5,7 +5,7 @@ import type { HlsStream } from "./hls-stream.ts";
 
 export type FrameExtractor = (fmp4: Uint8Array) => Promise<Uint8Array | undefined>;
 
-export type ThumbnailRefusal = "not_ready" | "failed";
+export type ThumbnailRefusal = "not_ready" | "failed" | "busy";
 
 export type Thumbnail = Result<Uint8Array, ThumbnailRefusal>;
 
@@ -19,10 +19,12 @@ type Entry = { readonly result: Promise<Thumbnail>; settledAt: number | undefine
 export const createThumbnails = ({
   extract,
   ttlMs,
+  maxConcurrent,
   now,
 }: {
   readonly extract: FrameExtractor;
   readonly ttlMs: number;
+  readonly maxConcurrent: number;
   readonly now: () => number;
 }): Thumbnails => {
   const entries = new Map<string, Entry>();
@@ -57,6 +59,10 @@ export const createThumbnails = ({
       const cached = entries.get(sessionId);
       if (cached !== undefined) {
         return cached.result;
+      }
+      const running = [...entries.values()].filter(({ settledAt }) => settledAt === undefined);
+      if (running.length >= maxConcurrent) {
+        return Promise.resolve(err("busy"));
       }
       const entry = start(concatBytes(stream.init.bytes, last.bytes));
       entries.set(sessionId, entry);

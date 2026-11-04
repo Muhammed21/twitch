@@ -47,6 +47,7 @@ describe("vignette par ffmpeg réel", () => {
         maxOutputBytes: 1024 * 1024,
       }),
       ttlMs: 30_000,
+      maxConcurrent: 2,
       now: Date.now,
     });
 

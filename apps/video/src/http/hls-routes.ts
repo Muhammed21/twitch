@@ -182,7 +182,7 @@ const thumbnailReply = (thumbnail: Thumbnail): HlsReply => {
   if (thumbnail.ok) {
     return { status: 200, headers: THUMBNAIL_HEADERS, body: thumbnail.value };
   }
-  return thumbnail.error === "failed" ? THUMBNAIL_UNAVAILABLE : NOT_FOUND;
+  return thumbnail.error === "not_ready" ? NOT_FOUND : THUMBNAIL_UNAVAILABLE;
 };
 
 const channelFile = async (

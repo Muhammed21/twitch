@@ -41,10 +41,18 @@ const deferred = <T>() => {
   return { promise, resolve: (value: T) => settle.resolve(value) };
 };
 
-const setup = ({ extract = async () => JPEG }: { extract?: FrameExtractor } = {}) => {
+const setup = ({
+  extract = async () => JPEG,
+  maxConcurrent = 8,
+}: { extract?: FrameExtractor; maxConcurrent?: number } = {}) => {
   const clock = { now: 1_000_000 };
   const extractor = vi.fn<FrameExtractor>(extract);
-  const thumbnails = createThumbnails({ extract: extractor, ttlMs: TTL_MS, now: () => clock.now });
+  const thumbnails = createThumbnails({
+    extract: extractor,
+    ttlMs: TTL_MS,
+    maxConcurrent,
+    now: () => clock.now,
+  });
   return { clock, extractor, thumbnails };
 };
 
@@ -180,5 +188,43 @@ describe("vignette d'une session en direct", () => {
     expect(thumbnails.size()).toBe(1);
     pending.resolve(JPEG);
     await first;
+  });
+
+  it("refuse une extraction au-delà du plafond global, sans garder ce refus", async () => {
+    const pending = deferred<Uint8Array | undefined>();
+    const { extractor, thumbnails } = setup({
+      extract: (fmp4) =>
+        extractor.mock.calls.length === 1 ? pending.promise : Promise.resolve(fmp4),
+      maxConcurrent: 1,
+    });
+    const first = thumbnails.of("session-a", WITH_CLOSED_SEGMENTS);
+
+    expect(await thumbnails.of("session-b", WITH_CLOSED_SEGMENTS)).toEqual({
+      ok: false,
+      error: "busy",
+    });
+    expect(extractor).toHaveBeenCalledTimes(1);
+    pending.resolve(JPEG);
+    await first;
+
+    expect((await thumbnails.of("session-b", WITH_CLOSED_SEGMENTS)).ok).toBe(true);
+    expect(extractor).toHaveBeenCalledTimes(2);
+  });
+
+  it("sert la vignette gardée d'une session même au plafond global", async () => {
+    const pending = deferred<Uint8Array | undefined>();
+    const { extractor, thumbnails } = setup({
+      extract: () => (extractor.mock.calls.length === 1 ? Promise.resolve(JPEG) : pending.promise),
+      maxConcurrent: 1,
+    });
+    await thumbnails.of("session-a", WITH_CLOSED_SEGMENTS);
+    const other = thumbnails.of("session-b", WITH_CLOSED_SEGMENTS);
+
+    expect(await thumbnails.of("session-a", WITH_CLOSED_SEGMENTS)).toEqual({
+      ok: true,
+      value: JPEG,
+    });
+    pending.resolve(JPEG);
+    await other;
   });
 });
