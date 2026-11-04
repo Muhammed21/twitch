@@ -407,7 +407,7 @@ const browseAll = async (cursor?: string): Promise<readonly BrowsedItem[]> => {
 };
 
 describe("catégories de Browse (ADR 0047)", () => {
-  it("classe l'audience calculée par lots, fusions suivies, et la pagine par curseur sans doublon", async () => {
+  it("classe l'audience calculée par lots, fusions suivies, même par deux calculs simultanés, et la pagine par curseur sans doublon", async () => {
     const suffix = randomUUID().slice(0, 8);
     const target = { categoryId: randomUUID(), slug: `cible-${suffix}`, name: "Cible" };
     const other = { categoryId: randomUUID(), slug: `autre-${suffix}`, name: "Autre" };
@@ -436,11 +436,12 @@ describe("catégories de Browse (ADR 0047)", () => {
       }),
     );
     try {
-      await categoryAudienceRefresh({
+      const refresh = categoryAudienceRefresh({
         prisma: discovery,
         viewerCounts: async () => new Map(),
         batchSize: 1,
-      })();
+      });
+      await Promise.all([refresh(), refresh()]);
 
       const browsed = await browseAll();
       const slugs = browsed.map(({ slug }) => slug);

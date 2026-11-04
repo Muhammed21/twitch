@@ -124,11 +124,24 @@ describe("GET /v1/categories", () => {
       "un curseur aux compteurs négatifs",
       `cursor=${encodeAudienceCursor({ viewerCount: -1, liveCount: 1, categoryId: "1c6f5e4d-3b2a-4019-9f8e-7d6c5b4a3928" })}`,
     ],
+    [
+      "un curseur au-delà d'un entier de la base",
+      `cursor=${encodeAudienceCursor({ viewerCount: 2_147_483_648, liveCount: 1, categoryId: "1c6f5e4d-3b2a-4019-9f8e-7d6c5b4a3928" })}`,
+    ],
     ["une limite hors bornes", "limit=51"],
   ])("refuse %s", async (_name, query) => {
     await withControllers({}, async (base, calls) => {
       expect((await fetch(`${base}/categories?${query}`)).status).toBe(400);
       expect(calls.browse).toEqual([]);
+    });
+  });
+
+  it("accepte un curseur au plus grand entier de la base", async () => {
+    const after = { viewerCount: 2_147_483_647, liveCount: 1, categoryId: IRL_AUDIENCE.categoryId };
+    await withControllers({}, async (base, calls) => {
+      await fetch(`${base}/categories?cursor=${encodeAudienceCursor(after)}`);
+
+      expect(calls.browse).toEqual([{ after, limit: 20 }]);
     });
   });
 
