@@ -99,6 +99,9 @@ public final class MyChannelStore {
       notice = nil
     } catch {
       log("my channel: stream key not read (\(Self.kind(of: error)))")
+      guard read == keyReads else {
+        return
+      }
       notice = .keyUnavailable
     }
   }
@@ -108,11 +111,19 @@ public final class MyChannelStore {
       return
     }
     keyReads += 1
+    let read = keyReads
     do {
-      streamKey = try await repository.rotateStreamKey(of: owned.id)
+      let key = try await repository.rotateStreamKey(of: owned.id)
+      guard read == keyReads else {
+        return
+      }
+      streamKey = key
       notice = .keyRotated
     } catch {
       log("my channel: stream key not rotated (\(Self.kind(of: error)))")
+      guard read == keyReads else {
+        return
+      }
       notice = .keyRotationFailed
     }
   }

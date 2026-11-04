@@ -112,6 +112,40 @@ struct MyChannelStoreTests {
     #expect(store.streamKey?.revealed == rotatedSecret)
   }
 
+  @Test(
+    "n'affiche ni clé ni avis quand on quitte l'écran pendant la rotation, réussie ou non",
+    arguments: [false, true]
+  )
+  func leavesDuringRotation(fails: Bool) async {
+    let repository = HeldRotation(fails: fails)
+    let store = makeStore(repository)
+    await store.load()
+    let rotation = Task { await store.rotateKey() }
+    await repository.untilAsked()
+
+    store.leave()
+    await repository.answer()
+    await rotation.value
+
+    #expect(store.streamKey == nil)
+    #expect(store.notice == nil)
+  }
+
+  @Test("garde l'avis de rotation quand l'ancienne clé échoue à arriver après la rotation")
+  func failedReadAfterRotation() async {
+    let repository = HeldKey(readFails: true)
+    let store = makeStore(repository)
+    await store.load()
+    let reveal = Task { await store.revealKey() }
+    await repository.untilAsked()
+
+    await store.rotateKey()
+    await repository.answer()
+    await reveal.value
+
+    #expect(store.notice == .keyRotated)
+  }
+
   @Test("ne fait rien tant que la chaîne n'est pas chargée")
   func rotationNeedsChannel() async {
     let store = makeStore(FakeMyChannel(owned: .success(nil)))
