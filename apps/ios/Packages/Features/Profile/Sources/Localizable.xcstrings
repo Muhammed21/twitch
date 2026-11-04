@@ -181,6 +181,16 @@
         }
       }
     },
+    "profile.tab" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profile"
+          }
+        }
+      }
+    },
     "streamManager.copy" : {
       "localizations" : {
         "en" : {

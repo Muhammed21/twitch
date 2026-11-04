@@ -17,25 +17,45 @@ public enum Route: Hashable, Sendable {
   }
 }
 
+public enum AppTab: Hashable, Sendable {
+  case home
+  case profile
+}
+
 @MainActor
 @Observable
 public final class Router {
+  public var selectedTab: AppTab = .home
   public var path: [Route] = []
+  public var profilePath: [Route] = []
 
   public init() {}
 
+  public var isTabBarVisible: Bool {
+    switch selectedTab {
+    case .home: path.isEmpty
+    case .profile: profilePath.isEmpty
+    }
+  }
+
   public func push(_ route: Route) {
-    path.append(route)
+    switch selectedTab {
+    case .home: path.append(route)
+    case .profile: profilePath.append(route)
+    }
   }
 
   public func reset() {
+    selectedTab = .home
     path = []
+    profilePath = []
   }
 
   @discardableResult
   public func open(_ url: URL) -> Bool {
     guard let route = Route(deepLink: url) else { return false }
-    push(route)
+    selectedTab = .home
+    path.append(route)
     return true
   }
 }

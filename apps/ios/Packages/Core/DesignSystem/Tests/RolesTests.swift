@@ -40,6 +40,17 @@ private let menuMeasures: [(LayoutRole, CGFloat)] = [
   (.menuCardRadius, 12),
 ]
 
+private let tabBarMeasures: [(LayoutRole, CGFloat)] = [
+  (.tabBarHeight, 49),
+  (.tabBarTopInset, 8),
+  (.tabLabelGap, 2),
+  (.tabIconSize, 24),
+  (.tabGlyphSize, 20),
+  (.avatarGlyphInset, 5),
+  (.avatarRingWidth, 2),
+  (.avatarRingGap, 1),
+]
+
 @Suite("Rôles de texte, de mise en page et de bouton")
 struct RolesTests {
   @Test("les catégories et le slogan de l'accueil sont en largeTitle gras, les boutons en headline gras")
@@ -87,6 +98,16 @@ struct RolesTests {
   @Test("les mesures du menu du compte relevées sur profil/menu-compte--defaut", arguments: menuMeasures)
   func menuLayoutRoles(role: LayoutRole, points: CGFloat) {
     #expect(role.points == points)
+  }
+
+  @Test("les mesures de la barre d'onglets relevées sur profil/menu-compte--defaut", arguments: tabBarMeasures)
+  func tabBarLayoutRoles(role: LayoutRole, points: CGFloat) {
+    #expect(role.points == points)
+  }
+
+  @Test("les libellés de la barre d'onglets sont en caption2 medium")
+  func tabBarTextRoles() {
+    #expect(TextRole.tabLabel.font == Font.caption2.weight(.medium))
   }
 
   @Test("le nom du compte en tête du menu est en title2 gras")

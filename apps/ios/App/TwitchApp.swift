@@ -117,35 +117,44 @@ struct RootView: View {
 struct SignedInRoot: View {
   @Environment(Router.self) private var router
   @Environment(SessionStore.self) private var session
-  @State private var isShowingAccount = false
+
+  static let tabs = [
+    TabBarItem(
+      tab: AppTab.home,
+      title: HomeTab.title,
+      glyph: .symbol(outline: "house", filled: "house.fill"),
+      accessibilityIdentifier: "root.home"
+    ),
+    TabBarItem(
+      tab: AppTab.profile,
+      title: ProfileText.tabTitle,
+      glyph: .avatar,
+      accessibilityIdentifier: "root.account"
+    ),
+  ]
 
   var body: some View {
     @Bindable var router = router
-    NavigationStack(path: $router.path) {
-      HomeScreen()
-        .toolbar {
-          ToolbarItem(placement: .topBarTrailing) {
-            Button { isShowingAccount = true } label: {
-              Label("root.account", systemImage: "person.crop.circle")
-            }
-            .accessibilityIdentifier("root.account")
-          }
-        }
-        .navigationDestination(for: Route.self) { route in
-          switch route {
-          case let .channel(slug):
-            ChannelScreen(slug: slug)
-          }
-        }
-    }
-    .sheet(isPresented: $isShowingAccount) {
-      NavigationStack {
+    TabView(selection: $router.selectedTab) {
+      NavigationStack(path: $router.path) {
+        HomeScreen().withRouteDestinations()
+      }
+      .toolbar(.hidden, for: .tabBar)
+      .tag(AppTab.home)
+      NavigationStack(path: $router.profilePath) {
         ProfileScreen(accountName: accountName) { slug in
-          isShowingAccount = false
           router.push(.channel(slug))
         } settings: {
           SignedInScreen()
         }
+        .withRouteDestinations()
+      }
+      .toolbar(.hidden, for: .tabBar)
+      .tag(AppTab.profile)
+    }
+    .safeAreaInset(edge: .bottom, spacing: 0) {
+      if router.isTabBarVisible {
+        TabBar(selection: $router.selectedTab, items: Self.tabs)
       }
     }
   }
@@ -153,6 +162,17 @@ struct SignedInRoot: View {
   private var accountName: String? {
     guard case let .signedIn(account) = session.phase else { return nil }
     return account?.name
+  }
+}
+
+private extension View {
+  func withRouteDestinations() -> some View {
+    navigationDestination(for: Route.self) { route in
+      switch route {
+      case let .channel(slug):
+        ChannelScreen(slug: slug)
+      }
+    }
   }
 }
 

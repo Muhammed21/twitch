@@ -80,6 +80,10 @@ private struct LiveRow: View {
   }
 }
 
+public enum HomeTab {
+  public static var title: String { String(localized: "home.tab", bundle: .module) }
+}
+
 enum HomeText {
   static var title: String { String(localized: "home.title", bundle: .module) }
   static var empty: String { String(localized: "home.empty", bundle: .module) }

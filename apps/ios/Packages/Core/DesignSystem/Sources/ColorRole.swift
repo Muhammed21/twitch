@@ -19,6 +19,10 @@ public enum ColorRole: Equatable, Sendable {
   case danger
   case onDanger
   case scrim
+  case navigationActive
+  case border
+  case avatarDefault
+  case onAvatarDefault
 
   public var color: Color {
     switch self {
@@ -38,6 +42,10 @@ public enum ColorRole: Equatable, Sendable {
     case .danger: .dangerDefault
     case .onDanger: .dangerOnDanger
     case .scrim: .overlayScrim
+    case .navigationActive: .navigationActive
+    case .border: .borderSubtle
+    case .avatarDefault: .avatarDefault
+    case .onAvatarDefault: .avatarOnDefault
     }
   }
 

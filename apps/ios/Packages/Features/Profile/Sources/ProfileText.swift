@@ -18,6 +18,7 @@ public enum ProfileText {
   static let editStreamInfo = LocalizedStringResource("editStreamInfo.navigationTitle", bundle: .module)
   static let cancel = LocalizedStringResource("editStreamInfo.cancel", bundle: .module)
   static let done = LocalizedStringResource("editStreamInfo.done", bundle: .module)
+  public static var tabTitle: String { String(localized: "profile.tab", bundle: .module) }
   static let masked = "••••••••••••••••"
 
   static func remaining(_ count: Int) -> LocalizedStringResource {
