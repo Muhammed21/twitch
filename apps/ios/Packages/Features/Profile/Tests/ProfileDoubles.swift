@@ -62,19 +62,27 @@ actor FakeMyChannel: MyChannelRepository {
 }
 
 actor HeldKey: MyChannelRepository {
+  private let readFails: Bool
   private var asked = false
   private var onAsked: CheckedContinuation<Void, Never>?
   private var release: CheckedContinuation<Void, Never>?
+
+  init(readFails: Bool = false) {
+    self.readFails = readFails
+  }
 
   func ownedChannel() throws -> OwnedChannel? {
     try makeOwnedChannel()
   }
 
-  func streamKey(of _: ChannelID) async -> StreamKey {
+  func streamKey(of _: ChannelID) async throws -> StreamKey {
     asked = true
     onAsked?.resume()
     onAsked = nil
     await withCheckedContinuation { release = $0 }
+    guard !readFails else {
+      throw Refused()
+    }
     return StreamKey(secret, ingestURL: ingestURL)
   }
 
@@ -84,6 +92,52 @@ actor HeldKey: MyChannelRepository {
 
   func rotateStreamKey(of _: ChannelID) -> StreamKey {
     StreamKey(rotatedSecret, ingestURL: ingestURL)
+  }
+
+  func untilAsked() async {
+    guard !asked else {
+      return
+    }
+    await withCheckedContinuation { onAsked = $0 }
+  }
+
+  func answer() {
+    release?.resume()
+    release = nil
+  }
+}
+
+actor HeldRotation: MyChannelRepository {
+  private let fails: Bool
+  private var asked = false
+  private var onAsked: CheckedContinuation<Void, Never>?
+  private var release: CheckedContinuation<Void, Never>?
+
+  func ownedChannel() throws -> OwnedChannel? {
+    try makeOwnedChannel()
+  }
+
+  func streamKey(of _: ChannelID) -> StreamKey {
+    StreamKey(secret, ingestURL: ingestURL)
+  }
+
+  func rename(_ channel: ChannelID, to title: String) throws -> Channel {
+    try Channel(id: channel, slug: ChannelSlug("viewer_de_test"), title: title, ownerID: ownerID)
+  }
+
+  init(fails: Bool = false) {
+    self.fails = fails
+  }
+
+  func rotateStreamKey(of _: ChannelID) async throws -> StreamKey {
+    asked = true
+    onAsked?.resume()
+    onAsked = nil
+    await withCheckedContinuation { release = $0 }
+    guard !fails else {
+      throw Refused()
+    }
+    return StreamKey(rotatedSecret, ingestURL: ingestURL)
   }
 
   func untilAsked() async {
