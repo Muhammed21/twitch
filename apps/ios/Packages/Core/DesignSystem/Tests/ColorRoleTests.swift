@@ -56,6 +56,8 @@ struct ColorRoleTests {
       (ColorRole.avatarDefault, ColorScheme.dark, "BFFF00"),
       (ColorRole.onAvatarDefault, ColorScheme.light, "000000"),
       (ColorRole.onAvatarDefault, ColorScheme.dark, "000000"),
+      (ColorRole.chatUnread, ColorScheme.light, "D80804"),
+      (ColorRole.chatUnread, ColorScheme.dark, "FF6B5A"),
     ]
   )
   func resolvesToken(role: ColorRole, scheme: ColorScheme, expected: String) {

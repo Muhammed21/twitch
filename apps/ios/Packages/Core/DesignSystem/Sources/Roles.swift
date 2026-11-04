@@ -47,6 +47,9 @@ public enum LayoutRole: Sendable {
   case dialogRadius
   case chatInset
   case chatRowGap
+  case chatUnreadGap
+  case chatUnreadLabelGap
+  case chatUnreadLineWidth
   case composerHeight
   case composerPadding
   case composerRadius
@@ -87,6 +90,9 @@ public enum LayoutRole: Sendable {
     case .dialogRadius: Radius.xxl
     case .chatInset: Spacing.x8
     case .chatRowGap: Spacing.x20
+    case .chatUnreadGap: Spacing.x2
+    case .chatUnreadLabelGap: Spacing.x4
+    case .chatUnreadLineWidth: Spacing.x1
     case .composerHeight: Spacing.x40
     case .composerPadding: Spacing.x12
     case .composerRadius: Radius.lg

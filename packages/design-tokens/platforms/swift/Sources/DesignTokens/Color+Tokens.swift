@@ -165,6 +165,13 @@ public extension Color {
             ? UIColor(red: 0.612, green: 0.604, blue: 1, alpha: 1)
             : UIColor(red: 0.38, green: 0.369, blue: 0.784, alpha: 1)
     })
+    /// Filet et libellé « New » qui séparent les messages lus des non lus dans le chat.
+    /// clair #D80804 · sombre #FF6B5A
+    static let chatUnread = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 1, green: 0.42, blue: 0.353, alpha: 1)
+            : UIColor(red: 0.847, green: 0.031, blue: 0.016, alpha: 1)
+    })
     /// Glyphe et libellé de l'onglet actif de la barre d'onglets, anneau de l'avatar de l'onglet Profile actif.
     /// clair #772CE8 · sombre #BF94FF
     static let navigationActive = Color(uiColor: UIColor { trait in
@@ -242,6 +249,8 @@ public extension Color {
         public static let chatNameTealDark = Color(.sRGB, red: 0.373, green: 0.722, blue: 0.729, opacity: 1)
         public static let chatNameIndigoLight = Color(.sRGB, red: 0.38, green: 0.369, blue: 0.784, opacity: 1)
         public static let chatNameIndigoDark = Color(.sRGB, red: 0.612, green: 0.604, blue: 1, opacity: 1)
+        public static let chatUnreadLight = Color(.sRGB, red: 0.847, green: 0.031, blue: 0.016, opacity: 1)
+        public static let chatUnreadDark = Color(.sRGB, red: 1, green: 0.42, blue: 0.353, opacity: 1)
         public static let navigationActiveLight = Color(.sRGB, red: 0.467, green: 0.173, blue: 0.91, opacity: 1)
         public static let navigationActiveDark = Color(.sRGB, red: 0.749, green: 0.58, blue: 1, opacity: 1)
         public static let borderSubtleLight = Color(.sRGB, red: 0.851, green: 0.851, blue: 0.851, opacity: 1)

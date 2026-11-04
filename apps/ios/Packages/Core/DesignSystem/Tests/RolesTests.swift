@@ -26,6 +26,9 @@ private let logOutDialogMeasures: [(LayoutRole, CGFloat)] = [
 private let chatMeasures: [(LayoutRole, CGFloat)] = [
   (.chatInset, 8),
   (.chatRowGap, 20),
+  (.chatUnreadGap, 2),
+  (.chatUnreadLabelGap, 4),
+  (.chatUnreadLineWidth, 1),
   (.composerHeight, 40),
   (.composerPadding, 12),
   (.composerRadius, 6),

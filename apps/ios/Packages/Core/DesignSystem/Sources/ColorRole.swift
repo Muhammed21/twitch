@@ -16,6 +16,7 @@ public enum ColorRole: Equatable, Sendable {
   case textSecondary
   case link
   case chatName(UUID)
+  case chatUnread
   case danger
   case onDanger
   case scrim
@@ -39,6 +40,7 @@ public enum ColorRole: Equatable, Sendable {
     case .textSecondary: .textSecondary
     case .link: .textLink
     case let .chatName(author): Self.chatNames[Self.stableIndex(of: author, count: Self.chatNames.count)]
+    case .chatUnread: .chatUnread
     case .danger: .dangerDefault
     case .onDanger: .dangerOnDanger
     case .scrim: .overlayScrim
