@@ -68,6 +68,61 @@ struct MyChannelStoreTests {
     #expect(try store.phase == .ready(makeOwnedChannel()))
   }
 
+  @Test("remplace la clé par une nouvelle, montrée aussitôt, et le dit")
+  func rotatesKey() async throws {
+    let store = try makeStore(FakeMyChannel(owned: .success(makeOwnedChannel())))
+    await store.load()
+
+    await store.rotateKey()
+
+    #expect(store.streamKey?.revealed == rotatedSecret)
+    #expect(store.notice == .keyRotated)
+  }
+
+  @Test("garde la clé montrée et le dit quand la rotation échoue, sans écrire la clé dans le log")
+  func rotationFails() async throws {
+    let log = LogBook()
+    let store = try makeStore(
+      FakeMyChannel(owned: .success(makeOwnedChannel()), rotated: .failure(Refused())),
+      log: log
+    )
+    await store.load()
+    await store.revealKey()
+
+    await store.rotateKey()
+
+    #expect(store.streamKey?.revealed == secret)
+    #expect(store.notice == .keyRotationFailed)
+    #expect(log.entries.contains { $0.contains("stream key not rotated") })
+    #expect(!log.entries.contains { $0.contains(secret) })
+  }
+
+  @Test("garde la nouvelle clé quand l'ancienne arrive après la rotation")
+  func rotationDuringRead() async {
+    let repository = HeldKey()
+    let store = makeStore(repository)
+    await store.load()
+    let reveal = Task { await store.revealKey() }
+    await repository.untilAsked()
+
+    await store.rotateKey()
+    await repository.answer()
+    await reveal.value
+
+    #expect(store.streamKey?.revealed == rotatedSecret)
+  }
+
+  @Test("ne fait rien tant que la chaîne n'est pas chargée")
+  func rotationNeedsChannel() async {
+    let store = makeStore(FakeMyChannel(owned: .success(nil)))
+    await store.load()
+
+    await store.rotateKey()
+
+    #expect(store.streamKey == nil)
+    #expect(store.notice == nil)
+  }
+
   @Test("dit que le compte n'a pas encore de chaîne")
   func noChannelYet() async {
     let store = makeStore(FakeMyChannel(owned: .success(nil)))
