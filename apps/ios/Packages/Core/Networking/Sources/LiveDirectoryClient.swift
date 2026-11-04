@@ -29,7 +29,8 @@ extension LiveChannel {
     self.init(
       session: StreamSession(channelID: ChannelID(live.channelId), startedAt: live.startedAt),
       slug: slug,
-      title: live.title
+      title: live.title,
+      viewers: live.viewerCount.flatMap { try? ViewerCount($0) }
     )
   }
 }

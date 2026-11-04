@@ -5,15 +5,10 @@ import { z } from "zod";
 import { responses } from "@repo/contracts";
 
 import { responseDto } from "../../../openapi/response-dto.ts";
-import type { LivePosition, LivesPage } from "../application/list-lives.ts";
+import type { ListLives } from "../application/list-lives.ts";
 import { encodeLiveCursor, LiveCursor } from "./live-cursor.ts";
 
 export const LIST_LIVES = Symbol("LIST_LIVES");
-
-export type ListLives = (request: {
-  after: LivePosition | undefined;
-  limit: number;
-}) => Promise<LivesPage>;
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
@@ -36,11 +31,12 @@ export class LivesController {
   async list(@Query() query: LivesQuery): Promise<z.input<typeof responses.LivePage>> {
     const { items, next } = await this.listLives({ after: query.cursor, limit: query.limit });
     return {
-      items: items.map(({ channelId, slug, title, startedAt }) => ({
+      items: items.map(({ channelId, slug, title, startedAt, viewerCount }) => ({
         channelId,
         slug,
         title,
         startedAt: startedAt.toISOString(),
+        ...(viewerCount === undefined ? {} : { viewerCount }),
       })),
       ...(next === undefined ? {} : { nextCursor: encodeLiveCursor(next) }),
     };

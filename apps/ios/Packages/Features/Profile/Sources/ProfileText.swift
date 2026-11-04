@@ -18,6 +18,8 @@ public enum ProfileText {
   static let editStreamInfo = LocalizedStringResource("editStreamInfo.navigationTitle", bundle: .module)
   static let cancel = LocalizedStringResource("editStreamInfo.cancel", bundle: .module)
   static let done = LocalizedStringResource("editStreamInfo.done", bundle: .module)
+  static let close = LocalizedStringResource("streamManager.close", bundle: .module)
+  public static var streamManagerTitle: String { String(localized: "profile.streamManager", bundle: .module) }
   public static var tabTitle: String { String(localized: "profile.tab", bundle: .module) }
   static let masked = "••••••••••••••••"
 
@@ -25,12 +27,18 @@ public enum ProfileText {
     LocalizedStringResource("editStreamInfo.remaining \(count)", bundle: .module)
   }
 
+  public static let resetKey = LocalizedStringResource("streamManager.resetKey", bundle: .module)
+  public static let resetKeyTitle = LocalizedStringResource("streamManager.resetKey.title", bundle: .module)
+  public static let resetKeyMessage = LocalizedStringResource("streamManager.resetKey.message", bundle: .module)
+
   public static func notice(_ notice: MyChannelStore.Notice) -> LocalizedStringResource {
     switch notice {
     case .keyCopied: LocalizedStringResource("streamManager.notice.keyCopied", bundle: .module)
     case .keyUnavailable: LocalizedStringResource("streamManager.notice.keyUnavailable", bundle: .module)
     case .titleSaved: LocalizedStringResource("streamManager.notice.titleSaved", bundle: .module)
     case .titleFailed: LocalizedStringResource("streamManager.notice.titleFailed", bundle: .module)
+    case .keyRotated: LocalizedStringResource("streamManager.notice.keyRotated", bundle: .module)
+    case .keyRotationFailed: LocalizedStringResource("streamManager.notice.keyRotationFailed", bundle: .module)
     }
   }
 
