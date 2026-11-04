@@ -21,10 +21,13 @@ actor FakeConnection: ChatConnection {
   private var queue: [Result<ChatEvent?, any Error>] = []
   private var waiting: CheckedContinuation<ChatEvent?, any Error>?
   private var outcomes: [ChatSendOutcome]
-  private(set) var delivered = 0
   private(set) var joined: [ChannelID] = []
   private(set) var sent: [String] = []
   private(set) var isClosed = false
+
+  var isAwaitingEvent: Bool {
+    waiting != nil
+  }
 
   init(outcomes: [ChatSendOutcome] = []) {
     self.outcomes = outcomes
@@ -72,15 +75,9 @@ actor FakeConnection: ChatConnection {
       return nil
     }
     guard queue.isEmpty else {
-      return try take(queue.removeFirst())
+      return try queue.removeFirst().get()
     }
     return try await withCheckedThrowingContinuation { waiting = $0 }
-  }
-
-  private func take(_ result: Result<ChatEvent?, any Error>) throws -> ChatEvent? {
-    let event = try result.get()
-    delivered += event == nil ? 0 : 1
-    return event
   }
 
   private func deliver(_ result: Result<ChatEvent?, any Error>) {
@@ -89,7 +86,7 @@ actor FakeConnection: ChatConnection {
       return
     }
     waiting = nil
-    continuation.resume(with: Result { try take(result) })
+    continuation.resume(with: result)
   }
 }
 
