@@ -16,8 +16,13 @@ export type ListedCategory = {
 
 export type ListedLive = LiveListItem & {
   readonly viewerCount?: number;
+  readonly thumbnailUrl?: string;
   readonly category?: ListedCategory;
 };
+
+export type ThumbnailUrlReader = (
+  channelIds: readonly string[],
+) => Promise<ReadonlyMap<string, string>>;
 
 export type LivePosition = {
   readonly startedAt: Date;
@@ -77,5 +82,35 @@ export const withLiveViewerCounts =
     return {
       ...page,
       items: page.items.map((live) => ({ ...live, viewerCount: counts.get(live.channelId) ?? 0 })),
+    };
+  };
+
+export const withLiveThumbnails =
+  ({
+    lives,
+    thumbnailUrls,
+    onThumbnailFailure,
+  }: {
+    lives: ListLives;
+    thumbnailUrls: ThumbnailUrlReader;
+    onThumbnailFailure: (error: unknown) => void;
+  }): ListLives =>
+  async (request) => {
+    const page = await lives(request);
+    if (page.items.length === 0) {
+      return page;
+    }
+    const urls = await thumbnailUrls(page.items.map(({ channelId }) => channelId)).catch(
+      (error: unknown) => {
+        onThumbnailFailure(error);
+        return new Map<string, string>();
+      },
+    );
+    return {
+      ...page,
+      items: page.items.map((live) => {
+        const thumbnailUrl = urls.get(live.channelId);
+        return thumbnailUrl === undefined ? live : { ...live, thumbnailUrl };
+      }),
     };
   };

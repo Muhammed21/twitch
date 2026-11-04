@@ -997,6 +997,10 @@
           },
           "name": {
             "type": "string"
+          },
+          "imageUrl": {
+            "type": "string",
+            "format": "uri"
           }
         },
         "required": [
@@ -1249,6 +1253,10 @@
             "type": "integer",
             "minimum": 0,
             "maximum": 9007199254740991
+          },
+          "thumbnailUrl": {
+            "type": "string",
+            "format": "uri"
           },
           "category": {
             "$ref": "#/components/schemas/LiveCategory"

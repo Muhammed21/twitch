@@ -17,6 +17,7 @@ filter:
     - PresenceController_record
     - CategoryCatalogController_read
     - CategoriesController_browse
+    - CategoriesController_lives
 additionalImports:
   - Foundation
 typeOverrides:

@@ -313,15 +313,30 @@ describe("catégorie posée sur une chaîne (ADR 0045, §5)", () => {
 });
 
 describe("recherche dans le catalogue (ADR 0045, §5)", () => {
-  it("trouve les catégories actives dont le nom contient le texte, sans tenir compte de la casse", async () => {
+  it("trouve les catégories actives dont le nom contient le texte, sans tenir compte de la casse, avec leur pochette", async () => {
     const active = await seedCategory();
+    const covered = await seedCategory();
+    const imageKey = `images/category/${randomUUID()}.webp`;
+    await catalog.changeImage({
+      categoryId: covered.id,
+      imageKey,
+      outboxEventId: randomUUID(),
+      occurredAt: NOW,
+    });
     const retired = await seedCategory();
     await catalog.retire({ categoryId: retired.id, outboxEventId: randomUUID(), occurredAt: NOW });
 
     const found = await search.search({ nameContains: active.slug.toUpperCase(), limit: 10 });
     const notFound = await search.search({ nameContains: retired.slug, limit: 10 });
 
-    expect(found).toEqual([{ id: active.id, slug: active.slug, name: active.name }]);
+    const foundCovered = await search.search({ nameContains: covered.slug, limit: 10 });
+
+    expect(found).toEqual([
+      { id: active.id, slug: active.slug, name: active.name, imageKey: null },
+    ]);
+    expect(foundCovered).toEqual([
+      { id: covered.id, slug: covered.slug, name: covered.name, imageKey },
+    ]);
     expect(notFound).toEqual([]);
   });
 });
