@@ -17,9 +17,21 @@ appId: com.muhammedcavus.twitch
       - extendedWaitUntil:
           visible: Username
           timeout: 30000
-- tapOn: Username
-- inputText: viewer@twitch.local
-- pressKey: Enter
+# « Username » nomme deux éléments de la page : le <label>, puis le champ juste en dessous. Sur le
+# runner chargé, un toucher sur le libellé laissait parfois le champ sans focus et la saisie partait
+# dans le vide : le flow vise donc le second élément, et vérifie la valeur saisie avant de continuer.
+- retry:
+    maxRetries: 2
+    commands:
+      - tapOn:
+          text: Username
+          index: 1
+      - eraseText
+      - inputText: viewer@twitch.local
+      - assertVisible: viewer@twitch.local
+- tapOn:
+    text: Password
+    index: 1
 - inputText: twitch-dev-password
 - pressKey: Enter
 # Sur le runner macOS, le hachage du mot de passe et l'échange du code prennent parfois plus de 30 s.

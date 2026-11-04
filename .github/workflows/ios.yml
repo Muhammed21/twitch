@@ -111,7 +111,7 @@ jobs:
       - name: Le contrôle du générateur refuse un schéma non pris en charge
         run: "! scripts/check-openapi-generator.sh scripts/fixtures/openapi-unsupported.json"
 
-      - name: Le lanceur Maestro de la CI ne relance que le pilote non prêt
+      - name: Le lanceur Maestro de la CI ne relance que le pilote non prêt, et republie le live à chaque essai
         run: maestro/check-ci-test.sh
 
       - name: Simulateur
@@ -226,11 +226,6 @@ jobs:
           done
           pnpm --filter @repo/api seed:dev
 
-      - name: Une chaîne en direct
-        run: |
-          set -a && . ./.env && set +a
-          apps/ios/maestro/go-live.sh viewer_dev
-
       # Modèle et iOS fixés : le premier iPhone de `simctl list` dépend des runtimes de l'image.
       - name: Simulateur iPhone 16 Pro, iOS 18.5
         run: |
@@ -275,7 +270,9 @@ jobs:
             curl -fsSL https://get.maestro.mobile.dev -o "$RUNNER_TEMP/maestro-install.sh"
             bash "$RUNNER_TEMP/maestro-install.sh"
           fi
-          apps/ios/maestro/ci-test.sh "$SIMULATOR" apps/ios/maestro/ \
+          # ci-test.sh publie viewer_dev en direct juste avant chaque essai (go-live.sh).
+          set -a && . ./.env && set +a
+          MAESTRO_LIVE_SLUG=viewer_dev apps/ios/maestro/ci-test.sh "$SIMULATOR" apps/ios/maestro/ \
             --format junit --output "$RUNNER_TEMP/maestro.xml"
 
       - name: Journal du simulateur
