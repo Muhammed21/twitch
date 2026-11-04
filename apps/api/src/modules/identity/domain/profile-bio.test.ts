@@ -34,6 +34,16 @@ describe("bio d'un profil", () => {
     expect(parseBio("👨‍👩‍👧".repeat(301))).toEqual({ ok: false, error: "bio_too_long" });
   });
 
+  it("accepte 3 000 unités de code UTF-16", () => {
+    const bio = `${"a".repeat(299)}${"\u0301".repeat(2701)}`;
+
+    expect(parseBio(bio)).toEqual({ ok: true, value: bio });
+  });
+
+  it("refuse un caractère chargé de milliers de diacritiques, au-delà de 3 000 unités de code", () => {
+    expect(parseBio(`a${"\u0301".repeat(3000)}`)).toEqual({ ok: false, error: "bio_too_long" });
+  });
+
   it("ne compte pas les espaces retirés", () => {
     expect(parseBio(` ${"a".repeat(300)} `)).toEqual({ ok: true, value: "a".repeat(300) });
   });
