@@ -5,6 +5,7 @@ import { appendToOutbox } from "@repo/db";
 
 import type { CategoryCatalog, CategoryStatus } from "../application/category-admin.ts";
 import type { CategorySearch } from "../application/category-search.ts";
+import { closeFollows, transferFollows } from "./category-follow-transfer.ts";
 import type { ChannelPrisma } from "./prisma-channel-registry.ts";
 
 const OUTBOX = { schema: "channel", table: "ChannelOutbox" };
@@ -76,6 +77,8 @@ export const prismaCategoryCatalog = (prisma: ChannelPrisma): CategoryCatalog =>
         where: { categoryId: sourceId },
         data: { categoryId: targetId },
       });
+      await transferFollows(tx, { sourceId, targetId, occurredAt });
+      await closeFollows(tx, { categoryId: sourceId, reason: "category_merged", occurredAt });
       await tx.channelCategory.update({
         where: { id: sourceId },
         data: { status: "merged", mergedIntoId: targetId },
@@ -109,6 +112,7 @@ export const prismaCategoryCatalog = (prisma: ChannelPrisma): CategoryCatalog =>
       if ((await tx.channel.count({ where: { categoryId } })) > 0) {
         return { ok: false, error: "category_in_use" } as const;
       }
+      await closeFollows(tx, { categoryId, reason: "category_retired", occurredAt });
       const retired = await tx.channelCategory.update({
         where: { id: categoryId },
         data: { status: "retired" },
