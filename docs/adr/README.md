@@ -53,7 +53,7 @@ Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes
 | [0041](0041-les-outbox-historique-lisible-pour-reconstruire-une-projection.md)             | Les outbox de `channel` et `stream` sont un historique lisible pour reconstruire une projection                | Accepté                                                                | Données      |
 | [0042](0042-ip-du-client-par-un-nombre-de-proxys-de-confiance-et-limite-de-debit-redis.md) | L'IP du client se lit par un nombre de proxys de confiance, et la limite de débit HTTP compte dans Redis       | Accepté                                                                | API          |
 | [0043](0043-seau-de-rate-limit-du-chat-dans-redis-et-repli-sur-le-seau-local.md)           | Le seau de rate limit du chat vit dans Redis, et se replie sur le seau local de l'instance                     | Accepté                                                                | Chat         |
-| [0046](0046-glyphes-d-interface-extraits-des-captures-en-masques.md)                       | Les glyphes d'interface sont des masques extraits des captures                                                 | Proposé                                                                | Design       |
+| [0046](0046-glyphes-d-interface-extraits-des-captures-en-masques.md)                       | Les glyphes d'interface sont des masques extraits des captures                                                 | Accepté                                                                | Design       |
 
 ## Dépendances principales
 

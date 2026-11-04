@@ -1,6 +1,6 @@
 # 0046 — Les glyphes d'interface sont des masques extraits des captures
 
-- Statut : Proposé
+- Statut : Accepté
 - Date : 2026-11-04
 - Décideurs : Muhammed Cavus
 - Amende : ADR 0036 (§6 marque)
