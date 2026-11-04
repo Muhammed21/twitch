@@ -118,6 +118,45 @@ describe("channel.metadata.updated", () => {
 
 const SESSION_ID = "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d";
 
+const CATEGORY_ID = "7c6d5e4f-3a2b-4c1d-8e9f-0a1b2c3d4e5f";
+
+describe("channel.category.created", () => {
+  const makeCreated = (overrides: Record<string, unknown> = {}) => ({
+    categoryId: CATEGORY_ID,
+    slug: "just-chatting",
+    name: "Just Chatting",
+    ...overrides,
+  });
+
+  it("porte son nom et sa version", () => {
+    expect(events.channel.channelCategoryCreated).toMatchObject({
+      name: "channel.category.created",
+      version: 1,
+    });
+  });
+
+  it("décode la catégorie, son slug et son nom", () => {
+    expect(events.channel.channelCategoryCreated.payload.parse(makeCreated())).toEqual(
+      makeCreated(),
+    );
+  });
+
+  it("garde un champ ajouté plus tard par l'émetteur", () => {
+    expect(
+      events.channel.channelCategoryCreated.payload.parse(makeCreated({ imageKey: "k" })),
+    ).toMatchObject({ imageKey: "k" });
+  });
+
+  it.each([
+    ["sans catégorie", makeCreated({ categoryId: undefined })],
+    ["avec une catégorie qui n'est pas un UUID", makeCreated({ categoryId: "jeux" })],
+    ["sans slug", makeCreated({ slug: undefined })],
+    ["sans nom", makeCreated({ name: undefined })],
+  ])("refuse un event %s", (_name, payload) => {
+    expect(events.channel.channelCategoryCreated.payload.safeParse(payload).success).toBe(false);
+  });
+});
+
 describe.each([
   ["stream.started", () => events.stream.streamStarted, "startedAt"],
   ["stream.ended", () => events.stream.streamEnded, "endedAt"],

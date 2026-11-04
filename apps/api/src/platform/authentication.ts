@@ -88,3 +88,17 @@ export const CurrentIdentity = createParamDecorator(
   (_data: unknown, context: ExecutionContext): AccessTokenIdentity | undefined =>
     identities.get(context.switchToHttp().getRequest<Request>()),
 );
+
+export const requiredScopeGuard = (scope: string) => {
+  @Injectable()
+  class RequiredScopeGuard implements CanActivate {
+    canActivate(context: ExecutionContext): boolean {
+      const identity = identities.get(context.switchToHttp().getRequest<Request>());
+      if (identity === undefined || !identity.scopes.includes(scope)) {
+        throw new ProblemException({ status: 403, title: "Action non autorisée" });
+      }
+      return true;
+    }
+  }
+  return RequiredScopeGuard;
+};
