@@ -1,6 +1,6 @@
 # 0045 — Une catégorie fusionnée réaffecte ses chaînes, et une catégorie n'est retirée qu'une fois inutilisée
 
-- Statut : Proposé
+- Statut : Accepté
 - Date : 2026-11-04
 - Décideurs : Muhammed Cavus
 
