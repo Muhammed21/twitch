@@ -5,5 +5,10 @@ import { Uuid } from "../../conventions/schemas.ts";
 export const channelCategoryUpdated = {
   name: "channel.category.updated",
   version: 1,
-  payload: z.looseObject({ categoryId: Uuid, name: z.string(), imageKey: z.string().nullable() }),
+  payload: z.looseObject({
+    categoryId: Uuid,
+    name: z.string(),
+    imageKey: z.string().nullable(),
+    tags: z.array(z.string()).default([]),
+  }),
 } as const;
