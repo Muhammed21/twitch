@@ -1,7 +1,10 @@
 appId: com.muhammedcavus.twitch
 ---
-# La feuille web de connexion reste parfois blanche sur le simulateur de la CI, alors que l'API a
-# servi /login : une relance complète de l'app la débloque.
+# La feuille web de connexion reste parfois blanche sur le simulateur de la CI. Sur le runner
+# chargé, le processus WebContent de SafariViewService a mis jusqu'à 38 s à démarrer (run
+# 41831254362), contre moins d'une seconde d'habitude, et la page n'est demandée qu'ensuite :
+# « Username » s'attend donc jusqu'à 90 s. Relancer l'app trop tôt jetait le processus en cours de
+# démarrage. La relance reste un dernier recours.
 - retry:
     maxRetries: 1
     commands:
@@ -16,7 +19,7 @@ appId: com.muhammedcavus.twitch
           id: welcome.logIn
       - extendedWaitUntil:
           visible: Username
-          timeout: 30000
+          timeout: 90000
 # « Username » nomme deux éléments de la page : le <label>, puis le champ juste en dessous. Sur le
 # runner chargé, un toucher sur le libellé laissait parfois le champ sans focus et la saisie partait
 # dans le vide : le flow vise donc le second élément, et vérifie la valeur saisie avant de continuer.
