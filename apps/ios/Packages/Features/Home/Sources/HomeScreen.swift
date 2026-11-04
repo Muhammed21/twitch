@@ -10,7 +10,7 @@ public struct HomeScreen: View {
 
   public var body: some View {
     ScrollView {
-      LazyVStack(alignment: .leading, spacing: LayoutRole.actionGap.points) {
+      LazyVStack(alignment: .leading, spacing: 0) {
         ForEach(store.lives, id: \.session.channelID) { live in
           NavigationLink(value: Route.channel(live.slug)) {
             LiveRow(live: live)
@@ -18,11 +18,11 @@ public struct HomeScreen: View {
           .buttonStyle(.plain)
         }
         footer
+          .padding(LayoutRole.screenInset.points)
       }
-      .padding(LayoutRole.screenInset.points)
     }
     .background(ColorRole.background.color.ignoresSafeArea())
-    .navigationTitle(HomeText.title)
+    .toolbar(.hidden, for: .navigationBar)
     .refreshable { await store.loadFirstPage() }
     .task {
       if store.phase == .idle { await store.loadFirstPage() }
@@ -62,22 +62,20 @@ private struct LiveRow: View {
   let live: LiveChannel
 
   var body: some View {
-    VStack(alignment: .leading, spacing: LayoutRole.dialogTitleGap.points) {
-      Rectangle()
-        .fill(ColorRole.surfaceSecondary.color)
-        .aspectRatio(16 / 9, contentMode: .fit)
-        .accessibilityHidden(true)
-      Text(live.title)
-        .font(TextRole.body.font)
-        .foregroundStyle(ColorRole.textPrimary.color)
-        .lineLimit(2)
-      Text(live.slug.rawValue)
-        .font(TextRole.body.font)
-        .foregroundStyle(ColorRole.textSecondary.color)
-    }
+    LiveCard(
+      badge: HomeCardText.liveBadge,
+      viewers: nil,
+      name: live.slug.rawValue,
+      title: live.title,
+      category: nil
+    )
     .accessibilityElement(children: .combine)
     .accessibilityIdentifier("home.live.\(live.slug.rawValue)")
   }
+}
+
+public enum HomeCardText {
+  public static var liveBadge: String { String(localized: "home.live.badge", bundle: .module) }
 }
 
 public enum HomeTab {
@@ -85,7 +83,6 @@ public enum HomeTab {
 }
 
 enum HomeText {
-  static var title: String { String(localized: "home.title", bundle: .module) }
   static var empty: String { String(localized: "home.empty", bundle: .module) }
   static var failed: String { String(localized: "home.failed", bundle: .module) }
   static var retry: String { String(localized: "home.retry", bundle: .module) }
