@@ -5,6 +5,7 @@ import SwiftUI
 public struct StreamManagerScreen: View {
   @Environment(MyChannelStore.self) private var store
   @State private var isEditingTitle = false
+  @State private var isConfirmingReset = false
   private let onClose: (() -> Void)?
 
   public init(onClose: (() -> Void)? = nil) {
@@ -52,6 +53,16 @@ public struct StreamManagerScreen: View {
     }
     .onDisappear { store.leave() }
     .sheet(isPresented: $isEditingTitle) { EditStreamInfoSheet(initialTitle: store.title) }
+    .alert(Text(ProfileText.resetKeyTitle), isPresented: $isConfirmingReset) {
+      Button(role: .destructive) {
+        Task { await store.rotateKey() }
+      } label: {
+        Text(ProfileText.resetKey)
+      }
+      Button(role: .cancel) {} label: { Text(ProfileText.cancel) }
+    } message: {
+      Text(ProfileText.resetKeyMessage)
+    }
   }
 
   private var titleCard: some View {
@@ -81,6 +92,8 @@ public struct StreamManagerScreen: View {
             .accessibilityIdentifier("streamManager.copyKey")
           Button(ProfileText.hide) { store.hideKey() }
         }
+        Button(ProfileText.resetKey) { isConfirmingReset = true }
+          .accessibilityIdentifier("streamManager.resetKey")
       }
       if let ingestURL = store.streamKey?.ingestURL {
         field(ProfileText.server) {

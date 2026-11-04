@@ -121,6 +121,11 @@
           "$value": "#c92309",
           "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : pseudo NecroAamon (chat/chat-lecteur--toast-abonne), thème clair."
         },
+        "50": {
+          "$type": "color",
+          "$value": "#eb0400",
+          "$description": "Rouge du badge LIVE de la charte twitch.tv. Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : mesuré #eb1a18 en clair et #ea1917 en sombre (parcourir/liste-chaines-live--defaut et --theme-sombre). La valeur de la charte, plus foncée, garde le libellé blanc au-dessus de 4,5:1."
+        },
         "60": {
           "$type": "color",
           "$value": "#fe504d",
