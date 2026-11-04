@@ -30,7 +30,13 @@ extension LiveChannel {
       session: StreamSession(channelID: ChannelID(live.channelId), startedAt: live.startedAt),
       slug: slug,
       title: live.title,
-      viewers: live.viewerCount.flatMap { try? ViewerCount($0) }
+      viewers: live.viewerCount.flatMap { try? ViewerCount($0) },
+      thumbnailURL: live.thumbnailUrl.flatMap(Self.webURL)
     )
+  }
+
+  private static func webURL(_ value: String) -> URL? {
+    guard let url = URL(string: value), let scheme = url.scheme?.lowercased(), ["http", "https"].contains(scheme) else { return nil }
+    return url
   }
 }

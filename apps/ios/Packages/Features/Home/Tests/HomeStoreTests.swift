@@ -208,6 +208,28 @@ struct HomeStoreTests {
     #expect(await directory.requested == [nil, LiveCursor("c2"), LiveCursor("c2")])
   }
 
+  @Test("chaque rechargement réussi de la première page renouvelle les vignettes, pas la page suivante ni un échec")
+  func thumbnailsFollowReload() async throws {
+    let directory = try FakeDirectory(pages: [
+      nil: .success(LivePage(lives: [live("jean_dupont", id: 1)], nextCursor: LiveCursor("c2"))),
+      LiveCursor("c2"): .success(LivePage(lives: [live("ada_lovelace", id: 3)], nextCursor: nil)),
+    ])
+    let store = HomeStore(directory: directory)
+    await store.loadFirstPage()
+    let first = store.thumbnailGeneration
+
+    await store.loadNextPage()
+    let afterNextPage = store.thumbnailGeneration
+    await store.loadFirstPage()
+    let afterReload = store.thumbnailGeneration
+    await directory.serve(nil, with: .failure(DirectoryDown()))
+    await store.loadFirstPage()
+
+    #expect(afterNextPage == first)
+    #expect(afterReload != first)
+    #expect(store.thumbnailGeneration == afterReload)
+  }
+
   @Test("réessayer sans échec ne demande rien")
   func retryWithoutFailure() async throws {
     let directory = try FakeDirectory(pages: [
