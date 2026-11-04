@@ -10,3 +10,17 @@ export const Category = z
     status: openEnum(["active", "merged", "retired"]),
   })
   .meta({ id: "Category" });
+
+export const CategorySummary = z
+  .looseObject({
+    id: Uuid,
+    slug: z.string(),
+    name: z.string(),
+  })
+  .meta({ id: "CategorySummary" });
+
+export const CategoryCatalog = z
+  .looseObject({
+    categories: z.array(CategorySummary),
+  })
+  .meta({ id: "CategoryCatalog" });

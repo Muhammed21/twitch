@@ -108,9 +108,19 @@ describe("channel.metadata.updated", () => {
   });
 
   it.each([
+    ["sa catégorie", "7c6d5e4f-3a2b-4c1d-8e9f-0a1b2c3d4e5f"],
+    ["l'absence de catégorie", null],
+  ])("décode %s", (_name, categoryId) => {
+    expect(events.channel.channelMetadataUpdated.payload.parse(makeUpdate({ categoryId }))).toEqual(
+      makeUpdate({ categoryId }),
+    );
+  });
+
+  it.each([
     ["sans chaîne", makeUpdate({ channelId: undefined })],
     ["avec une chaîne qui n'est pas un UUID", makeUpdate({ channelId: "chaine-1" })],
     ["sans titre", makeUpdate({ title: undefined })],
+    ["avec une catégorie qui n'est pas un UUID", makeUpdate({ categoryId: "jeux" })],
   ])("refuse un event %s", (_name, payload) => {
     expect(events.channel.channelMetadataUpdated.payload.safeParse(payload).success).toBe(false);
   });
