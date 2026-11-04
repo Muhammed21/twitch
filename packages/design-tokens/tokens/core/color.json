@@ -116,6 +116,11 @@
           "$value": "#c92309",
           "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : pseudo NecroAamon (chat/chat-lecteur--toast-abonne), thème clair."
         },
+        "50": {
+          "$type": "color",
+          "$value": "#eb1a18",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : fond du badge LIVE posé sur la miniature, mesuré #eb1a18 en clair et #ea1917 en sombre (parcourir/liste-chaines-live--defaut et --theme-sombre)."
+        },
         "60": {
           "$type": "color",
           "$value": "#fe504d",
