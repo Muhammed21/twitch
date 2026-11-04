@@ -119,13 +119,16 @@ struct SignedInRoot: View {
   @Environment(Router.self) private var router
   @Environment(SessionStore.self) private var session
 
-  static let tabs = [
+  static let leadingTabs = [
     TabBarItem(
       tab: AppTab.home,
       title: HomeTab.title,
       glyph: .symbol(outline: "house", filled: "house.fill"),
       accessibilityIdentifier: "root.home"
     ),
+  ]
+
+  static let trailingTabs = [
     TabBarItem(
       tab: AppTab.profile,
       title: ProfileText.tabTitle,
@@ -153,9 +156,22 @@ struct SignedInRoot: View {
       .toolbar(.hidden, for: .tabBar)
       .tag(AppTab.profile)
     }
+    .fullScreenCover(isPresented: $router.isShowingStreamManager) {
+      NavigationStack {
+        StreamManagerScreen { router.isShowingStreamManager = false }
+      }
+    }
     .safeAreaInset(edge: .bottom, spacing: 0) {
       if router.isTabBarVisible {
-        TabBar(selection: $router.selectedTab, items: Self.tabs)
+        TabBar(
+          selection: $router.selectedTab,
+          leading: Self.leadingTabs,
+          create: TabBarCreate(
+            label: ProfileText.streamManagerTitle,
+            accessibilityIdentifier: "root.create"
+          ) { router.create() },
+          trailing: Self.trailingTabs
+        )
       }
     }
   }

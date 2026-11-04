@@ -32,14 +32,40 @@ public struct TabBarItem<Tab: Hashable>: Identifiable {
   }
 }
 
+public struct TabBarCreate {
+  public let label: String
+  public let accessibilityIdentifier: String
+  public let action: () -> Void
+
+  public init(label: String, accessibilityIdentifier: String, action: @escaping () -> Void) {
+    self.label = label
+    self.accessibilityIdentifier = accessibilityIdentifier
+    self.action = action
+  }
+}
+
+public enum TabBarCreateStyle {
+  public static let background = ColorRole.surfaceSecondary
+  public static let foreground = ColorRole.textPrimary
+}
+
 public struct TabBar<Tab: Hashable>: View {
   @Binding private var selection: Tab
   @Environment(\.displayScale) private var displayScale
-  private let items: [TabBarItem<Tab>]
+  private let leading: [TabBarItem<Tab>]
+  private let create: TabBarCreate?
+  private let trailing: [TabBarItem<Tab>]
 
-  public init(selection: Binding<Tab>, items: [TabBarItem<Tab>]) {
+  public init(
+    selection: Binding<Tab>,
+    leading: [TabBarItem<Tab>],
+    create: TabBarCreate? = nil,
+    trailing: [TabBarItem<Tab>] = []
+  ) {
     _selection = selection
-    self.items = items
+    self.leading = leading
+    self.create = create
+    self.trailing = trailing
   }
 
   public var body: some View {
@@ -48,20 +74,47 @@ public struct TabBar<Tab: Hashable>: View {
         .fill(ColorRole.border.color)
         .frame(height: 1 / displayScale)
       HStack(spacing: 0) {
-        ForEach(items) { item in
-          Button { selection = item.tab } label: {
-            TabBarCell(item: item, isSelected: item.tab == selection)
-          }
-          .buttonStyle(.plain)
-          .accessibilityAddTraits(item.tab == selection ? .isSelected : [])
-          .accessibilityIdentifier(item.accessibilityIdentifier)
+        ForEach(leading) { tabButton($0) }
+        if let create {
+          CreateButton(create: create)
         }
+        ForEach(trailing) { tabButton($0) }
       }
       .frame(height: LayoutRole.tabBarHeight.points, alignment: .top)
       .accessibilityElement(children: .contain)
       .accessibilityAddTraits(.isTabBar)
     }
     .background(ColorRole.background.color.ignoresSafeArea(edges: .bottom))
+  }
+
+  private func tabButton(_ item: TabBarItem<Tab>) -> some View {
+    Button { selection = item.tab } label: {
+      TabBarCell(item: item, isSelected: item.tab == selection)
+    }
+    .buttonStyle(.plain)
+    .accessibilityAddTraits(item.tab == selection ? .isSelected : [])
+    .accessibilityIdentifier(item.accessibilityIdentifier)
+  }
+}
+
+private struct CreateButton: View {
+  let create: TabBarCreate
+
+  var body: some View {
+    Button(action: create.action) {
+      Image(systemName: "plus")
+        .resizable()
+        .scaledToFit()
+        .frame(width: LayoutRole.createGlyphSize.points, height: LayoutRole.createGlyphSize.points)
+        .foregroundStyle(TabBarCreateStyle.foreground.color)
+        .frame(width: LayoutRole.createButtonWidth.points, height: LayoutRole.createButtonHeight.points)
+        .background(TabBarCreateStyle.background.color, in: Capsule())
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .contentShape(Rectangle())
+    }
+    .buttonStyle(.plain)
+    .accessibilityLabel(create.label)
+    .accessibilityIdentifier(create.accessibilityIdentifier)
   }
 }
 

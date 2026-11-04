@@ -136,4 +136,35 @@ struct RouterTabTests {
     #expect(router.path.isEmpty)
     #expect(router.profilePath.isEmpty)
   }
+
+  @Test("le bouton « + » ouvre le Stream Manager par-dessus l'onglet courant, sans en changer")
+  func createOpensStreamManager() {
+    let router = Router()
+    router.selectedTab = .profile
+
+    router.create()
+
+    #expect(router.isShowingStreamManager)
+    #expect(router.selectedTab == .profile)
+  }
+
+  @Test("reset ferme le Stream Manager ouvert par « + »")
+  func resetClosesStreamManager() {
+    let router = Router()
+    router.create()
+
+    router.reset()
+
+    #expect(!router.isShowingStreamManager)
+  }
+
+  @Test("un deep link ferme le Stream Manager pour montrer la chaîne")
+  func deepLinkClosesStreamManager() throws {
+    let router = Router()
+    router.create()
+
+    #expect(try router.open(#require(URL(string: "twitch://channel/jean_dupont"))))
+
+    #expect(!router.isShowingStreamManager)
+  }
 }
