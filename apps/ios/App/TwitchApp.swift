@@ -123,6 +123,7 @@ struct SignedInRoot: View {
             Button { isShowingAccount = true } label: {
               Label("root.account", systemImage: "person.crop.circle")
             }
+            .accessibilityIdentifier("root.account")
           }
         }
         .navigationDestination(for: Route.self) { route in

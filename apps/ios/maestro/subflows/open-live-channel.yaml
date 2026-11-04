@@ -1,0 +1,8 @@
+appId: com.muhammedcavus.twitch
+---
+- extendedWaitUntil:
+    visible:
+      id: home.live.viewer_dev
+    timeout: 30000
+- tapOn:
+    id: home.live.viewer_dev

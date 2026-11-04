@@ -21,6 +21,7 @@ public struct SignedInScreen: View {
       Spacer(minLength: 0)
       Button(AuthText.logOut) { isConfirmingLogOut = true }
         .buttonStyle(ActionButtonStyle(.secondary))
+        .accessibilityIdentifier("account.logOut")
     }
     .frame(maxWidth: .infinity, alignment: .leading)
     .padding(LayoutRole.screenInset.points)
