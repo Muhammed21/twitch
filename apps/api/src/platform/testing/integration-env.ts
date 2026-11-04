@@ -9,7 +9,8 @@ export const integrationEnv = ({
   readonly dotenv: Env;
   readonly shell: Env;
 }): Record<string, string> => {
-  const endpoint = shell.INTEGRATION_S3_ENDPOINT ?? UNREACHABLE_S3;
+  const explicit = shell.INTEGRATION_S3_ENDPOINT === "" ? undefined : shell.INTEGRATION_S3_ENDPOINT;
+  const endpoint = explicit ?? UNREACHABLE_S3;
   const bucket = dotenv.S3_BUCKET;
   const base = Object.fromEntries(
     Object.entries(dotenv).filter((entry): entry is [string, string] => entry[1] !== undefined),
@@ -20,6 +21,6 @@ export const integrationEnv = ({
     S3_ENDPOINT: endpoint,
     S3_PUBLIC_ENDPOINT: endpoint,
     ...(bucket === undefined ? {} : { S3_PUBLIC_BASE_URL: `${endpoint}/${bucket}` }),
-    ...(shell.INTEGRATION_S3_ENDPOINT === undefined ? {} : { INTEGRATION_S3: "1" }),
+    ...(explicit === undefined ? {} : { INTEGRATION_S3: "1" }),
   };
 };

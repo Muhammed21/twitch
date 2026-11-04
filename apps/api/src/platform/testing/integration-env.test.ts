@@ -43,6 +43,16 @@ describe("environnement des tests d'intégration", () => {
     });
   });
 
+  it("traite un INTEGRATION_S3_ENDPOINT vide comme absent", () => {
+    const env = integrationEnv({ dotenv: LOCAL_STACK, shell: { INTEGRATION_S3_ENDPOINT: "" } });
+
+    expect(env).toMatchObject({
+      S3_ENDPOINT: "http://s3.integration.invalid",
+      S3_PUBLIC_BASE_URL: "http://s3.integration.invalid/twitch-local",
+    });
+    expect(env).not.toHaveProperty("INTEGRATION_S3");
+  });
+
   it("ignore un INTEGRATION_S3_ENDPOINT écrit dans le .env", () => {
     const env = integrationEnv({
       dotenv: { ...LOCAL_STACK, INTEGRATION_S3_ENDPOINT: "http://127.0.0.1:8333" },
