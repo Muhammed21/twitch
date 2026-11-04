@@ -1,3 +1,5 @@
+import { applyCategoryEvent, type CategoryView } from "../domain/category-view.ts";
+import { isCategoryEvent } from "../domain/discovery-event.ts";
 import { applyDiscoveryEvent, type LiveChannelView } from "../domain/live-channel-view.ts";
 import { DISCOVERY_EVENT_READERS, type PublishedEvent } from "./read-discovery-event.ts";
 
@@ -9,6 +11,7 @@ export interface OutboxHistory {
 
 export type RebuiltProjection = {
   readonly views: readonly LiveChannelView[];
+  readonly categories: readonly CategoryView[];
   readonly eventIds: readonly string[];
   readonly skipped: number;
 };
@@ -19,12 +22,14 @@ export interface LiveChannelStore {
 
 export type RebuildReport = {
   readonly channels: number;
+  readonly categories: number;
   readonly events: number;
   readonly skipped: number;
 };
 
 type Accumulator = {
   readonly views: Map<string, LiveChannelView>;
+  readonly categories: Map<string, CategoryView>;
   readonly eventIds: string[];
   readonly skippedIds: string[];
 };
@@ -41,11 +46,19 @@ const foldInto =
       accumulator.skippedIds.push(event.id);
       return;
     }
-    const { channelId } = decoded;
-    accumulator.views.set(
-      channelId,
-      applyDiscoveryEvent(accumulator.views.get(channelId) ?? null, decoded),
-    );
+    if (isCategoryEvent(decoded)) {
+      const { categoryId } = decoded;
+      accumulator.categories.set(
+        categoryId,
+        applyCategoryEvent(accumulator.categories.get(categoryId) ?? null, decoded),
+      );
+    } else {
+      const { channelId } = decoded;
+      accumulator.views.set(
+        channelId,
+        applyDiscoveryEvent(accumulator.views.get(channelId) ?? null, decoded),
+      );
+    }
     accumulator.eventIds.push(event.id);
   };
 
@@ -70,10 +83,16 @@ const readAll = async ({
 };
 
 const project = async (history: OutboxHistory, pageSize: number): Promise<RebuiltProjection> => {
-  const accumulator: Accumulator = { views: new Map(), eventIds: [], skippedIds: [] };
+  const accumulator: Accumulator = {
+    views: new Map(),
+    categories: new Map(),
+    eventIds: [],
+    skippedIds: [],
+  };
   await readAll({ history, pageSize, accumulator, after: undefined });
   return {
     views: [...accumulator.views.values()],
+    categories: [...accumulator.categories.values()],
     eventIds: accumulator.eventIds,
     skipped: accumulator.skippedIds.length,
   };
@@ -88,6 +107,13 @@ export const rebuildLiveChannelViews = async ({
   store: LiveChannelStore;
   pageSize: number;
 }): Promise<RebuildReport> => {
-  const { views, eventIds, skipped } = await store.replaceAll(() => project(history, pageSize));
-  return { channels: views.length, events: eventIds.length, skipped };
+  const { views, categories, eventIds, skipped } = await store.replaceAll(() =>
+    project(history, pageSize),
+  );
+  return {
+    channels: views.length,
+    categories: categories.length,
+    events: eventIds.length,
+    skipped,
+  };
 };

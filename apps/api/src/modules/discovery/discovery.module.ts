@@ -23,6 +23,7 @@ import {
 import { pgOutboxHistory } from "./infrastructure/pg-outbox-history.ts";
 import {
   type DiscoveryPrisma,
+  prismaCategoryProjection,
   prismaLiveChannelProjection,
   prismaLiveChannelStore,
 } from "./infrastructure/prisma-live-channel-projection.ts";
@@ -119,7 +120,10 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
   onModuleInit(): void {
     const { prisma, channelConsumerRedis, streamConsumerRedis, logSink } = this.dependencies;
     const handlers = discoveryEventHandlers({
-      project: projectDiscoveryEvent(prismaLiveChannelProjection(prisma)),
+      project: projectDiscoveryEvent({
+        channels: prismaLiveChannelProjection(prisma),
+        categories: prismaCategoryProjection(prisma),
+      }),
       logSink,
     });
     const liveStatusTicks = startPeriodicJob({

@@ -270,14 +270,69 @@ describe("LivePage", () => {
     expect(responses.LivePage.parse(page)).toEqual(page);
   });
 
+  it("décode la catégorie d'un live, avec ou sans pochette", () => {
+    const page = {
+      items: [
+        makeLive({ category: { slug: "irl", name: "IRL" } }),
+        makeLive({
+          category: { slug: "art", name: "Art", imageUrl: "https://cdn.twitch.local/art.webp" },
+        }),
+      ],
+    };
+
+    expect(responses.LivePage.parse(page)).toEqual(page);
+  });
+
   it.each([
     ["sans slug", { slug: undefined }],
+    ["avec une catégorie sans nom", { category: { slug: "irl" } }],
+    [
+      "avec une pochette qui n'est pas une URL",
+      { category: { slug: "irl", name: "IRL", imageUrl: "art" } },
+    ],
     ["avec un démarrage qui n'est pas une date ISO", { startedAt: "hier soir" }],
     ["avec un identifiant de chaîne qui n'est pas un UUID", { channelId: "42" }],
     ["avec un nombre de viewers négatif", { viewerCount: -1 }],
     ["avec un nombre de viewers fractionnaire", { viewerCount: 1.5 }],
   ])("refuse un live %s", (_name, overrides) => {
     expect(responses.LivePage.safeParse({ items: [makeLive(overrides)] }).success).toBe(false);
+  });
+});
+
+describe("BrowseCategoryList", () => {
+  const makeBrowseCategory = (overrides: Record<string, unknown> = {}) => ({
+    slug: "just-chatting",
+    name: "Just Chatting",
+    liveCount: 3,
+    ...overrides,
+  });
+
+  it("décode les catégories en live, avec leurs viewers et leur pochette", () => {
+    const list = {
+      items: [
+        makeBrowseCategory({ viewerCount: 1200, imageUrl: "https://cdn.twitch.local/jc.webp" }),
+        makeBrowseCategory({ slug: "irl", name: "IRL", liveCount: 1, viewerCount: 0 }),
+      ],
+    };
+
+    expect(responses.BrowseCategoryList.parse(list)).toEqual(list);
+  });
+
+  it("décode une catégorie dont le nombre de viewers n'a pas pu être lu", () => {
+    const list = { items: [makeBrowseCategory()] };
+
+    expect(responses.BrowseCategoryList.parse(list)).toEqual(list);
+  });
+
+  it.each([
+    ["sans live", { liveCount: 0 }],
+    ["sans nom", { name: undefined }],
+    ["avec un nombre de viewers négatif", { viewerCount: -1 }],
+    ["avec une pochette qui n'est pas une URL", { imageUrl: "jc.webp" }],
+  ])("refuse une catégorie %s", (_name, overrides) => {
+    expect(
+      responses.BrowseCategoryList.safeParse({ items: [makeBrowseCategory(overrides)] }).success,
+    ).toBe(false);
   });
 });
 
