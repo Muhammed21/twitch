@@ -134,7 +134,7 @@ struct SignedInRoot: View {
     TabBarItem(
       tab: AppTab.browse,
       title: BrowseText.tabTitle,
-      glyph: .symbol(outline: "magnifyingglass", filled: "magnifyingglass"),
+      glyph: .mask(outline: .browseOutline, filled: .browseFilled),
       accessibilityIdentifier: "root.browse"
     ),
   ]
