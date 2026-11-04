@@ -6,6 +6,7 @@ public struct StreamManagerScreen: View {
   @Environment(MyChannelStore.self) private var store
   @State private var isEditingTitle = false
   @State private var isConfirmingReset = false
+  @State private var widget = StreamManagerWidget.initial
   private let onClose: (() -> Void)?
 
   public init(onClose: (() -> Void)? = nil) {
@@ -13,60 +14,99 @@ public struct StreamManagerScreen: View {
   }
 
   public var body: some View {
-    ScrollView {
-      VStack(alignment: .leading, spacing: LayoutRole.menuCardGap.points) {
-        switch store.phase {
-        case .loading:
-          ProgressView().frame(maxWidth: .infinity)
-        case .noChannel:
-          message(ProfileText.noChannel)
-        case .failed:
-          message(ProfileText.failed)
-          Button(ProfileText.retry) { Task { await store.load() } }
-            .buttonStyle(ActionButtonStyle(.secondary))
-        case .ready:
-          titleCard
-          keyCard
-          obsCard
-          if let notice = store.notice {
-            message(ProfileText.notice(notice))
-              .accessibilityIdentifier("streamManager.notice")
+    content
+      .background(ColorRole.background.color.ignoresSafeArea())
+      .navigationTitle(Text(ProfileText.streamManager))
+      .navigationBarTitleDisplayMode(.inline)
+      .task { await store.loadIfNeeded() }
+      .toolbar {
+        if let onClose {
+          ToolbarItem(placement: .topBarLeading) {
+            Button(action: onClose) {
+              Image(systemName: "xmark")
+            }
+            .accessibilityLabel(Text(ProfileText.close))
+            .accessibilityIdentifier("streamManager.close")
           }
         }
+      }
+      .onDisappear { store.leave() }
+      .sheet(isPresented: $isEditingTitle) { EditStreamInfoSheet(initialTitle: store.title) }
+      .alert(Text(ProfileText.resetKeyTitle), isPresented: $isConfirmingReset) {
+        Button(role: .destructive) {
+          Task { await store.rotateKey() }
+        } label: {
+          Text(ProfileText.resetKey)
+        }
+        Button(role: .cancel) {} label: { Text(ProfileText.cancel) }
+      } message: {
+        Text(ProfileText.resetKeyMessage)
+      }
+  }
+
+  @ViewBuilder private var content: some View {
+    switch store.phase {
+    case .loading:
+      ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+    case .noChannel:
+      message(ProfileText.noChannel)
+        .padding(LayoutRole.screenInset.points)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    case .failed:
+      VStack(alignment: .leading, spacing: LayoutRole.menuCardGap.points) {
+        message(ProfileText.failed)
+        Button(ProfileText.retry) { Task { await store.load() } }
+          .buttonStyle(ActionButtonStyle(.secondary))
       }
       .padding(LayoutRole.screenInset.points)
+      .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    case .ready:
+      widgets
     }
-    .background(ColorRole.background.color.ignoresSafeArea())
-    .navigationTitle(Text(ProfileText.streamManager))
-    .navigationBarTitleDisplayMode(.inline)
-    .task { await store.loadIfNeeded() }
-    .toolbar {
-      if let onClose {
-        ToolbarItem(placement: .topBarLeading) {
-          Button(action: onClose) {
-            Image(systemName: "xmark")
-          }
-          .accessibilityLabel(Text(ProfileText.close))
-          .accessibilityIdentifier("streamManager.close")
+  }
+
+  private var widgets: some View {
+    VStack(spacing: LayoutRole.widgetGap.points) {
+      StreamPreview()
+        .padding(.horizontal, LayoutRole.widgetInset.points)
+      TabView(selection: $widget) {
+        ForEach(StreamManagerWidget.allCases, id: \.self) { widget in
+          WidgetCard(title: String(localized: widget.title)) { widgetContent(widget) }
+            .padding(.horizontal, LayoutRole.widgetInset.points)
+            .tag(widget)
         }
       }
-    }
-    .onDisappear { store.leave() }
-    .sheet(isPresented: $isEditingTitle) { EditStreamInfoSheet(initialTitle: store.title) }
-    .alert(Text(ProfileText.resetKeyTitle), isPresented: $isConfirmingReset) {
-      Button(role: .destructive) {
-        Task { await store.rotateKey() }
-      } label: {
-        Text(ProfileText.resetKey)
+      .tabViewStyle(.page(indexDisplayMode: .never))
+      if let notice = store.notice {
+        message(ProfileText.notice(notice))
+          .padding(.horizontal, LayoutRole.widgetInset.points)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .accessibilityIdentifier("streamManager.notice")
       }
-      Button(role: .cancel) {} label: { Text(ProfileText.cancel) }
-    } message: {
-      Text(ProfileText.resetKeyMessage)
+      WidgetDock(selection: $widget, items: Self.dock)
+    }
+    .padding(.bottom, LayoutRole.widgetGap.points)
+  }
+
+  private static let dock = StreamManagerWidget.allCases.map {
+    WidgetDockItem(
+      widget: $0,
+      label: String(localized: $0.title),
+      systemImage: $0.systemImage,
+      accessibilityIdentifier: $0.accessibilityIdentifier
+    )
+  }
+
+  @ViewBuilder private func widgetContent(_ widget: StreamManagerWidget) -> some View {
+    switch widget {
+    case .streamInfo: titleCard
+    case .streamKey: keyCard
+    case .obs: obsCard
     }
   }
 
   private var titleCard: some View {
-    MenuCard {
+    VStack(alignment: .leading, spacing: 0) {
       field(ProfileText.title) {
         Text(store.title)
           .accessibilityIdentifier("streamManager.channelTitle")
@@ -78,7 +118,7 @@ public struct StreamManagerScreen: View {
   }
 
   private var keyCard: some View {
-    MenuCard {
+    VStack(alignment: .leading, spacing: 0) {
       field(ProfileText.streamKey) {
         Text(store.streamKey?.revealed ?? ProfileText.masked)
           .textSelection(.disabled)
@@ -105,16 +145,11 @@ public struct StreamManagerScreen: View {
   }
 
   private var obsCard: some View {
-    VStack(alignment: .leading, spacing: LayoutRole.chatInset.points) {
-      Text(ProfileText.obs)
-        .font(TextRole.display.font)
-        .foregroundStyle(ColorRole.textPrimary.color)
-      MenuCard {
-        ForEach(Array(ProfileText.obsSettings.enumerated()), id: \.offset) { _, setting in
-          field(setting.label) {
-            Text(setting.value)
-            Spacer(minLength: 0)
-          }
+    VStack(alignment: .leading, spacing: 0) {
+      ForEach(Array(ProfileText.obsSettings.enumerated()), id: \.offset) { _, setting in
+        field(setting.label) {
+          Text(setting.value)
+          Spacer(minLength: 0)
         }
       }
     }

@@ -22,6 +22,9 @@ export default defineConfig({
         "src/platform/testing/**",
         "src/platform/stream-consumer.ts",
         "src/platform/redis-window-counter.ts",
+        "src/platform/images/images.module.ts",
+        "src/platform/images/infrastructure/**",
+        "src/platform/images/testing/**",
       ],
       reporter: ["text"],
       thresholds: {
