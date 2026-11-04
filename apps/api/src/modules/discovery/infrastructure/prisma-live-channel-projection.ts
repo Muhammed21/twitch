@@ -94,7 +94,7 @@ export const prismaCategoryProjection = (prisma: DiscoveryPrisma): CategoryProje
       `;
       const rows = await tx.$queryRaw<CategoryView[]>`
         SELECT "categoryId"::text AS "categoryId", "slug", "name", "status"::text AS "status",
-               "mergedIntoId"::text AS "mergedIntoId", "imageKey"
+               "mergedIntoId"::text AS "mergedIntoId", "imageKey", "tags"
         FROM "discovery"."DiscoveryCategoryView"
         WHERE "categoryId" = ${categoryId}::uuid
         FOR UPDATE
@@ -103,7 +103,11 @@ export const prismaCategoryProjection = (prisma: DiscoveryPrisma): CategoryProje
       if (row === undefined) {
         throw new Error(`vue de la catégorie ${categoryId} introuvable après insertion`);
       }
-      await tx.discoveryCategoryView.update({ where: { categoryId }, data: change(row) });
+      const changed = change(row);
+      await tx.discoveryCategoryView.update({
+        where: { categoryId },
+        data: { ...changed, tags: [...changed.tags] },
+      });
     }),
 });
 
@@ -137,7 +141,9 @@ export const prismaLiveChannelStore = (prisma: DiscoveryPrisma): LiveChannelStor
           tx.discoveryLiveChannelView.createMany({ data: views.map(toRow) }),
         );
         await sequentially(inBatches(projection.categories), (categories) =>
-          tx.discoveryCategoryView.createMany({ data: [...categories] }),
+          tx.discoveryCategoryView.createMany({
+            data: categories.map((category) => ({ ...category, tags: [...category.tags] })),
+          }),
         );
         await sequentially(inBatches(projection.eventIds), (eventIds) =>
           tx.discoveryProcessedEvent.createMany({

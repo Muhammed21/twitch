@@ -79,11 +79,12 @@ export const DISCOVERY_EVENT_READERS: Readonly<
   })),
   [channelCategoryUpdated.name]: reader(
     channelCategoryUpdated,
-    ({ categoryId, name, imageKey }) => ({
+    ({ categoryId, name, imageKey, tags }) => ({
       kind: "category-updated",
       categoryId,
       name,
       imageKey,
+      tags,
     }),
   ),
   [streamStarted.name]: reader(streamStarted, ({ channelId, sessionId, startedAt }) => ({

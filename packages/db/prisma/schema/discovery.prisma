@@ -37,6 +37,8 @@ model DiscoveryCategoryView {
   mergedIntoId String?                 @db.Uuid
   /// Clé de la pochette, portée par channel.category.updated (ADR 0045 §6). L'URL est calculée à la lecture.
   imageKey     String?
+  /// Tags de la catégorie, portés par channel.category.updated (ADR 0050).
+  tags         String[]                @default([])
 
   @@schema("discovery")
 }

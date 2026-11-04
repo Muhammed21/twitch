@@ -6,6 +6,7 @@ import type {
   CategoryAudienceStore,
   LiveInCategorySource,
 } from "../application/category-audience.ts";
+import type { CategoryAudienceLookup } from "../application/category-reads.ts";
 import type { DiscoveryPrisma } from "./prisma-live-channel-projection.ts";
 
 export const prismaLivesInCategory =
@@ -47,6 +48,7 @@ const BrowsedRows = z.array(
     slug: z.string(),
     name: z.string(),
     imageKey: z.string().nullable(),
+    tags: z.array(z.string()),
     liveCount: z.number(),
     viewerCount: z.number(),
   }),
@@ -62,7 +64,7 @@ export const audiencePageQuery = ({
   after: AudiencePosition | undefined;
   take: number;
 }): { text: string; values: readonly unknown[] } => ({
-  text: `SELECT a."categoryId"::text AS "categoryId", v."slug", v."name", v."imageKey",
+  text: `SELECT a."categoryId"::text AS "categoryId", v."slug", v."name", v."imageKey", v."tags",
                 a."liveCount", a."viewerCount"
            FROM "discovery"."DiscoveryCategoryAudience" a
            JOIN "discovery"."DiscoveryCategoryView" v ON v."categoryId" = a."categoryId"
@@ -71,6 +73,14 @@ export const audiencePageQuery = ({
           LIMIT $1`,
   values:
     after === undefined ? [take] : [take, after.viewerCount, after.liveCount, after.categoryId],
+});
+
+export const prismaCategoryAudienceLookup = (prisma: DiscoveryPrisma): CategoryAudienceLookup => ({
+  of: (categoryId) =>
+    prisma.discoveryCategoryAudience.findUnique({
+      where: { categoryId },
+      select: { liveCount: true, viewerCount: true },
+    }),
 });
 
 export const prismaCategoryAudienceReader = (prisma: DiscoveryPrisma): CategoryAudienceReader => ({

@@ -24,6 +24,7 @@ const PAYLOADS: Readonly<Record<string, unknown>> = {
     categoryId: CATEGORY_ID,
     name: "IRL",
     imageKey: "images/category/irl.webp",
+    tags: ["IRL"],
   },
   "stream.started": {
     sessionId: SESSION_ID,
@@ -113,6 +114,7 @@ describe("handlers de discovery pour events.channel et events.stream", () => {
         categoryId: CATEGORY_ID,
         name: "IRL",
         imageKey: "images/category/irl.webp",
+        tags: ["IRL"],
       },
     ],
     [

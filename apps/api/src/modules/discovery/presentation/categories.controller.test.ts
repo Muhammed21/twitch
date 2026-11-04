@@ -6,12 +6,13 @@ import { rejectingVerifier } from "../../../platform/authentication.ts";
 import { configureApp } from "../../../platform/configure-app.ts";
 import { PlatformModule } from "../../../platform/platform.module.ts";
 import type { BrowseCategories, BrowsePage } from "../application/category-audience.ts";
-import type { ListCategoryLives } from "../application/category-reads.ts";
+import type { ListCategoryLives, ReadCategoryHeader } from "../application/category-reads.ts";
 import type { ListedLive, LivesPage } from "../application/list-lives.ts";
 import {
   BROWSE_CATEGORIES,
   CategoriesController,
   LIST_CATEGORY_LIVES,
+  READ_CATEGORY_HEADER,
 } from "./categories.controller.ts";
 import { encodeAudienceCursor } from "./category-cursor.ts";
 import { CATEGORY_IMAGE_URL } from "./category-image-url.ts";
@@ -35,9 +36,23 @@ const IRL_LIVE = makeLive({
   viewerCount: 12,
 });
 
+const HEADER = {
+  ok: true,
+  value: {
+    categoryId: "1c6f5e4d-3b2a-4019-9f8e-7d6c5b4a3928",
+    slug: "fortnite",
+    name: "Fortnite",
+    imageKey: "images/category/fortnite.webp",
+    tags: ["Shooter", "RPG"],
+    liveCount: 12,
+    viewerCount: 22000,
+  },
+} as const;
+
 type Calls = {
   categoryLives: Parameters<ListCategoryLives>[0][];
   browse: Parameters<BrowseCategories>[0][];
+  headers: string[];
 };
 
 const withControllers = async (
@@ -45,14 +60,20 @@ const withControllers = async (
     categoryPage = { items: [], next: undefined },
     found = true,
     browsePage = { items: [], next: undefined },
+    header = HEADER,
   }: {
     categoryPage?: LivesPage;
     found?: boolean;
     browsePage?: BrowsePage;
+    header?: Awaited<ReturnType<ReadCategoryHeader>>;
   },
   run: (base: string, calls: Calls, document: () => unknown) => Promise<void>,
 ) => {
-  const calls: Calls = { categoryLives: [], browse: [] };
+  const calls: Calls = { categoryLives: [], browse: [], headers: [] };
+  const readCategoryHeader: ReadCategoryHeader = async (slug) => {
+    calls.headers.push(slug);
+    return header;
+  };
   const browseCategories: BrowseCategories = async (request) => {
     calls.browse.push(request);
     return browsePage;
@@ -73,6 +94,7 @@ const withControllers = async (
     providers: [
       { provide: LIST_CATEGORY_LIVES, useValue: listCategoryLives },
       { provide: BROWSE_CATEGORIES, useValue: browseCategories },
+      { provide: READ_CATEGORY_HEADER, useValue: readCategoryHeader },
       { provide: CATEGORY_IMAGE_URL, useValue: (key: string) => `https://images.test/${key}` },
     ],
   }).compile();
@@ -92,6 +114,7 @@ const IRL_AUDIENCE = {
   liveCount: 2,
   viewerCount: 70,
   imageKey: "images/category/irl.webp",
+  tags: ["IRL", "Discussion"],
 };
 
 const ART_AUDIENCE = {
@@ -101,10 +124,11 @@ const ART_AUDIENCE = {
   liveCount: 1,
   viewerCount: 3,
   imageKey: null,
+  tags: [],
 };
 
 describe("GET /v1/categories", () => {
-  it("rend une page de catégories en live avec leur pochette, sans jeton, avec le curseur suivant", async () => {
+  it("rend une page de catégories en live avec leur pochette et leurs tags, sans jeton, avec le curseur suivant", async () => {
     const next = { viewerCount: 70, liveCount: 2, categoryId: IRL_AUDIENCE.categoryId };
     const browsePage = { items: [IRL_AUDIENCE, ART_AUDIENCE], next };
     await withControllers({ browsePage }, async (base, calls) => {
@@ -119,8 +143,9 @@ describe("GET /v1/categories", () => {
             imageUrl: "https://images.test/images/category/irl.webp",
             liveCount: 2,
             viewerCount: 70,
+            tags: ["IRL", "Discussion"],
           },
-          { slug: "art", name: "Art", liveCount: 1, viewerCount: 3 },
+          { slug: "art", name: "Art", liveCount: 1, viewerCount: 3, tags: [] },
         ],
         nextCursor: encodeAudienceCursor(next),
       });
@@ -233,6 +258,49 @@ describe("GET /v1/categories/{slug}/lives", () => {
     await withControllers({}, async (base, calls) => {
       expect((await fetch(`${base}/categories/irl/lives?${query}`)).status).toBe(400);
       expect(calls.categoryLives).toEqual([]);
+    });
+  });
+});
+
+describe("GET /v1/categories/{slug} (ADR 0050)", () => {
+  it("rend l'en-tête de la catégorie, sans jeton", async () => {
+    await withControllers({}, async (base, calls) => {
+      const response = await fetch(`${base}/categories/fortnite`);
+
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({
+        slug: "fortnite",
+        name: "Fortnite",
+        imageUrl: "https://images.test/images/category/fortnite.webp",
+        liveCount: 12,
+        viewerCount: 22000,
+        tags: ["Shooter", "RPG"],
+      });
+      expect(calls.headers).toEqual(["fortnite"]);
+    });
+  });
+
+  it("rend l'en-tête d'une catégorie sans pochette, sans imageUrl", async () => {
+    const header = { ok: true, value: { ...HEADER.value, imageKey: null } } as const;
+    await withControllers({ header }, async (base) => {
+      expect(await (await fetch(`${base}/categories/fortnite`)).json()).not.toHaveProperty(
+        "imageUrl",
+      );
+    });
+  });
+
+  it("répond 404 pour une catégorie introuvable", async () => {
+    await withControllers({ header: { ok: false, error: "category_not_found" } }, async (base) => {
+      const response = await fetch(`${base}/categories/minecraft`);
+
+      expect(response.status).toBe(404);
+      expect(await response.json()).toMatchObject({ status: 404, title: "Catégorie introuvable" });
+    });
+  });
+
+  it("figure dans l'OpenAPI avec CategoryHeader", async () => {
+    await withControllers({}, async (_base, _calls, document) => {
+      expect(JSON.stringify(document())).toContain('"$ref":"#/components/schemas/CategoryHeader"');
     });
   });
 });

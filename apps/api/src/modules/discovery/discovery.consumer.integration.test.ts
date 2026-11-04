@@ -37,7 +37,7 @@ const outboxPool = new Pool({ connectionString: urlOf("DATABASE_URL_PROJECTION_R
 type OutboxEvent = {
   id: string;
   name: string;
-  payload: Readonly<Record<string, string>>;
+  payload: Readonly<Record<string, string | readonly string[]>>;
   occurredAt: Date;
 };
 
@@ -68,7 +68,7 @@ const publish = (
   }: {
     id?: string;
     name: string;
-    payload: Readonly<Record<string, string>>;
+    payload: Readonly<Record<string, string | readonly string[]>>;
     occurredAt?: Date;
   },
 ) => publisher.xAdd(stream, "*", toStreamEntry({ id, name, version: 1, payload, occurredAt }));
@@ -553,7 +553,12 @@ describe("reconstruction de la projection depuis les outbox (ADR 0003, ADR 0034)
         id: randomUUID(),
         occurredAt: new Date(),
         name: "channel.category.updated",
-        payload: { categoryId: targetId, name: "Cible", imageKey: "images/category/cible.webp" },
+        payload: {
+          categoryId: targetId,
+          name: "Cible",
+          imageKey: "images/category/cible.webp",
+          tags: ["Shooter"],
+        },
       },
       {
         id: randomUUID(),
@@ -589,6 +594,7 @@ describe("reconstruction de la projection depuis les outbox (ADR 0003, ADR 0034)
             status: "active",
             mergedIntoId: null,
             imageKey: "images/category/cible.webp",
+            tags: ["Shooter"],
           },
           {
             categoryId: sourceId,
@@ -597,6 +603,7 @@ describe("reconstruction de la projection depuis les outbox (ADR 0003, ADR 0034)
             status: "merged",
             mergedIntoId: targetId,
             imageKey: null,
+            tags: [],
           },
         ]),
       );
