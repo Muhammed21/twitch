@@ -42,3 +42,19 @@ struct UnreadMarker: Equatable {
     UnreadMarker(messageID: messageID, isSettled: true)
   }
 }
+
+struct ChatViewport: Equatable {
+  private var visible: Set<UUID> = []
+
+  func appeared(_ id: UUID) -> ChatViewport {
+    ChatViewport(visible: visible.union([id]))
+  }
+
+  func disappeared(_ id: UUID) -> ChatViewport {
+    ChatViewport(visible: visible.subtracting([id]))
+  }
+
+  func isAtEnd(after messages: [ChatMessage]) -> Bool {
+    messages.last.map { visible.contains($0.id) } ?? true
+  }
+}

@@ -7,7 +7,7 @@ public struct ChatList: View {
   @Environment(\.locale) private var locale
   @Environment(\.timeZone) private var timeZone
   @State private var unread = UnreadMarker()
-  @State private var isAtEnd = true
+  @State private var viewport = ChatViewport()
 
   public init() {}
 
@@ -17,8 +17,8 @@ public struct ChatList: View {
         let entries = ChatFeed.entries(session.messages, status: session.status, unread: unread)
         ForEach(entries) { entry in
           ChatEntryRow(entry: entry)
-            .onAppear { track(entry, in: entries, isVisible: true) }
-            .onDisappear { track(entry, in: entries, isVisible: false) }
+            .onAppear { appeared(entry) }
+            .onDisappear { disappeared(entry) }
         }
         if let notice = session.moderationNotice {
           Text(ChatText.moderation(notice))
@@ -38,22 +38,27 @@ public struct ChatList: View {
     }
     .defaultScrollAnchor(.bottom)
     .onChange(of: session.messages) { previous, messages in
-      unread = unread.arrived(messages, after: previous, isAtEnd: isAtEnd)
-    }
-    .onChange(of: isAtEnd) {
-      if isAtEnd {
-        unread = unread.reachedEnd()
-      }
+      unread = unread.arrived(messages, after: previous, isAtEnd: viewport.isAtEnd(after: previous))
     }
     .background(ColorRole.background.color)
     .accessibilityIdentifier("chat.list")
   }
 
-  private func track(_ entry: ChatEntry, in entries: [ChatEntry], isVisible: Bool) {
-    guard entry == entries.last else {
+  private func appeared(_ entry: ChatEntry) {
+    guard case let .message(message) = entry else {
       return
     }
-    isAtEnd = isVisible
+    viewport = viewport.appeared(message.id)
+    if viewport.isAtEnd(after: session.messages) {
+      unread = unread.reachedEnd()
+    }
+  }
+
+  private func disappeared(_ entry: ChatEntry) {
+    guard case let .message(message) = entry else {
+      return
+    }
+    viewport = viewport.disappeared(message.id)
   }
 }
 

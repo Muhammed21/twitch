@@ -119,6 +119,39 @@ struct UnreadMarkerTests {
   }
 }
 
+@Suite("Lignes visibles du fil")
+struct ChatViewportTests {
+  @Test("un fil vide est au bas")
+  func emptyFeedIsAtEnd() {
+    #expect(ChatViewport().isAtEnd(after: []))
+  }
+
+  @Test("le fil est au bas quand le dernier message déjà reçu est visible")
+  func atEndWhenLastVisible() {
+    let messages = [message(1), message(2)]
+    let viewport = ChatViewport().appeared(messages[0].id).appeared(messages[1].id)
+
+    #expect(viewport.isAtEnd(after: messages))
+  }
+
+  @Test("un message arrivé sous l'écran, jamais apparu, ne compte pas comme visible")
+  func arrivalBelowScreen() {
+    let shown = message(1)
+    let below = message(2)
+    let viewport = ChatViewport().appeared(shown.id)
+
+    #expect(!viewport.isAtEnd(after: [shown, below]))
+  }
+
+  @Test("le dernier message sorti de l'écran laisse le fil loin du bas")
+  func lastScrolledAway() {
+    let messages = [message(1), message(2)]
+    let viewport = ChatViewport().appeared(messages[0].id).appeared(messages[1].id).disappeared(messages[1].id)
+
+    #expect(!viewport.isAtEnd(after: messages))
+  }
+}
+
 @Suite("Textes du fil du chat")
 struct ChatFeedTextTests {
   @Test("le message de bienvenue et le séparateur reprennent les libellés des captures")
