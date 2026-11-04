@@ -101,12 +101,7 @@ const makeViewerCounts = (counts: ReadonlyMap<string, number>) => {
     reads,
     read: async (channelIds: readonly string[]) => {
       reads.push(channelIds);
-      return new Map(
-        channelIds.flatMap((channelId) => {
-          const count = counts.get(channelId);
-          return count === undefined ? [] : [[channelId, count] as const];
-        }),
-      );
+      return new Map([...counts].filter(([channelId]) => channelIds.includes(channelId)));
     },
   };
 };

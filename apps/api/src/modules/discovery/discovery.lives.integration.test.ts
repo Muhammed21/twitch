@@ -151,7 +151,7 @@ describe("GET /v1/lives (jalon A3)", () => {
       expect(heartbeats.map(({ status }) => status)).toEqual([204, 204]);
       expect((await page("?limit=2")).items).toEqual([
         { ...asListed(watched), viewerCount: 2 },
-        asListed(unwatched),
+        { ...asListed(unwatched), viewerCount: 0 },
       ]);
     } finally {
       await cleanUp();
