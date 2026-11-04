@@ -49,7 +49,8 @@ type Abilities =
   | ["update" | "readStreamKey" | "rotateStreamKey" | "suspend", "Channel" | Channel]
   | ["grant", "ChannelRole" | ChannelRoleGrant]
   | ["timeout" | "ban", "ChannelMember" | ChannelMember]
-  | ["send", "Chat" | Chat];
+  | ["send", "Chat" | Chat]
+  | ["administer", "Category"];
 
 export type AppAbility = MongoAbility<Abilities>;
 
@@ -87,6 +88,7 @@ const CHANNEL_RULES: Readonly<Record<ChannelRole, (builder: Builder, channelId: 
 const PLATFORM_RULES: Readonly<Record<PlatformRole, (builder: Builder) => void>> = {
   admin: ({ can }) => {
     can("suspend", "Channel");
+    can("administer", "Category");
   },
   staff: ({ can }) => {
     can("suspend", "Channel");

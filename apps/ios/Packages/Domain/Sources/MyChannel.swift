@@ -31,5 +31,6 @@ public struct StreamKey: Equatable, Sendable, CustomStringConvertible, CustomDeb
 public protocol MyChannelRepository: Sendable {
   func ownedChannel() async throws -> OwnedChannel?
   func streamKey(of channel: ChannelID) async throws -> StreamKey
+  func rotateStreamKey(of channel: ChannelID) async throws -> StreamKey
   func rename(_ channel: ChannelID, to title: String) async throws -> Channel
 }
