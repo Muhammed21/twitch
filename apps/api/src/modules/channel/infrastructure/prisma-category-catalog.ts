@@ -4,6 +4,7 @@ import { events } from "@repo/contracts";
 import { appendToOutbox } from "@repo/db";
 
 import type { CategoryCatalog, CategoryStatus } from "../application/category-admin.ts";
+import type { CategorySearch } from "../application/category-search.ts";
 import type { ChannelPrisma } from "./prisma-channel-registry.ts";
 
 const OUTBOX = { schema: "channel", table: "ChannelOutbox" };
@@ -149,5 +150,20 @@ export const prismaCategoryCatalog = (prisma: ChannelPrisma): CategoryCatalog =>
         },
       });
       return { ok: true, value: updated } as const;
+    }),
+});
+
+export const prismaCategorySearch = (prisma: ChannelPrisma): CategorySearch => ({
+  search: ({ nameContains, limit }) =>
+    prisma.channelCategory.findMany({
+      where: {
+        status: "active",
+        ...(nameContains === undefined
+          ? {}
+          : { name: { contains: nameContains, mode: "insensitive" } }),
+      },
+      orderBy: [{ name: "asc" }, { id: "asc" }],
+      take: limit,
+      select: { id: true, slug: true, name: true },
     }),
 });

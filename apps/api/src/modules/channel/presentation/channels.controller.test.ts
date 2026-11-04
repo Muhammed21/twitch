@@ -1,19 +1,21 @@
+import type { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import { describe, expect, it } from "vitest";
 
 import type { AccessTokenIdentity } from "@repo/auth-verifier";
 import { err, ok, type Result } from "@repo/result";
 
+import { buildOpenApiDocument } from "../../../openapi/build-document.ts";
 import type { AccessTokenVerifier } from "../../../platform/authentication.ts";
 import { configureApp } from "../../../platform/configure-app.ts";
 import { PlatformModule } from "../../../platform/platform.module.ts";
-import type { ChannelView, TitleUpdateError } from "../application/channel-queries.ts";
+import type { ChannelUpdateError, ChannelView } from "../application/channel-queries.ts";
 import {
   ChannelsController,
   GET_CHANNEL,
   type GetChannel,
-  UPDATE_CHANNEL_TITLE,
-  type UpdateChannelTitle,
+  UPDATE_CHANNEL,
+  type UpdateChannel,
 } from "./channels.controller.ts";
 
 const ACTOR_ID = "4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b";
@@ -23,7 +25,16 @@ const CHANNEL: ChannelView = {
   slug: "streamer_de_test",
   title: "Speedrun du dimanche",
   ownerId: ACTOR_ID,
+  category: null,
 };
+
+const JUST_CHATTING = {
+  id: "7c6d5e4f-3a2b-4c1d-8e9f-0a1b2c3d4e5f",
+  slug: "just-chatting",
+  name: "Just Chatting",
+};
+
+const { category: _none, ...CHANNEL_RESPONSE } = CHANNEL;
 
 const IDENTITY: AccessTokenIdentity = {
   userId: ACTOR_ID,
@@ -36,7 +47,7 @@ const IDENTITY: AccessTokenIdentity = {
 
 const acceptingVerifier: AccessTokenVerifier = { verify: async () => ok(IDENTITY) };
 
-type Calls = { titleUpdates: Parameters<UpdateChannelTitle>[0][] };
+type Calls = { titleUpdates: Parameters<UpdateChannel>[0][] };
 
 const withChannels = async (
   {
@@ -45,10 +56,10 @@ const withChannels = async (
   }: {
     getChannel?: GetChannel;
     updateTitle?: (
-      request: Parameters<UpdateChannelTitle>[0],
-    ) => Promise<Result<ChannelView, TitleUpdateError>>;
+      request: Parameters<UpdateChannel>[0],
+    ) => Promise<Result<ChannelView, ChannelUpdateError>>;
   },
-  run: (base: string, calls: Calls) => Promise<void>,
+  run: (base: string, calls: Calls, app: INestApplication) => Promise<void>,
 ) => {
   const calls: Calls = { titleUpdates: [] };
   const moduleRef = await Test.createTestingModule({
@@ -63,8 +74,8 @@ const withChannels = async (
     providers: [
       { provide: GET_CHANNEL, useValue: getChannel },
       {
-        provide: UPDATE_CHANNEL_TITLE,
-        useValue: (request: Parameters<UpdateChannelTitle>[0]) => {
+        provide: UPDATE_CHANNEL,
+        useValue: (request: Parameters<UpdateChannel>[0]) => {
           calls.titleUpdates.push(request);
           return updateTitle(request);
         },
@@ -74,7 +85,7 @@ const withChannels = async (
   const app = configureApp(moduleRef.createNestApplication({ logger: false }));
   await app.listen(0, "127.0.0.1");
   try {
-    await run(`${await app.getUrl()}/v1/channels`, calls);
+    await run(`${await app.getUrl()}/v1/channels`, calls, app);
   } finally {
     await app.close();
   }
@@ -98,7 +109,18 @@ describe("GET /v1/channels/{slug}", () => {
         const response = await fetch(`${base}/${CHANNEL.slug}`);
 
         expect(response.status).toBe(200);
-        expect(await response.json()).toEqual(CHANNEL);
+        expect(await response.json()).toEqual(CHANNEL_RESPONSE);
+      },
+    );
+  });
+
+  it("rend la catégorie de la chaîne quand elle en a une", async () => {
+    await withChannels(
+      { getChannel: async () => ok({ ...CHANNEL, category: JUST_CHATTING }) },
+      async (base) => {
+        const response = await fetch(`${base}/${CHANNEL.slug}`);
+
+        expect(await response.json()).toEqual({ ...CHANNEL_RESPONSE, category: JUST_CHATTING });
       },
     );
   });
@@ -119,7 +141,7 @@ describe("PATCH /v1/channels/{id}", () => {
       const response = await patch(`${base}/${CHANNEL.id}`, { title: "Speedrun du dimanche" });
 
       expect(response.status).toBe(200);
-      expect(await response.json()).toEqual(CHANNEL);
+      expect(await response.json()).toEqual(CHANNEL_RESPONSE);
       expect(calls.titleUpdates).toEqual([
         { actorId: ACTOR_ID, channelId: CHANNEL.id, title: "Speedrun du dimanche" },
       ]);
@@ -189,8 +211,73 @@ describe("PATCH /v1/channels/{id}", () => {
     });
   });
 
+  it("pose la catégorie, en minuscules quand son UUID arrive en majuscules", async () => {
+    await withChannels(
+      { updateTitle: async () => ok({ ...CHANNEL, category: JUST_CHATTING }) },
+      async (base, calls) => {
+        const response = await patch(`${base}/${CHANNEL.id}`, {
+          category: { id: JUST_CHATTING.id.toUpperCase() },
+        });
+
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({ ...CHANNEL_RESPONSE, category: JUST_CHATTING });
+        expect(calls.titleUpdates).toEqual([
+          { actorId: ACTOR_ID, channelId: CHANNEL.id, categoryId: JUST_CHATTING.id },
+        ]);
+      },
+    );
+  });
+
+  it("retire la catégorie avec un choix de catégorie vide", async () => {
+    await withChannels({}, async (base, calls) => {
+      const response = await patch(`${base}/${CHANNEL.id}`, { category: {} });
+
+      expect(response.status).toBe(200);
+      expect(calls.titleUpdates).toEqual([
+        { actorId: ACTOR_ID, channelId: CHANNEL.id, categoryId: null },
+      ]);
+    });
+  });
+
+  it("répond 422 pour une catégorie fusionnée, retirée ou inconnue", async () => {
+    await withChannels({ updateTitle: async () => err("category_unavailable") }, async (base) => {
+      const response = await patch(`${base}/${CHANNEL.id}`, {
+        category: { id: JUST_CHATTING.id },
+      });
+
+      expect(response.status).toBe(422);
+      expect(await response.json()).toMatchObject({
+        status: 422,
+        title: "Catégorie invalide",
+        detail: "La catégorie n'existe pas, ou elle a été fusionnée ou retirée.",
+      });
+    });
+  });
+
+  it("refuse un corps vide en disant ce qu'il doit changer", async () => {
+    await withChannels({}, async (base) => {
+      const response = await patch(`${base}/${CHANNEL.id}`, {});
+
+      expect(response.status).toBe(400);
+      expect(JSON.stringify(await response.json())).toContain(
+        "Le corps change le titre, la catégorie, ou les deux.",
+      );
+    });
+  });
+
+  it("publie le choix de catégorie sous le schéma nommé CategoryChoice", async () => {
+    await withChannels({}, async (_base, _calls, app) => {
+      expect(JSON.stringify(buildOpenApiDocument(app))).toContain(
+        '"category":{"$ref":"#/components/schemas/CategoryChoice"}',
+      );
+    });
+  });
+
   it.each([
-    ["sans titre", {}],
+    ["vide", {}],
+    ["avec une catégorie qui n'est pas un UUID", { category: { id: "just-chatting" } }],
+    ["avec une catégorie nulle", { category: null }],
+    ["avec un champ inconnu dans la catégorie", { category: { slug: "irl" } }],
     ["avec un titre qui n'est pas un texte", { title: 42 }],
     ["avec un champ inconnu", { title: "Titre", slug: "autre" }],
   ])("répond 400 à un corps %s", async (_name, body) => {
