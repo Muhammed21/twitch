@@ -60,7 +60,7 @@ export const bindChatEvents = ({
         onRejectedEvent();
         return;
       }
-      const { channelId } = parsed.data;
+      const channelId = parsed.data.channelId.toLowerCase();
       if (joined.has(channelId) || (await rooms.enter(channelId)) === undefined) {
         return;
       }
@@ -78,7 +78,7 @@ export const bindChatEvents = ({
         onRejectedEvent();
         return;
       }
-      const { channelId } = parsed.data;
+      const channelId = parsed.data.channelId.toLowerCase();
       if (!joined.delete(channelId)) {
         return;
       }
@@ -92,7 +92,8 @@ export const bindChatEvents = ({
         onRejectedEvent();
         return;
       }
-      const { channelId, body } = parsed.data;
+      const { body } = parsed.data;
+      const channelId = parsed.data.channelId.toLowerCase();
       const room = joined.has(channelId) ? rooms.state(channelId) : undefined;
       if (room === undefined) {
         ack({ reason: "not_joined" });
