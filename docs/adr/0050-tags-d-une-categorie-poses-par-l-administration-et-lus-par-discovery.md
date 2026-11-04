@@ -1,6 +1,6 @@
 # 0050 — Les tags d'une catégorie sont posés par l'administration dans `channel`, et lus par `discovery`
 
-- Statut : Proposé
+- Statut : Accepté
 - Date : 2026-11-04
 - Décideurs : Muhammed Cavus
 

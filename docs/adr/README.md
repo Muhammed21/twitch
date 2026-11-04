@@ -58,7 +58,7 @@ Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes
 | [0046](0046-glyphes-d-interface-extraits-des-captures-en-masques.md)                                      | Les glyphes d'interface sont des masques extraits des captures                                                 | Accepté                                                                | Design       |
 | [0047](0047-audience-des-categories-agregee-par-un-job-et-lue-par-curseur.md)                             | L'audience des catégories est agrégée par un job périodique, et Browse la lit par curseur                      | Accepté                                                                | Discovery    |
 | [0048](0048-messages-d-un-chatter-en-timeout-effaces-chez-les-viewers.md)                                 | Les messages d'un chatter mis en timeout sont effacés chez les viewers, émis par chaque instance à ses sockets | Accepté                                                                | Chat         |
-| [0050](0050-tags-d-une-categorie-poses-par-l-administration-et-lus-par-discovery.md)                      | Les tags d'une catégorie sont posés par l'administration dans `channel`, et lus par `discovery`                | Proposé                                                                | Channel      |
+| [0050](0050-tags-d-une-categorie-poses-par-l-administration-et-lus-par-discovery.md)                      | Les tags d'une catégorie sont posés par l'administration dans `channel`, et lus par `discovery`                | Accepté                                                                | Channel      |
 
 ## Dépendances principales
 
