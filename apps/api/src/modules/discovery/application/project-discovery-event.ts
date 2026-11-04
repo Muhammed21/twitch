@@ -1,5 +1,13 @@
+import {
+  applyCategoryFollowEvent,
+  type CategoryFollowView,
+} from "../domain/category-follow-view.ts";
 import { applyCategoryEvent, type CategoryView } from "../domain/category-view.ts";
-import { type DiscoveryEvent, isCategoryEvent } from "../domain/discovery-event.ts";
+import {
+  type DiscoveryEvent,
+  isCategoryEvent,
+  isCategoryFollowEvent,
+} from "../domain/discovery-event.ts";
 import { applyDiscoveryEvent, type LiveChannelView } from "../domain/live-channel-view.ts";
 
 export interface LiveChannelProjection {
@@ -18,9 +26,34 @@ export interface CategoryProjection {
   }): Promise<void>;
 }
 
+export interface CategoryFollowProjection {
+  update(input: {
+    eventId: string;
+    userId: string;
+    categoryId: string;
+    change: (view: CategoryFollowView | null) => CategoryFollowView | null;
+  }): Promise<void>;
+}
+
 export const projectDiscoveryEvent =
-  ({ channels, categories }: { channels: LiveChannelProjection; categories: CategoryProjection }) =>
+  ({
+    channels,
+    categories,
+    follows,
+  }: {
+    channels: LiveChannelProjection;
+    categories: CategoryProjection;
+    follows: CategoryFollowProjection;
+  }) =>
   ({ eventId, event }: { eventId: string; event: DiscoveryEvent }): Promise<void> => {
+    if (isCategoryFollowEvent(event)) {
+      return follows.update({
+        eventId,
+        userId: event.userId,
+        categoryId: event.categoryId,
+        change: (view) => applyCategoryFollowEvent(view, event),
+      });
+    }
     if (isCategoryEvent(event)) {
       return categories.update({
         eventId,

@@ -5,6 +5,7 @@ import type {
   LiveChannelProjection,
 } from "../application/project-discovery-event.ts";
 import type { LiveChannelStore } from "../application/rebuild-live-channel-views.ts";
+import { followerCounts } from "../domain/category-follow-view.ts";
 import type { CategoryView } from "../domain/category-view.ts";
 import type { LiveChannelView } from "../domain/live-channel-view.ts";
 
@@ -52,7 +53,11 @@ export const prismaLiveChannelProjection = (prisma: DiscoveryPrisma): LiveChanne
   update: ({ eventId, channelId, change }) =>
     prisma.$transaction(async (tx) => {
       if (
-        await alreadyProcessed(tx, { processedEvents: PROCESSED_EVENTS, eventId, handler: HANDLER })
+        await alreadyProcessed(tx, {
+          processedEvents: PROCESSED_EVENTS,
+          eventId,
+          handler: HANDLER,
+        })
       ) {
         return;
       }
@@ -83,7 +88,11 @@ export const prismaCategoryProjection = (prisma: DiscoveryPrisma): CategoryProje
   update: ({ eventId, categoryId, change }) =>
     prisma.$transaction(async (tx) => {
       if (
-        await alreadyProcessed(tx, { processedEvents: PROCESSED_EVENTS, eventId, handler: HANDLER })
+        await alreadyProcessed(tx, {
+          processedEvents: PROCESSED_EVENTS,
+          eventId,
+          handler: HANDLER,
+        })
       ) {
         return;
       }
@@ -127,17 +136,26 @@ export const prismaLiveChannelStore = (prisma: DiscoveryPrisma): LiveChannelStor
       async (tx) => {
         await tx.$executeRaw`
           LOCK TABLE "discovery"."DiscoveryLiveChannelView", "discovery"."DiscoveryCategoryView",
+                     "discovery"."DiscoveryCategoryFollow", "discovery"."DiscoveryCategoryFollowerCount",
                      "discovery"."DiscoveryProcessedEvent"
           IN EXCLUSIVE MODE
         `;
         const projection = await compute();
         await tx.discoveryLiveChannelView.deleteMany();
         await tx.discoveryCategoryView.deleteMany();
+        await tx.discoveryCategoryFollow.deleteMany();
+        await tx.discoveryCategoryFollowerCount.deleteMany();
         await sequentially(inBatches(projection.views), (views) =>
           tx.discoveryLiveChannelView.createMany({ data: views.map(toRow) }),
         );
         await sequentially(inBatches(projection.categories), (categories) =>
           tx.discoveryCategoryView.createMany({ data: [...categories] }),
+        );
+        await sequentially(inBatches(projection.follows), (follows) =>
+          tx.discoveryCategoryFollow.createMany({ data: [...follows] }),
+        );
+        await sequentially(inBatches(followerCounts(projection.follows)), (counts) =>
+          tx.discoveryCategoryFollowerCount.createMany({ data: [...counts] }),
         );
         await sequentially(inBatches(projection.eventIds), (eventIds) =>
           tx.discoveryProcessedEvent.createMany({

@@ -680,6 +680,7 @@ describe("reconstruction de la projection depuis les outbox (ADR 0003, ADR 0034)
           },
         ],
         categories: [],
+        follows: [],
         eventIds: [],
         skipped: 0,
       };
