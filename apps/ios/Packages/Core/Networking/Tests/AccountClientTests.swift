@@ -44,6 +44,25 @@ struct AccountClientTests {
     #expect(request.url == meURL)
   }
 
+  @Test("lit la bio et la date du dernier live quand l'API les donne")
+  func readsBioAndLastLive() async throws {
+    let transport = FakeTransport(json: meJSON(extraFields: #","bio":"i love do gaming stream","lastLiveAt":"2026-11-03T18:30:00.5Z""#))
+
+    let account = try await makeClient(transport: transport).currentAccount()
+
+    #expect(account.bio == "i love do gaming stream")
+    let lastLive = try #require(account.lastLiveAt)
+    #expect(abs(lastLive.timeIntervalSince1970 - 1_793_730_600.5) < 0.000_5)
+  }
+
+  @Test("sans bio ni dernier live, les deux restent absents")
+  func noBioNorLastLive() async throws {
+    let account = try await makeClient(transport: FakeTransport(json: meJSON())).currentAccount()
+
+    #expect(account.bio == nil)
+    #expect(account.lastLiveAt == nil)
+  }
+
   @Test("tolère un champ ajouté par le serveur (ADR 0024, §8)")
   func toleratesAddedField() async throws {
     let transport = FakeTransport(json: meJSON(extraFields: #","avatar":{"url":"https://cdn.twitch.local/a.png"}"#))
