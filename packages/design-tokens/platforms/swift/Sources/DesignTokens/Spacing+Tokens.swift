@@ -22,18 +22,26 @@ public enum Spacing {
     public static let x10: CGFloat = 10
     /// 12 fois l'unité de base de la charte relevée (1 pt).
     public static let x12: CGFloat = 12
+    /// Glyphe « + » de la barre d'onglets, relevé sur l'app iOS Twitch (14 pt).
+    public static let x14: CGFloat = 14
     /// 15 fois l'unité de base de la charte relevée (1 pt).
     public static let x15: CGFloat = 15
     /// Marge latérale des écrans, relevée sur l'app iOS Twitch (16 pt).
     public static let x16: CGFloat = 16
     /// Marges latérales et basse des boutons de l'accueil, relevées sur l'app iOS Twitch (20 pt).
     public static let x20: CGFloat = 20
+    /// Avatar de l'onglet Profile, relevé sur l'app iOS Twitch (24 pt).
+    public static let x24: CGFloat = 24
     /// Retrait du contenu de l'accueil, relevé sur l'app iOS Twitch (40 pt).
     public static let x40: CGFloat = 40
     /// Hauteur des boutons d'action, relevée sur l'app iOS Twitch (44 pt), cible tactile minimale d'iOS.
     public static let x44: CGFloat = 44
+    /// Hauteur de la barre d'onglets, relevée sur l'app iOS Twitch (49 pt).
+    public static let x49: CGFloat = 49
     /// Hauteur des lignes du menu du compte, relevée sur l'app iOS Twitch (56 pt, profil/menu-compte--defaut).
     public static let x56: CGFloat = 56
+    /// Largeur du bouton « + » de la barre d'onglets, relevée sur l'app iOS Twitch (72 pt).
+    public static let x72: CGFloat = 72
     /// Largeur des modales de confirmation, relevée sur l'app iOS Twitch (300 pt).
     public static let x300: CGFloat = 300
 }

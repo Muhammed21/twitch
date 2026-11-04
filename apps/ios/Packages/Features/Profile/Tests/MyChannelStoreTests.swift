@@ -31,6 +31,43 @@ struct MyChannelStoreTests {
     #expect(store.title == "Speedrun du dimanche")
   }
 
+  @Test("charge la chaîne au premier affichage du Stream Manager, même sans passer par Profile")
+  func loadsWhenNeverLoaded() async throws {
+    let store = try makeStore(FakeMyChannel(owned: .success(makeOwnedChannel())))
+
+    await store.loadIfNeeded()
+
+    #expect(try store.phase == .ready(makeOwnedChannel()))
+  }
+
+  @Test("ne recharge pas une chaîne déjà chargée : la clé montrée reste visible")
+  func keepsLoadedChannel() async throws {
+    let store = try makeStore(FakeMyChannel(owned: .success(makeOwnedChannel())))
+    await store.load()
+    await store.revealKey()
+
+    await store.loadIfNeeded()
+
+    #expect(store.streamKey?.revealed == secret)
+  }
+
+  @Test("oublie la chaîne, le titre et la clé à la fin de session, puis recharge celle du compte suivant")
+  func resetsAtSessionEnd() async throws {
+    let store = try makeStore(FakeMyChannel(owned: .success(makeOwnedChannel())))
+    await store.load()
+    await store.revealKey()
+
+    store.reset()
+
+    #expect(store.phase == .loading)
+    #expect(store.title.isEmpty)
+    #expect(store.streamKey == nil)
+
+    await store.loadIfNeeded()
+
+    #expect(try store.phase == .ready(makeOwnedChannel()))
+  }
+
   @Test("dit que le compte n'a pas encore de chaîne")
   func noChannelYet() async {
     let store = makeStore(FakeMyChannel(owned: .success(nil)))

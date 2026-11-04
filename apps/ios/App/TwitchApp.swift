@@ -75,6 +75,7 @@ struct RootView: View {
   @Environment(SessionStore.self) private var session
   @Environment(LaunchStore.self) private var launch
   @Environment(Router.self) private var router
+  @Environment(MyChannelStore.self) private var myChannel
   @State private var isSplashVisible = true
 
   var body: some View {
@@ -83,7 +84,10 @@ struct RootView: View {
       .logOutFailureAlert(session)
       .onOpenURL { router.open($0) }
       .onChange(of: session.phase) { old, new in
-        if RootScreen.resetsNavigation(from: old, to: new) { router.reset() }
+        if RootScreen.resetsNavigation(from: old, to: new) {
+          router.reset()
+          myChannel.reset()
+        }
       }
       .task { await launch.run() }
       .task { await session.run() }
@@ -118,35 +122,60 @@ struct RootView: View {
 struct SignedInRoot: View {
   @Environment(Router.self) private var router
   @Environment(SessionStore.self) private var session
-  @State private var isShowingAccount = false
+
+  static let leadingTabs = [
+    TabBarItem(
+      tab: AppTab.home,
+      title: HomeTab.title,
+      glyph: .symbol(outline: "house", filled: "house.fill"),
+      accessibilityIdentifier: "root.home"
+    ),
+  ]
+
+  static let trailingTabs = [
+    TabBarItem(
+      tab: AppTab.profile,
+      title: ProfileText.tabTitle,
+      glyph: .avatar,
+      accessibilityIdentifier: "root.account"
+    ),
+  ]
 
   var body: some View {
     @Bindable var router = router
-    NavigationStack(path: $router.path) {
-      HomeScreen()
-        .toolbar {
-          ToolbarItem(placement: .topBarTrailing) {
-            Button { isShowingAccount = true } label: {
-              Label("root.account", systemImage: "person.crop.circle")
-            }
-            .accessibilityIdentifier("root.account")
-          }
-        }
-        .navigationDestination(for: Route.self) { route in
-          switch route {
-          case let .channel(slug):
-            ChannelScreen(slug: slug)
-          }
-        }
-    }
-    .sheet(isPresented: $isShowingAccount) {
-      NavigationStack {
+    TabView(selection: $router.selectedTab) {
+      NavigationStack(path: $router.path) {
+        HomeScreen().withRouteDestinations()
+      }
+      .toolbar(.hidden, for: .tabBar)
+      .tag(AppTab.home)
+      NavigationStack(path: $router.profilePath) {
         ProfileScreen(accountName: accountName) { slug in
-          isShowingAccount = false
           router.push(.channel(slug))
         } settings: {
           SignedInScreen()
         }
+        .withRouteDestinations()
+      }
+      .toolbar(.hidden, for: .tabBar)
+      .tag(AppTab.profile)
+    }
+    .fullScreenCover(isPresented: $router.isShowingStreamManager) {
+      NavigationStack {
+        StreamManagerScreen { router.isShowingStreamManager = false }
+      }
+    }
+    .safeAreaInset(edge: .bottom, spacing: 0) {
+      if router.isTabBarVisible {
+        TabBar(
+          selection: $router.selectedTab,
+          leading: Self.leadingTabs,
+          create: TabBarCreate(
+            label: ProfileText.streamManagerTitle,
+            accessibilityIdentifier: "root.create"
+          ) { router.create() },
+          trailing: Self.trailingTabs
+        )
       }
     }
   }
@@ -154,6 +183,17 @@ struct SignedInRoot: View {
   private var accountName: String? {
     guard case let .signedIn(account) = session.phase else { return nil }
     return account?.name
+  }
+}
+
+private extension View {
+  func withRouteDestinations() -> some View {
+    navigationDestination(for: Route.self) { route in
+      switch route {
+      case let .channel(slug):
+        ChannelScreen(slug: slug)
+      }
+    }
   }
 }
 

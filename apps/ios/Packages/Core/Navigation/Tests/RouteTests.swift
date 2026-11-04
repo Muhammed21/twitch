@@ -65,3 +65,106 @@ struct RouterTests {
     #expect(router.path.isEmpty)
   }
 }
+
+@MainActor
+@Suite("Router : onglets de la barre du bas")
+struct RouterTabTests {
+  @Test("l'app s'ouvre sur l'onglet Home, barre d'onglets visible")
+  func startsOnHome() {
+    let router = Router()
+
+    #expect(router.selectedTab == .home)
+    #expect(router.isTabBarVisible)
+  }
+
+  @Test("chaque onglet garde sa propre pile : une route émise depuis Profile ne touche pas Home")
+  func stackPerTab() throws {
+    let router = Router()
+    try router.push(.channel(ChannelSlug("jean_dupont")))
+
+    router.selectedTab = .profile
+    try router.push(.channel(ChannelSlug("marie_curie")))
+
+    #expect(try router.path == [.channel(ChannelSlug("jean_dupont"))])
+    #expect(try router.profilePath == [.channel(ChannelSlug("marie_curie"))])
+  }
+
+  @Test("la barre d'onglets se masque quand une page de chaîne couvre l'onglet sélectionné")
+  func tabBarHiddenOverChannel() throws {
+    let router = Router()
+    try router.push(.channel(ChannelSlug("jean_dupont")))
+
+    #expect(!router.isTabBarVisible)
+
+    router.selectedTab = .profile
+
+    #expect(router.isTabBarVisible)
+  }
+
+  @Test("un deep link ouvert depuis Profile revient sur Home et y empile la chaîne")
+  func deepLinkSelectsHome() throws {
+    let router = Router()
+    router.selectedTab = .profile
+
+    #expect(try router.open(#require(URL(string: "twitch://channel/jean_dupont"))))
+
+    #expect(router.selectedTab == .home)
+    #expect(try router.path == [.channel(ChannelSlug("jean_dupont"))])
+    #expect(router.profilePath.isEmpty)
+  }
+
+  @Test("un lien inconnu ne change pas d'onglet")
+  func unknownLinkKeepsTab() throws {
+    let router = Router()
+    router.selectedTab = .profile
+
+    #expect(try !router.open(#require(URL(string: "twitch://profile/jean_dupont"))))
+
+    #expect(router.selectedTab == .profile)
+  }
+
+  @Test("reset vide les deux piles et revient sur Home")
+  func resetAll() throws {
+    let router = Router()
+    try router.push(.channel(ChannelSlug("jean_dupont")))
+    router.selectedTab = .profile
+    try router.push(.channel(ChannelSlug("marie_curie")))
+
+    router.reset()
+
+    #expect(router.selectedTab == .home)
+    #expect(router.path.isEmpty)
+    #expect(router.profilePath.isEmpty)
+  }
+
+  @Test("le bouton « + » ouvre le Stream Manager par-dessus l'onglet courant, sans en changer")
+  func createOpensStreamManager() {
+    let router = Router()
+    router.selectedTab = .profile
+
+    router.create()
+
+    #expect(router.isShowingStreamManager)
+    #expect(router.selectedTab == .profile)
+  }
+
+  @Test("reset ferme le Stream Manager ouvert par « + »")
+  func resetClosesStreamManager() {
+    let router = Router()
+    router.create()
+
+    router.reset()
+
+    #expect(!router.isShowingStreamManager)
+  }
+
+  @Test("un deep link ferme le Stream Manager pour montrer la chaîne")
+  func deepLinkClosesStreamManager() throws {
+    let router = Router()
+    router.create()
+
+    #expect(try router.open(#require(URL(string: "twitch://channel/jean_dupont"))))
+
+    #expect(!router.isShowingStreamManager)
+  }
+}

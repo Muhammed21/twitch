@@ -31,6 +31,16 @@
         }
       }
     },
+    "home.tab" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home"
+          }
+        }
+      }
+    },
     "home.title" : {
       "localizations" : {
         "en" : {

@@ -61,7 +61,15 @@ const asListed = ({ channelId, slug, title, liveStartedAt }: SeededView) => ({
   slug,
   title,
   startedAt: liveStartedAt?.toISOString(),
+  viewerCount: 0,
 });
+
+const sendPresence = (channelId: string) =>
+  fetch(`${state.url}/v1/channels/${channelId}/presence`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ viewerId: randomUUID() }),
+  });
 
 const state: { app?: INestApplication; url?: string } = {};
 
@@ -126,6 +134,25 @@ describe("GET /v1/lives (jalon A3)", () => {
       expect((await page("?limit=4")).items).toEqual(
         [latest, tieFirst, tieSecond, oldest].map(asListed),
       );
+    } finally {
+      await cleanUp();
+    }
+  });
+
+  it("donne à chaque live le nombre de viewers qui envoient un heartbeat de présence", async () => {
+    const watched = await seedLiveView({ minute: 60 });
+    const unwatched = await seedLiveView({ minute: 59 });
+    try {
+      const heartbeats = await Promise.all([
+        sendPresence(watched.channelId),
+        sendPresence(watched.channelId),
+      ]);
+
+      expect(heartbeats.map(({ status }) => status)).toEqual([204, 204]);
+      expect((await page("?limit=2")).items).toEqual([
+        { ...asListed(watched), viewerCount: 2 },
+        { ...asListed(unwatched), viewerCount: 0 },
+      ]);
     } finally {
       await cleanUp();
     }

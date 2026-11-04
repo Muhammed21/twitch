@@ -10,7 +10,8 @@ private func live(_ slug: String, id: Int) throws -> LiveChannel {
   return try LiveChannel(
     session: StreamSession(channelID: channelID, startedAt: Date(timeIntervalSince1970: TimeInterval(id))),
     slug: ChannelSlug(slug),
-    title: "Live \(slug)"
+    title: "Live \(slug)",
+    viewers: nil
   )
 }
 
