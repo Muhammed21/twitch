@@ -29,6 +29,7 @@ describe("slug d'une catégorie", () => {
     ["avec un accent", "musique-électro"],
     ["avec un souligné", "just_chatting"],
     ["trop long", "a".repeat(MAX_CATEGORY_SLUG_LENGTH + 1)],
+    ["réservé à la route du catalogue (ADR 0050 §4)", "catalog"],
   ])("refuse un slug %s", (_name, slug) => {
     expect(parseCategorySlug(slug)).toEqual({ ok: false, error: "invalid_slug" });
   });
