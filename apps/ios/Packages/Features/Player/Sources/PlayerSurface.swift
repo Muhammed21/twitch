@@ -13,6 +13,7 @@ public struct PlayerSurface: View {
       .aspectRatio(16 / 9, contentMode: .fit)
       .background(Color.black)
       .overlay { PlayerStatus() }
+      .accessibilityElement(children: .contain)
       .accessibilityIdentifier("player.surface")
   }
 }
@@ -22,8 +23,14 @@ private struct PlayerStatus: View {
 
   var body: some View {
     switch controller.state {
-    case .idle, .playing:
+    case .idle:
       EmptyView()
+    case .playing:
+      Color.clear
+        .allowsHitTesting(false)
+        .accessibilityElement()
+        .accessibilityLabel(PlayerText.playing)
+        .accessibilityIdentifier("player.playing")
     case .loading, .buffering:
       ProgressView().tint(.white)
     case .failed:
@@ -71,6 +78,7 @@ final class PlayerLayerView: UIView {
 enum PlayerText {
   static var failed: String { String(localized: "player.failed", bundle: .module) }
   static var retry: String { String(localized: "player.retry", bundle: .module) }
+  static var playing: String { String(localized: "player.playing", bundle: .module) }
   static var play: String { String(localized: "player.play", bundle: .module) }
   static var ended: String { String(localized: "player.ended", bundle: .module) }
 }

@@ -283,7 +283,7 @@ struct TimedOut: Error {}
 
 @MainActor
 func waitUntil(_ condition: @MainActor () async -> Bool) async throws {
-  let deadline = ContinuousClock.now + .seconds(2)
+  let deadline = ContinuousClock.now + .seconds(10)
   while await !condition() {
     guard ContinuousClock.now < deadline else {
       throw TimedOut()

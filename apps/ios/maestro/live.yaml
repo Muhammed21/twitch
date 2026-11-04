@@ -1,0 +1,9 @@
+appId: com.muhammedcavus.twitch
+name: Lecture d'un live
+---
+- runFlow: subflows/sign-in.yaml
+- runFlow: subflows/open-live-channel.yaml
+- extendedWaitUntil:
+    visible:
+      id: player.playing
+    timeout: 60000

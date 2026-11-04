@@ -43,6 +43,11 @@ struct WelcomeTests {
     ])
   }
 
+  @Test("chaque bouton porte l'identifiant que visent les flows Maestro (ADR 0030, §4)")
+  func accessibilityIdentifiers() {
+    #expect(WelcomeContent.actions.map(\.accessibilityIdentifier) == ["welcome.logIn", "welcome.signUp"])
+  }
+
   @Test("le slogan et les boutons reprennent les textes anglais de la capture")
   func texts() {
     #expect(WelcomeText.slogan == "There's something\nfor you on Twitch")

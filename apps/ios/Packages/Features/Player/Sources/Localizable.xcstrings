@@ -31,6 +31,16 @@
         }
       }
     },
+    "player.playing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live video playing"
+          }
+        }
+      }
+    },
     "player.retry" : {
       "localizations" : {
         "en" : {

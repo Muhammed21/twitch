@@ -30,6 +30,13 @@ public struct WelcomeAction: Sendable, Equatable {
     self.kind = kind
     self.intent = intent
   }
+
+  public var accessibilityIdentifier: String {
+    switch intent {
+    case .logIn: "welcome.logIn"
+    case .signUp: "welcome.signUp"
+    }
+  }
 }
 
 public extension WelcomeContent {
@@ -108,6 +115,7 @@ public struct WelcomeScreen: View {
           ForEach(WelcomeContent.actions, id: \.title) { action in
             Button(action.title) { onIntent(action.intent) }
               .buttonStyle(ActionButtonStyle(action.kind))
+              .accessibilityIdentifier(action.accessibilityIdentifier)
           }
         }
         .padding([.horizontal, .bottom], LayoutRole.actionInset.points)
