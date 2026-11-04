@@ -56,6 +56,7 @@ Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes
 | [0044](0044-images-envoyees-relues-validees-et-reencodees-par-l-api-avec-sharp.md)                        | Les images envoyées montent par URL présignée, puis l'API les relit, les valide et les réencode avec sharp     | Accepté                                                                | Données      |
 | [0045](0045-categorie-fusion-qui-reaffecte-les-chaines-et-retrait-refuse-tant-qu-une-chaine-l-utilise.md) | Une catégorie fusionnée réaffecte ses chaînes, et une catégorie n'est retirée qu'une fois inutilisée           | Accepté                                                                | Channel      |
 | [0046](0046-glyphes-d-interface-extraits-des-captures-en-masques.md)                                      | Les glyphes d'interface sont des masques extraits des captures                                                 | Accepté                                                                | Design       |
+| [0048](0048-messages-d-un-chatter-en-timeout-effaces-chez-les-viewers.md)                                 | Les messages d'un chatter mis en timeout sont effacés chez les viewers, émis par chaque instance à ses sockets | Accepté                                                                | Chat         |
 
 ## Dépendances principales
 
@@ -94,6 +95,7 @@ Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes
 0008, 0021, 0028, 0042 ── 0044 (images envoyées relues, validées et réencodées par l'API, amende 0008 §4)
 0006, 0007, 0021, 0041 ── 0045 (cycle de vie d'une catégorie : fusion qui réaffecte, retrait d'une catégorie inutilisée)
 0036, 0037, 0040 ── 0046 (glyphes d'interface extraits des captures en masques, amende 0036 §6)
+0004, 0022, 0024, 0027, 0032 ── 0048 (messages d'un chatter en timeout effacés chez les viewers)
 ```
 
 ## Points ouverts
