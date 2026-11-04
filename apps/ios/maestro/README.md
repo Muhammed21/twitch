@@ -24,8 +24,10 @@ cd apps/ios && maestro test maestro/
 
 ## En CI
 
-Le job `maestro` de `.github/workflows/ios.yml` monte PostgreSQL, Redis, l'API, le relais de l'outbox et le service vidéo sur le runner macOS (pas de Docker), met `viewer_dev` en direct et lance tous les flows.
+Le job `maestro` de `.github/workflows/ios.yml` monte PostgreSQL, Redis, l'API, le relais de l'outbox et le service vidéo sur le runner macOS (pas de Docker), met `viewer_dev` en direct et lance tous les flows sur un iPhone 16 Pro sous iOS 18.5, démarré et attendu (`simctl bootstatus`) avant Maestro.
 
-Il ne tourne pas sur les PR : il tourne à chaque push sur `main` qui touche `apps/ios/`, chaque nuit à 3 h UTC (les flows dépendent aussi de l'API et du service vidéo), et à la main (`gh workflow run ios.yml --ref <branche>`) pour éprouver une branche avant son merge. Il reprend le DerivedData de l'app que le job `iOS` met en cache.
+Les flows passent par `ci-test.sh`. Quand le pilote XCTest de Maestro ne démarre pas (« iOS driver not ready in time »), aucun flow n'a tourné : le script redémarre le simulateur et relance Maestro, trois essais au plus. Un flow en échec n'est jamais relancé. `check-ci-test.sh` vérifie ce comportement dans le job `ios`.
+
+Le job `maestro` ne tourne pas sur les PR : il tourne à chaque push sur `main` qui touche `apps/ios/`, chaque nuit à 3 h UTC (les flows dépendent aussi de l'API et du service vidéo), et à la main (`gh workflow run ios.yml --ref <branche>`) pour éprouver une branche avant son merge. Il reprend le DerivedData de l'app que le job `iOS` met en cache.
 
 **Le job est non bloquant (`continue-on-error`) tant qu'il n'a pas réussi dix exécutions vertes d'affilée.** Les exécutions comptées sont celles de `main`, push et nuit ; un échec remet le compte à zéro. À la dixième, une PR retire `continue-on-error` et cette phrase.
