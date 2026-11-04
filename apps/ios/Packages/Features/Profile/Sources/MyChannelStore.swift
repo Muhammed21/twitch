@@ -27,6 +27,8 @@ public final class MyChannelStore {
   public private(set) var streamKey: StreamKey?
   public private(set) var notice: Notice?
 
+  @ObservationIgnored private var keyReads = 0
+
   @ObservationIgnored private let repository: any MyChannelRepository
   @ObservationIgnored private let channels: any ChannelRepository
   @ObservationIgnored private let copy: @MainActor (String) -> Void
@@ -50,6 +52,8 @@ public final class MyChannelStore {
 
   public func load() async {
     phase = .loading
+    hideKey()
+    notice = nil
     do {
       guard let owned = try await repository.ownedChannel() else {
         phase = .noChannel
@@ -67,8 +71,13 @@ public final class MyChannelStore {
     guard case let .ready(owned) = phase else {
       return
     }
+    let read = keyReads
     do {
-      streamKey = try await repository.streamKey(of: owned.id)
+      let key = try await repository.streamKey(of: owned.id)
+      guard read == keyReads else {
+        return
+      }
+      streamKey = key
       notice = nil
     } catch {
       log("my channel: stream key not read (\(Self.kind(of: error)))")
@@ -77,7 +86,13 @@ public final class MyChannelStore {
   }
 
   public func hideKey() {
+    keyReads += 1
     streamKey = nil
+  }
+
+  public func leave() {
+    hideKey()
+    notice = nil
   }
 
   public func copyKey() {

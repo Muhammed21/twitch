@@ -33,7 +33,7 @@ struct StreamManagerScreen: View {
     .background(ColorRole.background.color.ignoresSafeArea())
     .navigationTitle(Text(ProfileText.streamManager))
     .navigationBarTitleDisplayMode(.inline)
-    .onDisappear { store.hideKey() }
+    .onDisappear { store.leave() }
     .sheet(isPresented: $isEditingTitle) { EditStreamInfoSheet(initialTitle: store.title) }
   }
 

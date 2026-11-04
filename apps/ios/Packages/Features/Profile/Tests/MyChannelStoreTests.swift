@@ -5,7 +5,7 @@ import Testing
 
 @MainActor
 private func makeStore(
-  _ repository: FakeMyChannel,
+  _ repository: any MyChannelRepository,
   title: String = "Speedrun du dimanche",
   pasteboard: Pasteboard = Pasteboard(),
   log: LogBook = LogBook()
@@ -61,6 +61,62 @@ struct MyChannelStoreTests {
 
     store.hideKey()
     #expect(store.streamKey == nil)
+  }
+
+  @Test("garde la clé masquée quand on la masque pendant sa lecture")
+  func hiddenDuringRead() async {
+    let repository = HeldKey()
+    let store = makeStore(repository)
+    await store.load()
+    let reveal = Task { await store.revealKey() }
+    await repository.untilAsked()
+
+    store.hideKey()
+    await repository.answer()
+    await reveal.value
+
+    #expect(store.streamKey == nil)
+  }
+
+  @Test("oublie la clé lue pendant un rechargement, comme au changement de compte")
+  func reloadDuringRead() async {
+    let repository = HeldKey()
+    let store = makeStore(repository)
+    await store.load()
+    let reveal = Task { await store.revealKey() }
+    await repository.untilAsked()
+
+    await store.load()
+    await repository.answer()
+    await reveal.value
+
+    #expect(store.streamKey == nil)
+  }
+
+  @Test("oublie la clé montrée et l'avis au rechargement")
+  func reloadForgetsKeyAndNotice() async throws {
+    let store = try makeStore(FakeMyChannel(owned: .success(makeOwnedChannel())))
+    await store.load()
+    await store.revealKey()
+    store.copyKey()
+
+    await store.load()
+
+    #expect(store.streamKey == nil)
+    #expect(store.notice == nil)
+  }
+
+  @Test("masque la clé et efface l'avis en quittant l'écran")
+  func leaves() async throws {
+    let store = try makeStore(FakeMyChannel(owned: .success(makeOwnedChannel())))
+    await store.load()
+    await store.revealKey()
+    store.copyKey()
+
+    store.leave()
+
+    #expect(store.streamKey == nil)
+    #expect(store.notice == nil)
   }
 
   @Test("copie la clé montrée et le confirme")

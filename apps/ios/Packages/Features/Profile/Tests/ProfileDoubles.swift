@@ -57,6 +57,40 @@ actor FakeMyChannel: MyChannelRepository {
   }
 }
 
+actor HeldKey: MyChannelRepository {
+  private var asked = false
+  private var onAsked: CheckedContinuation<Void, Never>?
+  private var release: CheckedContinuation<Void, Never>?
+
+  func ownedChannel() throws -> OwnedChannel? {
+    try makeOwnedChannel()
+  }
+
+  func streamKey(of _: ChannelID) async -> StreamKey {
+    asked = true
+    onAsked?.resume()
+    onAsked = nil
+    await withCheckedContinuation { release = $0 }
+    return StreamKey(secret, ingestURL: ingestURL)
+  }
+
+  func rename(_ channel: ChannelID, to title: String) throws -> Channel {
+    try Channel(id: channel, slug: ChannelSlug("viewer_de_test"), title: title, ownerID: ownerID)
+  }
+
+  func untilAsked() async {
+    guard !asked else {
+      return
+    }
+    await withCheckedContinuation { onAsked = $0 }
+  }
+
+  func answer() {
+    release?.resume()
+    release = nil
+  }
+}
+
 struct FakeChannels: ChannelRepository {
   let title: String
 
