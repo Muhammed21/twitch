@@ -33,6 +33,28 @@ struct ChannelClientTests {
     #expect(request.headers["Authorization"] == nil)
   }
 
+  @Test("lit la catégorie de la chaîne quand elle en a une")
+  func readsCategory() async throws {
+    let category = #","category":{"id":"1c9e4a52-7d3b-4f8e-a6b1-2d5c8e9f0a13","slug":"honor-of-kings","name":"Honor of Kings"}}"#
+    let transport = FakeTransport(json: channelJSON().dropLast() + category)
+
+    let channel = try await makeClient(transport).channel(withSlug: ChannelSlug("jean_dupont"))
+
+    #expect(try channel.category == ChannelCategory(
+      id: CategoryID(#require(UUID(uuidString: "1c9e4a52-7d3b-4f8e-a6b1-2d5c8e9f0a13"))),
+      name: "Honor of Kings"
+    ))
+  }
+
+  @Test("une chaîne sans catégorie n'en a pas")
+  func noCategory() async throws {
+    let transport = FakeTransport(json: channelJSON())
+
+    let channel = try await makeClient(transport).channel(withSlug: ChannelSlug("jean_dupont"))
+
+    #expect(channel.category == nil)
+  }
+
   @Test("refuse une chaîne au slug invalide")
   func rejectsMalformedSlug() async throws {
     let transport = FakeTransport(json: channelJSON(slug: "Jean-Dupont"))

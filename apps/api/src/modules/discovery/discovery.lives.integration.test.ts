@@ -22,6 +22,7 @@ const urlOf = (variable: string): string => {
 };
 
 const discovery = createContextClient({ context: "discovery", env: process.env });
+const stream = createContextClient({ context: "stream", env: process.env });
 
 const inTheFuture = (minute: number): Date => new Date(Date.UTC(2099, 0, 1, 0, minute));
 
@@ -33,6 +34,14 @@ type SeededView = {
 };
 
 const seeded: string[] = [];
+const linked: string[] = [];
+
+const seedStreamChannel = async (channelId: string): Promise<string> => {
+  const providerChannelId = randomUUID();
+  await stream.streamChannel.create({ data: { channelId, providerChannelId } });
+  linked.push(channelId);
+  return providerChannelId;
+};
 
 const seedLiveView = async ({
   minute,
@@ -108,8 +117,10 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await discovery.discoveryLiveChannelView.deleteMany({ where: { channelId: { in: seeded } } });
+  await stream.streamChannel.deleteMany({ where: { channelId: { in: linked } } });
   await state.app?.close();
   await discovery.$disconnect();
+  await stream.$disconnect();
 });
 
 const cleanUp = () =>
@@ -156,6 +167,23 @@ describe("GET /v1/lives (jalon A3)", () => {
       expect((await page("?limit=2")).items).toEqual([
         { ...asListed(watched), viewerCount: 2 },
         { ...asListed(unwatched), viewerCount: 0 },
+      ]);
+    } finally {
+      await cleanUp();
+    }
+  });
+
+  it("donne à chaque live dont la chaîne a un canal vidéo l'URL de sa vignette", async () => {
+    const withChannel = await seedLiveView({ minute: 58 });
+    const withoutChannel = await seedLiveView({ minute: 57 });
+    const providerChannelId = await seedStreamChannel(withChannel.channelId);
+    try {
+      expect((await page("?limit=2")).items).toEqual([
+        {
+          ...asListed(withChannel),
+          thumbnailUrl: `${urlOf("VIDEO_PLAYBACK_BASE_URL").replace(/\/$/, "")}/hls/channels/${providerChannelId}/thumbnail.jpg`,
+        },
+        asListed(withoutChannel),
       ]);
     } finally {
       await cleanUp();

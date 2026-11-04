@@ -1,5 +1,6 @@
 import DesignSystem
 import Domain
+import Navigation
 import SwiftUI
 
 public struct BrowseScreen: View {
@@ -40,11 +41,14 @@ private struct CategoryGrid: View {
       LazyVStack(spacing: 0) {
         LazyVGrid(columns: columns, alignment: .leading, spacing: LayoutRole.categoryRowGap.points) {
           ForEach(store.categories, id: \.slug) { category in
-            CategoryTile(
-              name: category.name,
-              viewers: BrowseText.viewers(category.viewers, locale: locale),
-              coverURL: category.imageURL
-            )
+            NavigationLink(value: Route.category(category.slug, name: category.name)) {
+              CategoryTile(
+                name: category.name,
+                viewers: BrowseText.viewers(category.viewers, locale: locale),
+                coverURL: category.imageURL
+              )
+            }
+            .buttonStyle(.plain)
             .accessibilityIdentifier("browse.category.\(category.slug.rawValue)")
           }
         }

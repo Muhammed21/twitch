@@ -28,8 +28,12 @@ import {
   provisionStreamChannel,
   rotateStreamKey,
 } from "./application/stream-keys.ts";
+import { type GetThumbnailUrls, getThumbnailUrls } from "./application/thumbnail-urls.ts";
 import { fakeLiveVideoProvider } from "./infrastructure/fake-live-video-provider.ts";
-import { prismaStreamChannels } from "./infrastructure/prisma-stream-channels.ts";
+import {
+  prismaProviderChannels,
+  prismaStreamChannels,
+} from "./infrastructure/prisma-stream-channels.ts";
 import {
   prismaOpenStreamSessions,
   prismaPlaybackSessions,
@@ -64,6 +68,15 @@ export const createViewerCountReader =
   (presenceRedis: PresenceRedis) =>
   (channelIds: readonly string[]): Promise<ReadonlyMap<string, number>> =>
     redisPresenceStore(presenceRedis).count({ channelIds, at: new Date() });
+
+export const createThumbnailUrlReader = ({
+  prisma,
+  playbackBaseUrl,
+}: {
+  prisma: StreamPrisma;
+  playbackBaseUrl: string;
+}): GetThumbnailUrls =>
+  getThumbnailUrls({ channels: prismaProviderChannels(prisma), baseUrl: playbackBaseUrl });
 
 export { prismaLastLiveOf as createLastLiveReader } from "./infrastructure/prisma-stream-sessions.ts";
 

@@ -75,6 +75,11 @@
       "$value": "{core.dimension.32}",
       "$description": "Écart entre les onglets Categories et Live Channels de Browse, relevé sur l'app iOS Twitch (32 pt)."
     },
+    "x36": {
+      "$type": "dimension",
+      "$value": "{core.dimension.36}",
+      "$description": "Hauteur du champ de recherche de catégorie, relevée sur l'app iOS Twitch (36 pt)."
+    },
     "x40": {
       "$type": "dimension",
       "$value": "{core.dimension.40}",
@@ -104,6 +109,11 @@
       "$type": "dimension",
       "$value": "{core.dimension.72}",
       "$description": "Largeur du bouton « + » de la barre d'onglets, relevée sur l'app iOS Twitch (72 pt)."
+    },
+    "x75": {
+      "$type": "dimension",
+      "$value": "{core.dimension.75}",
+      "$description": "Largeur de la pochette d'une catégorie dans la recherche, relevée sur l'app iOS Twitch (75 pt)."
     },
     "x88": {
       "$type": "dimension",
