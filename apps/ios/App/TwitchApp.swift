@@ -34,6 +34,7 @@ struct TwitchApp: App {
         .environment(stores.presence)
         .environment(stores.chat)
         .environment(stores.myChannel)
+        .environment(stores.categorySearch)
     }
   }
 }
@@ -254,6 +255,7 @@ struct Stores {
   let presence: ChannelPresence
   let chat: ChatSession
   let myChannel: MyChannelStore
+  let categorySearch: CategorySearch
 }
 
 @MainActor
@@ -314,7 +316,8 @@ enum Composition {
         moderation: ModerationClient(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
         viewer: { sessionStore.accountID }
       ),
-      myChannel: Self.myChannel(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, channels: channels)
+      myChannel: Self.myChannel(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, channels: channels),
+      categorySearch: CategorySearch(catalog: CategoryCatalogClient(apiBaseURL: configuration.apiBaseURL, transport: transport))
     )
   }
 

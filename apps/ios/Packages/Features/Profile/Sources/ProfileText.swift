@@ -18,6 +18,13 @@ public enum ProfileText {
   static let cancel = LocalizedStringResource("editStreamInfo.cancel", bundle: .module)
   static let done = LocalizedStringResource("editStreamInfo.done", bundle: .module)
   static let close = LocalizedStringResource("streamManager.close", bundle: .module)
+  public static let category = LocalizedStringResource("editStreamInfo.category", bundle: .module)
+  public static let categoryHint = LocalizedStringResource("editStreamInfo.category.hint", bundle: .module)
+  public static let chooseCategory = LocalizedStringResource("editStreamInfo.category.choose", bundle: .module)
+  public static let removeCategory = LocalizedStringResource("editStreamInfo.category.remove", bundle: .module)
+  public static let searchCategories = LocalizedStringResource("categorySearch.prompt", bundle: .module)
+  public static let noCategoryFound = LocalizedStringResource("categorySearch.empty", bundle: .module)
+  public static let categorySearchFailed = LocalizedStringResource("categorySearch.failed", bundle: .module)
   public static var streamManagerTitle: String { String(localized: "profile.streamManager", bundle: .module) }
   public static var tabTitle: String { String(localized: "profile.tab", bundle: .module) }
   static let masked = "••••••••••••••••"

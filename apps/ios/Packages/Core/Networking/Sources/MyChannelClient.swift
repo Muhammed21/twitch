@@ -55,16 +55,24 @@ public struct MyChannelClient: MyChannelRepository {
     }
   }
 
-  public func rename(_ channel: ChannelID, to title: String) async throws -> Channel {
+  public func update(_ channel: ChannelID, title: String, category: CategoryChange) async throws -> Channel {
+    let body = Components.Schemas.UpdateChannelRequest(title: title, category: Self.choice(category))
     let output = try await unwrappingClientError {
-      try await client.channelsControllerUpdate(path: .init(id: Self.pathID(channel)), body: .json(.init(title: title)))
+      try await client.channelsControllerUpdate(path: .init(id: Self.pathID(channel)), body: .json(body))
     }
     switch output {
     case let .ok(response):
-      let body = try response.body.json
-      return try Channel(id: ChannelID(body.id), slug: ChannelSlug(body.slug), title: body.title, ownerID: body.ownerId)
+      return try Channel(response.body.json)
     case let .default(_, response):
       throw try ServiceProblem(response.body.applicationProblemJson)
+    }
+  }
+
+  private static func choice(_ change: CategoryChange) -> Components.Schemas.CategoryChoice? {
+    switch change {
+    case .keep: nil
+    case let .set(id): .init(id: id.rawValue)
+    case .clear: .init()
     }
   }
 
