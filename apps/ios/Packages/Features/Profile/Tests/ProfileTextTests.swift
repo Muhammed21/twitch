@@ -55,6 +55,17 @@ struct ProfileTextTests {
     #expect(String(localized: ProfileText.notice(notice)) == text)
   }
 
+  @Test("les libellés du sélecteur de catégorie, comme sur creer/edition-infos-diffusion--defaut")
+  func categoryPicker() {
+    #expect(String(localized: ProfileText.category) == "Category")
+    #expect(String(localized: ProfileText.categoryHint) == "All content must adhere to and be categorized according to our guidelines.")
+    #expect(String(localized: ProfileText.chooseCategory) == "Search for a category")
+    #expect(String(localized: ProfileText.removeCategory) == "Remove category")
+    #expect(String(localized: ProfileText.searchCategories) == "Search")
+    #expect(String(localized: ProfileText.noCategoryFound) == "No results found")
+    #expect(String(localized: ProfileText.categorySearchFailed) == "Couldn't search categories.")
+  }
+
   @Test("la réinitialisation de la clé se confirme : l'ancienne clé cesse de marcher")
   func rotationConfirmation() {
     #expect(String(localized: ProfileText.resetKey) == "Reset")

@@ -31,7 +31,7 @@ public struct StreamManagerScreen: View {
         }
       }
       .onDisappear { store.leave() }
-      .sheet(isPresented: $isEditingTitle) { EditStreamInfoSheet(initialTitle: store.title) }
+      .sheet(isPresented: $isEditingTitle) { EditStreamInfoSheet(initialTitle: store.title, initialCategory: store.category) }
       .alert(Text(ProfileText.resetKeyTitle), isPresented: $isConfirmingReset) {
         Button(role: .destructive) {
           Task { await store.rotateKey() }
@@ -182,11 +182,13 @@ struct EditStreamInfoSheet: View {
   @Environment(MyChannelStore.self) private var store
   @Environment(\.dismiss) private var dismiss
   @State private var draft: String
+  @State private var chosen: ChannelCategory?
   @State private var isSaving = false
   @State private var saveFailed = false
 
-  init(initialTitle: String) {
+  init(initialTitle: String, initialCategory: ChannelCategory?) {
     _draft = State(initialValue: initialTitle)
+    _chosen = State(initialValue: initialCategory)
   }
 
   var body: some View {
@@ -211,6 +213,8 @@ struct EditStreamInfoSheet: View {
             .foregroundStyle(ColorRole.textSecondary.color)
             .accessibilityIdentifier("editStreamInfo.notice")
         }
+        CategoryField(chosen: $chosen)
+          .padding(.top, LayoutRole.screenInset.points)
         Spacer(minLength: 0)
       }
       .padding(LayoutRole.screenInset.points)
@@ -234,7 +238,7 @@ struct EditStreamInfoSheet: View {
     isSaving = true
     saveFailed = false
     Task {
-      let saved = await store.rename(to: draft)
+      let saved = await store.save(title: draft, category: chosen)
       saveFailed = !saved
       isSaving = false
       if saved { dismiss() }

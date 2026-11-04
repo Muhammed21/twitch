@@ -77,21 +77,52 @@ struct MyChannelClientTests {
     #expect(!String(reflecting: error).contains(secret))
   }
 
-  @Test("change le titre de la chaîne et rend la chaîne à jour")
-  func renames() async throws {
+  @Test("change le titre seul quand la catégorie ne change pas, et rend la chaîne à jour")
+  func updatesTitleOnly() async throws {
     let transport = FakeTransport(
       json: #"{"id":"9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69","slug":"viewer_de_test","title":"Speedrun du dimanche","ownerId":"\#(ownerID)"}"#
     )
 
-    let channel = try await makeClient(transport).rename(channelID, to: "Speedrun du dimanche")
+    let channel = try await makeClient(transport).update(channelID, title: "Speedrun du dimanche", category: .keep)
 
     #expect(channel.title == "Speedrun du dimanche")
+    #expect(channel.category == nil)
     let request = try #require(await transport.requests.first)
     #expect(request.method == "PATCH")
     #expect(request.url == channelURL)
     #expect(request.headers["Authorization"] == "Bearer access-1")
     let body = try #require(JSONSerialization.jsonObject(with: request.body) as? [String: String])
     #expect(body == ["title": "Speedrun du dimanche"])
+  }
+
+  @Test("pose la catégorie choisie avec le titre, et lit la catégorie rendue")
+  func setsCategory() async throws {
+    let categoryID = try CategoryID(#require(UUID(uuidString: "1C9E4A52-7D3B-4F8E-A6B1-2D5C8E9F0A13")))
+    let category = #"{"id":"1c9e4a52-7d3b-4f8e-a6b1-2d5c8e9f0a13","slug":"honor-of-kings","name":"Honor of Kings"}"#
+    let transport = FakeTransport(
+      json: #"{"id":"9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69","slug":"viewer_de_test","title":"Rank","ownerId":"\#(ownerID)","category":\#(category)}"#
+    )
+
+    let channel = try await makeClient(transport).update(channelID, title: "Rank", category: .set(categoryID))
+
+    #expect(channel.category == ChannelCategory(id: categoryID, name: "Honor of Kings"))
+    let request = try #require(await transport.requests.first)
+    let body = try #require(JSONSerialization.jsonObject(with: request.body) as? NSDictionary)
+    #expect(body == ["title": "Rank", "category": ["id": "1C9E4A52-7D3B-4F8E-A6B1-2D5C8E9F0A13"]])
+  }
+
+  @Test("retire la catégorie en envoyant une catégorie sans identifiant")
+  func clearsCategory() async throws {
+    let transport = FakeTransport(
+      json: #"{"id":"9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69","slug":"viewer_de_test","title":"Rank","ownerId":"\#(ownerID)"}"#
+    )
+
+    let channel = try await makeClient(transport).update(channelID, title: "Rank", category: .clear)
+
+    #expect(channel.category == nil)
+    let request = try #require(await transport.requests.first)
+    let body = try #require(JSONSerialization.jsonObject(with: request.body) as? NSDictionary)
+    #expect(body == ["title": "Rank", "category": [String: String]()])
   }
 
   @Test("remplace la clé de stream par une nouvelle, avec le jeton du propriétaire")
@@ -126,12 +157,12 @@ struct MyChannelClientTests {
     }
   }
 
-  @Test("remonte le problème du serveur quand le titre est refusé", arguments: [403, 422])
-  func renameRefused(status: Int) async {
+  @Test("remonte le problème du serveur quand le titre ou la catégorie sont refusés", arguments: [403, 422])
+  func updateRefused(status: Int) async {
     let transport = FakeTransport(status: status, json: refusal(status))
 
     await #expect(throws: ServiceProblem(type: "about:blank", title: "Refus", status: status, detail: nil)) {
-      try await makeClient(transport).rename(channelID, to: "Titre")
+      try await makeClient(transport).update(channelID, title: "Titre", category: .keep)
     }
   }
 }
