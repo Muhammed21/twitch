@@ -134,6 +134,8 @@ let package = Package(
       name: "DesignSystem",
       dependencies: [.product(name: "DesignTokens", package: "swift")],
       path: "Core/DesignSystem/Sources",
+      exclude: ["glyphs.json"],
+      resources: [.process("Glyphs.xcassets")],
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
     .testTarget(

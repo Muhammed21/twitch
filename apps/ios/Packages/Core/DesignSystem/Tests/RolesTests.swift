@@ -45,11 +45,10 @@ private let tabBarMeasures: [(LayoutRole, CGFloat)] = [
   (.tabBarTopInset, 8),
   (.tabLabelGap, 2),
   (.tabIconSize, 24),
-  (.tabGlyphSize, 20),
-  (.avatarGlyphInset, 5),
+  (.avatarGlyphInset, 4),
   (.createButtonWidth, 72),
   (.createButtonHeight, 40),
-  (.createGlyphSize, 14),
+  (.createGlyphSize, 16),
   (.avatarRingWidth, 2),
   (.avatarRingGap, 1),
 ]
