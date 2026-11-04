@@ -1146,6 +1146,23 @@
             "properties": {
               "event": {
                 "type": "string",
+                "const": "chat:user_cleared"
+              },
+              "data": {
+                "$ref": "#/components/schemas/RealtimeChatUserCleared"
+              }
+            },
+            "required": [
+              "event",
+              "data"
+            ],
+            "additionalProperties": {}
+          },
+          {
+            "type": "object",
+            "properties": {
+              "event": {
+                "type": "string",
                 "const": "session:revoked"
               },
               "data": {
@@ -1243,6 +1260,22 @@
         },
         "required": [
           "reason"
+        ],
+        "additionalProperties": {}
+      },
+      "RealtimeChatUserCleared": {
+        "type": "object",
+        "properties": {
+          "channelId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "userId": {
+            "$ref": "#/components/schemas/Uuid"
+          }
+        },
+        "required": [
+          "channelId",
+          "userId"
         ],
         "additionalProperties": {}
       },
