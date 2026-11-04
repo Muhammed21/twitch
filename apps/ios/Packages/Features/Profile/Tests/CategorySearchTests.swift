@@ -39,6 +39,22 @@ private actor HeldCatalog: CategoryCatalog {
   }
 }
 
+struct CancelledCatalog: CategoryCatalog {
+  enum Kind: Sendable {
+    case cancellation
+    case urlCancelled
+  }
+
+  let kind: Kind
+
+  func categories(matching _: String) throws -> [ChannelCategory] {
+    switch kind {
+    case .cancellation: throw CancellationError()
+    case .urlCancelled: throw URLError(.cancelled)
+    }
+  }
+}
+
 private actor SlowCatalog: CategoryCatalog {
   private var asked = false
   private var waiter: CheckedContinuation<Void, Never>?
@@ -89,6 +105,18 @@ struct CategorySearchTests {
     await catalog.untilAsked()
     running.cancel()
     await running.value
+
+    #expect(search.phase == .loading)
+  }
+
+  @Test(
+    "une requête annulée par le transport n'affiche pas d'échec",
+    arguments: [CancelledCatalog.Kind.cancellation, .urlCancelled]
+  )
+  func cancelledRequest(kind: CancelledCatalog.Kind) async {
+    let search = CategorySearch(catalog: CancelledCatalog(kind: kind))
+
+    await search.search("leg")
 
     #expect(search.phase == .loading)
   }
