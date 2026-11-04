@@ -71,6 +71,11 @@
         "$value": "44px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : hauteur des boutons de l'accueil."
       },
+      "56": {
+        "$type": "dimension",
+        "$value": "56px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : hauteur des lignes du menu du compte."
+      },
       "300": {
         "$type": "dimension",
         "$value": "300px",

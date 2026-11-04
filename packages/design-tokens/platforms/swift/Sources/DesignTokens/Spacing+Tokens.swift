@@ -32,6 +32,8 @@ public enum Spacing {
     public static let x40: CGFloat = 40
     /// Hauteur des boutons d'action, relevée sur l'app iOS Twitch (44 pt), cible tactile minimale d'iOS.
     public static let x44: CGFloat = 44
+    /// Hauteur des lignes du menu du compte, relevée sur l'app iOS Twitch (56 pt, profil/menu-compte--defaut).
+    public static let x56: CGFloat = 56
     /// Largeur des modales de confirmation, relevée sur l'app iOS Twitch (300 pt).
     public static let x300: CGFloat = 300
 }

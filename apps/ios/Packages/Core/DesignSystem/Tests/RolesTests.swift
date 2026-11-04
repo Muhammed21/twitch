@@ -31,6 +31,15 @@ private let chatMeasures: [(LayoutRole, CGFloat)] = [
   (.composerRadius, 6),
 ]
 
+private let menuMeasures: [(LayoutRole, CGFloat)] = [
+  (.menuRowHeight, 56),
+  (.menuRowPadding, 16),
+  (.menuIconWidth, 20),
+  (.menuLabelGap, 20),
+  (.menuCardGap, 16),
+  (.menuCardRadius, 12),
+]
+
 @Suite("Rôles de texte, de mise en page et de bouton")
 struct RolesTests {
   @Test("les catégories et le slogan de l'accueil sont en largeTitle gras, les boutons en headline gras")
@@ -73,6 +82,16 @@ struct RolesTests {
   )
   func chatLayoutRoles(role: LayoutRole, points: CGFloat) {
     #expect(role.points == points)
+  }
+
+  @Test("les mesures du menu du compte relevées sur profil/menu-compte--defaut", arguments: menuMeasures)
+  func menuLayoutRoles(role: LayoutRole, points: CGFloat) {
+    #expect(role.points == points)
+  }
+
+  @Test("le nom du compte en tête du menu est en title2 gras")
+  func menuTextRoles() {
+    #expect(TextRole.title.font == Font.title2.weight(.bold))
   }
 
   @Test("un message du chat est en body régulier, son auteur en headline gras")

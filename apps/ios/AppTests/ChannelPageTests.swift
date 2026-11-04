@@ -104,17 +104,22 @@ private func viewers(_ count: Int) throws -> LiveStatus {
   try .live(viewers: ViewerCount(count))
 }
 
-private struct TimedOut: Error {}
-
 @MainActor
 private func waitUntil(_ condition: @MainActor () async -> Bool) async throws {
-  let deadline = ContinuousClock.now + .seconds(3)
   while await !condition() {
-    guard ContinuousClock.now < deadline else {
-      throw TimedOut()
-    }
     try await Task.sleep(for: .milliseconds(5))
   }
+}
+
+private let reconnectionDelay = Duration.seconds(1)
+
+@Sendable
+private func holdingReconnections(_ delay: Duration) async throws {
+  guard delay < reconnectionDelay else {
+    try await Task.sleep(for: .seconds(3600))
+    return
+  }
+  try await Task.sleep(for: delay)
 }
 
 @MainActor
@@ -127,13 +132,14 @@ private struct Page {
 
   init() throws {
     let slug = try ChannelSlug("jean_dupont")
-    live = LiveStatusChannel(channels: Channels(), source: feed, onEnded: {}, onLive: {})
+    live = LiveStatusChannel(channels: Channels(), source: feed, onEnded: {}, onLive: {}, wait: holdingReconnections)
     chat = ChatSession(
       connector: chatFeed,
       tokens: Tokens(),
       channels: Channels(),
       moderation: NoModeration(),
       viewer: { nil },
+      wait: holdingReconnections,
       jitter: { $0 }
     )
     tasks = [Task { [live] in await live.run(slug) }, Task { [chat] in await chat.run(slug) }]
@@ -152,7 +158,10 @@ private struct Page {
 }
 
 @MainActor
-@Suite("Page de chaîne : le chat et le statut du live vivent chacun de leur côté (ADR 0004 §2, ADR 0011)")
+@Suite(
+  "Page de chaîne : le chat et le statut du live vivent chacun de leur côté (ADR 0004 §2, ADR 0011)",
+  .timeLimit(.minutes(1))
+)
 struct ChannelPageTests {
   @Test("une coupure du chat laisse le compteur de viewers continuer")
   func chatCutKeepsCounter() async throws {

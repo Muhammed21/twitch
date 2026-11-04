@@ -10,7 +10,10 @@ import Navigation
 import Networking
 import Onboarding
 import Player
+import Profile
 import SwiftUI
+import UIKit
+import UniformTypeIdentifiers
 
 @main
 struct TwitchApp: App {
@@ -28,6 +31,7 @@ struct TwitchApp: App {
         .environment(stores.liveStatus)
         .environment(stores.presence)
         .environment(stores.chat)
+        .environment(stores.myChannel)
     }
   }
 }
@@ -113,6 +117,7 @@ struct RootView: View {
 
 struct SignedInRoot: View {
   @Environment(Router.self) private var router
+  @Environment(SessionStore.self) private var session
   @State private var isShowingAccount = false
 
   var body: some View {
@@ -134,7 +139,21 @@ struct SignedInRoot: View {
           }
         }
     }
-    .sheet(isPresented: $isShowingAccount) { SignedInScreen() }
+    .sheet(isPresented: $isShowingAccount) {
+      NavigationStack {
+        ProfileScreen(accountName: accountName) { slug in
+          isShowingAccount = false
+          router.push(.channel(slug))
+        } settings: {
+          SignedInScreen()
+        }
+      }
+    }
+  }
+
+  private var accountName: String? {
+    guard case let .signedIn(account) = session.phase else { return nil }
+    return account?.name
   }
 }
 
@@ -177,6 +196,7 @@ struct Stores {
   let liveStatus: LiveStatusChannel
   let presence: ChannelPresence
   let chat: ChatSession
+  let myChannel: MyChannelStore
 }
 
 @MainActor
@@ -216,10 +236,7 @@ enum Composition {
     let sessionStore = Self.sessionStore(configuration: configuration, session: session, transport: transport, now: now)
     return Stores(
       session: sessionStore,
-      launch: LaunchStore(
-        source: BootstrapClient(apiBaseURL: configuration.apiBaseURL, transport: transport),
-        currentVersion: currentVersion
-      ),
+      launch: LaunchStore(source: BootstrapClient(apiBaseURL: configuration.apiBaseURL, transport: transport), currentVersion: currentVersion),
       home: HomeStore(directory: LiveDirectoryClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
       router: Router(),
       player: player,
@@ -237,7 +254,26 @@ enum Composition {
         channels: channels,
         moderation: ModerationClient(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
         viewer: { sessionStore.accountID }
-      )
+      ),
+      myChannel: Self.myChannel(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, channels: channels)
+    )
+  }
+
+  private static func myChannel(
+    apiBaseURL: URL,
+    transport: ClientVersionTransport,
+    tokens: OAuthSession,
+    channels: ChannelClient
+  ) -> MyChannelStore {
+    MyChannelStore(
+      repository: MyChannelClient(apiBaseURL: apiBaseURL, transport: transport, tokens: tokens, now: { Date.now }),
+      channels: channels,
+      copy: { key in
+        UIPasteboard.general.setItems(
+          [[UTType.plainText.identifier: key]],
+          options: [.localOnly: true, .expirationDate: Date.now.addingTimeInterval(120)]
+        )
+      }
     )
   }
 

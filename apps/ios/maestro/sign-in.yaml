@@ -4,6 +4,8 @@ name: Connexion
 - runFlow: subflows/sign-in.yaml
 - tapOn:
     id: root.account
+- tapOn:
+    id: profile.settings
 - extendedWaitUntil:
     visible:
       id: account.logOut
