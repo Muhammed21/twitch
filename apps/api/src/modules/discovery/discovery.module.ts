@@ -15,7 +15,13 @@ import { startPeriodicJob } from "../../platform/periodic-job.ts";
 import { startStreamConsumer, type StreamConsumerRedis } from "../../platform/stream-consumer.ts";
 import { browseCategories, refreshCategoryAudience } from "./application/category-audience.ts";
 import { listCategoryLives } from "./application/category-reads.ts";
-import { type ListLives, listLives, withLiveViewerCounts } from "./application/list-lives.ts";
+import {
+  type ListLives,
+  listLives,
+  type ThumbnailUrlReader,
+  withLiveThumbnails,
+  withLiveViewerCounts,
+} from "./application/list-lives.ts";
 import { withLiveCategories } from "./application/live-categories.ts";
 import { createLiveStatusHub, type LiveStatusHub } from "./application/live-status-hub.ts";
 import { type ViewerCountReader, withViewerCounts } from "./application/live-status-viewers.ts";
@@ -84,14 +90,29 @@ type DiscoveryDependencies = {
   channelConsumerRedis: StreamConsumerRedis;
   streamConsumerRedis: StreamConsumerRedis;
   viewerCounts: ViewerCountReader;
+  thumbnailUrls: ThumbnailUrlReader;
   logSink: LogSink;
   images: Pick<ImageBrick, "imageUrlOf">;
 };
 
-const listedLives = ({ prisma, viewerCounts, logSink }: DiscoveryDependencies): ListLives =>
+const listedLives = ({
+  prisma,
+  viewerCounts,
+  thumbnailUrls,
+  logSink,
+}: DiscoveryDependencies): ListLives =>
   withLiveCategories({
     lives: withLiveViewerCounts({
-      lives: listLives(prismaLiveReader(prisma)),
+      lives: withLiveThumbnails({
+        lives: listLives(prismaLiveReader(prisma)),
+        thumbnailUrls,
+        onThumbnailFailure: (error) =>
+          writeLog(logSink, {
+            level: "error",
+            msg: "lecture des vignettes de la liste des lives en échec",
+            ...errorDetails(error),
+          }),
+      }),
       viewerCounts,
       onViewerCountFailure: (error) =>
         writeLog(logSink, {

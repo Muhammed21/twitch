@@ -24,6 +24,7 @@ public enum ColorRole: Equatable, Sendable {
   case border
   case avatarDefault
   case onAvatarDefault
+  case liveIndicator
   case mediaBackground
   case liveBadge
   case onLiveBadge
@@ -52,6 +53,7 @@ public enum ColorRole: Equatable, Sendable {
     case .border: .borderSubtle
     case .avatarDefault: .avatarDefault
     case .onAvatarDefault: .avatarOnDefault
+    case .liveIndicator: .indicatorLive
     case .mediaBackground: .mediaBackground
     case .liveBadge: .liveBadge
     case .onLiveBadge: .liveOnBadge

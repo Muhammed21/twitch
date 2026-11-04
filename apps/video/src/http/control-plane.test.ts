@@ -34,6 +34,7 @@ const startControlPlane = async ({
       blockingTimeoutMs: 0,
       liveSessionOf: async () => undefined,
       fallbackBandwidth: 1,
+      thumbnailOf: async () => ({ ok: false, error: "not_ready" }),
     },
   });
   onTestFinished(() => server.close());

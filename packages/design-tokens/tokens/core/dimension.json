@@ -71,6 +71,11 @@
         "$value": "24px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : avatar de l'onglet Profile (profil/menu-compte--defaut)."
       },
+      "32": {
+        "$type": "dimension",
+        "$value": "32px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : écart entre les onglets Categories et Live Channels de Browse (parcourir/liste-categories--defaut)."
+      },
       "40": {
         "$type": "dimension",
         "$value": "40px",

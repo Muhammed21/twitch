@@ -76,45 +76,48 @@ const deposit = async ({
   return prepared.value.uploadId;
 };
 
-describe("envoi d'une image, de la préparation à l'URL servie", () => {
-  it("sert en lecture anonyme un WebP 512 × 512, avec un cache d'un an, et efface le dépôt", async () => {
-    const userId = randomUUID();
-    const uploadId = await deposit({ userId, bytes: await makeJpeg(800, 600) });
+describe.skipIf(process.env.INTEGRATION_S3 !== "1")(
+  "envoi d'une image, de la préparation à l'URL servie",
+  () => {
+    it("sert en lecture anonyme un WebP 512 × 512, avec un cache d'un an, et efface le dépôt", async () => {
+      const userId = randomUUID();
+      const uploadId = await deposit({ userId, bytes: await makeJpeg(800, 600) });
 
-    const finalized = await brick.finalizeImage({ uploadId, purpose: "avatar", userId });
+      const finalized = await brick.finalizeImage({ uploadId, purpose: "avatar", userId });
 
-    expect(finalized.ok).toBe(true);
-    const { key, url } = finalized.ok ? finalized.value : { key: "", url: "" };
-    written.push(key);
-    const response = await fetch(url);
-    expect(response.status).toBe(200);
-    expect(response.headers.get("cache-control")).toBe("public, max-age=31536000, immutable");
-    const metadata = await sharp(new Uint8Array(await response.arrayBuffer())).metadata();
-    expect([metadata.format, metadata.width, metadata.height]).toEqual(["webp", 512, 512]);
-    expect(
-      await storage.read({ key: `incoming/${userId}/avatar/${uploadId}`, maxBytes: 1 }),
-    ).toEqual({ kind: "missing" });
-  });
-
-  it("refuse le dépôt d'un autre utilisateur", async () => {
-    const uploadId = await deposit({ userId: randomUUID(), bytes: await makeJpeg(300, 300) });
-
-    expect(
-      await brick.finalizeImage({ uploadId, purpose: "avatar", userId: randomUUID() }),
-    ).toEqual({ ok: false, error: "upload_not_found" });
-  });
-
-  it("refuse un dépôt dont les octets ne sont pas une image acceptée, et l'efface", async () => {
-    const userId = randomUUID();
-    const svg = new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg"/>');
-    const uploadId = await deposit({ userId, bytes: svg });
-
-    expect(await brick.finalizeImage({ uploadId, purpose: "avatar", userId })).toEqual({
-      ok: false,
-      error: "unsupported_type",
+      expect(finalized.ok).toBe(true);
+      const { key, url } = finalized.ok ? finalized.value : { key: "", url: "" };
+      written.push(key);
+      const response = await fetch(url);
+      expect(response.status).toBe(200);
+      expect(response.headers.get("cache-control")).toBe("public, max-age=31536000, immutable");
+      const metadata = await sharp(new Uint8Array(await response.arrayBuffer())).metadata();
+      expect([metadata.format, metadata.width, metadata.height]).toEqual(["webp", 512, 512]);
+      expect(
+        await storage.read({ key: `incoming/${userId}/avatar/${uploadId}`, maxBytes: 1 }),
+      ).toEqual({ kind: "missing" });
     });
-    expect(
-      await storage.read({ key: `incoming/${userId}/avatar/${uploadId}`, maxBytes: 1_000 }),
-    ).toEqual({ kind: "missing" });
-  });
-});
+
+    it("refuse le dépôt d'un autre utilisateur", async () => {
+      const uploadId = await deposit({ userId: randomUUID(), bytes: await makeJpeg(300, 300) });
+
+      expect(
+        await brick.finalizeImage({ uploadId, purpose: "avatar", userId: randomUUID() }),
+      ).toEqual({ ok: false, error: "upload_not_found" });
+    });
+
+    it("refuse un dépôt dont les octets ne sont pas une image acceptée, et l'efface", async () => {
+      const userId = randomUUID();
+      const svg = new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg"/>');
+      const uploadId = await deposit({ userId, bytes: svg });
+
+      expect(await brick.finalizeImage({ uploadId, purpose: "avatar", userId })).toEqual({
+        ok: false,
+        error: "unsupported_type",
+      });
+      expect(
+        await storage.read({ key: `incoming/${userId}/avatar/${uploadId}`, maxBytes: 1_000 }),
+      ).toEqual({ kind: "missing" });
+    });
+  },
+);
