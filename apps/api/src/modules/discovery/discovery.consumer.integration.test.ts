@@ -211,6 +211,7 @@ describe("projection LiveChannelView de discovery (ADR 0003, §6)", () => {
           slug,
           title: "Speedrun",
           titleChangedAt: expect.any(Date),
+          categoryId: null,
           liveSessionId: sessionId,
           liveStartedAt: startedAt,
           lastEndedAt: null,
