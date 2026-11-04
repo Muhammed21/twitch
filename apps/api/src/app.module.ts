@@ -1,7 +1,11 @@
 import { type DynamicModule, Module } from "@nestjs/common";
 
 import type { AuthzRedis } from "./authz/authz-context.ts";
-import { type ChannelPrisma, ChannelModule } from "./modules/channel/channel.module.ts";
+import {
+  type ChannelPrisma,
+  ChannelModule,
+  createOwnedChannelReader,
+} from "./modules/channel/channel.module.ts";
 import { DiscoveryModule, type DiscoveryPrisma } from "./modules/discovery/discovery.module.ts";
 import {
   createCurrentAccountReader,
@@ -64,7 +68,10 @@ export class AppModule {
       module: AppModule,
       imports: [
         PlatformModule.register(platform),
-        IdentityModule.register(identity),
+        IdentityModule.register({
+          ...identity,
+          ownedChannel: createOwnedChannelReader(channel.prisma),
+        }),
         ChannelModule.register({ ...channel, logSink: platform.logSink }),
         StreamModule.register({
           ...stream,

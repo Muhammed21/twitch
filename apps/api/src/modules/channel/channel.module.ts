@@ -28,6 +28,7 @@ import {
 import { identityEventHandlers } from "./presentation/identity-event-handlers.ts";
 
 export type { ChannelPrisma } from "./infrastructure/prisma-channel-registry.ts";
+export { prismaOwnedChannel as createOwnedChannelReader } from "./infrastructure/prisma-owned-channel.ts";
 
 const CHANNEL_DEPENDENCIES = Symbol("CHANNEL_DEPENDENCIES");
 

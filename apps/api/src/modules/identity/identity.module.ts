@@ -1,10 +1,11 @@
 import { type DynamicModule, Inject, Module, type OnModuleDestroy } from "@nestjs/common";
 
 import { getCurrentAccount } from "./application/get-current-account.ts";
+import { type FindOwnedChannel, readMe } from "./application/read-me.ts";
 import type { IdentityPrisma } from "./infrastructure/better-auth.ts";
 import { prismaAccountDirectory } from "./infrastructure/prisma-account-directory.ts";
 import type { IdentityRedis } from "./infrastructure/redis-session-revocation.ts";
-import { GET_CURRENT_ACCOUNT, MeController } from "./presentation/me.controller.ts";
+import { MeController, READ_ME } from "./presentation/me.controller.ts";
 export {
   createIdentityRedis,
   type IdentityRedis,
@@ -18,6 +19,8 @@ export {
   type IdentityAuth,
   type IdentityPrisma,
 } from "./infrastructure/better-auth.ts";
+
+export type { FindOwnedChannel, OwnedChannel } from "./application/read-me.ts";
 
 export const createCurrentAccountReader = (prisma: IdentityPrisma) =>
   getCurrentAccount(prismaAccountDirectory(prisma));
@@ -35,17 +38,19 @@ export class IdentityModule implements OnModuleDestroy {
   static register({
     prisma,
     redis,
+    ownedChannel,
   }: {
     prisma: IdentityPrisma;
     redis: IdentityRedis;
+    ownedChannel: FindOwnedChannel;
   }): DynamicModule {
     return {
       module: IdentityModule,
       controllers: [MeController],
       providers: [
         {
-          provide: GET_CURRENT_ACCOUNT,
-          useValue: createCurrentAccountReader(prisma),
+          provide: READ_ME,
+          useValue: readMe({ currentAccount: createCurrentAccountReader(prisma), ownedChannel }),
         },
         { provide: IDENTITY_PRISMA, useValue: prisma },
         { provide: IDENTITY_REDIS, useValue: redis },

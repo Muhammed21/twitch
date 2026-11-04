@@ -71,10 +71,18 @@ describe("Me", () => {
     });
   });
 
+  it("décode la chaîne du compte", () => {
+    const channel = { id: "9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69", slug: "viewer_de_test" };
+
+    expect(responses.Me.parse(makeMe({ channel }))).toEqual(makeMe({ channel }));
+  });
+
   it.each([
     ["un identifiant qui n'est pas un UUID", { id: "FWGDz5f2dSosyWpO6un25VBOMSsnkVjk" }],
     ["sans nom", { name: undefined }],
     ["sans e-mail", { email: undefined }],
+    ["une chaîne sans slug", { channel: { id: "9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69" } }],
+    ["une chaîne dont l'identifiant n'est pas un UUID", { channel: { id: "c1", slug: "viewer" } }],
   ])("refuse %s", (_name, overrides) => {
     expect(responses.Me.safeParse(makeMe(overrides)).success).toBe(false);
   });

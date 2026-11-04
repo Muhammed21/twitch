@@ -56,6 +56,18 @@ const seedPublicClient = async ({
   return clientId;
 };
 
+const seedChannel = async (ownerId: string) => {
+  const channel = { id: randomUUID(), slug: `viewer_${randomUUID().slice(0, 8)}` };
+  await asMigrator((client) =>
+    client.query(`INSERT INTO "channel"."Channel" ("id", "ownerId", "slug") VALUES ($1, $2, $3)`, [
+      channel.id,
+      ownerId,
+      channel.slug,
+    ]),
+  );
+  return channel;
+};
+
 const sessionCookieOf = async (base: string) => {
   const response = await fetch(`${base}/auth/sign-up/email`, {
     method: "POST",
@@ -838,6 +850,19 @@ describe("identity : caractérisation OAuth de l'ADR 0026, contre le vrai better
           name: "Viewer de test",
           email: expect.stringMatching(/^oauth-.+@twitch\.local$/),
         },
+      });
+    });
+  });
+
+  it("rend la chaîne du compte sur GET /v1/me", async () => {
+    await withApi(async (base) => {
+      const { tokens } = await signIn(base);
+      const { userId } = identityOf(tokens.access_token);
+      const channel = await seedChannel(userId);
+
+      expect(await me(base, tokens.access_token)).toMatchObject({
+        status: 200,
+        body: { id: userId, channel },
       });
     });
   });

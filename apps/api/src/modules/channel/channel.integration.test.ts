@@ -6,6 +6,7 @@ import { createContextClient } from "@repo/db";
 
 import { createAuthzRedis } from "../../authz/authz-context.ts";
 import { createChannelForAccount } from "./application/create-channel-for-account.ts";
+import { createOwnedChannelReader } from "./channel.module.ts";
 import { slugCandidates } from "./domain/channel-slug.ts";
 import { prismaChannelRegistry } from "./infrastructure/prisma-channel-registry.ts";
 import { redisOwnerAssignmentsCache } from "./infrastructure/redis-owner-assignments-cache.ts";
@@ -175,5 +176,22 @@ describe("chaîne créée à l'inscription (ADR 0003, ADR 0035)", () => {
 
     expect(await redis.exists(`authz:assign:${registration.accountId}`)).toBe(0);
     expect(await redis.get(`authz:gen:${registration.accountId}`)).toBe("1");
+  });
+});
+
+describe("chaîne d'un compte, pour GET /v1/me", () => {
+  it("rend l'identifiant et le slug de la chaîne du compte", async () => {
+    const registration = makeRegistration();
+    await handle(registration);
+    const [channel] = await channelsOf(registration.accountId);
+
+    expect(await createOwnedChannelReader(prisma)(registration.accountId)).toEqual({
+      id: channel?.id,
+      slug: channel?.slug,
+    });
+  });
+
+  it("ne rend rien pour un compte qui n'a pas encore de chaîne", async () => {
+    expect(await createOwnedChannelReader(prisma)(randomUUID())).toBeNull();
   });
 });
