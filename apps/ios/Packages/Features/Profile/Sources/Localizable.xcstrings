@@ -1,46 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "editStreamInfo.cancel" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cancel"
-          }
-        }
-      }
-    },
-    "editStreamInfo.done" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Done"
-          }
-        }
-      }
-    },
-    "editStreamInfo.navigationTitle" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edit Stream Info"
-          }
-        }
-      }
-    },
-    "editStreamInfo.remaining %lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld remaining"
-          }
-        }
-      }
-    },
     "obs.audioEncoder" : {
       "localizations" : {
         "en" : {
@@ -191,16 +151,6 @@
         }
       }
     },
-    "streamManager.edit" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edit"
-          }
-        }
-      }
-    },
     "streamManager.hide" : {
       "localizations" : {
         "en" : {
@@ -227,26 +177,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't load your stream key."
-          }
-        }
-      }
-    },
-    "streamManager.notice.titleFailed" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Couldn't update your stream info."
-          }
-        }
-      }
-    },
-    "streamManager.notice.titleSaved" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Stream info updated successfully."
           }
         }
       }
