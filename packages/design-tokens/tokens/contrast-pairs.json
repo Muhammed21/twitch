@@ -157,6 +157,12 @@
       "note": "SC 1.4.11 — glyphe de l'avatar par défaut"
     },
     {
+      "foreground": "color.chat.unread",
+      "background": "color.background.primary",
+      "min": 4.5,
+      "note": "Libellé « New » du séparateur des non lus, en body"
+    },
+    {
       "foreground": "color.live.onBadge",
       "background": "color.live.badge",
       "min": 4.5,
