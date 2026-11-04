@@ -20,7 +20,9 @@ jobs:
   ios:
     name: iOS
     runs-on: macos-15
-    timeout-minutes: 30
+    # Cache Mint froid (ios.yml ne tourne pas sur main, donc chaque PR part sans cache) : la
+    # compilation de SwiftLint prend 12 min et le job dure environ 32 min (run 41798220030).
+    timeout-minutes: 40
     defaults:
       run:
         working-directory: apps/ios
@@ -36,7 +38,8 @@ jobs:
         working-directory: .
         run: node packages/ios-imports/scripts/check.ts
 
-      - uses: actions/cache@v4
+      - id: mint-cache
+        uses: actions/cache/restore@v4
         with:
           path: ~/.mint
           key: mint-v1-${{ runner.os }}-${{ hashFiles('apps/ios/Mintfile') }}
@@ -45,6 +48,13 @@ jobs:
         run: |
           brew install mint
           mint bootstrap
+
+      # Sauvé tout de suite : un job annulé ou en échec plus loin ne sauverait rien.
+      - if: steps.mint-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.mint
+          key: ${{ steps.mint-cache.outputs.cache-primary-key }}
 
       - name: SwiftFormat
         run: mint run swiftformat --lint .
@@ -57,6 +67,9 @@ jobs:
 
       - name: Le contrôle du générateur refuse un schéma non pris en charge
         run: "! scripts/check-openapi-generator.sh scripts/fixtures/openapi-unsupported.json"
+
+      - name: Le lanceur Maestro de la CI ne relance que le pilote non prêt
+        run: maestro/check-ci-test.sh
 
       - name: Tests (Swift Testing)
         working-directory: apps/ios/Packages
@@ -130,27 +143,57 @@ jobs:
           set -a && . ./.env && set +a
           apps/ios/maestro/go-live.sh viewer_dev
 
+      # Modèle et iOS fixés : le premier iPhone de `simctl list` dépend des runtimes de l'image.
+      - name: Simulateur iPhone 16 Pro, iOS 18.5
+        run: |
+          runtime=com.apple.CoreSimulator.SimRuntime.iOS-18-5
+          simulator=$(xcrun simctl list devices available --json \
+            | jq -r --arg runtime "$runtime" '.devices[$runtime] // [] | map(select(.name == "iPhone 16 Pro"))[0].udid // empty')
+          if [ -z "$simulator" ]; then
+            echo "::error::Pas d'iPhone 16 Pro sur $runtime dans l'image du runner." >&2
+            xcrun simctl list runtimes >&2
+            exit 1
+          fi
+          echo "SIMULATOR=$simulator" >> "$GITHUB_ENV"
+          xcrun simctl boot "$simulator"
+
       - name: App sur le simulateur
         working-directory: apps/ios
         run: |
-          simulator=$(xcrun simctl list devices available --json \
-            | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | startswith("iPhone"))][0].udid')
-          echo "SIMULATOR=$simulator" >> "$GITHUB_ENV"
-          xcrun simctl boot "$simulator"
           xcodebuild build -skipPackagePluginValidation -project App.xcodeproj -scheme App \
-            -destination "id=$simulator" -derivedDataPath "$RUNNER_TEMP/dd" -quiet
-          xcrun simctl install "$simulator" "$RUNNER_TEMP/dd/Build/Products/Debug-iphonesimulator/Twitch.app"
+            -destination "id=$SIMULATOR" -derivedDataPath "$RUNNER_TEMP/dd" -quiet
+          xcrun simctl bootstatus "$SIMULATOR" -b
+          xcrun simctl install "$SIMULATOR" "$RUNNER_TEMP/dd/Build/Products/Debug-iphonesimulator/Twitch.app"
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.maestro/bin
+            ~/.maestro/lib
+          key: maestro-${{ runner.os }}-2.12.1
 
       - name: Maestro
         env:
-          # Le pilote XCTest de Maestro a dépassé son délai de démarrage par défaut sur le runner.
-          MAESTRO_DRIVER_STARTUP_TIMEOUT: "300000"
+          MAESTRO_VERSION: 2.12.1
+          # Un pilote qui démarre répond en moins de 40 s ; un pilote bloqué ne répond pas en 300 s.
+          # ci-test.sh relance alors Maestro sur un simulateur redémarré.
+          MAESTRO_DRIVER_STARTUP_TIMEOUT: "120000"
           MAESTRO_CLI_NO_ANALYTICS: "1"
         run: |
-          curl -fsSL https://get.maestro.mobile.dev -o "$RUNNER_TEMP/maestro-install.sh"
-          MAESTRO_VERSION=2.12.1 bash "$RUNNER_TEMP/maestro-install.sh"
-          "$HOME/.maestro/bin/maestro" --device "$SIMULATOR" test apps/ios/maestro/ \
+          # La clé du cache porte la version : un binaire présent est le bon.
+          if [ ! -x "$HOME/.maestro/bin/maestro" ]; then
+            curl -fsSL https://get.maestro.mobile.dev -o "$RUNNER_TEMP/maestro-install.sh"
+            bash "$RUNNER_TEMP/maestro-install.sh"
+          fi
+          apps/ios/maestro/ci-test.sh "$SIMULATOR" apps/ios/maestro/ \
             --format junit --output "$RUNNER_TEMP/maestro.xml"
+
+      - name: Journal du simulateur
+        if: failure()
+        run: |
+          xcrun simctl spawn "$SIMULATOR" log show --last 20m --style compact \
+            --predicate 'process == "testmanagerd" OR process BEGINSWITH "maestro-driver"' \
+            > "$RUNNER_TEMP/simulator.log" 2>&1 || true
 
       - if: failure()
         uses: actions/upload-artifact@v4
