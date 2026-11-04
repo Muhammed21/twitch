@@ -24,4 +24,8 @@ public extension Font {
     static let dialogMessage = Font.body.weight(.regular)
     /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : libellés de la barre d'onglets, hauteur de capitale 7 pt et « Home » large de 27 pt, soit 10 pt medium (profil/menu-compte--defaut). Text style iOS caption2 (11 pt), le plus proche, pour le Dynamic Type.
     static let tabLabel = Font.caption2.weight(.medium)
+    /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : libellé du badge LIVE, hauteur de capitale 10 pt, soit 14 pt semibold (parcourir/liste-chaines-live--defaut et --theme-sombre). Text style iOS subheadline (15 pt), le plus proche, pour le Dynamic Type.
+    static let liveBadge = Font.subheadline.weight(.semibold)
+    /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : nombre de viewers sur la miniature, hauteur de capitale 10,3 pt, soit 14 pt (parcourir/liste-chaines-live--defaut et --theme-sombre). Text style iOS subheadline (15 pt), le plus proche, pour le Dynamic Type.
+    static let viewerCount = Font.subheadline.weight(.regular)
 }
