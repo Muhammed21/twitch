@@ -39,6 +39,18 @@ model DiscoveryCategoryView {
   @@schema("discovery")
 }
 
+/// Audience d'une catégorie qui a au moins un live, recalculée toutes les 15 s par un job (ADR 0047). Reconstructible.
+model DiscoveryCategoryAudience {
+  /// Catégorie active, fusions suivies.
+  categoryId  String   @id @db.Uuid
+  liveCount   Int
+  viewerCount Int
+  refreshedAt DateTime
+
+  @@index([viewerCount(sort: Desc), liveCount(sort: Desc), categoryId])
+  @@schema("discovery")
+}
+
 model DiscoveryProcessedEvent {
   eventId     String   @db.Uuid
   handlerName String

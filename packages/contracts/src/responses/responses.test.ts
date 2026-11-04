@@ -321,6 +321,7 @@ describe("BrowseCategoryList", () => {
     slug: "just-chatting",
     name: "Just Chatting",
     liveCount: 3,
+    viewerCount: 40,
     ...overrides,
   });
 
@@ -335,8 +336,8 @@ describe("BrowseCategoryList", () => {
     expect(responses.BrowseCategoryList.parse(list)).toEqual(list);
   });
 
-  it("décode une catégorie dont le nombre de viewers n'a pas pu être lu", () => {
-    const list = { items: [makeBrowseCategory()] };
+  it("décode le curseur de la page suivante", () => {
+    const list = { items: [makeBrowseCategory()], nextCursor: "WzQwLDNd" };
 
     expect(responses.BrowseCategoryList.parse(list)).toEqual(list);
   });
@@ -345,6 +346,7 @@ describe("BrowseCategoryList", () => {
     ["sans live", { liveCount: 0 }],
     ["sans nom", { name: undefined }],
     ["avec un nombre de viewers négatif", { viewerCount: -1 }],
+    ["sans nombre de viewers", { viewerCount: undefined }],
     ["avec une pochette qui n'est pas une URL", { imageUrl: "jc.webp" }],
   ])("refuse une catégorie %s", (_name, overrides) => {
     expect(

@@ -11,8 +11,8 @@ const Position = z.tuple([
   Uuid,
 ]);
 
-export const encodeLiveCursor = ({ startedAt, channelId }: LivePosition): string =>
-  Buffer.from(JSON.stringify([startedAt.toISOString(), channelId])).toString("base64url");
+export const encodeCursor = (position: readonly unknown[]): string =>
+  Buffer.from(JSON.stringify(position)).toString("base64url");
 
 const decoded = (cursor: string): unknown => {
   try {
@@ -23,12 +23,23 @@ const decoded = (cursor: string): unknown => {
   }
 };
 
-export const LiveCursor = z.string().transform((cursor, context): LivePosition => {
-  const position = Position.safeParse(decoded(cursor));
-  if (!position.success) {
-    context.addIssue({ code: "custom", message: "Curseur illisible" });
-    return z.NEVER;
-  }
-  const [startedAt, channelId] = position.data;
-  return { startedAt: new Date(startedAt), channelId };
-});
+export const cursorOf = <Fields, Value>(
+  fields: z.ZodType<Fields>,
+  toValue: (fields: Fields) => Value,
+) =>
+  z.string().transform((cursor, context): Value => {
+    const position = fields.safeParse(decoded(cursor));
+    if (!position.success) {
+      context.addIssue({ code: "custom", message: "Curseur illisible" });
+      return z.NEVER;
+    }
+    return toValue(position.data);
+  });
+
+export const encodeLiveCursor = ({ startedAt, channelId }: LivePosition): string =>
+  encodeCursor([startedAt.toISOString(), channelId]);
+
+export const LiveCursor = cursorOf(Position, ([startedAt, channelId]): LivePosition => ({
+  startedAt: new Date(startedAt),
+  channelId,
+}));

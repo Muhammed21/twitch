@@ -9,6 +9,7 @@ import { createContextClient } from "@repo/db";
 
 import { createApp } from "../../create-app.ts";
 import { buildOpenApiDocument } from "../../openapi/build-document.ts";
+import { categoryAudienceRefresh } from "./discovery.module.ts";
 import { livePageQuery, prismaLiveReader } from "./infrastructure/prisma-live-reader.ts";
 import { encodeLiveCursor } from "./presentation/live-cursor.ts";
 
@@ -390,6 +391,83 @@ describe("lives d'une catégorie", () => {
       await cleanUp();
       await discovery.discoveryCategoryView.deleteMany({
         where: { categoryId: { in: [target.categoryId, source.categoryId] } },
+      });
+    }
+  });
+});
+
+type BrowsedItem = ReturnType<typeof responses.BrowseCategory.parse>;
+
+const browseAll = async (cursor?: string): Promise<readonly BrowsedItem[]> => {
+  const query = cursor === undefined ? "?limit=2" : `?limit=2&cursor=${cursor}`;
+  const response = await fetch(`${state.url}/v1/categories${query}`);
+  expect(response.status).toBe(200);
+  const { items, nextCursor } = responses.BrowseCategoryList.parse(await response.json());
+  return nextCursor === undefined ? items : [...items, ...(await browseAll(nextCursor))];
+};
+
+describe("catégories de Browse (ADR 0047)", () => {
+  it("classe l'audience calculée par lots, fusions suivies, même par deux calculs simultanés, et la pagine par curseur sans doublon", async () => {
+    const suffix = randomUUID().slice(0, 8);
+    const target = { categoryId: randomUUID(), slug: `cible-${suffix}`, name: "Cible" };
+    const other = { categoryId: randomUUID(), slug: `autre-${suffix}`, name: "Autre" };
+    const source = {
+      categoryId: randomUUID(),
+      slug: `source-${suffix}`,
+      name: "Source",
+      status: "merged" as const,
+      mergedIntoId: target.categoryId,
+    };
+    const retired = {
+      categoryId: randomUUID(),
+      slug: `retiree-${suffix}`,
+      name: "Retirée",
+      status: "retired" as const,
+    };
+    const categories = [target, other, source, retired];
+    await discovery.discoveryCategoryView.createMany({ data: categories });
+    await Promise.all(
+      [target, source, other, retired].map(async ({ categoryId }, index) => {
+        const live = await seedLiveView({ minute: 70 + index });
+        await discovery.discoveryLiveChannelView.update({
+          where: { channelId: live.channelId },
+          data: { categoryId },
+        });
+      }),
+    );
+    try {
+      const refresh = categoryAudienceRefresh({
+        prisma: discovery,
+        viewerCounts: async () => new Map(),
+        batchSize: 1,
+      });
+      await Promise.all([refresh(), refresh()]);
+
+      const browsed = await browseAll();
+      const slugs = browsed.map(({ slug }) => slug);
+
+      expect(browsed).toContainEqual({
+        slug: target.slug,
+        name: "Cible",
+        liveCount: 2,
+        viewerCount: 0,
+      });
+      expect(browsed).toContainEqual({
+        slug: other.slug,
+        name: "Autre",
+        liveCount: 1,
+        viewerCount: 0,
+      });
+      expect(slugs).not.toContain(source.slug);
+      expect(slugs).not.toContain(retired.slug);
+      expect(new Set(slugs).size).toBe(slugs.length);
+    } finally {
+      await cleanUp();
+      await discovery.discoveryCategoryAudience.deleteMany({
+        where: { categoryId: { in: categories.map(({ categoryId }) => categoryId) } },
+      });
+      await discovery.discoveryCategoryView.deleteMany({
+        where: { categoryId: { in: categories.map(({ categoryId }) => categoryId) } },
       });
     }
   });
