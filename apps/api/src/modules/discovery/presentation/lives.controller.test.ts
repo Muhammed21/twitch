@@ -4,7 +4,13 @@ import { describe, expect, it } from "vitest";
 import { rejectingVerifier } from "../../../platform/authentication.ts";
 import { configureApp } from "../../../platform/configure-app.ts";
 import { PlatformModule } from "../../../platform/platform.module.ts";
-import type { ListedLive, ListLives, LivesRequest } from "../application/list-lives.ts";
+import type {
+  ListedLive,
+  ListLives,
+  LivePosition,
+  LivesRequest,
+} from "../application/list-lives.ts";
+import { encodeLiveCursor } from "./live-cursor.ts";
 import { LIST_LIVES, LivesController } from "./lives.controller.ts";
 
 const CHANNEL_ID = "6f1c2d3e-4a5b-4c6d-8e7f-9a0b1c2d3e4f";
@@ -22,11 +28,12 @@ const makeLive = (overrides: Partial<ListedLive> = {}): ListedLive => ({
 const withLives = async (
   items: readonly ListedLive[],
   run: (base: string, requests: LivesRequest[]) => Promise<void>,
+  next?: LivePosition,
 ) => {
   const requests: LivesRequest[] = [];
   const listLives: ListLives = async (request) => {
     requests.push(request);
-    return { items, next: undefined };
+    return { items, next };
   };
   const moduleRef = await Test.createTestingModule({
     imports: [
@@ -69,5 +76,18 @@ describe("GET /v1/lives", () => {
       });
       expect(requests).toEqual([{ after: undefined, limit: 3 }]);
     });
+  });
+
+  it("rend le curseur de la page suivante", async () => {
+    const next = { startedAt: STARTED_AT, channelId: CHANNEL_ID };
+    await withLives(
+      [makeLive()],
+      async (base) => {
+        expect(await (await fetch(base)).json()).toMatchObject({
+          nextCursor: encodeLiveCursor(next),
+        });
+      },
+      next,
+    );
   });
 });
