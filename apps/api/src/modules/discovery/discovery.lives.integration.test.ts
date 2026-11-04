@@ -115,6 +115,9 @@ afterAll(async () => {
 const cleanUp = () =>
   discovery.discoveryLiveChannelView.deleteMany({ where: { channelId: { in: seeded } } });
 
+const coverUrl = (key: string) =>
+  `${(process.env.S3_PUBLIC_BASE_URL ?? "").replace(/\/$/, "")}/${key}`;
+
 describe("GET /v1/lives (jalon A3)", () => {
   it("liste les lives en cours dont le slug est connu, du plus récent au plus ancien, puis par chaîne", async () => {
     const latest = await seedLiveView({ minute: 30 });
@@ -159,11 +162,12 @@ describe("GET /v1/lives (jalon A3)", () => {
     }
   });
 
-  it("donne à un live la catégorie de sa chaîne", async () => {
+  it("donne à un live la catégorie de sa chaîne, avec sa pochette", async () => {
     const category = {
       categoryId: randomUUID(),
       slug: `cat-${randomUUID().slice(0, 8)}`,
       name: "Cat",
+      imageKey: "images/category/cat.webp",
     };
     await discovery.discoveryCategoryView.create({ data: category });
     const live = await seedLiveView({ minute: 90 });
@@ -173,7 +177,14 @@ describe("GET /v1/lives (jalon A3)", () => {
     });
     try {
       expect((await page("?limit=1")).items).toEqual([
-        { ...asListed(live), category: { slug: category.slug, name: "Cat" } },
+        {
+          ...asListed(live),
+          category: {
+            slug: category.slug,
+            name: "Cat",
+            imageUrl: coverUrl("images/category/cat.webp"),
+          },
+        },
       ]);
     } finally {
       await cleanUp();
@@ -409,7 +420,12 @@ const browseAll = async (cursor?: string): Promise<readonly BrowsedItem[]> => {
 describe("catégories de Browse (ADR 0047)", () => {
   it("classe l'audience calculée par lots, fusions suivies, même par deux calculs simultanés, et la pagine par curseur sans doublon", async () => {
     const suffix = randomUUID().slice(0, 8);
-    const target = { categoryId: randomUUID(), slug: `cible-${suffix}`, name: "Cible" };
+    const target = {
+      categoryId: randomUUID(),
+      slug: `cible-${suffix}`,
+      name: "Cible",
+      imageKey: "images/category/cible.webp",
+    };
     const other = { categoryId: randomUUID(), slug: `autre-${suffix}`, name: "Autre" };
     const source = {
       categoryId: randomUUID(),
@@ -449,6 +465,7 @@ describe("catégories de Browse (ADR 0047)", () => {
       expect(browsed).toContainEqual({
         slug: target.slug,
         name: "Cible",
+        imageUrl: coverUrl("images/category/cible.webp"),
         liveCount: 2,
         viewerCount: 0,
       });

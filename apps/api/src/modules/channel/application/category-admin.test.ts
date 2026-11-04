@@ -57,6 +57,7 @@ const memoryCatalog = ({
   const merges: CategoryMerge[] = [];
   const retirements: CategoryRetirement[] = [];
   const imageChanges: CategoryImageChange[] = [];
+  const steps: string[] = [];
   const byId = (id: string) => categories.find((category) => category.id === id);
   const catalog: CategoryCatalog = {
     findBySlug: async (slug) => categories.find((category) => category.slug === slug) ?? null,
@@ -99,10 +100,14 @@ const memoryCatalog = ({
         return err("category_inactive");
       }
       imageChanges.push(change);
-      return ok({ ...category, imageKey: change.imageKey });
+      steps.push(`enregistre ${change.imageKey}`);
+      return ok({
+        category: { ...category, imageKey: change.imageKey },
+        replacedImageKey: category.imageKey,
+      });
     },
   };
-  return { catalog, created, merges, retirements, imageChanges };
+  return { catalog, created, merges, retirements, imageChanges, steps };
 };
 
 const ASSIGNMENTS = { [ADMIN]: [onPlatform("admin")], [STAFF]: [onPlatform("staff")] };
@@ -355,12 +360,45 @@ const recordingFinalizer = (outcome: Awaited<ReturnType<FinalizeImage>>) => {
 
 const FINALIZED = ok({ key: IMAGE_KEY, url: `https://images.twitch.local/${IMAGE_KEY}` });
 
+const OLD_IMAGE_KEY = "images/category/1f2e3d4c-5b6a-4978-8a1b-2c3d4e5f6a7b.webp";
+
+const recordingDiscard = ({ steps = [], failure }: { steps?: string[]; failure?: Error } = {}) => {
+  const failures: { imageKey: string; error: unknown }[] = [];
+  return {
+    discardImage: async (key: string) => {
+      steps.push(`supprime ${key}`);
+      if (failure !== undefined) {
+        throw failure;
+      }
+    },
+    onDiscardFailure: (failure: { imageKey: string; error: unknown }) => {
+      failures.push(failure);
+    },
+    failures,
+  };
+};
+
+const imageChanger = (
+  catalog: CategoryCatalog,
+  finalizeImage: FinalizeImage,
+  discard: ReturnType<typeof recordingDiscard> = recordingDiscard(),
+) =>
+  changeCategoryImage({
+    ...dependencies(catalog),
+    finalizeImage,
+    discardImage: discard.discardImage,
+    onDiscardFailure: discard.onDiscardFailure,
+  });
+
 describe("pochette d'une catégorie", () => {
   it("relit l'envoi de l'admin pour une catégorie, puis pose la clé avec channel.category.updated", async () => {
     const { catalog, imageChanges } = memoryCatalog();
     const { finalizeImage, requests } = recordingFinalizer(FINALIZED);
 
-    const outcome = await changeCategoryImage({ ...dependencies(catalog), finalizeImage })({
+    const outcome = await imageChanger(
+      catalog,
+      finalizeImage,
+    )({
       actorId: ADMIN,
       slug: "just-chatting",
       uploadId: UPLOAD_ID,
@@ -391,7 +429,10 @@ describe("pochette d'une catégorie", () => {
     });
     const { finalizeImage, requests } = recordingFinalizer(FINALIZED);
 
-    const outcome = await changeCategoryImage({ ...dependencies(catalog), finalizeImage })({
+    const outcome = await imageChanger(
+      catalog,
+      finalizeImage,
+    )({
       actorId,
       slug,
       uploadId: UPLOAD_ID,
@@ -406,7 +447,10 @@ describe("pochette d'une catégorie", () => {
     const { catalog, imageChanges } = memoryCatalog();
     const { finalizeImage } = recordingFinalizer(err("too_small"));
 
-    const outcome = await changeCategoryImage({ ...dependencies(catalog), finalizeImage })({
+    const outcome = await imageChanger(
+      catalog,
+      finalizeImage,
+    )({
       actorId: ADMIN,
       slug: "just-chatting",
       uploadId: UPLOAD_ID,
@@ -414,5 +458,105 @@ describe("pochette d'une catégorie", () => {
 
     expect(outcome).toEqual(err("too_small"));
     expect(imageChanges).toEqual([]);
+  });
+
+  it("supprime l'ancienne pochette après l'enregistrement de la nouvelle (ADR 0044 §4)", async () => {
+    const { catalog, steps } = memoryCatalog({
+      categories: [makeCategory({ imageKey: OLD_IMAGE_KEY })],
+    });
+    const discard = recordingDiscard({ steps });
+
+    const outcome = await imageChanger(
+      catalog,
+      recordingFinalizer(FINALIZED).finalizeImage,
+      discard,
+    )({
+      actorId: ADMIN,
+      slug: "just-chatting",
+      uploadId: UPLOAD_ID,
+    });
+
+    expect(outcome).toEqual(ok(makeCategory({ imageKey: IMAGE_KEY })));
+    expect(steps).toEqual([`enregistre ${IMAGE_KEY}`, `supprime ${OLD_IMAGE_KEY}`]);
+    expect(discard.failures).toEqual([]);
+  });
+
+  it("ne supprime rien quand la catégorie n'avait pas de pochette", async () => {
+    const { catalog, steps } = memoryCatalog();
+
+    await imageChanger(
+      catalog,
+      recordingFinalizer(FINALIZED).finalizeImage,
+      recordingDiscard({ steps }),
+    )({
+      actorId: ADMIN,
+      slug: "just-chatting",
+      uploadId: UPLOAD_ID,
+    });
+
+    expect(steps).toEqual([`enregistre ${IMAGE_KEY}`]);
+  });
+
+  it("rend la pochette enregistrée et signale l'ancienne quand sa suppression échoue", async () => {
+    const { catalog } = memoryCatalog({
+      categories: [makeCategory({ imageKey: OLD_IMAGE_KEY })],
+    });
+    const error = new Error("S3 indisponible");
+    const discard = recordingDiscard({ failure: error });
+
+    const outcome = await imageChanger(
+      catalog,
+      recordingFinalizer(FINALIZED).finalizeImage,
+      discard,
+    )({
+      actorId: ADMIN,
+      slug: "just-chatting",
+      uploadId: UPLOAD_ID,
+    });
+
+    expect(outcome).toEqual(ok(makeCategory({ imageKey: IMAGE_KEY })));
+    expect(discard.failures).toEqual([{ imageKey: OLD_IMAGE_KEY, error }]);
+  });
+
+  it("ne supprime pas l'ancienne pochette quand la nouvelle est refusée", async () => {
+    const { catalog, steps } = memoryCatalog({
+      categories: [makeCategory({ imageKey: OLD_IMAGE_KEY })],
+    });
+
+    await imageChanger(
+      catalog,
+      recordingFinalizer(err("too_small")).finalizeImage,
+      recordingDiscard({ steps }),
+    )({
+      actorId: ADMIN,
+      slug: "just-chatting",
+      uploadId: UPLOAD_ID,
+    });
+
+    expect(steps).toEqual([]);
+  });
+
+  it("rend le refus d'une catégorie retirée entre-temps, sans rien supprimer", async () => {
+    const { catalog } = memoryCatalog({
+      categories: [makeCategory({ imageKey: OLD_IMAGE_KEY })],
+    });
+    const steps: string[] = [];
+    const retiredMeanwhile: CategoryCatalog = {
+      ...catalog,
+      changeImage: async () => err("category_inactive"),
+    };
+
+    const outcome = await imageChanger(
+      retiredMeanwhile,
+      recordingFinalizer(FINALIZED).finalizeImage,
+      recordingDiscard({ steps }),
+    )({
+      actorId: ADMIN,
+      slug: "just-chatting",
+      uploadId: UPLOAD_ID,
+    });
+
+    expect(outcome).toEqual(err("category_inactive"));
+    expect(steps).toEqual([]);
   });
 });

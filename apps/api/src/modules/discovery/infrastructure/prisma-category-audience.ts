@@ -46,6 +46,7 @@ const BrowsedRows = z.array(
     categoryId: z.string(),
     slug: z.string(),
     name: z.string(),
+    imageKey: z.string().nullable(),
     liveCount: z.number(),
     viewerCount: z.number(),
   }),
@@ -61,7 +62,8 @@ export const audiencePageQuery = ({
   after: AudiencePosition | undefined;
   take: number;
 }): { text: string; values: readonly unknown[] } => ({
-  text: `SELECT a."categoryId"::text AS "categoryId", v."slug", v."name", a."liveCount", a."viewerCount"
+  text: `SELECT a."categoryId"::text AS "categoryId", v."slug", v."name", v."imageKey",
+                a."liveCount", a."viewerCount"
            FROM "discovery"."DiscoveryCategoryAudience" a
            JOIN "discovery"."DiscoveryCategoryView" v ON v."categoryId" = a."categoryId"
           WHERE v."status" = 'active' AND v."slug" IS NOT NULL ${after === undefined ? "" : SEEK}

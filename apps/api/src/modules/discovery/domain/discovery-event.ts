@@ -7,6 +7,7 @@ const CATEGORY_KINDS: ReadonlySet<DiscoveryEvent["kind"]> = new Set([
   "category-created",
   "category-merged",
   "category-retired",
+  "category-updated",
 ]);
 
 export const isCategoryEvent = (event: DiscoveryEvent): event is CategoryEvent =>

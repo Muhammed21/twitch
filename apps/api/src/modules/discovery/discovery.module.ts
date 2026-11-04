@@ -9,6 +9,7 @@ import {
 } from "@nestjs/common";
 import type { Pool } from "pg";
 
+import type { ImageBrick } from "../../platform/images/images.module.ts";
 import { errorDetails, type LogSink, writeLog } from "../../platform/logging.ts";
 import { startPeriodicJob } from "../../platform/periodic-job.ts";
 import { startStreamConsumer, type StreamConsumerRedis } from "../../platform/stream-consumer.ts";
@@ -42,6 +43,7 @@ import {
   CategoriesController,
   LIST_CATEGORY_LIVES,
 } from "./presentation/categories.controller.ts";
+import { CATEGORY_IMAGE_URL } from "./presentation/category-image-url.ts";
 import { discoveryEventHandlers } from "./presentation/discovery-event-handlers.ts";
 import {
   LIVE_STATUS_HEARTBEAT_MS,
@@ -82,6 +84,7 @@ type DiscoveryDependencies = {
   streamConsumerRedis: StreamConsumerRedis;
   viewerCounts: ViewerCountReader;
   logSink: LogSink;
+  images: Pick<ImageBrick, "imageUrlOf">;
 };
 
 const listedLives = ({ prisma, viewerCounts, logSink }: DiscoveryDependencies): ListLives =>
@@ -157,6 +160,7 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
           provide: BROWSE_CATEGORIES,
           useValue: browseCategories(prismaCategoryAudienceReader(dependencies.prisma)),
         },
+        { provide: CATEGORY_IMAGE_URL, useValue: dependencies.images.imageUrlOf },
       ],
     };
   }

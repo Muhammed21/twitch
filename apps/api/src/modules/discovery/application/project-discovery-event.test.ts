@@ -28,6 +28,7 @@ const ACTIVE_CATEGORY: CategoryView = {
   name: "IRL",
   status: "active",
   mergedIntoId: null,
+  imageKey: null,
 };
 
 const inMemoryProjections = () => {
@@ -78,6 +79,29 @@ describe("projection d'un event de discovery", () => {
         eventId: EVENT_ID,
         categoryId: CATEGORY_ID,
         result: { ...ACTIVE_CATEGORY, status: "retired" },
+      },
+    ]);
+    expect(channelUpdates).toEqual([]);
+  });
+
+  it("met à jour la pochette de la catégorie, pas la vue d'une chaîne", async () => {
+    const { project, channelUpdates, categoryUpdates } = inMemoryProjections();
+
+    await project({
+      eventId: EVENT_ID,
+      event: {
+        kind: "category-updated",
+        categoryId: CATEGORY_ID,
+        name: "IRL",
+        imageKey: "images/category/irl.webp",
+      },
+    });
+
+    expect(categoryUpdates).toEqual([
+      {
+        eventId: EVENT_ID,
+        categoryId: CATEGORY_ID,
+        result: { ...ACTIVE_CATEGORY, imageKey: "images/category/irl.webp" },
       },
     ]);
     expect(channelUpdates).toEqual([]);

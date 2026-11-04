@@ -17,6 +17,7 @@ const makeView = (overrides: Partial<CategoryView> = {}): CategoryView => ({
   name: "Just Chatting",
   status: "active",
   mergedIntoId: null,
+  imageKey: null,
   ...overrides,
 });
 
@@ -34,6 +35,13 @@ const mergedInto = (targetCategoryId: string): CategoryEvent => ({
 });
 
 const retired: CategoryEvent = { kind: "category-retired", categoryId: SOURCE };
+
+const updated: CategoryEvent = {
+  kind: "category-updated",
+  categoryId: SOURCE,
+  name: "Discussion",
+  imageKey: "images/category/jc.webp",
+};
 
 const viewsOf = (...views: readonly CategoryView[]): ReadonlyMap<string, CategoryView> =>
   new Map(views.map((view) => [view.categoryId, view]));
@@ -53,6 +61,31 @@ describe("vue d'une catégorie dans discovery", () => {
     expect(applyCategoryEvent(makeView(), retired)).toEqual(makeView({ status: "retired" }));
   });
 
+  it("prend le nom et la pochette d'une catégorie mise à jour", () => {
+    expect(applyCategoryEvent(makeView(), updated)).toEqual(
+      makeView({ name: "Discussion", imageKey: "images/category/jc.webp" }),
+    );
+  });
+
+  it("retire la pochette quand la mise à jour n'en porte plus", () => {
+    expect(
+      applyCategoryEvent(makeView({ imageKey: "images/category/jc.webp" }), {
+        kind: "category-updated",
+        categoryId: SOURCE,
+        name: "Just Chatting",
+        imageKey: null,
+      }),
+    ).toEqual(makeView());
+  });
+
+  it("garde la pochette d'une mise à jour arrivée avant la création", () => {
+    const early = applyCategoryEvent(null, updated);
+
+    expect(applyCategoryEvent(early, created)).toEqual(
+      makeView({ imageKey: "images/category/jc.webp" }),
+    );
+  });
+
   it.each([
     ["une fusion", mergedInto(TARGET), { status: "merged", mergedIntoId: TARGET }],
     ["un retrait", retired, { status: "retired" }],
@@ -70,6 +103,7 @@ describe("résolution d'une catégorie dans discovery", () => {
       categoryId: SOURCE,
       slug: "just-chatting",
       name: "Just Chatting",
+      imageKey: null,
     });
   });
 
@@ -77,13 +111,19 @@ describe("résolution d'une catégorie dans discovery", () => {
     const views = viewsOf(
       makeView({ status: "merged", mergedIntoId: TARGET }),
       makeView({ categoryId: TARGET, slug: "irl", status: "merged", mergedIntoId: FINAL }),
-      makeView({ categoryId: FINAL, slug: "talk", name: "Talk" }),
+      makeView({
+        categoryId: FINAL,
+        slug: "talk",
+        name: "Talk",
+        imageKey: "images/category/talk.webp",
+      }),
     );
 
     expect(resolveCategory(views, SOURCE)).toEqual({
       categoryId: FINAL,
       slug: "talk",
       name: "Talk",
+      imageKey: "images/category/talk.webp",
     });
   });
 
