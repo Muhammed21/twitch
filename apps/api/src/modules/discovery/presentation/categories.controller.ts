@@ -6,27 +6,45 @@ import { responses } from "@repo/contracts";
 
 import { responseDto } from "../../../openapi/response-dto.ts";
 import { ProblemException } from "../../../platform/problem.ts";
-import type { BrowseCategories, ListCategoryLives } from "../application/category-reads.ts";
+import type { BrowseCategories } from "../application/category-audience.ts";
+import type { ListCategoryLives } from "../application/category-reads.ts";
+import { AudienceCursor, encodeAudienceCursor } from "./category-cursor.ts";
 import { LivePage, LivesQuerySchema, toLivePage } from "./live-page-response.ts";
 
-export const BROWSE_CATEGORIES = Symbol("BROWSE_CATEGORIES");
 export const LIST_CATEGORY_LIVES = Symbol("LIST_CATEGORY_LIVES");
+export const BROWSE_CATEGORIES = Symbol("BROWSE_CATEGORIES");
 
 class LivesQuery extends createZodDto(LivesQuerySchema) {}
+
+class BrowseQuery extends createZodDto(
+  LivesQuerySchema.extend({ cursor: AudienceCursor.optional() }),
+) {}
 
 class BrowseCategoryList extends responseDto(responses.BrowseCategoryList) {}
 
 @Controller("categories")
 export class CategoriesController {
   constructor(
-    @Inject(BROWSE_CATEGORIES) private readonly browseCategories: BrowseCategories,
     @Inject(LIST_CATEGORY_LIVES) private readonly listCategoryLives: ListCategoryLives,
+    @Inject(BROWSE_CATEGORIES) private readonly browseCategories: BrowseCategories,
   ) {}
 
   @Get()
   @ZodResponse({ status: 200, type: BrowseCategoryList })
-  async browse(): Promise<z.input<typeof responses.BrowseCategoryList>> {
-    return { items: [...(await this.browseCategories())] };
+  async browse(@Query() query: BrowseQuery): Promise<z.input<typeof responses.BrowseCategoryList>> {
+    const { items, next } = await this.browseCategories({
+      after: query.cursor,
+      limit: query.limit,
+    });
+    return {
+      items: items.map(({ slug, name, liveCount, viewerCount }) => ({
+        slug,
+        name,
+        liveCount,
+        viewerCount,
+      })),
+      ...(next === undefined ? {} : { nextCursor: encodeAudienceCursor(next) }),
+    };
   }
 
   @Get(":slug/lives")

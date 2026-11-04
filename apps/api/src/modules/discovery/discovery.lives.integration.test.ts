@@ -9,7 +9,8 @@ import { createContextClient } from "@repo/db";
 
 import { createApp } from "../../create-app.ts";
 import { buildOpenApiDocument } from "../../openapi/build-document.ts";
-import { livePageQuery } from "./infrastructure/prisma-live-reader.ts";
+import { categoryAudienceRefresh } from "./discovery.module.ts";
+import { livePageQuery, prismaLiveReader } from "./infrastructure/prisma-live-reader.ts";
 import { encodeLiveCursor } from "./presentation/live-cursor.ts";
 
 const urlOf = (variable: string): string => {
@@ -152,6 +153,52 @@ describe("GET /v1/lives (jalon A3)", () => {
       expect((await page("?limit=2")).items).toEqual([
         { ...asListed(watched), viewerCount: 2 },
         { ...asListed(unwatched), viewerCount: 0 },
+      ]);
+    } finally {
+      await cleanUp();
+    }
+  });
+
+  it("donne à un live la catégorie de sa chaîne", async () => {
+    const category = {
+      categoryId: randomUUID(),
+      slug: `cat-${randomUUID().slice(0, 8)}`,
+      name: "Cat",
+    };
+    await discovery.discoveryCategoryView.create({ data: category });
+    const live = await seedLiveView({ minute: 90 });
+    await discovery.discoveryLiveChannelView.update({
+      where: { channelId: live.channelId },
+      data: { categoryId: category.categoryId },
+    });
+    try {
+      expect((await page("?limit=1")).items).toEqual([
+        { ...asListed(live), category: { slug: category.slug, name: "Cat" } },
+      ]);
+    } finally {
+      await cleanUp();
+      await discovery.discoveryCategoryView.delete({ where: { categoryId: category.categoryId } });
+    }
+  });
+
+  it("filtre une page par catégorie, avec et sans curseur", async () => {
+    const categoryId = randomUUID();
+    const first = await seedLiveView({ minute: 80 });
+    await seedLiveView({ minute: 79 });
+    const last = await seedLiveView({ minute: 78 });
+    await discovery.discoveryLiveChannelView.updateMany({
+      where: { channelId: { in: [first.channelId, last.channelId] } },
+      data: { categoryId },
+    });
+    const reader = prismaLiveReader(discovery);
+    const channelsOf = async (after: { startedAt: Date; channelId: string } | undefined) =>
+      (await reader.page({ after, take: 10, categoryIds: [categoryId] })).map(
+        ({ channelId }) => channelId,
+      );
+    try {
+      expect(await channelsOf(undefined)).toEqual([first.channelId, last.channelId]);
+      expect(await channelsOf({ startedAt: inTheFuture(80), channelId: first.channelId })).toEqual([
+        last.channelId,
       ]);
     } finally {
       await cleanUp();
@@ -309,8 +356,8 @@ describe("GET /v1/lives (jalon A3)", () => {
   });
 });
 
-describe("lectures des catégories de Browse", () => {
-  it("regroupe sous la cible les lives d'une catégorie fusionnée, et les liste par l'un ou l'autre slug", async () => {
+describe("lives d'une catégorie", () => {
+  it("liste les lives d'une catégorie fusionnée avec ceux de sa cible, par l'un ou l'autre slug", async () => {
     const suffix = randomUUID().slice(0, 8);
     const target = { categoryId: randomUUID(), slug: `cible-${suffix}`, name: `Cible ${suffix}` };
     const source = {
@@ -333,11 +380,6 @@ describe("lectures des catégories de Browse", () => {
     });
     const category = { slug: target.slug, name: target.name };
     try {
-      const browse = await fetch(`${state.url}/v1/categories`);
-      const { items } = responses.BrowseCategoryList.parse(await browse.json());
-
-      expect(items).toContainEqual({ ...category, liveCount: 2, viewerCount: 0 });
-      expect(items.map(({ slug }) => slug)).not.toContain(source.slug);
       for (const slug of [target.slug, source.slug]) {
         const response = await fetch(`${state.url}/v1/categories/${slug}/lives`);
         expect(responses.LivePage.parse(await response.json()).items).toEqual(
@@ -349,6 +391,82 @@ describe("lectures des catégories de Browse", () => {
       await cleanUp();
       await discovery.discoveryCategoryView.deleteMany({
         where: { categoryId: { in: [target.categoryId, source.categoryId] } },
+      });
+    }
+  });
+});
+
+type BrowsedItem = ReturnType<typeof responses.BrowseCategory.parse>;
+
+const browseAll = async (cursor?: string): Promise<readonly BrowsedItem[]> => {
+  const query = cursor === undefined ? "?limit=2" : `?limit=2&cursor=${cursor}`;
+  const response = await fetch(`${state.url}/v1/categories${query}`);
+  expect(response.status).toBe(200);
+  const { items, nextCursor } = responses.BrowseCategoryList.parse(await response.json());
+  return nextCursor === undefined ? items : [...items, ...(await browseAll(nextCursor))];
+};
+
+describe("catégories de Browse (ADR 0047)", () => {
+  it("classe l'audience calculée par lots, fusions suivies, et la pagine par curseur sans doublon", async () => {
+    const suffix = randomUUID().slice(0, 8);
+    const target = { categoryId: randomUUID(), slug: `cible-${suffix}`, name: "Cible" };
+    const other = { categoryId: randomUUID(), slug: `autre-${suffix}`, name: "Autre" };
+    const source = {
+      categoryId: randomUUID(),
+      slug: `source-${suffix}`,
+      name: "Source",
+      status: "merged" as const,
+      mergedIntoId: target.categoryId,
+    };
+    const retired = {
+      categoryId: randomUUID(),
+      slug: `retiree-${suffix}`,
+      name: "Retirée",
+      status: "retired" as const,
+    };
+    const categories = [target, other, source, retired];
+    await discovery.discoveryCategoryView.createMany({ data: categories });
+    await Promise.all(
+      [target, source, other, retired].map(async ({ categoryId }, index) => {
+        const live = await seedLiveView({ minute: 70 + index });
+        await discovery.discoveryLiveChannelView.update({
+          where: { channelId: live.channelId },
+          data: { categoryId },
+        });
+      }),
+    );
+    try {
+      await categoryAudienceRefresh({
+        prisma: discovery,
+        viewerCounts: async () => new Map(),
+        batchSize: 1,
+      })();
+
+      const browsed = await browseAll();
+      const slugs = browsed.map(({ slug }) => slug);
+
+      expect(browsed).toContainEqual({
+        slug: target.slug,
+        name: "Cible",
+        liveCount: 2,
+        viewerCount: 0,
+      });
+      expect(browsed).toContainEqual({
+        slug: other.slug,
+        name: "Autre",
+        liveCount: 1,
+        viewerCount: 0,
+      });
+      expect(slugs).not.toContain(source.slug);
+      expect(slugs).not.toContain(retired.slug);
+      expect(new Set(slugs).size).toBe(slugs.length);
+    } finally {
+      await cleanUp();
+      await discovery.discoveryCategoryAudience.deleteMany({
+        where: { categoryId: { in: categories.map(({ categoryId }) => categoryId) } },
+      });
+      await discovery.discoveryCategoryView.deleteMany({
+        where: { categoryId: { in: categories.map(({ categoryId }) => categoryId) } },
       });
     }
   });

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { CategoryViewReader, LiveCategory } from "../application/category-reads.ts";
+import type { CategoryViewReader } from "../application/category-reads.ts";
 import type { LivePosition, LiveReader } from "../application/list-lives.ts";
 import type { CategoryView } from "../domain/category-view.ts";
 import type { DiscoveryPrisma } from "./prisma-live-channel-projection.ts";
@@ -14,8 +14,6 @@ const LiveRows = z.array(
     categoryId: z.string().nullable(),
   }),
 );
-
-const LiveCategoryRows = z.array(z.object({ channelId: z.string(), categoryId: z.string() }));
 
 const LIVE = `"liveSessionId" IS NOT NULL AND "liveStartedAt" IS NOT NULL AND "slug" IS NOT NULL`;
 
@@ -53,19 +51,70 @@ export const prismaLiveReader = (prisma: DiscoveryPrisma): LiveReader => ({
   },
 });
 
-export const prismaLiveCategories =
-  (prisma: DiscoveryPrisma) => async (): Promise<readonly LiveCategory[]> =>
-    LiveCategoryRows.parse(
-      await prisma.$queryRawUnsafe(
-        `SELECT "channelId"::text AS "channelId", "categoryId"::text AS "categoryId"
-           FROM "discovery"."DiscoveryLiveChannelView"
-          WHERE ${LIVE} AND "categoryId" IS NOT NULL`,
-      ),
-    );
+const MAX_MERGE_HOPS = 16;
+const MAX_MERGED_SOURCES = 200;
+
+type Views = ReadonlyMap<string, CategoryView>;
+
+const withRows = (views: Views, rows: readonly CategoryView[]): Views =>
+  new Map([...views, ...rows.map((row): [string, CategoryView] => [row.categoryId, row])]);
+
+const followTargets = async (
+  prisma: DiscoveryPrisma,
+  frontier: readonly string[],
+  views: Views,
+  hops = 0,
+): Promise<Views> => {
+  const missing = frontier.filter((id) => !views.has(id));
+  if (missing.length === 0 || hops > MAX_MERGE_HOPS) {
+    return views;
+  }
+  const rows: readonly CategoryView[] = await prisma.discoveryCategoryView.findMany({
+    where: { categoryId: { in: [...missing] } },
+    take: missing.length,
+  });
+  return followTargets(
+    prisma,
+    rows.flatMap(({ mergedIntoId }) => (mergedIntoId === null ? [] : [mergedIntoId])),
+    withRows(views, rows),
+    hops + 1,
+  );
+};
+
+const followSources = async (
+  prisma: DiscoveryPrisma,
+  frontier: readonly string[],
+  views: Views,
+  hops = 0,
+): Promise<Views> => {
+  if (frontier.length === 0 || hops > MAX_MERGE_HOPS) {
+    return views;
+  }
+  const rows: readonly CategoryView[] = await prisma.discoveryCategoryView.findMany({
+    where: { mergedIntoId: { in: [...frontier] } },
+    take: MAX_MERGED_SOURCES,
+  });
+  const unseen = rows.filter(({ categoryId }) => !views.has(categoryId));
+  return followSources(
+    prisma,
+    unseen.map(({ categoryId }) => categoryId),
+    withRows(views, unseen),
+    hops + 1,
+  );
+};
 
 export const prismaCategoryViewReader = (prisma: DiscoveryPrisma): CategoryViewReader => ({
-  all: async () => {
-    const rows: readonly CategoryView[] = await prisma.discoveryCategoryView.findMany();
-    return new Map(rows.map((row) => [row.categoryId, row]));
+  withMergeTargets: (categoryIds) => followTargets(prisma, categoryIds, new Map()),
+  aroundSlug: async (slug) => {
+    const named: readonly CategoryView[] = await prisma.discoveryCategoryView.findMany({
+      where: { slug },
+      take: 1,
+    });
+    const targets = await followTargets(
+      prisma,
+      named.map(({ categoryId }) => categoryId),
+      new Map(),
+    );
+    return followSources(prisma, [...targets.keys()], targets);
   },
 });
