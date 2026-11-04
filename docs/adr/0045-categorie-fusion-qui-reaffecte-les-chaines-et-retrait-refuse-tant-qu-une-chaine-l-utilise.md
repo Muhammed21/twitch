@@ -83,7 +83,7 @@ En dev, le seed crée un client OAuth d'administration autorisé à demander `ad
 
 ### 5. Catégorie d'une chaîne
 
-Le propriétaire, ou un éditeur, pose la catégorie par `PATCH /v1/channels/{id}` avec `categoryId` (UUID d'une catégorie `active`, ou `null` pour la retirer). `channel.metadata.updated` porte alors l'état complet des métadonnées : `{ channelId, title, categoryId }`. Le champ s'ajoute à la version 1 sans la casser, car le payload d'un event est un `looseObject` qui garde un champ inconnu. Le catalogue des catégories actives, que l'app lit pour proposer un choix, est servi par `channel` sur `GET /v1/categories/catalog`. Il se filtre par nom pour l'écran de recherche de catégorie (`docs/reference-ui/creer/recherche-categorie--resultats-clavier-ouvert.png`).
+Le propriétaire, ou un éditeur, pose la catégorie par `PATCH /v1/channels/{id}` avec `category` : `{ "id": "<UUID d'une catégorie active>" }` la pose, `{}` la retire. Le choix est un objet plutôt qu'un `categoryId` nullable, parce que le générateur Swift ne lit pas un schéma `null` (ADR 0024). `channel.metadata.updated` porte alors l'état complet des métadonnées : `{ channelId, title, categoryId }`. Le champ s'ajoute à la version 1 sans la casser, car le payload d'un event est un `looseObject` qui garde un champ inconnu. Le catalogue des catégories actives, que l'app lit pour proposer un choix, est servi par `channel` sur `GET /v1/categories/catalog`. Il se filtre par nom pour l'écran de recherche de catégorie (`docs/reference-ui/creer/recherche-categorie--resultats-clavier-ouvert.png`).
 
 ### 6. Pochette
 
