@@ -155,6 +155,55 @@ struct MyChannelStoreTests {
     #expect(store.notice == .keyUnavailable)
   }
 
+  @Test("change le titre de la chaîne et le confirme")
+  func renames() async throws {
+    let repository = try FakeMyChannel(owned: .success(makeOwnedChannel()))
+    let store = makeStore(repository)
+    await store.load()
+
+    let saved = await store.rename(to: "Any% en 2 h")
+
+    #expect(saved)
+    #expect(await repository.renames == [RenameCall(channel: channelID, title: "Any% en 2 h")])
+    #expect(store.title == "Any% en 2 h")
+    #expect(store.notice == .titleSaved)
+  }
+
+  @Test("refuse un titre de plus de 140 caractères sans l'envoyer")
+  func refusesLongTitle() async throws {
+    let repository = try FakeMyChannel(owned: .success(makeOwnedChannel()))
+    let store = makeStore(repository)
+    await store.load()
+
+    let saved = await store.rename(to: String(repeating: "a", count: 141))
+
+    #expect(!saved)
+    #expect(await repository.renames.isEmpty)
+    #expect(store.title == "Speedrun du dimanche")
+  }
+
+  @Test("garde l'ancien titre et le dit quand le serveur refuse")
+  func renameRefused() async throws {
+    let store = try makeStore(FakeMyChannel(owned: .success(makeOwnedChannel()), renamed: .failure(Refused())))
+    await store.load()
+
+    let saved = await store.rename(to: "Nouveau titre")
+
+    #expect(!saved)
+    #expect(store.title == "Speedrun du dimanche")
+    #expect(store.notice == .titleFailed)
+  }
+
+  @Test("compte les caractères restants du titre en graphèmes, sans les espaces retirés par l'API", arguments: [
+    ("", 140),
+    ("Fun Gaming Session", 122),
+    ("café 👨‍👩‍👧", 134),
+    (" \n" + String(repeating: "a", count: 140) + " ", 0),
+  ])
+  func remaining(draft: String, expected: Int) {
+    #expect(MyChannelStore.remaining(in: draft) == expected)
+  }
+
   @Test("journalise la clé refusée par son statut, sans le problème du serveur qui la cite")
   func logsRefusalByStatus() async throws {
     let log = LogBook()
@@ -167,6 +216,18 @@ struct MyChannelStoreTests {
     #expect(log.entries == ["my channel: stream key not read (status 403)"])
   }
 
+  @Test("journalise le titre refusé par son statut")
+  func logsRenameRefusalByStatus() async throws {
+    let log = LogBook()
+    let problem = ServiceProblem(type: "about:blank", title: "Refus", status: 422, detail: "titre refusé")
+    let store = try makeStore(FakeMyChannel(owned: .success(makeOwnedChannel()), renamed: .failure(problem)), log: log)
+    await store.load()
+
+    _ = await store.rename(to: "Nouveau titre")
+
+    #expect(log.entries == ["my channel: title not saved (status 422)"])
+  }
+
   @Test("la clé n'apparaît dans aucun log, sur aucun chemin")
   func keyNeverLogged() async throws {
     let log = LogBook()
@@ -176,11 +237,12 @@ struct MyChannelStoreTests {
     shown.copyKey()
     shown.hideKey()
     let refused = try makeStore(
-      FakeMyChannel(owned: .success(makeOwnedChannel()), key: .failure(Refused())),
+      FakeMyChannel(owned: .success(makeOwnedChannel()), key: .failure(Refused()), renamed: .failure(Refused())),
       log: log
     )
     await refused.load()
     await refused.revealKey()
+    _ = await refused.rename(to: "Nouveau titre")
     let unreachable = makeStore(FakeMyChannel(owned: .failure(Refused())), log: log)
     await unreachable.load()
 

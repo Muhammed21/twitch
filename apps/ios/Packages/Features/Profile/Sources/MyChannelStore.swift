@@ -16,7 +16,11 @@ public final class MyChannelStore {
   public enum Notice: Equatable, Sendable {
     case keyCopied
     case keyUnavailable
+    case titleSaved
+    case titleFailed
   }
+
+  public static let maxTitleLength = 140
 
   public private(set) var phase: Phase = .loading
   public private(set) var title = ""
@@ -40,6 +44,10 @@ public final class MyChannelStore {
     self.channels = channels
     self.copy = copy
     self.log = log
+  }
+
+  public static func remaining(in draft: String) -> Int {
+    maxTitleLength - draft.trimmingCharacters(in: .whitespacesAndNewlines).count
   }
 
   public func load() async {
@@ -93,6 +101,21 @@ public final class MyChannelStore {
     }
     copy(streamKey.revealed)
     notice = .keyCopied
+  }
+
+  public func rename(to draft: String) async -> Bool {
+    guard case let .ready(owned) = phase, Self.remaining(in: draft) >= 0 else {
+      return false
+    }
+    do {
+      title = try await repository.rename(owned.id, to: draft).title
+      notice = .titleSaved
+      return true
+    } catch {
+      log("my channel: title not saved (\(Self.kind(of: error)))")
+      notice = .titleFailed
+      return false
+    }
   }
 
   private static func kind(of error: any Error) -> String {

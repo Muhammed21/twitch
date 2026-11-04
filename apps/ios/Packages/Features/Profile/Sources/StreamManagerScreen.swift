@@ -4,6 +4,7 @@ import SwiftUI
 
 struct StreamManagerScreen: View {
   @Environment(MyChannelStore.self) private var store
+  @State private var isEditingTitle = false
 
   var body: some View {
     ScrollView {
@@ -33,6 +34,7 @@ struct StreamManagerScreen: View {
     .navigationTitle(Text(ProfileText.streamManager))
     .navigationBarTitleDisplayMode(.inline)
     .onDisappear { store.leave() }
+    .sheet(isPresented: $isEditingTitle) { EditStreamInfoSheet(initialTitle: store.title) }
   }
 
   private var titleCard: some View {
@@ -41,6 +43,8 @@ struct StreamManagerScreen: View {
         Text(store.title)
           .accessibilityIdentifier("streamManager.channelTitle")
         Spacer(minLength: 0)
+        Button(ProfileText.edit) { isEditingTitle = true }
+          .accessibilityIdentifier("streamManager.editTitle")
       }
     }
   }
@@ -106,5 +110,69 @@ struct StreamManagerScreen: View {
     Text(text)
       .font(TextRole.body.font)
       .foregroundStyle(ColorRole.textSecondary.color)
+  }
+}
+
+struct EditStreamInfoSheet: View {
+  @Environment(MyChannelStore.self) private var store
+  @Environment(\.dismiss) private var dismiss
+  @State private var draft: String
+  @State private var isSaving = false
+  @State private var saveFailed = false
+
+  init(initialTitle: String) {
+    _draft = State(initialValue: initialTitle)
+  }
+
+  var body: some View {
+    NavigationStack {
+      VStack(alignment: .leading, spacing: LayoutRole.chatInset.points) {
+        HStack {
+          Text(ProfileText.title)
+            .font(TextRole.display.font)
+            .foregroundStyle(ColorRole.textPrimary.color)
+          Spacer(minLength: 0)
+          Text(ProfileText.remaining(MyChannelStore.remaining(in: draft)))
+            .font(TextRole.body.font)
+            .foregroundStyle(ColorRole.textSecondary.color)
+        }
+        TextField(text: $draft) { Text(ProfileText.title) }
+          .padding(LayoutRole.composerPadding.points)
+          .background(ColorRole.surfaceSecondary.color, in: RoundedRectangle(cornerRadius: LayoutRole.composerRadius.points))
+          .accessibilityIdentifier("editStreamInfo.title")
+        if saveFailed {
+          Text(ProfileText.notice(.titleFailed))
+            .font(TextRole.body.font)
+            .foregroundStyle(ColorRole.textSecondary.color)
+            .accessibilityIdentifier("editStreamInfo.notice")
+        }
+        Spacer(minLength: 0)
+      }
+      .padding(LayoutRole.screenInset.points)
+      .background(ColorRole.background.color.ignoresSafeArea())
+      .navigationTitle(Text(ProfileText.editStreamInfo))
+      .navigationBarTitleDisplayMode(.inline)
+      .toolbar {
+        ToolbarItem(placement: .cancellationAction) {
+          Button(ProfileText.cancel) { dismiss() }
+        }
+        ToolbarItem(placement: .confirmationAction) {
+          Button(ProfileText.done) { save() }
+            .disabled(isSaving || MyChannelStore.remaining(in: draft) < 0)
+            .accessibilityIdentifier("editStreamInfo.done")
+        }
+      }
+    }
+  }
+
+  private func save() {
+    isSaving = true
+    saveFailed = false
+    Task {
+      let saved = await store.rename(to: draft)
+      saveFailed = !saved
+      isSaving = false
+      if saved { dismiss() }
+    }
   }
 }
