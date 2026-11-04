@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { CategoryViewReader, LiveCategory } from "../application/category-reads.ts";
+import type { CategoryViewReader } from "../application/category-reads.ts";
 import type { LivePosition, LiveReader } from "../application/list-lives.ts";
 import type { CategoryView } from "../domain/category-view.ts";
 import type { DiscoveryPrisma } from "./prisma-live-channel-projection.ts";
@@ -14,8 +14,6 @@ const LiveRows = z.array(
     categoryId: z.string().nullable(),
   }),
 );
-
-const LiveCategoryRows = z.array(z.object({ channelId: z.string(), categoryId: z.string() }));
 
 const LIVE = `"liveSessionId" IS NOT NULL AND "liveStartedAt" IS NOT NULL AND "slug" IS NOT NULL`;
 
@@ -52,16 +50,6 @@ export const prismaLiveReader = (prisma: DiscoveryPrisma): LiveReader => ({
     return LiveRows.parse(await prisma.$queryRawUnsafe(text, ...values));
   },
 });
-
-export const prismaLiveCategories =
-  (prisma: DiscoveryPrisma) => async (): Promise<readonly LiveCategory[]> =>
-    LiveCategoryRows.parse(
-      await prisma.$queryRawUnsafe(
-        `SELECT "channelId"::text AS "channelId", "categoryId"::text AS "categoryId"
-           FROM "discovery"."DiscoveryLiveChannelView"
-          WHERE ${LIVE} AND "categoryId" IS NOT NULL`,
-      ),
-    );
 
 const MAX_MERGE_HOPS = 16;
 const MAX_MERGED_SOURCES = 200;

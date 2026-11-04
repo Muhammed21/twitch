@@ -355,8 +355,8 @@ describe("GET /v1/lives (jalon A3)", () => {
   });
 });
 
-describe("lectures des catégories de Browse", () => {
-  it("regroupe sous la cible les lives d'une catégorie fusionnée, et les liste par l'un ou l'autre slug", async () => {
+describe("lives d'une catégorie", () => {
+  it("liste les lives d'une catégorie fusionnée avec ceux de sa cible, par l'un ou l'autre slug", async () => {
     const suffix = randomUUID().slice(0, 8);
     const target = { categoryId: randomUUID(), slug: `cible-${suffix}`, name: `Cible ${suffix}` };
     const source = {
@@ -379,11 +379,6 @@ describe("lectures des catégories de Browse", () => {
     });
     const category = { slug: target.slug, name: target.name };
     try {
-      const browse = await fetch(`${state.url}/v1/categories`);
-      const { items } = responses.BrowseCategoryList.parse(await browse.json());
-
-      expect(items).toContainEqual({ ...category, liveCount: 2, viewerCount: 0 });
-      expect(items.map(({ slug }) => slug)).not.toContain(source.slug);
       for (const slug of [target.slug, source.slug]) {
         const response = await fetch(`${state.url}/v1/categories/${slug}/lives`);
         expect(responses.LivePage.parse(await response.json()).items).toEqual(

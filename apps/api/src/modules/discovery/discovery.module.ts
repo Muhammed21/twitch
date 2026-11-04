@@ -12,7 +12,7 @@ import type { Pool } from "pg";
 import { errorDetails, type LogSink, writeLog } from "../../platform/logging.ts";
 import { startPeriodicJob } from "../../platform/periodic-job.ts";
 import { startStreamConsumer, type StreamConsumerRedis } from "../../platform/stream-consumer.ts";
-import { browseCategories, listCategoryLives } from "./application/category-reads.ts";
+import { listCategoryLives } from "./application/category-reads.ts";
 import { type ListLives, listLives, withLiveViewerCounts } from "./application/list-lives.ts";
 import { withLiveCategories } from "./application/live-categories.ts";
 import { createLiveStatusHub, type LiveStatusHub } from "./application/live-status-hub.ts";
@@ -29,17 +29,9 @@ import {
   prismaLiveChannelProjection,
   prismaLiveChannelStore,
 } from "./infrastructure/prisma-live-channel-projection.ts";
-import {
-  prismaCategoryViewReader,
-  prismaLiveCategories,
-  prismaLiveReader,
-} from "./infrastructure/prisma-live-reader.ts";
+import { prismaCategoryViewReader, prismaLiveReader } from "./infrastructure/prisma-live-reader.ts";
 import { prismaLiveStatusReader } from "./infrastructure/prisma-live-status-reader.ts";
-import {
-  BROWSE_CATEGORIES,
-  CategoriesController,
-  LIST_CATEGORY_LIVES,
-} from "./presentation/categories.controller.ts";
+import { CategoriesController, LIST_CATEGORY_LIVES } from "./presentation/categories.controller.ts";
 import { discoveryEventHandlers } from "./presentation/discovery-event-handlers.ts";
 import {
   LIVE_STATUS_HEARTBEAT_MS,
@@ -132,20 +124,6 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
           useValue: listCategoryLives({
             categories: prismaCategoryViewReader(dependencies.prisma),
             lives: listedLives(dependencies),
-          }),
-        },
-        {
-          provide: BROWSE_CATEGORIES,
-          useValue: browseCategories({
-            liveCategories: prismaLiveCategories(dependencies.prisma),
-            categories: prismaCategoryViewReader(dependencies.prisma),
-            viewerCounts: dependencies.viewerCounts,
-            onViewerCountFailure: (error) =>
-              writeLog(dependencies.logSink, {
-                level: "error",
-                msg: "lecture du nombre de viewers des catégories en échec",
-                ...errorDetails(error),
-              }),
           }),
         },
       ],

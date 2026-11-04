@@ -5,13 +5,9 @@ import { buildOpenApiDocument } from "../../../openapi/build-document.ts";
 import { rejectingVerifier } from "../../../platform/authentication.ts";
 import { configureApp } from "../../../platform/configure-app.ts";
 import { PlatformModule } from "../../../platform/platform.module.ts";
-import type { BrowsedCategory, ListCategoryLives } from "../application/category-reads.ts";
+import type { ListCategoryLives } from "../application/category-reads.ts";
 import type { ListedLive, LivesPage } from "../application/list-lives.ts";
-import {
-  BROWSE_CATEGORIES,
-  CategoriesController,
-  LIST_CATEGORY_LIVES,
-} from "./categories.controller.ts";
+import { CategoriesController, LIST_CATEGORY_LIVES } from "./categories.controller.ts";
 import { encodeLiveCursor } from "./live-cursor.ts";
 
 const CHANNEL_ID = "6f1c2d3e-4a5b-4c6d-8e7f-9a0b1c2d3e4f";
@@ -36,11 +32,9 @@ type Calls = { categoryLives: Parameters<ListCategoryLives>[0][] };
 
 const withControllers = async (
   {
-    browsed = [],
     categoryPage = { items: [], next: undefined },
     found = true,
   }: {
-    browsed?: readonly BrowsedCategory[];
     categoryPage?: LivesPage;
     found?: boolean;
   },
@@ -60,10 +54,7 @@ const withControllers = async (
       }),
     ],
     controllers: [CategoriesController],
-    providers: [
-      { provide: BROWSE_CATEGORIES, useValue: async () => browsed },
-      { provide: LIST_CATEGORY_LIVES, useValue: listCategoryLives },
-    ],
+    providers: [{ provide: LIST_CATEGORY_LIVES, useValue: listCategoryLives }],
   }).compile();
   const app = configureApp(moduleRef.createNestApplication({ logger: false }));
   await app.listen(0, "127.0.0.1");
@@ -73,32 +64,6 @@ const withControllers = async (
     await app.close();
   }
 };
-
-describe("GET /v1/categories", () => {
-  it("rend les catégories en live, sans jeton, sans viewers quand ils manquent", async () => {
-    const browsed = [
-      { slug: "irl", name: "IRL", liveCount: 2, viewerCount: 70 },
-      { slug: "art", name: "Art", liveCount: 1 },
-    ];
-    await withControllers({ browsed }, async (base) => {
-      const response = await fetch(`${base}/categories`);
-
-      expect(response.status).toBe(200);
-      expect(await response.json()).toEqual({ items: browsed });
-    });
-  });
-
-  it("figure dans l'OpenAPI avec BrowseCategoryList", async () => {
-    await withControllers({}, async (_base, _calls, document) => {
-      expect(JSON.stringify(document())).toContain(
-        '"/v1/categories":{"get":{"operationId":"CategoriesController_browse"',
-      );
-      expect(JSON.stringify(document())).toContain(
-        '"$ref":"#/components/schemas/BrowseCategoryList"',
-      );
-    });
-  });
-});
 
 describe("GET /v1/categories/{slug}/lives", () => {
   it("rend les lives de la catégorie avec leur catégorie, et le curseur suivant", async () => {
