@@ -25,9 +25,26 @@ export type CategoryCreation = {
   readonly occurredAt: Date;
 };
 
+export type CategoryMerge = {
+  readonly sourceId: string;
+  readonly targetId: string;
+  readonly outboxEventId: string;
+  readonly occurredAt: Date;
+};
+
+export type CategoryRetirement = {
+  readonly categoryId: string;
+  readonly outboxEventId: string;
+  readonly occurredAt: Date;
+};
+
 export interface CategoryCatalog {
   findBySlug(slug: string): Promise<CategoryView | null>;
   create(creation: CategoryCreation): Promise<Result<CategoryView, "slug_taken">>;
+  merge(merge: CategoryMerge): Promise<Result<CategoryView, "invalid_merge">>;
+  retire(
+    retirement: CategoryRetirement,
+  ): Promise<Result<CategoryView, "category_inactive" | "category_in_use">>;
 }
 
 type Dependencies = {
@@ -71,4 +88,61 @@ export const createCategory =
       outboxEventId: newId(),
       occurredAt: now(),
     });
+  };
+
+export type CategoryMergeError = "forbidden" | "category_not_found" | "invalid_merge";
+
+export const mergeCategory =
+  ({ catalog, authz, newId, now }: Dependencies) =>
+  async ({
+    actorId,
+    sourceSlug,
+    targetSlug,
+  }: {
+    actorId: string;
+    sourceSlug: string;
+    targetSlug: string;
+  }): Promise<Result<CategoryView, CategoryMergeError>> => {
+    if (!(await isAdmin(authz, actorId))) {
+      return err("forbidden");
+    }
+    const source = await catalog.findBySlug(sourceSlug);
+    const target = await catalog.findBySlug(targetSlug);
+    if (source === null || target === null) {
+      return err("category_not_found");
+    }
+    if (source.id === target.id) {
+      return err("invalid_merge");
+    }
+    return catalog.merge({
+      sourceId: source.id,
+      targetId: target.id,
+      outboxEventId: newId(),
+      occurredAt: now(),
+    });
+  };
+
+export type CategoryRetirementError =
+  | "forbidden"
+  | "category_not_found"
+  | "category_inactive"
+  | "category_in_use";
+
+export const retireCategory =
+  ({ catalog, authz, newId, now }: Dependencies) =>
+  async ({
+    actorId,
+    slug,
+  }: {
+    actorId: string;
+    slug: string;
+  }): Promise<Result<CategoryView, CategoryRetirementError>> => {
+    if (!(await isAdmin(authz, actorId))) {
+      return err("forbidden");
+    }
+    const category = await catalog.findBySlug(slug);
+    if (category === null) {
+      return err("category_not_found");
+    }
+    return catalog.retire({ categoryId: category.id, outboxEventId: newId(), occurredAt: now() });
   };

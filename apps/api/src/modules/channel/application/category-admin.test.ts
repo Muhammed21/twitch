@@ -6,8 +6,12 @@ import { err, ok } from "@repo/result";
 import {
   type CategoryCatalog,
   type CategoryCreation,
+  type CategoryMerge,
+  type CategoryRetirement,
   type CategoryView,
   createCategory,
+  mergeCategory,
+  retireCategory,
 } from "./category-admin.ts";
 
 const NOW = new Date("2026-11-04T12:00:00.000Z");
@@ -40,10 +44,15 @@ const VALORANT = makeCategory({
 
 const memoryCatalog = ({
   categories = [makeCategory(), VALORANT],
+  channelsIn = {},
 }: {
   categories?: readonly CategoryView[];
+  channelsIn?: Readonly<Record<string, number>>;
 } = {}) => {
   const created: CategoryCreation[] = [];
+  const merges: CategoryMerge[] = [];
+  const retirements: CategoryRetirement[] = [];
+  const byId = (id: string) => categories.find((category) => category.id === id);
   const catalog: CategoryCatalog = {
     findBySlug: async (slug) => categories.find((category) => category.slug === slug) ?? null,
     create: async (creation) => {
@@ -58,8 +67,28 @@ const memoryCatalog = ({
         status: "active",
       });
     },
+    merge: async (merge) => {
+      const source = byId(merge.sourceId);
+      const target = byId(merge.targetId);
+      if (source?.status !== "active" || target?.status !== "active") {
+        return err("invalid_merge");
+      }
+      merges.push(merge);
+      return ok(target);
+    },
+    retire: async (retirement) => {
+      const category = byId(retirement.categoryId);
+      if (category?.status !== "active") {
+        return err("category_inactive");
+      }
+      if ((channelsIn[category.id] ?? 0) > 0) {
+        return err("category_in_use");
+      }
+      retirements.push(retirement);
+      return ok({ ...category, status: "retired" });
+    },
   };
-  return { catalog, created };
+  return { catalog, created, merges, retirements };
 };
 
 const ASSIGNMENTS = { [ADMIN]: [onPlatform("admin")], [STAFF]: [onPlatform("staff")] };
@@ -149,5 +178,145 @@ describe("création d'une catégorie", () => {
     });
 
     expect(outcome).toEqual({ ok: false, error: "forbidden" });
+  });
+});
+
+describe("fusion d'une catégorie dans une autre", () => {
+  it("fusionne la source dans la cible pour un admin, et rend la cible", async () => {
+    const { catalog, merges } = memoryCatalog();
+
+    const outcome = await mergeCategory(dependencies(catalog))({
+      actorId: ADMIN,
+      sourceSlug: "just-chatting",
+      targetSlug: "valorant",
+    });
+
+    expect(outcome).toEqual({ ok: true, value: VALORANT });
+    expect(merges).toEqual([
+      {
+        sourceId: makeCategory().id,
+        targetId: VALORANT.id,
+        outboxEventId: NEW_ID,
+        occurredAt: NOW,
+      },
+    ]);
+  });
+
+  it("est refusée à un compte sans le rôle admin", async () => {
+    const { catalog, merges } = memoryCatalog();
+
+    const outcome = await mergeCategory(dependencies(catalog))({
+      actorId: STAFF,
+      sourceSlug: "just-chatting",
+      targetSlug: "valorant",
+    });
+
+    expect(outcome).toEqual({ ok: false, error: "forbidden" });
+    expect(merges).toEqual([]);
+  });
+
+  it.each([
+    ["une source inconnue", { sourceSlug: "inconnue", targetSlug: "valorant" }],
+    ["une cible inconnue", { sourceSlug: "just-chatting", targetSlug: "inconnue" }],
+  ])("dit que la catégorie n'existe pas pour %s", async (_name, request) => {
+    const { catalog, merges } = memoryCatalog();
+
+    const outcome = await mergeCategory(dependencies(catalog))({ actorId: ADMIN, ...request });
+
+    expect(outcome).toEqual({ ok: false, error: "category_not_found" });
+    expect(merges).toEqual([]);
+  });
+
+  it("refuse la fusion d'une catégorie dans elle-même", async () => {
+    const { catalog, merges } = memoryCatalog();
+
+    const outcome = await mergeCategory(dependencies(catalog))({
+      actorId: ADMIN,
+      sourceSlug: "valorant",
+      targetSlug: "valorant",
+    });
+
+    expect(outcome).toEqual({ ok: false, error: "invalid_merge" });
+    expect(merges).toEqual([]);
+  });
+
+  it.each([
+    ["depuis une catégorie fusionnée", "merged", "active"],
+    ["vers une catégorie retirée", "active", "retired"],
+  ] as const)("refuse la fusion %s", async (_name, sourceStatus, targetStatus) => {
+    const { catalog, merges } = memoryCatalog({
+      categories: [makeCategory({ status: sourceStatus }), { ...VALORANT, status: targetStatus }],
+    });
+
+    const outcome = await mergeCategory(dependencies(catalog))({
+      actorId: ADMIN,
+      sourceSlug: "just-chatting",
+      targetSlug: "valorant",
+    });
+
+    expect(outcome).toEqual({ ok: false, error: "invalid_merge" });
+    expect(merges).toEqual([]);
+  });
+});
+
+describe("retrait d'une catégorie", () => {
+  it("retire une catégorie inutilisée pour un admin", async () => {
+    const { catalog, retirements } = memoryCatalog();
+
+    const outcome = await retireCategory(dependencies(catalog))({
+      actorId: ADMIN,
+      slug: "valorant",
+    });
+
+    expect(outcome).toEqual({ ok: true, value: { ...VALORANT, status: "retired" } });
+    expect(retirements).toEqual([
+      { categoryId: VALORANT.id, outboxEventId: NEW_ID, occurredAt: NOW },
+    ]);
+  });
+
+  it("refuse le retrait d'une catégorie qu'une chaîne utilise encore", async () => {
+    const { catalog, retirements } = memoryCatalog({ channelsIn: { [VALORANT.id]: 1 } });
+
+    const outcome = await retireCategory(dependencies(catalog))({
+      actorId: ADMIN,
+      slug: "valorant",
+    });
+
+    expect(outcome).toEqual({ ok: false, error: "category_in_use" });
+    expect(retirements).toEqual([]);
+  });
+
+  it("refuse le retrait d'une catégorie déjà fusionnée", async () => {
+    const { catalog } = memoryCatalog({ categories: [{ ...VALORANT, status: "merged" }] });
+
+    const outcome = await retireCategory(dependencies(catalog))({
+      actorId: ADMIN,
+      slug: "valorant",
+    });
+
+    expect(outcome).toEqual({ ok: false, error: "category_inactive" });
+  });
+
+  it("dit qu'une catégorie inconnue n'existe pas", async () => {
+    const { catalog } = memoryCatalog();
+
+    const outcome = await retireCategory(dependencies(catalog))({
+      actorId: ADMIN,
+      slug: "inconnue",
+    });
+
+    expect(outcome).toEqual({ ok: false, error: "category_not_found" });
+  });
+
+  it("est refusé à un compte sans le rôle admin", async () => {
+    const { catalog, retirements } = memoryCatalog();
+
+    const outcome = await retireCategory(dependencies(catalog))({
+      actorId: VIEWER,
+      slug: "valorant",
+    });
+
+    expect(outcome).toEqual({ ok: false, error: "forbidden" });
+    expect(retirements).toEqual([]);
   });
 });
