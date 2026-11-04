@@ -10,6 +10,7 @@ public enum TextRole: Sendable {
   case body
   case chatMessage
   case chatAuthor
+  case title
 
   public var font: Font {
     switch self {
@@ -21,6 +22,7 @@ public enum TextRole: Sendable {
     case .body: .bodyText
     case .chatMessage: .supportingText
     case .chatAuthor: .actionLabel
+    case .title: .titleText
     }
   }
 }
@@ -46,6 +48,12 @@ public enum LayoutRole: Sendable {
   case composerHeight
   case composerPadding
   case composerRadius
+  case menuRowHeight
+  case menuRowPadding
+  case menuIconWidth
+  case menuLabelGap
+  case menuCardGap
+  case menuCardRadius
 
   public var points: CGFloat {
     switch self {
@@ -69,6 +77,12 @@ public enum LayoutRole: Sendable {
     case .composerHeight: Spacing.x40
     case .composerPadding: Spacing.x12
     case .composerRadius: Radius.lg
+    case .menuRowHeight: Spacing.x56
+    case .menuRowPadding: Spacing.x16
+    case .menuIconWidth: Spacing.x20
+    case .menuLabelGap: Spacing.x20
+    case .menuCardGap: Spacing.x16
+    case .menuCardRadius: Radius.xxl
     }
   }
 }

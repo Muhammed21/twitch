@@ -70,6 +70,11 @@
       "$value": "{core.dimension.44}",
       "$description": "Hauteur des boutons d'action, relevée sur l'app iOS Twitch (44 pt), cible tactile minimale d'iOS."
     },
+    "x56": {
+      "$type": "dimension",
+      "$value": "{core.dimension.56}",
+      "$description": "Hauteur des lignes du menu du compte, relevée sur l'app iOS Twitch (56 pt, profil/menu-compte--defaut)."
+    },
     "x300": {
       "$type": "dimension",
       "$value": "{core.dimension.300}",
