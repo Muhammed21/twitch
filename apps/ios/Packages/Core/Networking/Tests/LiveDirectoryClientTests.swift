@@ -6,8 +6,9 @@ import Testing
 private let livesURL = URL(string: "http://127.0.0.1:3000/v1/lives")!
 private let channelID = ChannelID(UUID(uuidString: "0f5e2d7a-3c41-4b8e-9a6d-1e2f3a4b5c6d")!)
 
-private func liveJSON(slug: String = "jean_dupont", startedAt: String = "2026-11-03T18:30:00Z") -> String {
-  #"{"channelId":"0f5e2d7a-3c41-4b8e-9a6d-1e2f3a4b5c6d","slug":"\#(slug)","title":"Speedrun","startedAt":"\#(startedAt)"}"#
+private func liveJSON(slug: String = "jean_dupont", startedAt: String = "2026-11-03T18:30:00Z", viewerCount: Int? = nil) -> String {
+  let viewers = viewerCount.map { #","viewerCount":\#($0)"# } ?? ""
+  return #"{"channelId":"0f5e2d7a-3c41-4b8e-9a6d-1e2f3a4b5c6d","slug":"\#(slug)","title":"Speedrun","startedAt":"\#(startedAt)"\#(viewers)}"#
 }
 
 private func makeClient(_ transport: FakeTransport) -> LiveDirectoryClient {
@@ -26,7 +27,8 @@ struct LiveDirectoryClientTests {
       lives: [LiveChannel(
         session: StreamSession(channelID: channelID, startedAt: Date(timeIntervalSince1970: 1_793_730_600)),
         slug: ChannelSlug("jean_dupont"),
-        title: "Speedrun"
+        title: "Speedrun",
+        viewers: nil
       )],
       nextCursor: LiveCursor("c2")
     ))
@@ -87,7 +89,7 @@ struct LiveDirectoryClientTests {
 
   @Test("lit le nombre de viewers de chaque live, zéro compris", arguments: [0, 42])
   func readsViewerCount(count: Int) async throws {
-    let transport = FakeTransport(json: #"{"items":[\#(liveJSON().dropLast()),"viewerCount":\#(count)}]}"#)
+    let transport = FakeTransport(json: #"{"items":[\#(liveJSON(viewerCount: count))]}"#)
 
     let page = try await makeClient(transport).lives(after: nil)
 
@@ -106,7 +108,7 @@ struct LiveDirectoryClientTests {
 
   @Test("garde le live et ignore un nombre de viewers négatif")
   func ignoresNegativeViewerCount() async throws {
-    let transport = FakeTransport(json: #"{"items":[\#(liveJSON().dropLast()),"viewerCount":-1}]}"#)
+    let transport = FakeTransport(json: #"{"items":[\#(liveJSON(viewerCount: -1))]}"#)
 
     let page = try await makeClient(transport).lives(after: nil)
 
