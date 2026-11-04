@@ -6,7 +6,7 @@ import { createContextClient } from "@repo/db";
 
 import { createAuthzContext, createAuthzRedis } from "../../authz/authz-context.ts";
 import { createApp } from "../../create-app.ts";
-import { updateChannelTitle } from "./application/channel-queries.ts";
+import { updateChannel } from "./application/channel-queries.ts";
 import { createChannelForAccount } from "./application/create-channel-for-account.ts";
 import { prismaChannelDirectory } from "./infrastructure/prisma-channel-directory.ts";
 import { prismaChannelRegistry } from "./infrastructure/prisma-channel-registry.ts";
@@ -43,7 +43,7 @@ const seedChannel = async () => {
   return channel;
 };
 
-const rename = updateChannelTitle({
+const rename = updateChannel({
   directory,
   authz: createAuthzContext({ prisma, redis, now: () => NOW }),
   newId: randomUUID,
@@ -71,7 +71,13 @@ afterAll(async () => {
 describe("lecture et modification d'une chaîne en base", () => {
   it("lit une chaîne par son slug et par son identifiant", async () => {
     const channel = await seedChannel();
-    const view = { id: channel.id, slug: channel.slug, title: "", ownerId: channel.ownerId };
+    const view = {
+      id: channel.id,
+      slug: channel.slug,
+      title: "",
+      ownerId: channel.ownerId,
+      category: null,
+    };
 
     expect(await directory.findBySlug(channel.slug)).toEqual(view);
     expect(await directory.findById(channel.id)).toEqual(view);
@@ -106,7 +112,7 @@ describe("lecture et modification d'une chaîne en base", () => {
     expect(await metadataEventsOf(channel.id)).toEqual([
       expect.objectContaining({
         version: 1,
-        payload: { channelId: channel.id, title: "Speedrun du dimanche" },
+        payload: { channelId: channel.id, title: "Speedrun du dimanche", categoryId: null },
         occurredAt: NOW,
         publishedAt: null,
       }),
