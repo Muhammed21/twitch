@@ -11,6 +11,16 @@
         }
       }
     },
+    "channel.notFound" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This channel doesn't exist."
+          }
+        }
+      }
+    },
     "channel.viewers" : {
       "localizations" : {
         "en" : {

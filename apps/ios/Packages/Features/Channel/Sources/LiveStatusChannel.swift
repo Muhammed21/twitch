@@ -12,6 +12,7 @@ public final class LiveStatusChannel {
   public private(set) var title: String?
   public private(set) var status: LiveStatus?
   public private(set) var isReconnecting = false
+  public private(set) var channelNotFound = false
 
   @ObservationIgnored private let channels: any ChannelRepository
   @ObservationIgnored private let source: any LiveStatusSource
@@ -37,6 +38,7 @@ public final class LiveStatusChannel {
     title = nil
     status = nil
     isReconnecting = false
+    channelNotFound = false
     var failures = 0
     var channel: ChannelID?
     while !Task.isCancelled {
@@ -47,6 +49,9 @@ public final class LiveStatusChannel {
           apply(next)
           failures = 0
         }
+      } catch let problem as ServiceProblem where problem.status == 404 {
+        channelNotFound = true
+        return
       } catch {}
       guard !Task.isCancelled else { return }
       isReconnecting = true

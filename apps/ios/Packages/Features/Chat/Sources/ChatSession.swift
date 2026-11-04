@@ -16,6 +16,7 @@ public final class ChatSession {
     case denied
     case halted
     case signedOut
+    case channelNotFound
   }
 
   public enum ModerationNotice: Equatable, Sendable {
@@ -88,11 +89,15 @@ public final class ChatSession {
     status = .connecting
     var failures = 0
     while !Task.isCancelled {
-      if let found = try? await channels.channel(withSlug: slug) {
+      do {
+        let found = try await channels.channel(withSlug: slug)
         owner = found.ownerID
         await run(in: found.id)
         return
-      }
+      } catch let problem as ServiceProblem where problem.status == 404 {
+        status = .channelNotFound
+        return
+      } catch {}
       guard !Task.isCancelled else {
         return
       }

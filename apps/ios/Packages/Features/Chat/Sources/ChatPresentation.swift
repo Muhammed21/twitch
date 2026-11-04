@@ -77,6 +77,7 @@ enum ChatNotice {
     case .denied: ChatText.localized("chat.status.denied")
     case .halted: ChatText.localized("chat.status.halted")
     case .signedOut: ChatText.localized("chat.status.signedOut")
+    case .channelNotFound: nil
     }
   }
 }

@@ -155,9 +155,12 @@ struct ChatNoticeTests {
     #expect(ChatNotice.text(for: status) == expected)
   }
 
-  @Test("en direct, aucun avis")
-  func live() {
-    #expect(ChatNotice.text(for: .live) == nil)
+  @Test(
+    "en direct, ou sur une chaîne introuvable que l'en-tête de la page annonce, aucun avis",
+    arguments: [ChatSession.Status.live, .channelNotFound]
+  )
+  func silent(status: ChatSession.Status) {
+    #expect(ChatNotice.text(for: status) == nil)
   }
 }
 
