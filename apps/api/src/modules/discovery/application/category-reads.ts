@@ -2,10 +2,11 @@ import { err, ok, type Result } from "@repo/result";
 
 import { type CategoryView, resolveCategory } from "../domain/category-view.ts";
 import type { ListLives, LivePosition, LivesPage } from "./list-lives.ts";
+import { type CategoryTargets, distinctCategoryIds } from "./live-categories.ts";
 import { readViewerCounts, type ViewerCountSource } from "./live-status-viewers.ts";
 
-export interface CategoryViewReader {
-  all(): Promise<ReadonlyMap<string, CategoryView>>;
+export interface CategoryViewReader extends CategoryTargets {
+  aroundSlug(slug: string): Promise<ReadonlyMap<string, CategoryView>>;
 }
 
 export type LiveCategory = {
@@ -27,22 +28,6 @@ export type ListCategoryLives = (request: {
   after: LivePosition | undefined;
   limit: number;
 }) => Promise<Result<LivesPage, "category_not_found">>;
-
-export const withLiveCategories =
-  ({ lives, categories }: { lives: ListLives; categories: CategoryViewReader }): ListLives =>
-  async (request) => {
-    const page = await lives(request);
-    const views = await categories.all();
-    return {
-      ...page,
-      items: page.items.map((live) => {
-        const resolved = live.categoryId === null ? null : resolveCategory(views, live.categoryId);
-        return resolved === null
-          ? live
-          : { ...live, category: { slug: resolved.slug, name: resolved.name } };
-      }),
-    };
-  };
 
 type Group = {
   readonly slug: string;
@@ -88,10 +73,13 @@ export const browseCategories =
     ...source
   }: {
     liveCategories: () => Promise<readonly LiveCategory[]>;
-    categories: CategoryViewReader;
+    categories: CategoryTargets;
   } & ViewerCountSource): BrowseCategories =>
   async () => {
-    const [lives, views] = await Promise.all([liveCategories(), categories.all()]);
+    const lives = await liveCategories();
+    const views = await categories.withMergeTargets(
+      distinctCategoryIds(lives.map(({ categoryId }) => categoryId)),
+    );
     const groups = groupByCategory(views, lives);
     const counts = await readViewerCounts(
       source,
@@ -120,7 +108,7 @@ export const listCategoryLives =
     lives: ListLives;
   }): ListCategoryLives =>
   async ({ slug, after, limit }) => {
-    const views = await categories.all();
+    const views = await categories.aroundSlug(slug);
     const named = [...views.values()].find((view) => view.slug === slug);
     const resolved = named === undefined ? null : resolveCategory(views, named.categoryId);
     if (resolved === null) {

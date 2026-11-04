@@ -6,7 +6,6 @@ import {
   type CategoryViewReader,
   type LiveCategory,
   listCategoryLives,
-  withLiveCategories,
 } from "./category-reads.ts";
 import type { ListedLive, ListLives, LivesRequest } from "./list-lives.ts";
 
@@ -37,9 +36,23 @@ const CATEGORIES: readonly CategoryView[] = [
   makeCategory({ categoryId: ART, slug: "art", name: "Art", status: "retired" }),
 ];
 
-const categoryReader = (views: readonly CategoryView[] = CATEGORIES): CategoryViewReader => ({
-  all: async () => new Map(views.map((view) => [view.categoryId, view])),
-});
+const recordingReader = (views: readonly CategoryView[] = CATEGORIES) => {
+  const asked: (readonly string[] | string)[] = [];
+  const known = new Map(views.map((view) => [view.categoryId, view]));
+  const reader: CategoryViewReader = {
+    withMergeTargets: async (categoryIds) => {
+      asked.push(categoryIds);
+      return known;
+    },
+    aroundSlug: async (slug) => {
+      asked.push(slug);
+      return known;
+    },
+  };
+  return { reader, asked };
+};
+
+const categoryReader = (views?: readonly CategoryView[]) => recordingReader(views).reader;
 
 const channelId = (index: number) => `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`;
 
@@ -99,46 +112,24 @@ const browse = ({
   };
 };
 
-describe("catégorie de chaque live", () => {
-  it("donne à un live le slug et le nom de sa catégorie", async () => {
-    const { lives } = fixedLives([makeLive(1, JUST_CHATTING)]);
-
-    const page = await withLiveCategories({ lives, categories: categoryReader() })({
-      after: undefined,
-      limit: 20,
-    });
-
-    expect(page.items[0]?.category).toEqual({ slug: "just-chatting", name: "Just Chatting" });
-  });
-
-  it("donne à un live d'une catégorie fusionnée la catégorie cible", async () => {
-    const { lives } = fixedLives([makeLive(1, TALK)]);
-
-    const page = await withLiveCategories({ lives, categories: categoryReader() })({
-      after: undefined,
-      limit: 20,
-    });
-
-    expect(page.items[0]?.category).toEqual({ slug: "irl", name: "IRL" });
-  });
-
-  it.each([
-    ["sans catégorie", null],
-    ["d'une catégorie retirée", ART],
-    ["d'une catégorie inconnue", "4f9c8b7a-6e5d-4c4c-8c1b-0a9f8e7d6c5b"],
-  ])("ne donne aucune catégorie à un live %s", async (_name, categoryId) => {
-    const { lives } = fixedLives([makeLive(1, categoryId)]);
-
-    const page = await withLiveCategories({ lives, categories: categoryReader() })({
-      after: undefined,
-      limit: 20,
-    });
-
-    expect(page.items[0]).not.toHaveProperty("category");
-  });
-});
-
 describe("catégories en live de Browse", () => {
+  it("ne lit que les catégories des lives en cours", async () => {
+    const { reader, asked } = recordingReader();
+
+    await browseCategories({
+      liveCategories: async () => [
+        liveCategory(1, IRL),
+        liveCategory(2, TALK),
+        liveCategory(3, IRL),
+      ],
+      categories: reader,
+      viewerCounts: viewerCountsOf({}),
+      onViewerCountFailure: () => {},
+    })();
+
+    expect(asked).toEqual([[IRL, TALK]]);
+  });
+
   it("compte les lives et somme les viewers de chaque catégorie, la plus regardée d'abord", async () => {
     const { read } = browse({
       lives: [liveCategory(1, JUST_CHATTING), liveCategory(2, IRL), liveCategory(3, IRL)],
@@ -211,9 +202,11 @@ describe("catégories en live de Browse", () => {
 describe("lives d'une catégorie", () => {
   const listFor = (slug: string) => {
     const { lives, requests } = fixedLives([makeLive(1, IRL)]);
+    const { reader, asked } = recordingReader();
     return {
       requests,
-      result: listCategoryLives({ categories: categoryReader(), lives })({
+      asked,
+      result: listCategoryLives({ categories: reader, lives })({
         slug,
         after: undefined,
         limit: 20,
@@ -222,13 +215,14 @@ describe("lives d'une catégorie", () => {
   };
 
   it("lit les lives de la catégorie et de celles qui y ont été fusionnées", async () => {
-    const { requests, result } = listFor("irl");
+    const { requests, result, asked } = listFor("irl");
 
     expect(await result).toEqual({
       ok: true,
       value: { items: [makeLive(1, IRL)], next: undefined },
     });
     expect(requests).toEqual([{ after: undefined, limit: 20, categoryIds: [IRL, TALK] }]);
+    expect(asked).toEqual(["irl"]);
   });
 
   it("mène le slug d'une catégorie fusionnée aux lives de sa cible", async () => {

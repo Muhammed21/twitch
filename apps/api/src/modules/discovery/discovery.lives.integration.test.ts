@@ -158,6 +158,28 @@ describe("GET /v1/lives (jalon A3)", () => {
     }
   });
 
+  it("donne à un live la catégorie de sa chaîne", async () => {
+    const category = {
+      categoryId: randomUUID(),
+      slug: `cat-${randomUUID().slice(0, 8)}`,
+      name: "Cat",
+    };
+    await discovery.discoveryCategoryView.create({ data: category });
+    const live = await seedLiveView({ minute: 90 });
+    await discovery.discoveryLiveChannelView.update({
+      where: { channelId: live.channelId },
+      data: { categoryId: category.categoryId },
+    });
+    try {
+      expect((await page("?limit=1")).items).toEqual([
+        { ...asListed(live), category: { slug: category.slug, name: "Cat" } },
+      ]);
+    } finally {
+      await cleanUp();
+      await discovery.discoveryCategoryView.delete({ where: { categoryId: category.categoryId } });
+    }
+  });
+
   it("retire de la liste un live qui se termine", async () => {
     const live = await seedLiveView({ minute: 50 });
     try {

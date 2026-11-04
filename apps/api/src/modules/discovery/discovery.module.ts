@@ -12,12 +12,9 @@ import type { Pool } from "pg";
 import { errorDetails, type LogSink, writeLog } from "../../platform/logging.ts";
 import { startPeriodicJob } from "../../platform/periodic-job.ts";
 import { startStreamConsumer, type StreamConsumerRedis } from "../../platform/stream-consumer.ts";
-import {
-  browseCategories,
-  listCategoryLives,
-  withLiveCategories,
-} from "./application/category-reads.ts";
+import { browseCategories, listCategoryLives } from "./application/category-reads.ts";
 import { type ListLives, listLives, withLiveViewerCounts } from "./application/list-lives.ts";
+import { withLiveCategories } from "./application/live-categories.ts";
 import { createLiveStatusHub, type LiveStatusHub } from "./application/live-status-hub.ts";
 import { type ViewerCountReader, withViewerCounts } from "./application/live-status-viewers.ts";
 import { projectDiscoveryEvent } from "./application/project-discovery-event.ts";

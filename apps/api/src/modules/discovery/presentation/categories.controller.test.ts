@@ -6,14 +6,13 @@ import { rejectingVerifier } from "../../../platform/authentication.ts";
 import { configureApp } from "../../../platform/configure-app.ts";
 import { PlatformModule } from "../../../platform/platform.module.ts";
 import type { BrowsedCategory, ListCategoryLives } from "../application/category-reads.ts";
-import type { ListedLive, ListLives, LivesPage } from "../application/list-lives.ts";
+import type { ListedLive, LivesPage } from "../application/list-lives.ts";
 import {
   BROWSE_CATEGORIES,
   CategoriesController,
   LIST_CATEGORY_LIVES,
 } from "./categories.controller.ts";
 import { encodeLiveCursor } from "./live-cursor.ts";
-import { LIST_LIVES, LivesController } from "./lives.controller.ts";
 
 const CHANNEL_ID = "6f1c2d3e-4a5b-4c6d-8e7f-9a0b1c2d3e4f";
 const STARTED_AT = new Date("2026-11-04T20:00:00.000Z");
@@ -33,33 +32,24 @@ const IRL_LIVE = makeLive({
   viewerCount: 12,
 });
 
-type Calls = {
-  categoryLives: Parameters<ListCategoryLives>[0][];
-  lives: Parameters<ListLives>[0][];
-};
+type Calls = { categoryLives: Parameters<ListCategoryLives>[0][] };
 
 const withControllers = async (
   {
     browsed = [],
     categoryPage = { items: [], next: undefined },
     found = true,
-    lives = { items: [], next: undefined },
   }: {
     browsed?: readonly BrowsedCategory[];
     categoryPage?: LivesPage;
     found?: boolean;
-    lives?: LivesPage;
   },
   run: (base: string, calls: Calls, document: () => unknown) => Promise<void>,
 ) => {
-  const calls: Calls = { categoryLives: [], lives: [] };
+  const calls: Calls = { categoryLives: [] };
   const listCategoryLives: ListCategoryLives = async (request) => {
     calls.categoryLives.push(request);
     return found ? { ok: true, value: categoryPage } : { ok: false, error: "category_not_found" };
-  };
-  const listLives: ListLives = async (request) => {
-    calls.lives.push(request);
-    return lives;
   };
   const moduleRef = await Test.createTestingModule({
     imports: [
@@ -69,11 +59,10 @@ const withControllers = async (
         accessTokenVerifier: rejectingVerifier,
       }),
     ],
-    controllers: [CategoriesController, LivesController],
+    controllers: [CategoriesController],
     providers: [
       { provide: BROWSE_CATEGORIES, useValue: async () => browsed },
       { provide: LIST_CATEGORY_LIVES, useValue: listCategoryLives },
-      { provide: LIST_LIVES, useValue: listLives },
     ],
   }).compile();
   const app = configureApp(moduleRef.createNestApplication({ logger: false }));
@@ -162,29 +151,5 @@ describe("GET /v1/categories/{slug}/lives", () => {
       expect((await fetch(`${base}/categories/irl/lives?${query}`)).status).toBe(400);
       expect(calls.categoryLives).toEqual([]);
     });
-  });
-});
-
-describe("GET /v1/lives", () => {
-  it("donne à chaque live sa catégorie quand il en a une", async () => {
-    await withControllers(
-      { lives: { items: [IRL_LIVE, makeLive()], next: undefined } },
-      async (base, calls) => {
-        const body = await (await fetch(`${base}/lives?limit=3`)).json();
-
-        expect(body).toEqual({
-          items: [
-            expect.objectContaining({ category: { slug: "irl", name: "IRL" } }),
-            {
-              channelId: CHANNEL_ID,
-              slug: "streamer",
-              title: "Speedrun",
-              startedAt: STARTED_AT.toISOString(),
-            },
-          ],
-        });
-        expect(calls.lives).toEqual([{ after: undefined, limit: 3 }]);
-      },
-    );
   });
 });
