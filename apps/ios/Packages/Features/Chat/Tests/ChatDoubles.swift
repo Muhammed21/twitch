@@ -245,17 +245,37 @@ struct TimeoutCall: Equatable {
 
 actor FakeModeration: ChatModeration {
   private let error: (any Error)?
+  private let holding: Bool
+  private var held: [CheckedContinuation<Void, Never>] = []
   private(set) var calls: [TimeoutCall] = []
 
-  init(failing error: (any Error)? = nil) {
+  init(failing error: (any Error)? = nil, holding: Bool = false) {
     self.error = error
+    self.holding = holding
   }
 
-  func timeout(_ user: UUID, in channel: ChannelID, for duration: Duration) throws {
+  func timeout(_ user: UUID, in channel: ChannelID, for duration: Duration) async throws {
     calls.append(TimeoutCall(user: user, channel: channel, duration: duration))
+    if holding {
+      await withCheckedContinuation { held.append($0) }
+    }
     if let error {
       throw error
     }
+  }
+
+  func release() {
+    held.forEach { $0.resume() }
+    held = []
+  }
+}
+
+@MainActor
+final class TestViewer {
+  var id: UUID?
+
+  init(_ id: UUID?) {
+    self.id = id
   }
 }
 
@@ -286,7 +306,7 @@ func makeSession(
   jitter: @escaping @Sendable (Duration) -> Duration = { $0 },
   channels: FakeChannels = FakeChannels(),
   moderation: FakeModeration = FakeModeration(),
-  viewer: UUID? = UUID(),
+  viewer: TestViewer = TestViewer(UUID()),
   now: TestNow = TestNow(),
   log: LogBook = LogBook()
 ) -> ChatSession {
@@ -295,7 +315,7 @@ func makeSession(
     tokens: tokens,
     channels: channels,
     moderation: moderation,
-    viewer: { viewer },
+    viewer: { viewer.id },
     window: window,
     wait: { await clock.wait($0) },
     jitter: jitter,

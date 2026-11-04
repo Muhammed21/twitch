@@ -230,7 +230,7 @@ enum Composition {
         tokens: session,
         channels: channels,
         moderation: ModerationClient(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
-        viewer: { await sessionStore.accountID }
+        viewer: { sessionStore.accountID }
       )
     )
   }

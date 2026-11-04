@@ -12,7 +12,7 @@ private func slug() throws -> ChannelSlug {
 
 @MainActor
 private func opened(
-  viewer: UUID?,
+  viewer: TestViewer,
   moderation: FakeModeration = FakeModeration()
 ) async throws -> (ChatSession, Task<Void, Never>) {
   let session = makeSession(
@@ -32,7 +32,7 @@ private func opened(
 struct ChatSessionModerationTests {
   @Test("le propriétaire peut mettre en timeout l'auteur d'un message, mais pas lui-même")
   func ownerSeesAction() async throws {
-    let (session, run) = try await opened(viewer: owner)
+    let (session, run) = try await opened(viewer: TestViewer(owner))
 
     #expect(session.canTimeOut(chatter))
     #expect(!session.canTimeOut(ChatAuthor(id: owner, displayName: "jean_dupont")))
@@ -43,7 +43,7 @@ struct ChatSessionModerationTests {
   @Test("un viewer qui n'est pas propriétaire ne voit pas l'action de timeout", arguments: [UUID(), nil])
   func viewerSeesNoAction(viewer: UUID?) async throws {
     let moderation = FakeModeration()
-    let (session, run) = try await opened(viewer: viewer, moderation: moderation)
+    let (session, run) = try await opened(viewer: TestViewer(viewer), moderation: moderation)
 
     await session.timeOut(chatter)
 
@@ -57,7 +57,7 @@ struct ChatSessionModerationTests {
   @Test("un timeout réussi met l'auteur en timeout 10 minutes et le confirme dans le chat")
   func timedOut() async throws {
     let moderation = FakeModeration()
-    let (session, run) = try await opened(viewer: owner, moderation: moderation)
+    let (session, run) = try await opened(viewer: TestViewer(owner), moderation: moderation)
 
     await session.timeOut(chatter)
 
@@ -76,7 +76,7 @@ struct ChatSessionModerationTests {
     ]
   )
   func refused(error: any Error, notice: ChatSession.ModerationNotice) async throws {
-    let (session, run) = try await opened(viewer: owner, moderation: FakeModeration(failing: error))
+    let (session, run) = try await opened(viewer: TestViewer(owner), moderation: FakeModeration(failing: error))
 
     await session.timeOut(chatter)
 
@@ -89,7 +89,7 @@ struct ChatSessionModerationTests {
   func noActionWhileLookingUp() async throws {
     let clock = TestClock(holding: [batchInterval, .seconds(1)])
     let channels = FakeChannels(owners: ["jean_dupont": owner], unreachable: ["marie_curie"])
-    let session = makeSession(FakeConnector([.open(FakeConnection())]), clock: clock, channels: channels, viewer: owner)
+    let session = makeSession(FakeConnector([.open(FakeConnection())]), clock: clock, channels: channels, viewer: TestViewer(owner))
     let first = try slug()
     let second = try ChannelSlug("marie_curie")
     let run = Task { await session.run(first) }
@@ -109,7 +109,7 @@ struct ChatSessionModerationTests {
   @Test("ouvrir une chaîne dont on n'est pas propriétaire retire l'action et l'avis")
   func resetsOnNextChannel() async throws {
     let connector = FakeConnector([.open(FakeConnection()), .open(FakeConnection())])
-    let session = makeSession(connector, channels: FakeChannels(owners: ["jean_dupont": owner]), viewer: owner)
+    let session = makeSession(connector, channels: FakeChannels(owners: ["jean_dupont": owner]), viewer: TestViewer(owner))
     let first = try slug()
     let second = try ChannelSlug("marie_curie")
     let run = Task { await session.run(first) }
@@ -122,6 +122,48 @@ struct ChatSessionModerationTests {
     try await waitUntil { await connector.tokens.count == 2 && session.status == .live }
 
     #expect(!session.canTimeOut(chatter))
+    #expect(session.moderationNotice == nil)
+    next.cancel()
+    await next.value
+  }
+
+  @Test("l'action de timeout suit le compte connecté pendant que la chaîne est ouverte")
+  func followsSignedInAccount() async throws {
+    let viewer = TestViewer(nil)
+    let (session, run) = try await opened(viewer: viewer)
+
+    #expect(!session.canTimeOut(chatter))
+    viewer.id = owner
+    #expect(session.canTimeOut(chatter))
+    viewer.id = nil
+    #expect(!session.canTimeOut(chatter))
+    run.cancel()
+    await run.value
+  }
+
+  @Test("la réponse d'un timeout lancé sur une chaîne ne s'affiche pas dans la chaîne suivante")
+  func noticeStaysOnItsChannel() async throws {
+    let moderation = FakeModeration(holding: true)
+    let connector = FakeConnector([.open(FakeConnection()), .open(FakeConnection())])
+    let channels = FakeChannels(
+      ids: ["marie_curie": ChannelID(UUID())],
+      owners: ["jean_dupont": owner]
+    )
+    let session = makeSession(connector, channels: channels, moderation: moderation, viewer: TestViewer(owner))
+    let first = try slug()
+    let second = try ChannelSlug("marie_curie")
+    let run = Task { await session.run(first) }
+    try await waitUntil { session.status == .live }
+    let pending = Task { await session.timeOut(chatter) }
+    try await waitUntil { await moderation.calls.count == 1 }
+    run.cancel()
+    await run.value
+
+    let next = Task { await session.run(second) }
+    try await waitUntil { await connector.tokens.count == 2 && session.status == .live }
+    await moderation.release()
+    await pending.value
+
     #expect(session.moderationNotice == nil)
     next.cancel()
     await next.value

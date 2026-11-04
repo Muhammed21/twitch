@@ -39,13 +39,13 @@ public final class ChatSession {
   public private(set) var messages: [ChatMessage] = []
   public private(set) var status = Status.connecting
   public private(set) var moderationNotice: ModerationNotice?
-  private var moderator: UUID?
+  private var owner: UUID?
 
   @ObservationIgnored private let connector: any ChatConnector
   @ObservationIgnored private let tokens: any AccessTokenProvider
   @ObservationIgnored private let channels: any ChannelRepository
   @ObservationIgnored private let moderation: any ChatModeration
-  @ObservationIgnored private let viewer: @Sendable () async -> UUID?
+  @ObservationIgnored private let viewer: @MainActor @Sendable () -> UUID?
   @ObservationIgnored private let window: Int
   @ObservationIgnored private let wait: Wait
   @ObservationIgnored private let jitter: Jitter
@@ -61,7 +61,7 @@ public final class ChatSession {
     tokens: any AccessTokenProvider,
     channels: any ChannelRepository,
     moderation: any ChatModeration,
-    viewer: @escaping @Sendable () async -> UUID?,
+    viewer: @escaping @MainActor @Sendable () -> UUID?,
     window: Int = 300,
     wait: @escaping Wait = { try await Task.sleep(for: $0) },
     jitter: @escaping Jitter = { $0 * Double.random(in: 0.5 ... 1) },
@@ -83,13 +83,13 @@ public final class ChatSession {
   public func run(_ slug: ChannelSlug) async {
     messages = []
     batch = []
-    moderator = nil
+    owner = nil
     moderationNotice = nil
     status = .connecting
     var failures = 0
     while !Task.isCancelled {
       if let found = try? await channels.channel(withSlug: slug) {
-        moderator = await viewer() == found.ownerID ? found.ownerID : nil
+        owner = found.ownerID
         await run(in: found.id)
         return
       }
@@ -144,24 +144,29 @@ public final class ChatSession {
   }
 
   public func canTimeOut(_ author: ChatAuthor) -> Bool {
-    guard let moderator else {
+    guard let owner, viewer() == owner else {
       return false
     }
-    return author.id != moderator
+    return author.id != owner
   }
 
   public func timeOut(_ author: ChatAuthor) async {
     guard canTimeOut(author), let channel else {
       return
     }
+    let notice: ModerationNotice
     do {
       try await moderation.timeout(author.id, in: channel, for: Self.timeoutDuration)
-      moderationNotice = .timedOut(author.displayName)
+      notice = .timedOut(author.displayName)
     } catch let problem as ServiceProblem where problem.status == 403 {
-      moderationNotice = .forbidden
+      notice = .forbidden
     } catch {
-      moderationNotice = .failed(author.displayName)
+      notice = .failed(author.displayName)
     }
+    guard self.channel == channel else {
+      return
+    }
+    moderationNotice = notice
   }
 
   private func attempt(in channel: ChannelID, rejectedToken: String?) async -> Ending {
