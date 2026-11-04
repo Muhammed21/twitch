@@ -104,6 +104,7 @@ describe("lecture et modification d'une chaîne en base", () => {
         slug: channel.slug,
         title: "Speedrun du dimanche",
         ownerId: channel.ownerId,
+        category: null,
       },
     });
     expect(await prisma.channel.findUnique({ where: { id: channel.id } })).toMatchObject({
