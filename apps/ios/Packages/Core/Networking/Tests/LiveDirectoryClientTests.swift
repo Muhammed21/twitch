@@ -85,6 +85,35 @@ struct LiveDirectoryClientTests {
     #expect(page.nextCursor == LiveCursor("c2"))
   }
 
+  @Test("lit le nombre de viewers de chaque live, zéro compris", arguments: [0, 42])
+  func readsViewerCount(count: Int) async throws {
+    let transport = FakeTransport(json: #"{"items":[\#(liveJSON().dropLast()),"viewerCount":\#(count)}]}"#)
+
+    let page = try await makeClient(transport).lives(after: nil)
+
+    #expect(try page.lives.first?.viewers == ViewerCount(count))
+  }
+
+  @Test("laisse le nombre de viewers inconnu quand l'API ne le donne pas")
+  func unknownViewerCount() async throws {
+    let transport = FakeTransport(json: #"{"items":[\#(liveJSON())]}"#)
+
+    let page = try await makeClient(transport).lives(after: nil)
+
+    let live = try #require(page.lives.first)
+    #expect(live.viewers == nil)
+  }
+
+  @Test("garde le live et ignore un nombre de viewers négatif")
+  func ignoresNegativeViewerCount() async throws {
+    let transport = FakeTransport(json: #"{"items":[\#(liveJSON().dropLast()),"viewerCount":-1}]}"#)
+
+    let page = try await makeClient(transport).lives(after: nil)
+
+    let live = try #require(page.lives.first)
+    #expect(live.viewers == nil)
+  }
+
   @Test("tolère un champ ajouté au live et à la page (ADR 0024, §8)")
   func toleratesAddedFields() async throws {
     let transport = FakeTransport(json: #"{"items":[\#(liveJSON().dropLast()),"thumbnail":"t.png"}],"total":1}"#)
