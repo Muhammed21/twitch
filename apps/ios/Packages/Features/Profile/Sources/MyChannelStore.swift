@@ -28,6 +28,7 @@ public final class MyChannelStore {
   public private(set) var notice: Notice?
 
   @ObservationIgnored private var keyReads = 0
+  @ObservationIgnored private var hasStartedLoading = false
 
   @ObservationIgnored private let repository: any MyChannelRepository
   @ObservationIgnored private let channels: any ChannelRepository
@@ -50,7 +51,15 @@ public final class MyChannelStore {
     maxTitleLength - draft.trimmingCharacters(in: .whitespacesAndNewlines).count
   }
 
+  public func loadIfNeeded() async {
+    guard !hasStartedLoading else {
+      return
+    }
+    await load()
+  }
+
   public func load() async {
+    hasStartedLoading = true
     phase = .loading
     hideKey()
     notice = nil

@@ -38,6 +38,7 @@ public struct StreamManagerScreen: View {
     .background(ColorRole.background.color.ignoresSafeArea())
     .navigationTitle(Text(ProfileText.streamManager))
     .navigationBarTitleDisplayMode(.inline)
+    .task { await store.loadIfNeeded() }
     .toolbar {
       if let onClose {
         ToolbarItem(placement: .topBarLeading) {
