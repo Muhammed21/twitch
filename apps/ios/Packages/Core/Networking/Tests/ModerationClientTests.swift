@@ -31,8 +31,20 @@ struct ModerationClientTests {
     #expect(request.url == timeoutsURL)
     #expect(request.headers["Authorization"] == "Bearer access-1")
     let sent = try body(of: request)
-    #expect((sent["userId"] as? String)?.lowercased() == viewer.uuidString.lowercased())
+    #expect(sent["userId"] as? String == viewer.uuidString.lowercased())
     #expect(sent["durationSeconds"] as? Int == seconds)
+  }
+
+  @Test("envoie l'UUID du viewer en minuscules, la forme sous laquelle le chat lit ses sanctions")
+  func sendsLowercasedViewer() async throws {
+    let transport = FakeTransport(status: 201, json: timeoutJSON)
+
+    try await makeClient(transport: transport).timeout(viewer, in: channel, for: .seconds(600))
+
+    let request = try #require(await transport.requests.first)
+    let sent = try #require(String(data: request.body, encoding: .utf8))
+    #expect(sent.contains(#""4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b""#))
+    #expect(!sent.contains(viewer.uuidString))
   }
 
   @Test("remonte le problème du serveur quand le timeout est refusé", arguments: [403, 404, 422])
