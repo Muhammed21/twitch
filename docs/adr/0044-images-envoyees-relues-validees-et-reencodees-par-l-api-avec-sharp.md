@@ -7,7 +7,7 @@
 
 ## Contexte et problématique
 
-Trois écrans demandent qu'un utilisateur envoie une image : l'avatar et la bannière du profil, et l'image d'une catégorie. D'autres suivront, avec les mêmes besoins (emotes, badges).
+Trois écrans demandent qu'un utilisateur envoie une image : l'avatar, la bannière de la chaîne affichée sur le profil, et l'image d'une catégorie. D'autres suivront, avec les mêmes besoins (emotes, badges).
 
 Ce qui est déjà décidé :
 
@@ -87,8 +87,8 @@ La brique vit dans `apps/api/src/platform/images` : c'est une capacité techniqu
 
 Chaque contexte garde la clé de _son_ image et décide qui peut la changer :
 
-- `identity` pour l'avatar et la bannière du profil ;
-- le contexte des catégories pour leur image.
+- `identity` pour l'avatar, propriété du profil ;
+- `channel` pour la bannière, propriété de la chaîne, et pour l'image d'une catégorie, qui appartient au catalogue des catégories (ADR 0021).
 
 ### 2. Envoi en deux temps, sans table
 
@@ -161,8 +161,8 @@ Il n'y a **pas de modération automatique** dans cette décision : l'image est p
    - réencodage par sharp ;
    - route de préparation ;
    - tests contre le service `s3` du Compose.
-2. **Avatar et bannière** du profil (`identity`).
-3. **Image de catégorie**, branchée par le contexte des catégories.
+2. **Avatar** (`identity`) et **bannière** (`channel`).
+3. **Image de catégorie**, branchée par `channel`, propriétaire du catalogue.
 4. **Local** : identité anonyme en lecture sur `images/` dans `docker/seaweedfs/start.sh`, règle de cycle de vie sur `incoming/`, et `S3_PUBLIC_BASE_URL` dans `.env.example`.
 
 ## Liens
