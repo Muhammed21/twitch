@@ -14,6 +14,7 @@ import {
   LIST_CATEGORY_LIVES,
 } from "./categories.controller.ts";
 import { encodeAudienceCursor } from "./category-cursor.ts";
+import { CATEGORY_IMAGE_URL } from "./category-image-url.ts";
 import { encodeLiveCursor } from "./live-cursor.ts";
 
 const CHANNEL_ID = "6f1c2d3e-4a5b-4c6d-8e7f-9a0b1c2d3e4f";
@@ -30,7 +31,7 @@ const makeLive = (overrides: Partial<ListedLive> = {}): ListedLive => ({
 
 const IRL_LIVE = makeLive({
   categoryId: "1c6f5e4d-3b2a-4019-9f8e-7d6c5b4a3928",
-  category: { slug: "irl", name: "IRL" },
+  category: { slug: "irl", name: "IRL", imageKey: "images/category/irl.webp" },
   viewerCount: 12,
 });
 
@@ -72,6 +73,7 @@ const withControllers = async (
     providers: [
       { provide: LIST_CATEGORY_LIVES, useValue: listCategoryLives },
       { provide: BROWSE_CATEGORIES, useValue: browseCategories },
+      { provide: CATEGORY_IMAGE_URL, useValue: (key: string) => `https://images.test/${key}` },
     ],
   }).compile();
   const app = configureApp(moduleRef.createNestApplication({ logger: false }));
@@ -89,17 +91,37 @@ const IRL_AUDIENCE = {
   name: "IRL",
   liveCount: 2,
   viewerCount: 70,
+  imageKey: "images/category/irl.webp",
+};
+
+const ART_AUDIENCE = {
+  categoryId: "3e8b7a6f-5d4c-4b3b-9b0a-9f8e7d6c5b4a",
+  slug: "art",
+  name: "Art",
+  liveCount: 1,
+  viewerCount: 3,
+  imageKey: null,
 };
 
 describe("GET /v1/categories", () => {
-  it("rend une page de catégories en live, sans jeton, avec le curseur suivant", async () => {
+  it("rend une page de catégories en live avec leur pochette, sans jeton, avec le curseur suivant", async () => {
     const next = { viewerCount: 70, liveCount: 2, categoryId: IRL_AUDIENCE.categoryId };
-    await withControllers({ browsePage: { items: [IRL_AUDIENCE], next } }, async (base, calls) => {
+    const browsePage = { items: [IRL_AUDIENCE, ART_AUDIENCE], next };
+    await withControllers({ browsePage }, async (base, calls) => {
       const response = await fetch(`${base}/categories`);
 
       expect(response.status).toBe(200);
       expect(await response.json()).toEqual({
-        items: [{ slug: "irl", name: "IRL", liveCount: 2, viewerCount: 70 }],
+        items: [
+          {
+            slug: "irl",
+            name: "IRL",
+            imageUrl: "https://images.test/images/category/irl.webp",
+            liveCount: 2,
+            viewerCount: 70,
+          },
+          { slug: "art", name: "Art", liveCount: 1, viewerCount: 3 },
+        ],
         nextCursor: encodeAudienceCursor(next),
       });
       expect(calls.browse).toEqual([{ after: undefined, limit: 20 }]);
@@ -172,7 +194,11 @@ describe("GET /v1/categories/{slug}/lives", () => {
             title: "Speedrun",
             startedAt: STARTED_AT.toISOString(),
             viewerCount: 12,
-            category: { slug: "irl", name: "IRL" },
+            category: {
+              slug: "irl",
+              name: "IRL",
+              imageUrl: "https://images.test/images/category/irl.webp",
+            },
           },
         ],
         nextCursor: encodeLiveCursor(next),

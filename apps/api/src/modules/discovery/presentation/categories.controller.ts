@@ -9,6 +9,7 @@ import { ProblemException } from "../../../platform/problem.ts";
 import type { BrowseCategories } from "../application/category-audience.ts";
 import type { ListCategoryLives } from "../application/category-reads.ts";
 import { AudienceCursor, encodeAudienceCursor } from "./category-cursor.ts";
+import { CATEGORY_IMAGE_URL, type CategoryImageUrl, withImageUrl } from "./category-image-url.ts";
 import { LivePage, LivesQuerySchema, toLivePage } from "./live-page-response.ts";
 
 export const LIST_CATEGORY_LIVES = Symbol("LIST_CATEGORY_LIVES");
@@ -27,6 +28,7 @@ export class CategoriesController {
   constructor(
     @Inject(LIST_CATEGORY_LIVES) private readonly listCategoryLives: ListCategoryLives,
     @Inject(BROWSE_CATEGORIES) private readonly browseCategories: BrowseCategories,
+    @Inject(CATEGORY_IMAGE_URL) private readonly imageUrlOf: CategoryImageUrl,
   ) {}
 
   @Get()
@@ -37,12 +39,9 @@ export class CategoriesController {
       limit: query.limit,
     });
     return {
-      items: items.map(({ slug, name, liveCount, viewerCount }) => ({
-        slug,
-        name,
-        liveCount,
-        viewerCount,
-      })),
+      items: items.map(({ slug, name, imageKey, liveCount, viewerCount }) =>
+        withImageUrl({ slug, name, imageKey, liveCount, viewerCount }, this.imageUrlOf),
+      ),
       ...(next === undefined ? {} : { nextCursor: encodeAudienceCursor(next) }),
     };
   }
@@ -57,6 +56,6 @@ export class CategoriesController {
     if (!page.ok) {
       throw new ProblemException({ status: 404, title: "Catégorie introuvable" });
     }
-    return toLivePage(page.value);
+    return toLivePage(page.value, this.imageUrlOf);
   }
 }

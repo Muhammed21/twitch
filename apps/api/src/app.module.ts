@@ -110,6 +110,7 @@ export class AppModule {
           ...discovery,
           viewerCounts: createViewerCountReader(stream.presenceRedis),
           logSink: platform.logSink,
+          images: imageBrick,
         }),
         MobileModule.register({
           featureFlags: createFeatureFlags(mobile.featureFlags),

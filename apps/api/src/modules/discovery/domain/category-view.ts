@@ -6,6 +6,7 @@ export type CategoryView = {
   readonly name: string;
   readonly status: CategoryStatus;
   readonly mergedIntoId: string | null;
+  readonly imageKey: string | null;
 };
 
 export type CategoryEvent =
@@ -20,12 +21,19 @@ export type CategoryEvent =
       readonly categoryId: string;
       readonly targetCategoryId: string;
     }
-  | { readonly kind: "category-retired"; readonly categoryId: string };
+  | { readonly kind: "category-retired"; readonly categoryId: string }
+  | {
+      readonly kind: "category-updated";
+      readonly categoryId: string;
+      readonly name: string;
+      readonly imageKey: string | null;
+    };
 
 export type ResolvedCategory = {
   readonly categoryId: string;
   readonly slug: string;
   readonly name: string;
+  readonly imageKey: string | null;
 };
 
 const unknownCategory = (categoryId: string): CategoryView => ({
@@ -34,6 +42,7 @@ const unknownCategory = (categoryId: string): CategoryView => ({
   name: "",
   status: "active",
   mergedIntoId: null,
+  imageKey: null,
 });
 
 export const applyCategoryEvent = (
@@ -48,6 +57,8 @@ export const applyCategoryEvent = (
       return { ...view, status: "merged", mergedIntoId: event.targetCategoryId };
     case "category-retired":
       return { ...view, status: "retired" };
+    case "category-updated":
+      return { ...view, name: event.name, imageKey: event.imageKey };
   }
 };
 
@@ -66,7 +77,12 @@ const follow = (
   if (view.status !== "active" || view.slug === null) {
     return null;
   }
-  return { categoryId: view.categoryId, slug: view.slug, name: view.name };
+  return {
+    categoryId: view.categoryId,
+    slug: view.slug,
+    name: view.name,
+    imageKey: view.imageKey,
+  };
 };
 
 export const resolveCategory = (

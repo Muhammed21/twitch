@@ -95,6 +95,7 @@ export type AudiencePosition = {
 export type BrowsedCategory = AudiencePosition & {
   readonly slug: string;
   readonly name: string;
+  readonly imageKey: string | null;
 };
 
 export interface CategoryAudienceReader {

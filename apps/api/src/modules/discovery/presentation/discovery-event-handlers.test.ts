@@ -20,6 +20,11 @@ const PAYLOADS: Readonly<Record<string, unknown>> = {
     targetCategoryId: TARGET_CATEGORY_ID,
   },
   "channel.category.retired": { categoryId: CATEGORY_ID },
+  "channel.category.updated": {
+    categoryId: CATEGORY_ID,
+    name: "IRL",
+    imageKey: "images/category/irl.webp",
+  },
   "stream.started": {
     sessionId: SESSION_ID,
     channelId: CHANNEL_ID,
@@ -69,6 +74,7 @@ describe("handlers de discovery pour events.channel et events.stream", () => {
       "channel.category.created",
       "channel.category.merged",
       "channel.category.retired",
+      "channel.category.updated",
       "channel.created",
       "channel.metadata.updated",
       "stream.ended",
@@ -100,6 +106,15 @@ describe("handlers de discovery pour events.channel et events.stream", () => {
       },
     ],
     ["channel.category.retired", { kind: "category-retired", categoryId: CATEGORY_ID }],
+    [
+      "channel.category.updated",
+      {
+        kind: "category-updated",
+        categoryId: CATEGORY_ID,
+        name: "IRL",
+        imageKey: "images/category/irl.webp",
+      },
+    ],
     [
       "stream.started",
       {
