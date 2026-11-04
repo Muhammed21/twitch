@@ -115,6 +115,22 @@ describe("changement d'avatar", () => {
     expect(discard.discarded).toEqual([]);
   });
 
+  it("supprime la nouvelle image et relance l'erreur quand l'enregistrement lève", async () => {
+    const failure = new Error("postgres injoignable");
+    const { finalizeImage } = makeFinalizer(ok(finalized(NEW_KEY)));
+    const store: AvatarStore = {
+      saveAvatar: async () => {
+        throw failure;
+      },
+    };
+    const discard = makeDiscard();
+
+    await expect(
+      changeAvatar({ store, finalizeImage, ...discard })({ userId: USER_ID, uploadId: UPLOAD_ID }),
+    ).rejects.toBe(failure);
+    expect(discard.discarded).toEqual([NEW_KEY]);
+  });
+
   it("supprime la nouvelle image quand le compte n'existe plus", async () => {
     const { finalizeImage } = makeFinalizer(ok(finalized(NEW_KEY)));
     const { store } = makeStore(new Map());
