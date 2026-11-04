@@ -26,6 +26,7 @@ public final class MyChannelStore {
 
   public private(set) var phase: Phase = .loading
   public private(set) var title = ""
+  public private(set) var category: ChannelCategory?
   public private(set) var streamKey: StreamKey?
   public private(set) var notice: Notice?
 
@@ -64,6 +65,7 @@ public final class MyChannelStore {
     hasStartedLoading = false
     phase = .loading
     title = ""
+    category = nil
     leave()
   }
 
@@ -77,7 +79,9 @@ public final class MyChannelStore {
         phase = .noChannel
         return
       }
-      title = try await channels.channel(withSlug: owned.slug).title
+      let channel = try await channels.channel(withSlug: owned.slug)
+      title = channel.title
+      category = channel.category
       phase = .ready(owned)
     } catch {
       log("my channel: channel not loaded (\(Self.kind(of: error)))")
@@ -146,12 +150,15 @@ public final class MyChannelStore {
     notice = .keyCopied
   }
 
-  public func rename(to draft: String) async -> Bool {
+  @discardableResult
+  public func save(title draft: String, category chosen: ChannelCategory?) async -> Bool {
     guard case let .ready(owned) = phase, Self.remaining(in: draft) >= 0 else {
       return false
     }
     do {
-      title = try await repository.rename(owned.id, to: draft).title
+      let channel = try await repository.update(owned.id, title: draft, category: CategoryChange.from(category, to: chosen))
+      title = channel.title
+      category = channel.category
       notice = .titleSaved
       return true
     } catch {

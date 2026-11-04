@@ -7,12 +7,13 @@ import Testing
 private func makeStore(
   _ repository: any MyChannelRepository,
   title: String = "Speedrun du dimanche",
+  category: ChannelCategory? = nil,
   pasteboard: Pasteboard = Pasteboard(),
   log: LogBook = LogBook()
 ) -> MyChannelStore {
   MyChannelStore(
     repository: repository,
-    channels: FakeChannels(title: title),
+    channels: FakeChannels(title: title, category: category),
     copy: { pasteboard.copy($0) },
     log: { log.write($0) }
   )
@@ -29,6 +30,7 @@ struct MyChannelStoreTests {
 
     #expect(try store.phase == .ready(makeOwnedChannel()))
     #expect(store.title == "Speedrun du dimanche")
+    #expect(store.category == nil)
   }
 
   @Test("charge la chaîne au premier affichage du Stream Manager, même sans passer par Profile")
@@ -51,9 +53,9 @@ struct MyChannelStoreTests {
     #expect(store.streamKey?.revealed == secret)
   }
 
-  @Test("oublie la chaîne, le titre et la clé à la fin de session, puis recharge celle du compte suivant")
+  @Test("oublie la chaîne, le titre, la catégorie et la clé à la fin de session, puis recharge celle du compte suivant")
   func resetsAtSessionEnd() async throws {
-    let store = try makeStore(FakeMyChannel(owned: .success(makeOwnedChannel())))
+    let store = try makeStore(FakeMyChannel(owned: .success(makeOwnedChannel())), category: honorOfKings)
     await store.load()
     await store.revealKey()
 
@@ -61,6 +63,7 @@ struct MyChannelStoreTests {
 
     #expect(store.phase == .loading)
     #expect(store.title.isEmpty)
+    #expect(store.category == nil)
     #expect(store.streamKey == nil)
 
     await store.loadIfNeeded()
@@ -192,16 +195,16 @@ struct MyChannelStoreTests {
     #expect(store.notice == .keyUnavailable)
   }
 
-  @Test("change le titre de la chaîne et le confirme")
+  @Test("change le titre de la chaîne et le confirme, sans toucher à sa catégorie")
   func renames() async throws {
     let repository = try FakeMyChannel(owned: .success(makeOwnedChannel()))
     let store = makeStore(repository)
     await store.load()
 
-    let saved = await store.rename(to: "Any% en 2 h")
+    let saved = await store.save(title: "Any% en 2 h", category: nil)
 
     #expect(saved)
-    #expect(await repository.renames == [RenameCall(channel: channelID, title: "Any% en 2 h")])
+    #expect(await repository.updates == [UpdateCall(channel: channelID, title: "Any% en 2 h", category: .keep)])
     #expect(store.title == "Any% en 2 h")
     #expect(store.notice == .titleSaved)
   }
@@ -212,22 +215,24 @@ struct MyChannelStoreTests {
     let store = makeStore(repository)
     await store.load()
 
-    let saved = await store.rename(to: String(repeating: "a", count: 141))
+    let saved = await store.save(title: String(repeating: "a", count: 141), category: justChatting)
 
     #expect(!saved)
-    #expect(await repository.renames.isEmpty)
+    #expect(await repository.updates.isEmpty)
     #expect(store.title == "Speedrun du dimanche")
+    #expect(store.category == nil)
   }
 
-  @Test("garde l'ancien titre et le dit quand le serveur refuse")
+  @Test("garde l'ancien titre et l'ancienne catégorie, et le dit, quand le serveur refuse")
   func renameRefused() async throws {
-    let store = try makeStore(FakeMyChannel(owned: .success(makeOwnedChannel()), renamed: .failure(Refused())))
+    let store = try makeStore(FakeMyChannel(owned: .success(makeOwnedChannel()), updated: .failure(Refused())), category: honorOfKings)
     await store.load()
 
-    let saved = await store.rename(to: "Nouveau titre")
+    let saved = await store.save(title: "Nouveau titre", category: justChatting)
 
     #expect(!saved)
     #expect(store.title == "Speedrun du dimanche")
+    #expect(store.category == honorOfKings)
     #expect(store.notice == .titleFailed)
   }
 
@@ -257,10 +262,10 @@ struct MyChannelStoreTests {
   func logsRenameRefusalByStatus() async throws {
     let log = LogBook()
     let problem = ServiceProblem(type: "about:blank", title: "Refus", status: 422, detail: "titre refusé")
-    let store = try makeStore(FakeMyChannel(owned: .success(makeOwnedChannel()), renamed: .failure(problem)), log: log)
+    let store = try makeStore(FakeMyChannel(owned: .success(makeOwnedChannel()), updated: .failure(problem)), log: log)
     await store.load()
 
-    _ = await store.rename(to: "Nouveau titre")
+    _ = await store.save(title: "Nouveau titre", category: nil)
 
     #expect(log.entries == ["my channel: title not saved (status 422)"])
   }
@@ -274,12 +279,12 @@ struct MyChannelStoreTests {
     shown.copyKey()
     shown.hideKey()
     let refused = try makeStore(
-      FakeMyChannel(owned: .success(makeOwnedChannel()), key: .failure(Refused()), renamed: .failure(Refused())),
+      FakeMyChannel(owned: .success(makeOwnedChannel()), key: .failure(Refused()), updated: .failure(Refused())),
       log: log
     )
     await refused.load()
     await refused.revealKey()
-    _ = await refused.rename(to: "Nouveau titre")
+    _ = await refused.save(title: "Nouveau titre", category: nil)
     let unreachable = makeStore(FakeMyChannel(owned: .failure(Refused())), log: log)
     await unreachable.load()
 

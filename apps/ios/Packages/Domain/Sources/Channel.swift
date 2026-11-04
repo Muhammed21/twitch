@@ -13,12 +13,14 @@ public struct Channel: Equatable, Sendable {
   public let slug: ChannelSlug
   public let title: String
   public let ownerID: UUID
+  public let category: ChannelCategory?
 
-  public init(id: ChannelID, slug: ChannelSlug, title: String, ownerID: UUID) {
+  public init(id: ChannelID, slug: ChannelSlug, title: String, ownerID: UUID, category: ChannelCategory? = nil) {
     self.id = id
     self.slug = slug
     self.title = title
     self.ownerID = ownerID
+    self.category = category
   }
 }
 

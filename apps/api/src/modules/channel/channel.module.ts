@@ -15,6 +15,7 @@ import { errorDetails, type LogSink, writeLog } from "../../platform/logging.ts"
 import { startStreamConsumer, type StreamConsumerRedis } from "../../platform/stream-consumer.ts";
 import {
   changeCategoryImage,
+  changeCategoryTags,
   createCategory,
   mergeCategory,
   retireCategory,
@@ -97,6 +98,7 @@ export class ChannelModule implements OnModuleInit, OnModuleDestroy {
       create: createCategory(categories),
       merge: mergeCategory(categories),
       retire: retireCategory(categories),
+      tags: changeCategoryTags(categories),
       image: changeCategoryImage({
         ...categories,
         finalizeImage: dependencies.images.finalizeImage,

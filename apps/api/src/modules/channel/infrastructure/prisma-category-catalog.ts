@@ -3,13 +3,24 @@ import type { z } from "zod";
 import { events } from "@repo/contracts";
 import { appendToOutbox } from "@repo/db";
 
-import type { CategoryCatalog, CategoryStatus } from "../application/category-admin.ts";
+import type {
+  CategoryCatalog,
+  CategoryStatus,
+  CategoryView,
+} from "../application/category-admin.ts";
 import type { CategorySearch } from "../application/category-search.ts";
 import { closeFollows, transferFollows } from "./category-follow-transfer.ts";
 import type { ChannelPrisma } from "./prisma-channel-registry.ts";
 
 const OUTBOX = { schema: "channel", table: "ChannelOutbox" };
-const VIEW = { id: true, slug: true, name: true, status: true, imageKey: true } as const;
+const VIEW = {
+  id: true,
+  slug: true,
+  name: true,
+  status: true,
+  imageKey: true,
+  tags: true,
+} as const;
 
 const {
   channelCategoryCreated,
@@ -38,6 +49,32 @@ const lockCategories = (tx: Transaction, ids: readonly string[]) =>
 const isActive = (rows: readonly LockedRow[], id: string): boolean =>
   rows.some((row) => row.id === id && row.status === "active");
 
+const publishUpdated = (
+  tx: Transaction,
+  {
+    category,
+    outboxEventId,
+    occurredAt,
+  }: { category: CategoryView; outboxEventId: string; occurredAt: Date },
+) => {
+  const payload = {
+    categoryId: category.id,
+    name: category.name,
+    imageKey: category.imageKey,
+    tags: [...category.tags],
+  } satisfies z.input<typeof channelCategoryUpdated.payload>;
+  return appendToOutbox(tx, {
+    outbox: OUTBOX,
+    event: {
+      id: outboxEventId,
+      name: channelCategoryUpdated.name,
+      version: channelCategoryUpdated.version,
+      payload,
+      occurredAt,
+    },
+  });
+};
+
 export const prismaCategoryCatalog = (prisma: ChannelPrisma): CategoryCatalog => ({
   findBySlug: (slug) => prisma.channelCategory.findUnique({ where: { slug }, select: VIEW }),
   create: ({ categoryId, slug, name, outboxEventId, occurredAt }) =>
@@ -64,7 +101,7 @@ export const prismaCategoryCatalog = (prisma: ChannelPrisma): CategoryCatalog =>
       });
       return {
         ok: true,
-        value: { id: categoryId, slug, name, status: "active", imageKey: null },
+        value: { id: categoryId, slug, name, status: "active", imageKey: null, tags: [] },
       } as const;
     }),
   merge: ({ sourceId, targetId, outboxEventId, occurredAt }) =>
@@ -143,22 +180,22 @@ export const prismaCategoryCatalog = (prisma: ChannelPrisma): CategoryCatalog =>
         data: { imageKey },
         select: VIEW,
       });
-      const payload = {
-        categoryId,
-        name: updated.name,
-        imageKey,
-      } satisfies z.input<typeof channelCategoryUpdated.payload>;
-      await appendToOutbox(tx, {
-        outbox: OUTBOX,
-        event: {
-          id: outboxEventId,
-          name: channelCategoryUpdated.name,
-          version: channelCategoryUpdated.version,
-          payload,
-          occurredAt,
-        },
-      });
+      await publishUpdated(tx, { category: updated, outboxEventId, occurredAt });
       return { ok: true, value: { category: updated, replacedImageKey } } as const;
+    }),
+  changeTags: ({ categoryId, tags, outboxEventId, occurredAt }) =>
+    prisma.$transaction(async (tx) => {
+      const locked = await lockCategories(tx, [categoryId]);
+      if (!isActive(locked, categoryId)) {
+        return { ok: false, error: "category_inactive" } as const;
+      }
+      const updated = await tx.channelCategory.update({
+        where: { id: categoryId },
+        data: { tags: [...tags] },
+        select: VIEW,
+      });
+      await publishUpdated(tx, { category: updated, outboxEventId, occurredAt });
+      return { ok: true, value: updated } as const;
     }),
 });
 

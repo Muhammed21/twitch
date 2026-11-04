@@ -34,6 +34,8 @@ public enum Spacing {
     public static let x24: CGFloat = 24
     /// Écart entre les onglets Categories et Live Channels de Browse, relevé sur l'app iOS Twitch (32 pt).
     public static let x32: CGFloat = 32
+    /// Hauteur du champ de recherche de catégorie, relevée sur l'app iOS Twitch (36 pt).
+    public static let x36: CGFloat = 36
     /// Retrait du contenu de l'accueil, relevé sur l'app iOS Twitch (40 pt).
     public static let x40: CGFloat = 40
     /// Hauteur des boutons d'action, relevée sur l'app iOS Twitch (44 pt), cible tactile minimale d'iOS.
@@ -46,6 +48,8 @@ public enum Spacing {
     public static let x70: CGFloat = 70
     /// Largeur du bouton « + » de la barre d'onglets, relevée sur l'app iOS Twitch (72 pt).
     public static let x72: CGFloat = 72
+    /// Largeur de la pochette d'une catégorie dans la recherche, relevée sur l'app iOS Twitch (75 pt).
+    public static let x75: CGFloat = 75
     /// Avatar de l'en-tête du profil, relevé sur l'app iOS Twitch (88 pt).
     public static let x88: CGFloat = 88
     /// Largeur des modales de confirmation, relevée sur l'app iOS Twitch (300 pt).

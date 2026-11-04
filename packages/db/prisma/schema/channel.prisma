@@ -36,6 +36,8 @@ model ChannelCategory {
   mergedIntoId String?                 @db.Uuid
   /// Clé d'objet de la pochette (ADR 0044, ADR 0045 §6) ; l'URL publique se calcule à la lecture.
   imageKey     String?
+  /// Libellés affichés sous la catégorie, dans l'ordre (ADR 0050).
+  tags         String[]                @default([])
   createdAt    DateTime                @default(now())
   channels     Channel[]
   follows      ChannelCategoryFollow[]
