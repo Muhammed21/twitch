@@ -1,12 +1,21 @@
 import { err, ok, type Result } from "@repo/result";
 
-export type Profile = {
+export type Account = {
   readonly id: string;
   readonly name: string;
   readonly email: string;
 };
 
-export type ReadProfile = (userId: string) => Promise<Result<Profile, "account_not_found">>;
+export type ReadProfile = (userId: string) => Promise<Result<Account, "account_not_found">>;
+
+export type OwnedChannel = {
+  readonly id: string;
+  readonly slug: string;
+};
+
+export type FindOwnedChannel = (ownerId: string) => Promise<OwnedChannel | null>;
+
+export type Profile = Account & { readonly channel?: OwnedChannel };
 
 export interface FeatureFlags {
   evaluate(distinctId: string): Promise<Readonly<Record<string, unknown>>>;
@@ -37,11 +46,13 @@ export const readBootstrap =
   ({
     featureFlags,
     readProfile,
+    ownedChannel,
     minSupportedVersion,
     onEvaluationFailure,
   }: {
     featureFlags: FeatureFlags;
     readProfile: ReadProfile;
+    ownedChannel: FindOwnedChannel;
     minSupportedVersion: string;
     onEvaluationFailure: (error: unknown) => void;
   }) =>
@@ -49,8 +60,9 @@ export const readBootstrap =
     if (userId === undefined) {
       return ok({ minSupportedVersion, flags: SAFE_FLAGS });
     }
-    const [profile, evaluated] = await Promise.all([
+    const [profile, channel, evaluated] = await Promise.all([
       readProfile(userId),
+      ownedChannel(userId),
       featureFlags.evaluate(userId).catch((error: unknown) => {
         onEvaluationFailure(error);
         return NO_EVALUATION;
@@ -59,5 +71,9 @@ export const readBootstrap =
     if (!profile.ok) {
       return err(profile.error);
     }
-    return ok({ minSupportedVersion, flags: resolveFlags(evaluated), profile: profile.value });
+    return ok({
+      minSupportedVersion,
+      flags: resolveFlags(evaluated),
+      profile: channel === null ? profile.value : { ...profile.value, channel },
+    });
   };

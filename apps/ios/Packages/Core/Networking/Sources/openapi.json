@@ -473,22 +473,6 @@
         "format": "uuid",
         "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
       },
-      "OwnedChannel": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "$ref": "#/components/schemas/Uuid"
-          },
-          "slug": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "slug"
-        ],
-        "additionalProperties": {}
-      },
       "Me": {
         "type": "object",
         "properties": {
@@ -500,9 +484,6 @@
           },
           "email": {
             "type": "string"
-          },
-          "channel": {
-            "$ref": "#/components/schemas/OwnedChannel"
           }
         },
         "required": [
@@ -707,12 +688,31 @@
           },
           "email": {
             "type": "string"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/OwnedChannel"
           }
         },
         "required": [
           "id",
           "name",
           "email"
+        ],
+        "additionalProperties": {}
+      },
+      "OwnedChannel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "slug": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "slug"
         ],
         "additionalProperties": {}
       },

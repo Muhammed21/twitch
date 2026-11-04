@@ -4,6 +4,7 @@ import type { FeatureFlagsConfig } from "../../platform/config/env.ts";
 import { errorDetails, type LogSink, writeLog } from "../../platform/logging.ts";
 import {
   type FeatureFlags,
+  type FindOwnedChannel,
   type ReadProfile,
   readBootstrap,
 } from "./application/read-bootstrap.ts";
@@ -28,6 +29,7 @@ export class MobileModule {
   }: {
     featureFlags: FeatureFlags;
     readProfile: ReadProfile;
+    ownedChannel: FindOwnedChannel;
     minSupportedVersion: string;
     logSink: LogSink;
   }): DynamicModule {

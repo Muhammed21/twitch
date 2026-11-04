@@ -854,16 +854,17 @@ describe("identity : caractérisation OAuth de l'ADR 0026, contre le vrai better
     });
   });
 
-  it("rend la chaîne du compte sur GET /v1/me", async () => {
+  it("rend la chaîne du compte dans le profil de GET /v1/mobile/bootstrap", async () => {
     await withApi(async (base) => {
       const { tokens } = await signIn(base);
       const { userId } = identityOf(tokens.access_token);
       const channel = await seedChannel(userId);
 
-      expect(await me(base, tokens.access_token)).toMatchObject({
-        status: 200,
-        body: { id: userId, channel },
+      const response = await fetch(`${base}/v1/mobile/bootstrap`, {
+        headers: { authorization: `Bearer ${tokens.access_token}` },
       });
+
+      expect(await response.json()).toMatchObject({ profile: { id: userId, channel } });
     });
   });
 

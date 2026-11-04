@@ -68,10 +68,7 @@ export class AppModule {
       module: AppModule,
       imports: [
         PlatformModule.register(platform),
-        IdentityModule.register({
-          ...identity,
-          ownedChannel: createOwnedChannelReader(channel.prisma),
-        }),
+        IdentityModule.register(identity),
         ChannelModule.register({ ...channel, logSink: platform.logSink }),
         StreamModule.register({
           ...stream,
@@ -87,6 +84,7 @@ export class AppModule {
         MobileModule.register({
           featureFlags: createFeatureFlags(mobile.featureFlags),
           readProfile: createCurrentAccountReader(identity.prisma),
+          ownedChannel: createOwnedChannelReader(channel.prisma),
           minSupportedVersion: mobile.minSupportedVersion,
           logSink: platform.logSink,
         }),
