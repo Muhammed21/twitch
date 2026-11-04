@@ -162,8 +162,6 @@ jobs:
 
   maestro:
     name: Maestro (non bloquant)
-    # Sur main, chaque nuit ou à la main, pas sur les PR (apps/ios/maestro/README.md).
-    if: github.event_name != 'pull_request'
     runs-on: macos-15
     timeout-minutes: 45
     # Non bloquant jusqu'à dix exécutions vertes d'affilée (apps/ios/maestro/README.md).
