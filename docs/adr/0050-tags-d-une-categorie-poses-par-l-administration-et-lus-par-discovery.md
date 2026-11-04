@@ -62,6 +62,7 @@ Le changement publie `channel.category.updated { categoryId, name, imageKey, tag
 - `GET /v1/categories` (Browse) rend `tags` sur chaque catégorie.
 - `GET /v1/categories/{slug}` rend l'en-tête d'une catégorie : `slug`, `name`, `imageUrl?`, `liveCount`, `viewerCount` et `tags`. L'audience vient de `DiscoveryCategoryAudience` (ADR 0047). Une catégorie active sans live rend `liveCount: 0` et `viewerCount: 0`.
 - Le slug d'une catégorie fusionnée rend la catégorie cible : le client lit le `slug` de la réponse. Un slug inconnu ou retiré rend `404`.
+- Un segment de route fixe sous `/v1/categories/` est un slug réservé : `catalog` ne peut pas nommer une catégorie, et `parseCategorySlug` le refuse. Un nouveau segment fixe rejoint cette liste, ce qui évite que l'en-tête d'une catégorie dépende de l'ordre d'enregistrement des modules.
 - Le catalogue (`GET /v1/categories/catalog`) ne porte pas les tags : le sélecteur de catégorie ne les affiche pas.
 
 ## Conséquences
