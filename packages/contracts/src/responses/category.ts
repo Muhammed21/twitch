@@ -8,5 +8,6 @@ export const Category = z
     slug: z.string(),
     name: z.string(),
     status: openEnum(["active", "merged", "retired"]),
+    imageUrl: z.url().optional(),
   })
   .meta({ id: "Category" });

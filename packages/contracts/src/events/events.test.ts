@@ -186,6 +186,37 @@ describe("channel.category.merged", () => {
   });
 });
 
+describe("channel.category.updated", () => {
+  const makeUpdated = (overrides: Record<string, unknown> = {}) => ({
+    categoryId: CATEGORY_ID,
+    name: "Just Chatting",
+    imageKey: "images/category/3a4b5c6d-7e8f-4a0b-9c1d-2e3f4a5b6c7d.webp",
+    ...overrides,
+  });
+
+  it("porte son nom et sa version", () => {
+    expect(events.channel.channelCategoryUpdated).toMatchObject({
+      name: "channel.category.updated",
+      version: 1,
+    });
+  });
+
+  it.each([
+    ["avec sa pochette", makeUpdated()],
+    ["sans pochette", makeUpdated({ imageKey: null })],
+  ])("décode la catégorie %s", (_name, updated) => {
+    expect(events.channel.channelCategoryUpdated.payload.parse(updated)).toEqual(updated);
+  });
+
+  it.each([
+    ["sans catégorie", makeUpdated({ categoryId: undefined })],
+    ["sans nom", makeUpdated({ name: undefined })],
+    ["sans clé de pochette", makeUpdated({ imageKey: undefined })],
+  ])("refuse un changement %s", (_name, updated) => {
+    expect(events.channel.channelCategoryUpdated.payload.safeParse(updated).success).toBe(false);
+  });
+});
+
 describe("channel.category.retired", () => {
   it("porte son nom et sa version", () => {
     expect(events.channel.channelCategoryRetired).toMatchObject({

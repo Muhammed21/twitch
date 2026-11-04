@@ -3,12 +3,15 @@ import { describe, expect, it } from "vitest";
 import { inMemoryAuthzContext, type RoleAssignment } from "@repo/authorization";
 import { err, ok } from "@repo/result";
 
+import type { FinalizeImage } from "../../../platform/images/images.module.ts";
 import {
   type CategoryCatalog,
   type CategoryCreation,
+  type CategoryImageChange,
   type CategoryMerge,
   type CategoryRetirement,
   type CategoryView,
+  changeCategoryImage,
   createCategory,
   mergeCategory,
   retireCategory,
@@ -33,6 +36,7 @@ const makeCategory = (overrides: Partial<CategoryView> = {}): CategoryView => ({
   slug: "just-chatting",
   name: "Just Chatting",
   status: "active",
+  imageKey: null,
   ...overrides,
 });
 
@@ -52,6 +56,7 @@ const memoryCatalog = ({
   const created: CategoryCreation[] = [];
   const merges: CategoryMerge[] = [];
   const retirements: CategoryRetirement[] = [];
+  const imageChanges: CategoryImageChange[] = [];
   const byId = (id: string) => categories.find((category) => category.id === id);
   const catalog: CategoryCatalog = {
     findBySlug: async (slug) => categories.find((category) => category.slug === slug) ?? null,
@@ -65,6 +70,7 @@ const memoryCatalog = ({
         slug: creation.slug,
         name: creation.name,
         status: "active",
+        imageKey: null,
       });
     },
     merge: async (merge) => {
@@ -87,8 +93,16 @@ const memoryCatalog = ({
       retirements.push(retirement);
       return ok({ ...category, status: "retired" });
     },
+    changeImage: async (change) => {
+      const category = byId(change.categoryId);
+      if (category?.status !== "active") {
+        return err("category_inactive");
+      }
+      imageChanges.push(change);
+      return ok({ ...category, imageKey: change.imageKey });
+    },
   };
-  return { catalog, created, merges, retirements };
+  return { catalog, created, merges, retirements, imageChanges };
 };
 
 const ASSIGNMENTS = { [ADMIN]: [onPlatform("admin")], [STAFF]: [onPlatform("staff")] };
@@ -115,7 +129,13 @@ describe("création d'une catégorie", () => {
 
     expect(outcome).toEqual({
       ok: true,
-      value: { id: NEW_ID, slug: "league-of-legends", name: "League of Legends", status: "active" },
+      value: {
+        id: NEW_ID,
+        slug: "league-of-legends",
+        name: "League of Legends",
+        status: "active",
+        imageKey: null,
+      },
     });
     expect(created).toEqual([
       {
@@ -318,5 +338,81 @@ describe("retrait d'une catégorie", () => {
 
     expect(outcome).toEqual({ ok: false, error: "forbidden" });
     expect(retirements).toEqual([]);
+  });
+});
+
+const UPLOAD_ID = "9e8f7a6b-5c4d-4e3f-8a2b-1c0d9e8f7a6b";
+const IMAGE_KEY = "images/category/3a4b5c6d-7e8f-4a0b-9c1d-2e3f4a5b6c7d.webp";
+
+const recordingFinalizer = (outcome: Awaited<ReturnType<FinalizeImage>>) => {
+  const requests: Parameters<FinalizeImage>[0][] = [];
+  const finalizeImage: FinalizeImage = async (request) => {
+    requests.push(request);
+    return outcome;
+  };
+  return { finalizeImage, requests };
+};
+
+const FINALIZED = ok({ key: IMAGE_KEY, url: `https://images.twitch.local/${IMAGE_KEY}` });
+
+describe("pochette d'une catégorie", () => {
+  it("relit l'envoi de l'admin pour une catégorie, puis pose la clé avec channel.category.updated", async () => {
+    const { catalog, imageChanges } = memoryCatalog();
+    const { finalizeImage, requests } = recordingFinalizer(FINALIZED);
+
+    const outcome = await changeCategoryImage({ ...dependencies(catalog), finalizeImage })({
+      actorId: ADMIN,
+      slug: "just-chatting",
+      uploadId: UPLOAD_ID,
+    });
+
+    expect(outcome).toEqual(ok(makeCategory({ imageKey: IMAGE_KEY })));
+    expect(requests).toEqual([{ uploadId: UPLOAD_ID, purpose: "category", userId: ADMIN }]);
+    expect(imageChanges).toEqual([
+      {
+        categoryId: makeCategory().id,
+        imageKey: IMAGE_KEY,
+        outboxEventId: NEW_ID,
+        occurredAt: NOW,
+      },
+    ]);
+  });
+
+  it.each([
+    ["un compte sans le rôle admin", STAFF, "just-chatting", "forbidden"],
+    ["une catégorie inconnue", ADMIN, "inconnue", "category_not_found"],
+    ["une catégorie fusionnée", ADMIN, "talk", "category_inactive"],
+  ] as const)("est refusée pour %s, sans relire l'envoi", async (_name, actorId, slug, error) => {
+    const { catalog, imageChanges } = memoryCatalog({
+      categories: [
+        makeCategory(),
+        makeCategory({ id: VALORANT.id, slug: "talk", status: "merged" }),
+      ],
+    });
+    const { finalizeImage, requests } = recordingFinalizer(FINALIZED);
+
+    const outcome = await changeCategoryImage({ ...dependencies(catalog), finalizeImage })({
+      actorId,
+      slug,
+      uploadId: UPLOAD_ID,
+    });
+
+    expect(outcome).toEqual(err(error));
+    expect(requests).toEqual([]);
+    expect(imageChanges).toEqual([]);
+  });
+
+  it("rend le refus de l'image sans toucher à la catégorie", async () => {
+    const { catalog, imageChanges } = memoryCatalog();
+    const { finalizeImage } = recordingFinalizer(err("too_small"));
+
+    const outcome = await changeCategoryImage({ ...dependencies(catalog), finalizeImage })({
+      actorId: ADMIN,
+      slug: "just-chatting",
+      uploadId: UPLOAD_ID,
+    });
+
+    expect(outcome).toEqual(err("too_small"));
+    expect(imageChanges).toEqual([]);
   });
 });

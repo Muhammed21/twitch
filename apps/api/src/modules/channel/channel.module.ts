@@ -10,9 +10,15 @@ import {
 } from "@nestjs/common";
 
 import { type AuthzRedis, createAuthzContext } from "../../authz/authz-context.ts";
+import type { ImageBrick } from "../../platform/images/images.module.ts";
 import { errorDetails, type LogSink, writeLog } from "../../platform/logging.ts";
 import { startStreamConsumer, type StreamConsumerRedis } from "../../platform/stream-consumer.ts";
-import { createCategory, mergeCategory, retireCategory } from "./application/category-admin.ts";
+import {
+  changeCategoryImage,
+  createCategory,
+  mergeCategory,
+  retireCategory,
+} from "./application/category-admin.ts";
 import { getChannel, updateChannelTitle } from "./application/channel-queries.ts";
 import { createChannelForAccount } from "./application/create-channel-for-account.ts";
 import { prismaCategoryCatalog } from "./infrastructure/prisma-category-catalog.ts";
@@ -25,6 +31,7 @@ import { redisOwnerAssignmentsCache } from "./infrastructure/redis-owner-assignm
 import {
   AdminCategoriesController,
   CATEGORY_ADMIN,
+  CATEGORY_IMAGE_URL,
   type CategoryAdmin,
 } from "./presentation/admin-categories.controller.ts";
 import {
@@ -49,6 +56,7 @@ type ChannelDependencies = {
   authzRedis: AuthzRedis;
   consumerRedis: StreamConsumerRedis;
   logSink: LogSink;
+  images: Pick<ImageBrick, "finalizeImage" | "imageUrlOf">;
 };
 
 @Module({})
@@ -74,6 +82,10 @@ export class ChannelModule implements OnModuleInit, OnModuleDestroy {
       create: createCategory(categories),
       merge: mergeCategory(categories),
       retire: retireCategory(categories),
+      image: changeCategoryImage({
+        ...categories,
+        finalizeImage: dependencies.images.finalizeImage,
+      }),
     };
     return {
       module: ChannelModule,
@@ -91,6 +103,7 @@ export class ChannelModule implements OnModuleInit, OnModuleDestroy {
           }),
         },
         { provide: CATEGORY_ADMIN, useValue: categoryAdmin },
+        { provide: CATEGORY_IMAGE_URL, useValue: dependencies.images.imageUrlOf },
       ],
     };
   }

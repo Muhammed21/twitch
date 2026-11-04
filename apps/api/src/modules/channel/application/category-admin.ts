@@ -1,6 +1,7 @@
 import type { AuthzContext } from "@repo/authorization";
 import { err, type Result } from "@repo/result";
 
+import type { FinalizeImage, ImageRejection } from "../../../platform/images/images.module.ts";
 import {
   type CategoryName,
   type CategorySlug,
@@ -15,6 +16,7 @@ export type CategoryView = {
   readonly slug: string;
   readonly name: string;
   readonly status: CategoryStatus;
+  readonly imageKey: string | null;
 };
 
 export type CategoryCreation = {
@@ -38,6 +40,13 @@ export type CategoryRetirement = {
   readonly occurredAt: Date;
 };
 
+export type CategoryImageChange = {
+  readonly categoryId: string;
+  readonly imageKey: string;
+  readonly outboxEventId: string;
+  readonly occurredAt: Date;
+};
+
 export interface CategoryCatalog {
   findBySlug(slug: string): Promise<CategoryView | null>;
   create(creation: CategoryCreation): Promise<Result<CategoryView, "slug_taken">>;
@@ -45,6 +54,7 @@ export interface CategoryCatalog {
   retire(
     retirement: CategoryRetirement,
   ): Promise<Result<CategoryView, "category_inactive" | "category_in_use">>;
+  changeImage(change: CategoryImageChange): Promise<Result<CategoryView, "category_inactive">>;
 }
 
 type Dependencies = {
@@ -145,4 +155,49 @@ export const retireCategory =
       return err("category_not_found");
     }
     return catalog.retire({ categoryId: category.id, outboxEventId: newId(), occurredAt: now() });
+  };
+
+export type CategoryImageError =
+  | "forbidden"
+  | "category_not_found"
+  | "category_inactive"
+  | ImageRejection;
+
+export const changeCategoryImage =
+  ({
+    catalog,
+    authz,
+    finalizeImage,
+    newId,
+    now,
+  }: Dependencies & { finalizeImage: FinalizeImage }) =>
+  async ({
+    actorId,
+    slug,
+    uploadId,
+  }: {
+    actorId: string;
+    slug: string;
+    uploadId: string;
+  }): Promise<Result<CategoryView, CategoryImageError>> => {
+    if (!(await isAdmin(authz, actorId))) {
+      return err("forbidden");
+    }
+    const category = await catalog.findBySlug(slug);
+    if (category === null) {
+      return err("category_not_found");
+    }
+    if (category.status !== "active") {
+      return err("category_inactive");
+    }
+    const image = await finalizeImage({ uploadId, purpose: "category", userId: actorId });
+    if (!image.ok) {
+      return image;
+    }
+    return catalog.changeImage({
+      categoryId: category.id,
+      imageKey: image.value.key,
+      outboxEventId: newId(),
+      occurredAt: now(),
+    });
   };

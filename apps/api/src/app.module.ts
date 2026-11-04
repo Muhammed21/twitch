@@ -99,7 +99,7 @@ export class AppModule {
         PlatformModule.register(platform),
         ImagesModule.register({ images: imageBrick, counter: images.counter }),
         IdentityModule.register({ ...identity, lastLiveOf }),
-        ChannelModule.register({ ...channel, logSink: platform.logSink }),
+        ChannelModule.register({ ...channel, logSink: platform.logSink, images: imageBrick }),
         StreamModule.register({
           ...stream,
           authzRedis: channel.authzRedis,
