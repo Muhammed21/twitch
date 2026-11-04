@@ -22,7 +22,8 @@ appId: com.muhammedcavus.twitch
 - pressKey: Enter
 - inputText: twitch-dev-password
 - pressKey: Enter
+# Sur le runner macOS, le hachage du mot de passe et l'échange du code prennent parfois plus de 30 s.
 - extendedWaitUntil:
     visible:
       id: root.account
-    timeout: 30000
+    timeout: 90000
