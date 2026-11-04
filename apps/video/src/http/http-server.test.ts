@@ -7,6 +7,7 @@ import { Problem } from "@repo/video-contract";
 
 import { createControlPlane } from "../control-plane/control-plane.ts";
 import { inMemoryVideoStore } from "../control-plane/in-memory-video-store.ts";
+import type { Thumbnail } from "../hls/thumbnails.ts";
 import { startHttpServer } from "./http-server.ts";
 
 const serverOptions = (port: number) => ({
@@ -24,6 +25,7 @@ const serverOptions = (port: number) => ({
     blockingTimeoutMs: 0,
     liveSessionOf: async () => undefined,
     fallbackBandwidth: 1,
+    thumbnailOf: async (): Promise<Thumbnail> => ({ ok: false, error: "not_ready" }),
   },
 });
 
