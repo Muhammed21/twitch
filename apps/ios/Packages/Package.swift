@@ -9,7 +9,7 @@ let package = Package(
     .library(name: "DesignSystem", targets: ["DesignSystem"]),
     .library(
       name: "Onboarding",
-      targets: ["Onboarding", "Home", "Navigation", "Player", "Channel", "ChatTransport", "Chat"]
+      targets: ["Onboarding", "Home", "Navigation", "Player", "Channel", "ChatTransport", "Chat", "Profile"]
     ),
     .library(name: "Auth", targets: ["Auth"]),
     .library(name: "Domain", targets: ["Domain"]),
@@ -166,6 +166,19 @@ let package = Package(
       name: "AuthTests",
       dependencies: ["Auth", "Domain", "Networking", "DesignSystem"],
       path: "Features/Auth/Tests",
+      swiftSettings: [.swiftLanguageMode(.v6)]
+    ),
+    .target(
+      name: "Profile",
+      dependencies: ["Domain", "DesignSystem"],
+      path: "Features/Profile/Sources",
+      resources: [.process("Localizable.xcstrings")],
+      swiftSettings: [.swiftLanguageMode(.v6)]
+    ),
+    .testTarget(
+      name: "ProfileTests",
+      dependencies: ["Profile", "Domain"],
+      path: "Features/Profile/Tests",
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
   ]
