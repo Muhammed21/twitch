@@ -12,7 +12,8 @@ import {
   CurrentIdentity,
   requiredScopeGuard,
 } from "../../../platform/authentication.ts";
-import { type ImageRejection, imageRejected } from "../../../platform/images/images.module.ts";
+import type { ImageRejection } from "../../../platform/images/finalize-image.ts";
+import { imageRejected } from "../../../platform/images/image-problems.ts";
 import { ProblemException } from "../../../platform/problem.ts";
 import type {
   CategoryCreationError,
