@@ -53,6 +53,18 @@ private let tabBarMeasures: [(LayoutRole, CGFloat)] = [
   (.avatarRingGap, 1),
 ]
 
+private let widgetMeasures: [(LayoutRole, CGFloat)] = [
+  (.widgetInset, 14),
+  (.widgetGap, 8),
+  (.widgetHeaderHeight, 40),
+  (.widgetHeaderPadding, 8),
+  (.widgetRadius, 4),
+  (.dockButtonSize, 44),
+  (.dockGap, 16),
+  (.dockRingWidth, 2),
+  (.dockRingGap, 3),
+]
+
 private let liveCardMeasures: [(LayoutRole, CGFloat)] = [
   (.mediaInset, 8),
   (.liveBadgePadding, 5),
@@ -124,6 +136,16 @@ struct RolesTests {
   @Test("les libellés de la barre d'onglets sont en caption2 medium")
   func tabBarTextRoles() {
     #expect(TextRole.tabLabel.font == Font.caption2.weight(.medium))
+  }
+
+  @Test("les mesures du Stream Manager à widgets relevées sur creer/gestionnaire-diffusion--widget-actions-rapides", arguments: widgetMeasures)
+  func widgetLayoutRoles(role: LayoutRole, points: CGFloat) {
+    #expect(role.points == points)
+  }
+
+  @Test("le titre d'un widget est en headline gras")
+  func widgetTextRoles() {
+    #expect(TextRole.widgetTitle.font == Font.headline.weight(.bold))
   }
 
   @Test("les mesures d'une carte de live relevées sur parcourir/liste-chaines-live--defaut", arguments: liveCardMeasures)

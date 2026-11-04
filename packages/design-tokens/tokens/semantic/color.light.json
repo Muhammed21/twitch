@@ -174,6 +174,11 @@
         "$type": "color",
         "$value": "{core.color.neutral.100}",
         "$description": "Texte posé sur le voile color.overlay.scrim au-dessus d'une miniature : nombre de viewers d'une carte de live."
+      },
+      "background": {
+        "$type": "color",
+        "$value": "{core.color.neutral.0}",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : fond de l'aperçu du flux du Stream Manager, mesuré #060508 (creer/gestionnaire-diffusion--widget-actions-rapides), identique dans les deux thèmes."
       }
     }
   }

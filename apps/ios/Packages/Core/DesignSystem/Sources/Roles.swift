@@ -12,6 +12,7 @@ public enum TextRole: Sendable {
   case chatAuthor
   case title
   case tabLabel
+  case widgetTitle
   case channelName
   case cardDetail
   case liveBadge
@@ -29,6 +30,7 @@ public enum TextRole: Sendable {
     case .chatAuthor: .actionLabel
     case .title: .titleText
     case .tabLabel: .tabLabel
+    case .widgetTitle: .actionLabel
     case .channelName: .displayText
     case .cardDetail: .supportingText
     case .liveBadge: .liveBadge
@@ -74,6 +76,15 @@ public enum LayoutRole: Sendable {
   case createGlyphSize
   case avatarRingWidth
   case avatarRingGap
+  case widgetInset
+  case widgetGap
+  case widgetHeaderHeight
+  case widgetHeaderPadding
+  case widgetRadius
+  case dockButtonSize
+  case dockGap
+  case dockRingWidth
+  case dockRingGap
   case mediaInset
   case liveBadgePadding
   case liveBadgeHeight
@@ -124,6 +135,15 @@ public enum LayoutRole: Sendable {
     case .createGlyphSize: Spacing.x16
     case .avatarRingWidth: Spacing.x2
     case .avatarRingGap: Spacing.x1
+    case .widgetInset: Spacing.x14
+    case .widgetGap: Spacing.x8
+    case .widgetHeaderHeight: Spacing.x40
+    case .widgetHeaderPadding: Spacing.x8
+    case .widgetRadius: Radius.md
+    case .dockButtonSize: Spacing.x44
+    case .dockGap: Spacing.x16
+    case .dockRingWidth: Spacing.x2
+    case .dockRingGap: Spacing.x3
     case .mediaInset: Spacing.x8
     case .liveBadgePadding: Spacing.x5
     case .liveBadgeHeight: Spacing.x20
