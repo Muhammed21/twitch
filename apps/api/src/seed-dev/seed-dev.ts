@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { networkInterfaces } from "node:os";
 
 import { Client } from "pg";
+import type { z } from "zod";
 
 import { events } from "@repo/contracts";
 import { appendToOutbox, createContextClient } from "@repo/db";
@@ -260,7 +261,9 @@ const categorizeDemoChannels = (env: Env, ownerIds: readonly string[]): Promise<
             id: randomUUID(),
             name: channelMetadataUpdated.name,
             version: channelMetadataUpdated.version,
-            payload: { channelId: id, title, categoryId: category.id },
+            payload: { channelId: id, title, categoryId: category.id } satisfies z.input<
+              typeof channelMetadataUpdated.payload
+            >,
             occurredAt: new Date(),
           },
         });
