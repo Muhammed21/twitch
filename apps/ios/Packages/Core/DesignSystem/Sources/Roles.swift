@@ -13,6 +13,11 @@ public enum TextRole: Sendable {
   case title
   case tabLabel
   case meta
+  case widgetTitle
+  case channelName
+  case cardDetail
+  case liveBadge
+  case viewerCount
 
   public var font: Font {
     switch self {
@@ -27,6 +32,11 @@ public enum TextRole: Sendable {
     case .title: .titleText
     case .tabLabel: .tabLabel
     case .meta: .metaText
+    case .widgetTitle: .actionLabel
+    case .channelName: .displayText
+    case .cardDetail: .supportingText
+    case .liveBadge: .liveBadge
+    case .viewerCount: .viewerCount
     }
   }
 }
@@ -62,7 +72,6 @@ public enum LayoutRole: Sendable {
   case tabBarTopInset
   case tabLabelGap
   case tabIconSize
-  case tabGlyphSize
   case avatarGlyphInset
   case createButtonWidth
   case createButtonHeight
@@ -77,6 +86,26 @@ public enum LayoutRole: Sendable {
   case categoryNameTop
   case liveDotSize
   case liveDotGap
+  case widgetInset
+  case widgetGap
+  case widgetHeaderHeight
+  case widgetHeaderPadding
+  case widgetRadius
+  case dockButtonSize
+  case dockGap
+  case dockRingWidth
+  case dockRingGap
+  case mediaInset
+  case liveBadgePadding
+  case liveBadgeHeight
+  case liveBadgeRadius
+  case cardInset
+  case cardInfoTop
+  case cardInfoBottom
+  case cardAvatarSize
+  case cardAvatarGlyphInset
+  case cardAvatarGap
+  case cardLineGap
 
   public var points: CGFloat {
     switch self {
@@ -110,11 +139,10 @@ public enum LayoutRole: Sendable {
     case .tabBarTopInset: Spacing.x8
     case .tabLabelGap: Spacing.x2
     case .tabIconSize: Spacing.x24
-    case .tabGlyphSize: Spacing.x20
-    case .avatarGlyphInset: Spacing.x5
+    case .avatarGlyphInset: Spacing.x4
     case .createButtonWidth: Spacing.x72
     case .createButtonHeight: Spacing.x40
-    case .createGlyphSize: Spacing.x14
+    case .createGlyphSize: Spacing.x16
     case .avatarRingWidth: Spacing.x2
     case .avatarRingGap: Spacing.x1
     case .browseTabGap: Spacing.x32
@@ -125,6 +153,26 @@ public enum LayoutRole: Sendable {
     case .categoryNameTop: Spacing.x4
     case .liveDotSize: Spacing.x8
     case .liveDotGap: Spacing.x6
+    case .widgetInset: Spacing.x14
+    case .widgetGap: Spacing.x8
+    case .widgetHeaderHeight: Spacing.x40
+    case .widgetHeaderPadding: Spacing.x8
+    case .widgetRadius: Radius.md
+    case .dockButtonSize: Spacing.x44
+    case .dockGap: Spacing.x16
+    case .dockRingWidth: Spacing.x2
+    case .dockRingGap: Spacing.x3
+    case .mediaInset: Spacing.x8
+    case .liveBadgePadding: Spacing.x5
+    case .liveBadgeHeight: Spacing.x20
+    case .liveBadgeRadius: Radius.md
+    case .cardInset: Spacing.x16
+    case .cardInfoTop: Spacing.x8
+    case .cardInfoBottom: Spacing.x16
+    case .cardAvatarSize: Spacing.x44
+    case .cardAvatarGlyphInset: Spacing.x10
+    case .cardAvatarGap: Spacing.x8
+    case .cardLineGap: Spacing.x2
     }
   }
 }

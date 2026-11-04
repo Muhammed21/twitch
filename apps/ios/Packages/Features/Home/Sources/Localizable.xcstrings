@@ -71,6 +71,26 @@
         }
       }
     },
+    "home.live.badge" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LIVE"
+          }
+        }
+      }
+    },
+    "home.live.viewers" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ viewers"
+          }
+        }
+      }
+    },
     "home.retry" : {
       "localizations" : {
         "en" : {
@@ -87,16 +107,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Home"
-          }
-        }
-      }
-    },
-    "home.title" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Live"
           }
         }
       }

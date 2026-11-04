@@ -128,7 +128,7 @@ struct SignedInRoot: View {
     TabBarItem(
       tab: AppTab.home,
       title: HomeTab.title,
-      glyph: .symbol(outline: "house", filled: "house.fill"),
+      glyph: .mask(outline: .homeOutline, filled: .homeFilled),
       accessibilityIdentifier: "root.home"
     ),
     TabBarItem(

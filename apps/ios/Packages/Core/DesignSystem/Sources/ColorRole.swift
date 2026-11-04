@@ -24,6 +24,10 @@ public enum ColorRole: Equatable, Sendable {
   case avatarDefault
   case onAvatarDefault
   case liveIndicator
+  case mediaBackground
+  case liveBadge
+  case onLiveBadge
+  case onMedia
 
   public var color: Color {
     switch self {
@@ -48,6 +52,10 @@ public enum ColorRole: Equatable, Sendable {
     case .avatarDefault: .avatarDefault
     case .onAvatarDefault: .avatarOnDefault
     case .liveIndicator: .indicatorLive
+    case .mediaBackground: .mediaBackground
+    case .liveBadge: .liveBadge
+    case .onLiveBadge: .liveOnBadge
+    case .onMedia: .mediaOnOverlay
     }
   }
 

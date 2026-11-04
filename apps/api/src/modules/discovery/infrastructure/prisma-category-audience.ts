@@ -31,12 +31,13 @@ export const prismaLivesInCategory =
 export const prismaCategoryAudienceStore = (prisma: DiscoveryPrisma): CategoryAudienceStore => ({
   replace: async (audiences) => {
     const refreshedAt = new Date();
-    await prisma.$transaction([
-      prisma.discoveryCategoryAudience.deleteMany(),
-      prisma.discoveryCategoryAudience.createMany({
+    await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('discovery.category-audience'))`;
+      await tx.discoveryCategoryAudience.deleteMany();
+      await tx.discoveryCategoryAudience.createMany({
         data: audiences.map((audience) => ({ ...audience, refreshedAt })),
-      }),
-    ]);
+      });
+    });
   },
 });
 

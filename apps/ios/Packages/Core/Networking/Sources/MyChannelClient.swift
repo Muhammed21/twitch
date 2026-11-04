@@ -37,11 +37,19 @@ public struct MyChannelClient: MyChannelRepository {
     }
     switch output {
     case let .ok(response):
-      let body = try response.body.json
-      guard let ingestURL = URL(string: body.ingestUrl) else {
-        throw ClientError.malformedIngestURL
-      }
-      return StreamKey(body.streamKey, ingestURL: ingestURL)
+      return try Self.streamKey(response.body.json)
+    case let .default(_, response):
+      throw try ServiceProblem(response.body.applicationProblemJson)
+    }
+  }
+
+  public func rotateStreamKey(of channel: ChannelID) async throws -> StreamKey {
+    let output = try await unwrappingClientError {
+      try await client.streamKeyControllerRotate(path: .init(id: Self.pathID(channel)))
+    }
+    switch output {
+    case let .ok(response):
+      return try Self.streamKey(response.body.json)
     case let .default(_, response):
       throw try ServiceProblem(response.body.applicationProblemJson)
     }
@@ -58,6 +66,13 @@ public struct MyChannelClient: MyChannelRepository {
     case let .default(_, response):
       throw try ServiceProblem(response.body.applicationProblemJson)
     }
+  }
+
+  private static func streamKey(_ body: Components.Schemas.StreamKey) throws -> StreamKey {
+    guard let ingestURL = URL(string: body.ingestUrl) else {
+      throw ClientError.malformedIngestURL
+    }
+    return StreamKey(body.streamKey, ingestURL: ingestURL)
   }
 
   private static func pathID(_ channel: ChannelID) -> String {

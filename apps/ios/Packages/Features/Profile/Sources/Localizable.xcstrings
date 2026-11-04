@@ -241,6 +241,26 @@
         }
       }
     },
+    "streamManager.notice.keyRotated" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stream key reset. Update it in your streaming software."
+          }
+        }
+      }
+    },
+    "streamManager.notice.keyRotationFailed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't reset your stream key."
+          }
+        }
+      }
+    },
     "streamManager.notice.keyUnavailable" : {
       "localizations" : {
         "en" : {
@@ -271,12 +291,32 @@
         }
       }
     },
-    "streamManager.obs" : {
+    "streamManager.resetKey" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Recommended OBS Settings"
+            "value" : "Reset"
+          }
+        }
+      }
+    },
+    "streamManager.resetKey.message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your current key will stop working right away."
+          }
+        }
+      }
+    },
+    "streamManager.resetKey.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset your stream key?"
           }
         }
       }
@@ -317,6 +357,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Title"
+          }
+        }
+      }
+    },
+    "streamManager.widget.obs" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OBS Settings"
+          }
+        }
+      }
+    },
+    "streamManager.widget.streamInfo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stream Info"
+          }
+        }
+      }
+    },
+    "streamManager.widget.streamKey" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stream Key"
           }
         }
       }

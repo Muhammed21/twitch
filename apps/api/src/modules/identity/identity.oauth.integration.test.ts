@@ -68,6 +68,32 @@ const seedChannel = async (ownerId: string) => {
   return channel;
 };
 
+const seedStreamSession = async ({
+  channelId,
+  startedAt,
+}: {
+  channelId: string;
+  startedAt: Date;
+}) => {
+  const id = randomUUID();
+  await asMigrator((client) =>
+    client.query(
+      `INSERT INTO "stream"."StreamSession" ("id", "channelId", "providerSessionId", "startedAt", "endedAt")
+       VALUES ($1, $2, $3, $4, $5)`,
+      [id, channelId, `session-${id}`, startedAt, new Date(startedAt.getTime() + 3_600_000)],
+    ),
+  );
+};
+
+const changeBio = async (base: string, accessToken: string, bio: unknown) => {
+  const response = await fetch(`${base}/v1/me`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json", authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify({ bio }),
+  });
+  return { status: response.status, body: (await response.json()) as Record<string, unknown> };
+};
+
 const sessionCookieOf = async (base: string) => {
   const response = await fetch(`${base}/auth/sign-up/email`, {
     method: "POST",
@@ -851,6 +877,78 @@ describe("identity : caractérisation OAuth de l'ADR 0026, contre le vrai better
           email: expect.stringMatching(/^oauth-.+@twitch\.local$/),
         },
       });
+    });
+  });
+
+  it("enregistre la bio de PATCH /v1/me et la relit sur GET /v1/me", async () => {
+    await withApi(async (base) => {
+      const { tokens } = await signIn(base);
+
+      expect(await changeBio(base, tokens.access_token, "  Speedrun le dimanche ")).toMatchObject({
+        status: 200,
+        body: { bio: "Speedrun le dimanche" },
+      });
+      expect((await me(base, tokens.access_token)).body).toMatchObject({
+        bio: "Speedrun le dimanche",
+      });
+    });
+  });
+
+  it("efface la bio sur PATCH /v1/me avec une bio vide", async () => {
+    await withApi(async (base) => {
+      const { tokens } = await signIn(base);
+      await changeBio(base, tokens.access_token, "Speedrun");
+
+      await changeBio(base, tokens.access_token, "");
+
+      expect((await me(base, tokens.access_token)).body).not.toHaveProperty("bio");
+    });
+  });
+
+  it("refuse en 422 une bio trop longue et garde l'ancienne", async () => {
+    await withApi(async (base) => {
+      const { tokens } = await signIn(base);
+      await changeBio(base, tokens.access_token, "Speedrun");
+
+      expect(await changeBio(base, tokens.access_token, "a".repeat(301))).toMatchObject({
+        status: 422,
+      });
+      expect((await me(base, tokens.access_token)).body).toMatchObject({ bio: "Speedrun" });
+    });
+  });
+
+  it("rend le début du dernier live de la chaîne du compte sur GET /v1/me et dans le bootstrap", async () => {
+    await withApi(async (base) => {
+      const { tokens } = await signIn(base);
+      const { userId } = identityOf(tokens.access_token);
+      const channel = await seedChannel(userId);
+      await seedStreamSession({
+        channelId: channel.id,
+        startedAt: new Date("2026-11-01T20:00:00.000Z"),
+      });
+      await seedStreamSession({
+        channelId: channel.id,
+        startedAt: new Date("2026-11-03T20:15:00.000Z"),
+      });
+
+      const bootstrap = await fetch(`${base}/v1/mobile/bootstrap`, {
+        headers: { authorization: `Bearer ${tokens.access_token}` },
+      });
+
+      expect((await me(base, tokens.access_token)).body).toMatchObject({
+        lastLiveAt: "2026-11-03T20:15:00.000Z",
+      });
+      expect(await bootstrap.json()).toMatchObject({
+        profile: { lastLiveAt: "2026-11-03T20:15:00.000Z" },
+      });
+    });
+  });
+
+  it("ne rend pas de dernier live pour un compte sans chaîne", async () => {
+    await withApi(async (base) => {
+      const { tokens } = await signIn(base);
+
+      expect((await me(base, tokens.access_token)).body).not.toHaveProperty("lastLiveAt");
     });
   });
 

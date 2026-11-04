@@ -193,6 +193,34 @@ public extension Color {
             ? UIColor(red: 0, green: 0, blue: 0, alpha: 1)
             : UIColor(red: 0, green: 0, blue: 0, alpha: 1)
     })
+    /// Fond du badge LIVE d'une carte de live, identique dans les deux thèmes.
+    /// clair #EB0400 · sombre #EB0400
+    static let liveBadge = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.922, green: 0.016, blue: 0, alpha: 1)
+            : UIColor(red: 0.922, green: 0.016, blue: 0, alpha: 1)
+    })
+    /// Libellé « LIVE » posé sur le badge.
+    /// clair #FFFFFF · sombre #FFFFFF
+    static let liveOnBadge = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 1, green: 1, blue: 1, alpha: 1)
+            : UIColor(red: 1, green: 1, blue: 1, alpha: 1)
+    })
+    /// Texte posé sur le voile color.overlay.scrim au-dessus d'une miniature : nombre de viewers d'une carte de live.
+    /// clair #FFFFFF · sombre #FFFFFF
+    static let mediaOnOverlay = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 1, green: 1, blue: 1, alpha: 1)
+            : UIColor(red: 1, green: 1, blue: 1, alpha: 1)
+    })
+    /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : fond de l'aperçu du flux du Stream Manager, mesuré #060508 (creer/gestionnaire-diffusion--widget-actions-rapides), identique dans les deux thèmes.
+    /// clair #000000 · sombre #000000
+    static let mediaBackground = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0, green: 0, blue: 0, alpha: 1)
+            : UIColor(red: 0, green: 0, blue: 0, alpha: 1)
+    })
     /// Point rouge devant le nombre de viewers d'une catégorie en live, identique dans les deux thèmes (parcourir/liste-categories--defaut et --theme-sombre, mesuré #ec1817 et #ed1918).
     /// clair #EB0400 · sombre #EB0400
     static let indicatorLive = Color(uiColor: UIColor { trait in
@@ -257,6 +285,14 @@ public extension Color {
         public static let avatarDefaultDark = Color(.sRGB, red: 0.749, green: 1, blue: 0, opacity: 1)
         public static let avatarOnDefaultLight = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 1)
         public static let avatarOnDefaultDark = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 1)
+        public static let liveBadgeLight = Color(.sRGB, red: 0.922, green: 0.016, blue: 0, opacity: 1)
+        public static let liveBadgeDark = Color(.sRGB, red: 0.922, green: 0.016, blue: 0, opacity: 1)
+        public static let liveOnBadgeLight = Color(.sRGB, red: 1, green: 1, blue: 1, opacity: 1)
+        public static let liveOnBadgeDark = Color(.sRGB, red: 1, green: 1, blue: 1, opacity: 1)
+        public static let mediaOnOverlayLight = Color(.sRGB, red: 1, green: 1, blue: 1, opacity: 1)
+        public static let mediaOnOverlayDark = Color(.sRGB, red: 1, green: 1, blue: 1, opacity: 1)
+        public static let mediaBackgroundLight = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 1)
+        public static let mediaBackgroundDark = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 1)
         public static let indicatorLiveLight = Color(.sRGB, red: 0.922, green: 0.016, blue: 0, opacity: 1)
         public static let indicatorLiveDark = Color(.sRGB, red: 0.922, green: 0.016, blue: 0, opacity: 1)
     }

@@ -1,12 +1,12 @@
 import SwiftUI
 
 public enum TabBarGlyph: Equatable, Sendable {
-  case symbol(outline: String, filled: String)
+  case mask(outline: Glyph, filled: Glyph)
   case avatar
 
-  public func systemName(isSelected: Bool) -> String? {
+  public func mask(isSelected: Bool) -> Glyph? {
     switch self {
-    case let .symbol(outline, filled): isSelected ? filled : outline
+    case let .mask(outline, filled): isSelected ? filled : outline
     case .avatar: nil
     }
   }
@@ -102,9 +102,7 @@ private struct CreateButton: View {
 
   var body: some View {
     Button(action: create.action) {
-      Image(systemName: "plus")
-        .resizable()
-        .scaledToFit()
+      Glyph.plus.image
         .frame(width: LayoutRole.createGlyphSize.points, height: LayoutRole.createGlyphSize.points)
         .foregroundStyle(TabBarCreateStyle.foreground.color)
         .frame(width: LayoutRole.createButtonWidth.points, height: LayoutRole.createButtonHeight.points)
@@ -136,33 +134,35 @@ private struct TabBarCell<Tab: Hashable>: View {
   }
 
   @ViewBuilder private var glyph: some View {
-    if let systemName = item.glyph.systemName(isSelected: isSelected) {
-      Image(systemName: systemName)
-        .resizable()
-        .scaledToFit()
-        .frame(width: LayoutRole.tabGlyphSize.points, height: LayoutRole.tabGlyphSize.points)
+    if let mask = item.glyph.mask(isSelected: isSelected) {
+      mask.image
         .accessibilityHidden(true)
     } else {
-      DefaultAvatar(isRinged: isSelected)
+      DefaultAvatar(
+        diameter: LayoutRole.tabIconSize.points,
+        glyphInset: LayoutRole.avatarGlyphInset.points,
+        isRinged: isSelected
+      )
     }
   }
 }
 
-private struct DefaultAvatar: View {
-  let isRinged: Bool
+struct DefaultAvatar: View {
+  let diameter: CGFloat
+  let glyphInset: CGFloat
+  var isRinged = false
 
-  private var diameter: CGFloat { LayoutRole.tabIconSize.points }
   private var ringInset: CGFloat { LayoutRole.avatarRingWidth.points + LayoutRole.avatarRingGap.points }
 
   var body: some View {
     Circle()
       .fill(ColorRole.avatarDefault.color)
       .overlay {
-        Image(systemName: "person")
+        Glyph.avatarPerson.image
           .resizable()
           .scaledToFit()
           .foregroundStyle(ColorRole.onAvatarDefault.color)
-          .padding(LayoutRole.avatarGlyphInset.points)
+          .padding(glyphInset)
       }
       .scaleEffect(isRinged ? (diameter - 2 * ringInset) / diameter : 1)
       .overlay {
@@ -170,6 +170,7 @@ private struct DefaultAvatar: View {
           Circle().strokeBorder(ColorRole.navigationActive.color, lineWidth: LayoutRole.avatarRingWidth.points)
         }
       }
+      .frame(width: diameter, height: diameter)
       .accessibilityHidden(true)
   }
 }

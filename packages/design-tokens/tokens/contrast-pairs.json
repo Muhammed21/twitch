@@ -157,6 +157,12 @@
       "note": "SC 1.4.11 — glyphe de l'avatar par défaut"
     },
     {
+      "foreground": "color.live.onBadge",
+      "background": "color.live.badge",
+      "min": 4.5,
+      "note": "Libellé « LIVE » en subheadline semibold, sous le seuil du grand texte WCAG"
+    },
+    {
       "foreground": "color.indicator.live",
       "background": "color.background.primary",
       "min": 3.0,

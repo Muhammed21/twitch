@@ -45,13 +45,38 @@ private let tabBarMeasures: [(LayoutRole, CGFloat)] = [
   (.tabBarTopInset, 8),
   (.tabLabelGap, 2),
   (.tabIconSize, 24),
-  (.tabGlyphSize, 20),
-  (.avatarGlyphInset, 5),
+  (.avatarGlyphInset, 4),
   (.createButtonWidth, 72),
   (.createButtonHeight, 40),
-  (.createGlyphSize, 14),
+  (.createGlyphSize, 16),
   (.avatarRingWidth, 2),
   (.avatarRingGap, 1),
+]
+
+private let widgetMeasures: [(LayoutRole, CGFloat)] = [
+  (.widgetInset, 14),
+  (.widgetGap, 8),
+  (.widgetHeaderHeight, 40),
+  (.widgetHeaderPadding, 8),
+  (.widgetRadius, 4),
+  (.dockButtonSize, 44),
+  (.dockGap, 16),
+  (.dockRingWidth, 2),
+  (.dockRingGap, 3),
+]
+
+private let liveCardMeasures: [(LayoutRole, CGFloat)] = [
+  (.mediaInset, 8),
+  (.liveBadgePadding, 5),
+  (.liveBadgeHeight, 20),
+  (.liveBadgeRadius, 4),
+  (.cardInset, 16),
+  (.cardInfoTop, 8),
+  (.cardInfoBottom, 16),
+  (.cardAvatarSize, 44),
+  (.cardAvatarGlyphInset, 10),
+  (.cardAvatarGap, 8),
+  (.cardLineGap, 2),
 ]
 
 @Suite("Rôles de texte, de mise en page et de bouton")
@@ -111,6 +136,29 @@ struct RolesTests {
   @Test("les libellés de la barre d'onglets sont en caption2 medium")
   func tabBarTextRoles() {
     #expect(TextRole.tabLabel.font == Font.caption2.weight(.medium))
+  }
+
+  @Test("les mesures du Stream Manager à widgets relevées sur creer/gestionnaire-diffusion--widget-actions-rapides", arguments: widgetMeasures)
+  func widgetLayoutRoles(role: LayoutRole, points: CGFloat) {
+    #expect(role.points == points)
+  }
+
+  @Test("le titre d'un widget est en headline gras")
+  func widgetTextRoles() {
+    #expect(TextRole.widgetTitle.font == Font.headline.weight(.bold))
+  }
+
+  @Test("les mesures d'une carte de live relevées sur parcourir/liste-chaines-live--defaut", arguments: liveCardMeasures)
+  func liveCardLayoutRoles(role: LayoutRole, points: CGFloat) {
+    #expect(role.points == points)
+  }
+
+  @Test("une carte de live : nom en headline semibold, titre et catégorie en body, badge et viewers en subheadline")
+  func liveCardTextRoles() {
+    #expect(TextRole.channelName.font == Font.headline.weight(.semibold))
+    #expect(TextRole.cardDetail.font == Font.body.weight(.regular))
+    #expect(TextRole.liveBadge.font == Font.subheadline.weight(.semibold))
+    #expect(TextRole.viewerCount.font == Font.subheadline.weight(.regular))
   }
 
   @Test("le nom du compte en tête du menu est en title2 gras")
