@@ -15,6 +15,16 @@ public final class CategoryLivesCatalog {
   public func store(for category: CategorySlug) -> HomeStore {
     HomeStore(directory: CategoryLiveDirectory(category: category, source: source))
   }
+
+  public func page(for category: CategorySlug, keeping current: CategoryLivesPage?) -> CategoryLivesPage {
+    if let current, current.category == category { return current }
+    return CategoryLivesPage(category: category, store: store(for: category))
+  }
+}
+
+public struct CategoryLivesPage {
+  public let category: CategorySlug
+  public let store: HomeStore
 }
 
 private struct CategoryLiveDirectory: LiveDirectory {
@@ -28,7 +38,7 @@ private struct CategoryLiveDirectory: LiveDirectory {
 
 public struct CategoryLivesScreen: View {
   @Environment(CategoryLivesCatalog.self) private var catalog
-  @State private var store: HomeStore?
+  @State private var page: CategoryLivesPage?
   private let category: CategorySlug
   private let name: String
 
@@ -39,8 +49,8 @@ public struct CategoryLivesScreen: View {
 
   public var body: some View {
     Group {
-      if let store {
-        LiveList(store: store)
+      if let page {
+        LiveList(store: page.store)
       } else {
         ColorRole.background.color.ignoresSafeArea()
       }
@@ -48,7 +58,7 @@ public struct CategoryLivesScreen: View {
     .navigationTitle(name)
     .navigationBarTitleDisplayMode(.inline)
     .task(id: category) {
-      if store == nil { store = catalog.store(for: category) }
+      page = catalog.page(for: category, keeping: page)
     }
   }
 }

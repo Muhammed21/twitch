@@ -58,6 +58,25 @@ struct CategoryLivesCatalogTests {
     ])
   }
 
+  @Test("l'écran garde sa liste pour la même catégorie et la remplace quand la catégorie change")
+  func pageFollowsCategory() async throws {
+    let source = try FakeCategoryLives(pages: [
+      Request(category: "just-chatting", cursor: nil): LivePage(lives: [live("jean_dupont", id: 1)], nextCursor: nil),
+      Request(category: "fortnite", cursor: nil): LivePage(lives: [live("marie_curie", id: 2)], nextCursor: nil),
+    ])
+    let catalog = CategoryLivesCatalog(source: source)
+    let first = try catalog.page(for: CategorySlug("just-chatting"), keeping: nil)
+
+    let same = try catalog.page(for: CategorySlug("just-chatting"), keeping: first)
+    let other = try catalog.page(for: CategorySlug("fortnite"), keeping: first)
+    await other.store.loadFirstPage()
+
+    #expect(same.store === first.store)
+    #expect(other.store !== first.store)
+    #expect(try other.category == CategorySlug("fortnite"))
+    #expect(other.store.lives.map(\.slug.rawValue) == ["marie_curie"])
+  }
+
   @Test("une catégorie inconnue, en 404, laisse la liste en échec avec réessai")
   func unknownCategory() async throws {
     let source = FakeCategoryLives(pages: [:])
