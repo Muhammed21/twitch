@@ -25,9 +25,14 @@ export const RealtimeSessionRevoked = z
   .looseObject({ action: openEnum(["refresh_and_reconnect", "stop"]) })
   .meta({ id: "RealtimeSessionRevoked" });
 
+export const RealtimeChatUserCleared = z
+  .looseObject({ channelId: Uuid, userId: Uuid })
+  .meta({ id: "RealtimeChatUserCleared" });
+
 export const serverEvents = {
   "chat:message": RealtimeChatMessage,
   "chat:rejected": RealtimeChatRejected,
+  "chat:user_cleared": RealtimeChatUserCleared,
   "session:revoked": RealtimeSessionRevoked,
 } as const;
 
@@ -37,5 +42,6 @@ const envelope = <const Event extends keyof typeof serverEvents>(event: Event) =
 export const RealtimeServerMessage = extensibleUnion("event", [
   envelope("chat:message"),
   envelope("chat:rejected"),
+  envelope("chat:user_cleared"),
   envelope("session:revoked"),
 ]).meta({ id: "RealtimeServerMessage" });
