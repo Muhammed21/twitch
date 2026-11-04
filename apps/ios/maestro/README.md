@@ -24,9 +24,9 @@ cd apps/ios && maestro test maestro/
 
 ## En CI
 
-Le job `maestro` de `.github/workflows/ios.yml` monte PostgreSQL, Redis, l'API, le relais de l'outbox et le service vidéo sur le runner macOS (pas de Docker), met `viewer_dev` en direct et lance tous les flows sur un iPhone 16 Pro sous iOS 18.5, démarré et attendu (`simctl bootstatus`) avant Maestro.
+Le job `maestro` de `.github/workflows/ios.yml` monte PostgreSQL, Redis, l'API, le relais de l'outbox et le service vidéo sur le runner macOS (pas de Docker), et lance tous les flows sur un iPhone 16 Pro sous iOS 18.5, démarré et attendu (`simctl bootstatus`) avant Maestro.
 
-Les flows passent par `ci-test.sh`. Quand le pilote XCTest de Maestro ne démarre pas (« iOS driver not ready in time »), aucun flow n'a tourné : le script redémarre le simulateur et relance Maestro, trois essais au plus. Un flow en échec n'est jamais relancé. `check-ci-test.sh` vérifie ce comportement dans le job `ios`.
+Les flows passent par `ci-test.sh`. Quand le pilote XCTest de Maestro ne démarre pas (« iOS driver not ready in time »), aucun flow n'a tourné : le script redémarre le simulateur et relance Maestro, trois essais au plus. Un flow en échec n'est jamais relancé. Avec `MAESTRO_LIVE_SLUG=viewer_dev`, le script publie aussi la chaîne en direct par `go-live.sh` juste avant chaque essai : pendant le redémarrage du simulateur, le runner sature et le serveur RTMP coupe ffmpeg, ce qui termine le live. Il arrête le ffmpeg de l'essai précédent et attend que la chaîne ne soit plus listée en direct avant de la republier. `check-ci-test.sh` vérifie ce comportement dans le job `ios`.
 
 Le job `maestro` tourne sur les PR qui touchent `apps/ios/`, au push sur `main`, chaque nuit à 3 h UTC (les flows dépendent aussi de l'API et du service vidéo) et à la main. Il reprend le DerivedData de l'app que le job `iOS` met en cache.
 
