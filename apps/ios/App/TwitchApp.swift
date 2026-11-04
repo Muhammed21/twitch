@@ -26,6 +26,7 @@ struct TwitchApp: App {
         .environment(stores.launch)
         .environment(stores.home)
         .environment(stores.browse)
+        .environment(stores.categoryLives)
         .environment(stores.router)
         .environment(stores.player)
         .environment(stores.channelPlayback)
@@ -204,6 +205,8 @@ private extension View {
       switch route {
       case let .channel(slug):
         ChannelScreen(slug: slug)
+      case let .category(slug, name):
+        CategoryLivesScreen(category: slug, name: name)
       }
     }
   }
@@ -243,6 +246,7 @@ struct Stores {
   let launch: LaunchStore
   let home: HomeStore
   let browse: BrowseStore
+  let categoryLives: CategoryLivesCatalog
   let router: Router
   let player: PlayerController
   let channelPlayback: ChannelPlayback
@@ -292,6 +296,7 @@ enum Composition {
       launch: LaunchStore(source: BootstrapClient(apiBaseURL: configuration.apiBaseURL, transport: transport), currentVersion: currentVersion),
       home: HomeStore(directory: LiveDirectoryClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
       browse: BrowseStore(directory: CategoryDirectoryClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
+      categoryLives: CategoryLivesCatalog(source: CategoryLivesClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
       router: Router(),
       player: player,
       channelPlayback: channelPlayback,
