@@ -21,13 +21,16 @@ export const toLivePage = (
   { items, next }: LivesPage,
   imageUrlOf: CategoryImageUrl,
 ): z.input<typeof responses.LivePage> => ({
-  items: items.map(({ channelId, slug, title, startedAt, viewerCount, category }) => ({
-    channelId,
-    slug,
-    title,
-    startedAt: startedAt.toISOString(),
-    viewerCount,
-    category: category === undefined ? undefined : withImageUrl(category, imageUrlOf),
-  })),
+  items: items.map(
+    ({ channelId, slug, title, startedAt, viewerCount, thumbnailUrl, category }) => ({
+      channelId,
+      slug,
+      title,
+      startedAt: startedAt.toISOString(),
+      viewerCount,
+      thumbnailUrl,
+      category: category === undefined ? undefined : withImageUrl(category, imageUrlOf),
+    }),
+  ),
   ...(next === undefined ? {} : { nextCursor: encodeLiveCursor(next) }),
 });

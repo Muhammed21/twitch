@@ -167,6 +167,12 @@
       "background": "color.live.badge",
       "min": 4.5,
       "note": "Libellé « LIVE » en subheadline semibold, sous le seuil du grand texte WCAG"
+    },
+    {
+      "foreground": "color.indicator.live",
+      "background": "color.background.primary",
+      "min": 3.0,
+      "note": "SC 1.4.11 — point rouge non textuel devant les viewers d'une catégorie"
     }
   ]
 }
