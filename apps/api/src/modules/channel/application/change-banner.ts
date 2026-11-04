@@ -41,7 +41,12 @@ export const changeBanner =
     if (!image.ok) {
       return image;
     }
-    const saved = await store.saveBanner({ ownerId: userId, bannerKey: image.value.key });
+    const saved = await store
+      .saveBanner({ ownerId: userId, bannerKey: image.value.key })
+      .catch(async (error: unknown) => {
+        await discard(image.value.key);
+        throw error;
+      });
     if (!saved.ok) {
       await discard(image.value.key);
       return saved;

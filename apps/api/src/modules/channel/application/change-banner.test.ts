@@ -127,6 +127,22 @@ describe("changement de bannière", () => {
     expect(discard.discarded).toEqual([]);
   });
 
+  it("supprime la nouvelle image et relance l'erreur quand l'enregistrement lève", async () => {
+    const failure = new Error("postgres injoignable");
+    const { finalizeImage } = makeFinalizer(ok(finalized(NEW_KEY)));
+    const store: BannerStore = {
+      saveBanner: async () => {
+        throw failure;
+      },
+    };
+    const discard = makeDiscard();
+
+    await expect(
+      changeBanner({ store, finalizeImage, ...discard })({ userId: OWNER_ID, uploadId: UPLOAD_ID }),
+    ).rejects.toBe(failure);
+    expect(discard.discarded).toEqual([NEW_KEY]);
+  });
+
   it("supprime la nouvelle image quand l'utilisateur n'a pas de chaîne", async () => {
     const { finalizeImage } = makeFinalizer(ok(finalized(NEW_KEY)));
     const { store } = makeStore(NO_CHANNEL);
