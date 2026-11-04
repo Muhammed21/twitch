@@ -1,4 +1,5 @@
 import type { StreamChannels } from "../application/stream-keys.ts";
+import type { ProviderChannels } from "../application/thumbnail-urls.ts";
 import type { StreamPrisma } from "./prisma-stream-sessions.ts";
 
 export const prismaStreamChannels = (prisma: StreamPrisma): StreamChannels => ({
@@ -11,4 +12,16 @@ export const prismaStreamChannels = (prisma: StreamPrisma): StreamChannels => ({
       update: {},
     });
   },
+});
+
+export const prismaProviderChannels = (prisma: StreamPrisma): ProviderChannels => ({
+  providerChannelsOf: async (channelIds) =>
+    new Map(
+      (
+        await prisma.streamChannel.findMany({
+          where: { channelId: { in: [...channelIds] } },
+          select: { channelId: true, providerChannelId: true },
+        })
+      ).map(({ channelId, providerChannelId }) => [channelId, providerChannelId]),
+    ),
 });
