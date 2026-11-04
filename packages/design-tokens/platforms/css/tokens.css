@@ -29,6 +29,7 @@
   --color-border-subtle: #d9d9d9;
   --color-avatar-default: #bfff00;
   --color-avatar-on-default: #000000;
+  --color-media-background: #000000;
   --typography-display-text-font: -apple-system-headline;
   --typography-display-text-weight: 600;
   --typography-heading-text-font: -apple-system-subheadline;
@@ -106,5 +107,6 @@
     --color-border-subtle: #2d2d2f;
     --color-avatar-default: #bfff00;
     --color-avatar-on-default: #000000;
+    --color-media-background: #000000;
   }
 }
