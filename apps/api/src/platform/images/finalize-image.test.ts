@@ -170,6 +170,45 @@ describe("confirmation d'un envoi d'image", () => {
   );
 });
 
+describe("confirmation quand la suppression du dépôt échoue", () => {
+  const failingDelete = (memory: ReturnType<typeof memoryImageStorage>) => ({
+    ...memory.storage,
+    delete: async () => {
+      throw new Error("stockage indisponible");
+    },
+  });
+
+  it("rend quand même l'image écrite : le dépôt sera effacé par le cycle de vie du bucket", async () => {
+    const memory = memoryImageStorage({ [depositOf(USER_ID, "avatar")]: JPEG_BYTES });
+
+    expect(
+      await finalizeWith({ storage: failingDelete(memory) })({
+        uploadId: UPLOAD_ID,
+        purpose: "avatar",
+        userId: USER_ID,
+      }),
+    ).toEqual({
+      ok: true,
+      value: {
+        key: `images/avatar/${IMAGE_ID}.webp`,
+        url: `https://images.twitch.test/images/avatar/${IMAGE_ID}.webp`,
+      },
+    });
+  });
+
+  it("rend quand même le refus du dépôt", async () => {
+    const memory = memoryImageStorage({ [depositOf(USER_ID, "avatar")]: GIF_BYTES });
+
+    expect(
+      await finalizeWith({ storage: failingDelete(memory) })({
+        uploadId: UPLOAD_ID,
+        purpose: "avatar",
+        userId: USER_ID,
+      }),
+    ).toEqual({ ok: false, error: "unsupported_type" });
+  });
+});
+
 describe("URL servie d'une image", () => {
   it.each([
     ["avec une barre finale", "https://images.twitch.test/"],

@@ -51,8 +51,9 @@ export const finalizeImage = ({
       ? err("unsupported_type")
       : reencode({ bytes, type, spec: IMAGE_PURPOSES[purpose] });
   };
+  const discard = (deposit: string) => storage.delete(deposit).catch(() => undefined);
   const reject = async (deposit: string, rejection: ImageRejection) => {
-    await storage.delete(deposit);
+    await discard(deposit);
     return err(rejection);
   };
   return async ({ uploadId, purpose, userId }) => {
@@ -78,7 +79,7 @@ export const finalizeImage = ({
       contentType: "image/webp",
       cacheControl: SERVED_CACHE_CONTROL,
     });
-    await storage.delete(deposit);
+    await discard(deposit);
     return ok({ key, url: urlOf(key) });
   };
 };
