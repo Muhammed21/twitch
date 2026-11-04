@@ -27,6 +27,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Xcode 26, comme en local
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)" && xcodebuild -version
+
       - uses: ./.github/actions/install
 
       - name: Imports (ADR 0010 règle 4, ADR 0019 règle 5 bis)
@@ -82,6 +85,9 @@ jobs:
     continue-on-error: true
     steps:
       - uses: actions/checkout@v5
+
+      - name: Xcode 26, comme en local
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)" && xcodebuild -version
 
       - uses: ./.github/actions/install
 
