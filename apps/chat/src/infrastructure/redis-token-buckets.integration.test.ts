@@ -92,15 +92,22 @@ describe("seau de rate limit dans le Redis de Compose (ADR 0004 §6)", () => {
     expect(decisions.filter(Boolean)).toHaveLength(5);
   });
 
-  it("ne rend aucun jeton à une instance dont l'horloge retarde", async () => {
+  it("débite sans rien retirer un seau entamé, depuis une instance dont l'horloge retarde", async () => {
     const redis = await connectRedis();
     const userId = await makeUser(redis);
     const buckets = redisTokenBuckets(redis);
-    await takeAll(buckets, { userId, at: [NOW, NOW, NOW, NOW, NOW] });
+    await takeAll(buckets, { userId, at: [NOW, NOW, NOW, NOW] });
 
-    expect(
-      await takeAll(buckets, { userId, at: [secondsFromNow(-10), secondsFromNow(0.999)] }),
-    ).toEqual([false, false]);
+    expect(await buckets.take({ userId, now: secondsFromNow(-10) })).toBe(true);
+  });
+
+  it("ne fait pas reculer le remplissage quand une instance dont l'horloge retarde débite", async () => {
+    const redis = await connectRedis();
+    const userId = await makeUser(redis);
+    const buckets = redisTokenBuckets(redis);
+    await takeAll(buckets, { userId, at: [NOW, NOW, NOW, NOW, secondsFromNow(-10)] });
+
+    expect(await buckets.take({ userId, now: secondsFromNow(0.999) })).toBe(false);
   });
 
   it("expire le seau quand il serait redevenu plein, et ne garde rien d'un refus", async () => {
