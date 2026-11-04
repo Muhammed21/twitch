@@ -1,17 +1,27 @@
 name: iOS
 
 # Déclenché sur les diffs de apps/ios/ (ADR 0018 §4, ADR 0038), ou à la main.
+# Le passage sur main crée les caches que les PR lisent : une PR ne lit que ceux de sa ref et de main.
 
 on:
   pull_request:
     paths:
       - apps/ios/**
       - .github/workflows/ios.yml
+  push:
+    branches: [main]
+    paths:
+      - apps/ios/**
+      - .github/workflows/ios.yml
+  # Maestro seul, chaque nuit : ses flows dépendent aussi de l'API et du service vidéo.
+  schedule:
+    - cron: "0 3 * * *"
   workflow_dispatch:
 
 concurrency:
   group: ios-${{ github.ref }}
-  cancel-in-progress: true
+  # Sur main, un run annulé ne sauverait pas ses caches.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -19,6 +29,7 @@ permissions:
 jobs:
   ios:
     name: iOS
+    if: github.event_name != 'schedule'
     runs-on: macos-15
     timeout-minutes: 30
     defaults:
@@ -28,7 +39,36 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Xcode 26, comme en local
-        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)" && xcodebuild -version
+        id: xcode
+        run: |
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)" && xcodebuild -version
+          echo "build=$(xcodebuild -version | awk '/Build version/ { print $3 }')" >> "$GITHUB_OUTPUT"
+
+      # Restaurés avant tout build : hashFiles ne doit pas lire Packages/.build.
+      - id: swiftpm-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/ci-cache/SourcePackages
+            apps/ios/Packages/.build
+          key: swiftpm-v1-${{ runner.os }}-${{ steps.xcode.outputs.build }}-${{ hashFiles('apps/ios/Packages/Package.resolved', 'apps/ios/App.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          restore-keys: swiftpm-v1-${{ runner.os }}-${{ steps.xcode.outputs.build }}-
+
+      # Deux DerivedData : compilées pour le package puis pour l'app, les mêmes cibles
+      # s'écrasent dans Build/Products et se recompilent à chaque passage.
+      - id: packages-dd-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/ci-cache/DerivedData/Packages
+          key: dd-packages-v1-${{ runner.os }}-${{ steps.xcode.outputs.build }}-${{ hashFiles('apps/ios/Packages/**', '!apps/ios/Packages/.build/**', 'packages/design-tokens/platforms/swift/**') }}
+          restore-keys: dd-packages-v1-${{ runner.os }}-${{ steps.xcode.outputs.build }}-
+
+      - id: app-dd-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/ci-cache/DerivedData/App
+          key: dd-app-v1-${{ runner.os }}-${{ steps.xcode.outputs.build }}-${{ hashFiles('apps/ios/App/**', 'apps/ios/AppTests/**', 'apps/ios/App.xcodeproj/**', 'apps/ios/Info.plist', 'apps/ios/Packages/**', '!apps/ios/Packages/.build/**', 'packages/design-tokens/platforms/swift/**') }}
+          restore-keys: dd-app-v1-${{ runner.os }}-${{ steps.xcode.outputs.build }}-
 
       - uses: ./.github/actions/install
 
@@ -36,21 +76,34 @@ jobs:
         working-directory: .
         run: node packages/ios-imports/scripts/check.ts
 
-      - uses: actions/cache@v4
-        with:
-          path: ~/.mint
-          key: mint-v1-${{ runner.os }}-${{ hashFiles('apps/ios/Mintfile') }}
-
-      - name: Mint
+      # Binaires publiés aux versions du Mintfile, vérifiés par SHA-256 : Mint les compilait (16 min).
+      # Changer une version du Mintfile demande la somme de son nouvel asset.
+      - name: SwiftFormat et SwiftLint du Mintfile
+        env:
+          SWIFTFORMAT_SHA256: 385ef1a263ba28685157b98c5536b9c9105e124518f28b7ef8a2bee4b167eaeb
+          SWIFTLINT_SHA256: c1e429b0599cf1b516f369a2d9ec04eaf0e436f3c12b637df8851fa52ff694d0
         run: |
-          brew install mint
-          mint bootstrap
+          swiftformat=$(sed -n 's#^nicklockwood/SwiftFormat@##p' Mintfile)
+          swiftlint=$(sed -n 's#^realm/SwiftLint@##p' Mintfile)
+          tools="$RUNNER_TEMP/swift-tools"
+          mkdir -p "$tools"
+          curl -fsSL -o "$RUNNER_TEMP/swiftformat.zip" \
+            "https://github.com/nicklockwood/SwiftFormat/releases/download/$swiftformat/swiftformat.zip"
+          curl -fsSL -o "$RUNNER_TEMP/swiftlint.zip" \
+            "https://github.com/realm/SwiftLint/releases/download/$swiftlint/portable_swiftlint.zip"
+          printf '%s  %s\n' "$SWIFTFORMAT_SHA256" "$RUNNER_TEMP/swiftformat.zip" \
+            "$SWIFTLINT_SHA256" "$RUNNER_TEMP/swiftlint.zip" | shasum -a 256 -c
+          unzip -oq "$RUNNER_TEMP/swiftformat.zip" swiftformat -d "$tools"
+          unzip -oq "$RUNNER_TEMP/swiftlint.zip" swiftlint -d "$tools"
+          test "$("$tools/swiftformat" --version)" = "$swiftformat"
+          test "$("$tools/swiftlint" version)" = "$swiftlint"
+          echo "$tools" >> "$GITHUB_PATH"
 
       - name: SwiftFormat
-        run: mint run swiftformat --lint .
+        run: swiftformat --lint .
 
       - name: SwiftLint
-        run: mint run swiftlint lint --strict
+        run: swiftlint lint --strict
 
       - name: Générateur OpenAPI sans partie sautée (ADR 0024, §8)
         run: scripts/check-openapi-generator.sh
@@ -58,24 +111,54 @@ jobs:
       - name: Le contrôle du générateur refuse un schéma non pris en charge
         run: "! scripts/check-openapi-generator.sh scripts/fixtures/openapi-unsupported.json"
 
+      - name: Le lanceur Maestro de la CI ne relance que le pilote non prêt
+        run: maestro/check-ci-test.sh
+
+      - name: Simulateur
+        run: |
+          simulator=$(xcrun simctl list devices available --json \
+            | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | startswith("iPhone"))][0].udid')
+          echo "SIMULATOR=$simulator" >> "$GITHUB_ENV"
+
       - name: Tests (Swift Testing)
         working-directory: apps/ios/Packages
         run: |
-          simulator=$(xcrun simctl list devices available --json \
-            | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | startswith("iPhone"))][0].udid')
-          xcodebuild test -skipPackagePluginValidation -scheme Packages-Package -destination "id=$simulator"
+          xcodebuild test -skipPackagePluginValidation -scheme Packages-Package -destination "id=$SIMULATOR" \
+            -derivedDataPath ~/ci-cache/DerivedData/Packages -clonedSourcePackagesDirPath ~/ci-cache/SourcePackages \
+            COMPILER_INDEX_STORE_ENABLE=NO
+
       - name: Tests hébergés par l'app (Keychain, Info.plist)
-        working-directory: apps/ios
         run: |
-          simulator=$(xcrun simctl list devices available --json \
-            | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | startswith("iPhone"))][0].udid')
-          xcodebuild test -skipPackagePluginValidation -project App.xcodeproj -scheme App -destination "id=$simulator"
+          xcodebuild test -skipPackagePluginValidation -project App.xcodeproj -scheme App -destination "id=$SIMULATOR" \
+            -derivedDataPath ~/ci-cache/DerivedData/App -clonedSourcePackagesDirPath ~/ci-cache/SourcePackages \
+            COMPILER_INDEX_STORE_ENABLE=NO
+
       - name: ChatTransport contre le vrai serveur de chat (ADR 0023)
-        working-directory: apps/ios
         run: |
-          simulator=$(xcrun simctl list devices available --json \
-            | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | startswith("iPhone"))][0].udid')
-          scripts/chat-integration.sh "id=$simulator"
+          scripts/chat-integration.sh "id=$SIMULATOR" \
+            -derivedDataPath ~/ci-cache/DerivedData/Packages -clonedSourcePackagesDirPath ~/ci-cache/SourcePackages \
+            COMPILER_INDEX_STORE_ENABLE=NO
+
+      # Sauvés même quand un test échoue : le build a eu lieu.
+      - if: ${{ !cancelled() && steps.swiftpm-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/ci-cache/SourcePackages
+            apps/ios/Packages/.build
+          key: ${{ steps.swiftpm-cache.outputs.cache-primary-key }}
+
+      - if: ${{ !cancelled() && steps.packages-dd-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: ~/ci-cache/DerivedData/Packages
+          key: ${{ steps.packages-dd-cache.outputs.cache-primary-key }}
+
+      - if: ${{ !cancelled() && steps.app-dd-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: ~/ci-cache/DerivedData/App
+          key: ${{ steps.app-dd-cache.outputs.cache-primary-key }}
 
   maestro:
     name: Maestro (non bloquant)
@@ -87,7 +170,25 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Xcode 26, comme en local
-        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)" && xcodebuild -version
+        id: xcode
+        run: |
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)" && xcodebuild -version
+          echo "build=$(xcodebuild -version | awk '/Build version/ { print $3 }')" >> "$GITHUB_OUTPUT"
+
+      # Lus seulement : le job iOS les sauve.
+      - uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/ci-cache/SourcePackages
+            apps/ios/Packages/.build
+          key: swiftpm-v1-${{ runner.os }}-${{ steps.xcode.outputs.build }}-${{ hashFiles('apps/ios/Packages/Package.resolved', 'apps/ios/App.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          restore-keys: swiftpm-v1-${{ runner.os }}-${{ steps.xcode.outputs.build }}-
+
+      - uses: actions/cache/restore@v4
+        with:
+          path: ~/ci-cache/DerivedData/App
+          key: dd-app-v1-${{ runner.os }}-${{ steps.xcode.outputs.build }}-${{ hashFiles('apps/ios/App/**', 'apps/ios/AppTests/**', 'apps/ios/App.xcodeproj/**', 'apps/ios/Info.plist', 'apps/ios/Packages/**', '!apps/ios/Packages/.build/**', 'packages/design-tokens/platforms/swift/**') }}
+          restore-keys: dd-app-v1-${{ runner.os }}-${{ steps.xcode.outputs.build }}-
 
       - uses: ./.github/actions/install
 
@@ -130,27 +231,59 @@ jobs:
           set -a && . ./.env && set +a
           apps/ios/maestro/go-live.sh viewer_dev
 
+      # Modèle et iOS fixés : le premier iPhone de `simctl list` dépend des runtimes de l'image.
+      - name: Simulateur iPhone 16 Pro, iOS 18.5
+        run: |
+          runtime=com.apple.CoreSimulator.SimRuntime.iOS-18-5
+          simulator=$(xcrun simctl list devices available --json \
+            | jq -r --arg runtime "$runtime" '.devices[$runtime] // [] | map(select(.name == "iPhone 16 Pro"))[0].udid // empty')
+          if [ -z "$simulator" ]; then
+            echo "::error::Pas d'iPhone 16 Pro sur $runtime dans l'image du runner." >&2
+            xcrun simctl list runtimes >&2
+            exit 1
+          fi
+          echo "SIMULATOR=$simulator" >> "$GITHUB_ENV"
+          xcrun simctl boot "$simulator"
+
+      # Mêmes chemins et réglages que le job iOS, pour reprendre son DerivedData.
       - name: App sur le simulateur
         working-directory: apps/ios
         run: |
-          simulator=$(xcrun simctl list devices available --json \
-            | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | startswith("iPhone"))][0].udid')
-          echo "SIMULATOR=$simulator" >> "$GITHUB_ENV"
-          xcrun simctl boot "$simulator"
-          xcodebuild build -skipPackagePluginValidation -project App.xcodeproj -scheme App \
-            -destination "id=$simulator" -derivedDataPath "$RUNNER_TEMP/dd" -quiet
-          xcrun simctl install "$simulator" "$RUNNER_TEMP/dd/Build/Products/Debug-iphonesimulator/Twitch.app"
+          xcodebuild build -skipPackagePluginValidation -project App.xcodeproj -scheme App -destination "id=$SIMULATOR" \
+            -derivedDataPath ~/ci-cache/DerivedData/App -clonedSourcePackagesDirPath ~/ci-cache/SourcePackages \
+            COMPILER_INDEX_STORE_ENABLE=NO -quiet
+          xcrun simctl bootstatus "$SIMULATOR" -b
+          xcrun simctl install "$SIMULATOR" ~/ci-cache/DerivedData/App/Build/Products/Debug-iphonesimulator/Twitch.app
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.maestro/bin
+            ~/.maestro/lib
+          key: maestro-${{ runner.os }}-2.12.1
 
       - name: Maestro
         env:
-          # Le pilote XCTest de Maestro a dépassé son délai de démarrage par défaut sur le runner.
-          MAESTRO_DRIVER_STARTUP_TIMEOUT: "300000"
+          MAESTRO_VERSION: 2.12.1
+          # Un pilote qui démarre répond en moins de 40 s ; un pilote bloqué ne répond pas en 300 s.
+          # ci-test.sh relance alors Maestro sur un simulateur redémarré.
+          MAESTRO_DRIVER_STARTUP_TIMEOUT: "120000"
           MAESTRO_CLI_NO_ANALYTICS: "1"
         run: |
-          curl -fsSL https://get.maestro.mobile.dev -o "$RUNNER_TEMP/maestro-install.sh"
-          MAESTRO_VERSION=2.12.1 bash "$RUNNER_TEMP/maestro-install.sh"
-          "$HOME/.maestro/bin/maestro" --device "$SIMULATOR" test apps/ios/maestro/ \
+          # La clé du cache porte la version : un binaire présent est le bon.
+          if [ ! -x "$HOME/.maestro/bin/maestro" ]; then
+            curl -fsSL https://get.maestro.mobile.dev -o "$RUNNER_TEMP/maestro-install.sh"
+            bash "$RUNNER_TEMP/maestro-install.sh"
+          fi
+          apps/ios/maestro/ci-test.sh "$SIMULATOR" apps/ios/maestro/ \
             --format junit --output "$RUNNER_TEMP/maestro.xml"
+
+      - name: Journal du simulateur
+        if: failure()
+        run: |
+          xcrun simctl spawn "$SIMULATOR" log show --last 20m --style compact \
+            --predicate 'process == "testmanagerd" OR process BEGINSWITH "maestro-driver"' \
+            > "$RUNNER_TEMP/simulator.log" 2>&1 || true
 
       - if: failure()
         uses: actions/upload-artifact@v4

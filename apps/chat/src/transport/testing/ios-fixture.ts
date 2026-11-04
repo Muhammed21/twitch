@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { createLocalTokenBuckets } from "../../application/local-token-buckets.ts";
 import { createMessageSender } from "../../application/message-sender.ts";
 import { createRoomRegistry } from "../../application/room-registry.ts";
 import { startChatServer } from "../chat-server.ts";
@@ -22,7 +23,7 @@ const server = await startChatServer({
   rooms: createRoomRegistry({
     find: async (id) => (id === channelId ? { channelId, sessionId: null } : undefined),
   }),
-  messages: createMessageSender(),
+  messages: createMessageSender(createLocalTokenBuckets()),
   saturation: SATURATION_LIMITS,
   adapter: LocalAdapter,
 });

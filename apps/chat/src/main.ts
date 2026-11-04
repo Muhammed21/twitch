@@ -6,6 +6,7 @@ import { createClient } from "redis";
 
 import { createAccessTokenVerifier } from "@repo/auth-verifier";
 
+import { createLocalTokenBuckets } from "./application/local-token-buckets.ts";
 import { createMessageSender } from "./application/message-sender.ts";
 import { chatEventHandlers, socketSanctionHandlers } from "./application/project-event.ts";
 import { createRoomRegistry } from "./application/room-registry.ts";
@@ -15,8 +16,10 @@ import { redisConnectionLog } from "./infrastructure/redis-connection-log.ts";
 import { redisLocalViewWriter } from "./infrastructure/redis-local-view-writer.ts";
 import { redisChatterProfiles, redisRoomDirectory } from "./infrastructure/redis-local-views.ts";
 import { redisRevokedSessions } from "./infrastructure/redis-revoked-sessions.ts";
+import { redisTokenBuckets } from "./infrastructure/redis-token-buckets.ts";
 import { subscribeToSessionRevocations } from "./infrastructure/session-revocation-subscriber.ts";
 import { unlessOffline, withSettledCommands } from "./infrastructure/settled-commands.ts";
+import { sharedRateLimit } from "./infrastructure/shared-rate-limit.ts";
 import { startStreamTail } from "./infrastructure/stream-tail.ts";
 import { type ChatLog, startChatServer } from "./transport/chat-server.ts";
 
@@ -88,7 +91,20 @@ try {
   const logFanOutFailure = unlessOffline((error) =>
     log({ level: "error", msg: "commande de fan-out en échec", error: messageOf(error) }),
   );
-  const messages = createMessageSender();
+  const localBuckets = createLocalTokenBuckets();
+  const messages = createMessageSender(
+    sharedRateLimit({
+      shared: redisTokenBuckets(redis),
+      local: localBuckets,
+      onFallback: unlessOffline((error) =>
+        log({
+          level: "error",
+          msg: "rate limit partagé injoignable, seau local",
+          error: messageOf(error),
+        }),
+      ),
+    }),
+  );
   const rooms = createRoomRegistry(redisRoomDirectory(redis));
   const server = await startChatServer({
     port: config.httpPort,
@@ -152,7 +168,7 @@ try {
   }).catch((error: unknown) =>
     log({ level: "error", msg: "abonnement aux révocations en échec", error: messageOf(error) }),
   );
-  const sweep = setInterval(() => messages.sweep(new Date()), BUCKET_SWEEP_INTERVAL_MS);
+  const sweep = setInterval(() => localBuckets.sweep(new Date()), BUCKET_SWEEP_INTERVAL_MS);
   const revalidation = setInterval(() => {
     server
       .revalidateSessions()

@@ -52,6 +52,7 @@ Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes
 | [0040](0040-illustration-inscription-terminee-reprise-telle-quelle.md)                     | L'illustration de « You're All Set! » est reprise telle quelle                                                 | Proposé                                                            | Design       |
 | [0041](0041-les-outbox-historique-lisible-pour-reconstruire-une-projection.md)             | Les outbox de `channel` et `stream` sont un historique lisible pour reconstruire une projection                | Accepté                                                            | Données      |
 | [0042](0042-ip-du-client-par-un-nombre-de-proxys-de-confiance-et-limite-de-debit-redis.md) | L'IP du client se lit par un nombre de proxys de confiance, et la limite de débit HTTP compte dans Redis       | Accepté                                                            | API          |
+| [0043](0043-seau-de-rate-limit-du-chat-dans-redis-et-repli-sur-le-seau-local.md)           | Le seau de rate limit du chat vit dans Redis, et se replie sur le seau local de l'instance                     | Accepté                                                            | Chat         |
 
 ## Dépendances principales
 
@@ -86,6 +87,7 @@ Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes
 0036, 0039 ── 0040 (illustration de « You're All Set! » reprise, amende 0036 §6)
 0003, 0025, 0034 ── 0041 (outbox de channel et stream lues pour reconstruire une projection, amende 0025 §3)
 0004, 0008, 0028 ── 0042 (IP du client par proxys de confiance, limite de débit HTTP dans Redis)
+0004, 0005, 0008, 0022 ── 0043 (seau de rate limit du chat dans Redis, repli sur le seau local)
 ```
 
 ## Points ouverts
