@@ -8,13 +8,13 @@ import Testing
 private let english = Locale(identifier: "en_US")
 private let utc = TimeZone(identifier: "UTC") ?? .current
 
-private func sent(at text: String) -> ChatMessage {
+private func sent(at text: String, by author: UUID = UUID()) -> ChatMessage {
   let date = (try? Date(text, strategy: .iso8601)) ?? Date()
   return ChatMessage(
     id: UUID(),
     channelID: channel,
     sessionID: nil,
-    author: ChatAuthor(id: UUID(), displayName: "yahway_810"),
+    author: ChatAuthor(id: author, displayName: "yahway_810"),
     body: "valid",
     sentAt: date
   )
@@ -50,13 +50,27 @@ struct ChatLineTests {
 
   @Test("la ligne affichée réunit l'heure, l'auteur et le corps, chacun dans son style")
   func styled() {
-    let text = ChatLine(sent(at: "2026-11-03T04:13:00Z"), locale: english, timeZone: utc).styled
+    let author = UUID()
+    let text = ChatLine(sent(at: "2026-11-03T04:13:00Z", by: author), locale: english, timeZone: utc).styled
 
     #expect(String(text.characters) == "04:13 yahway_810: valid")
     #expect(segments(of: text) { $0.foregroundColor == ColorRole.textSecondary.color } == ["04:13"])
-    #expect(segments(of: text) { $0.foregroundColor == ColorRole.link.color } == ["yahway_810:"])
+    #expect(segments(of: text) { $0.foregroundColor == ColorRole.chatName(author).color } == ["yahway_810:"])
     #expect(segments(of: text) { $0.font == TextRole.chatAuthor.font } == ["yahway_810:"])
     #expect(segments(of: text) { $0.foregroundColor == ColorRole.textPrimary.color } == ["valid"])
+  }
+
+  @Test("chaque auteur garde la couleur de pseudo qui lui est attribuée")
+  func authorColors() throws {
+    let blue = try #require(UUID(uuidString: "00000000-0000-0000-0000-000000000007"))
+    let green = try #require(UUID(uuidString: "00000000-0000-0000-0000-000000000004"))
+    let colors = [blue, green].map { author in
+      let text = ChatLine(sent(at: "2026-11-03T04:13:00Z", by: author), locale: english, timeZone: utc).styled
+      return text.runs.first { String(text[$0.range].characters) == "yahway_810:" }?.foregroundColor
+    }
+
+    #expect(colors == [ColorRole.chatName(blue).color, ColorRole.chatName(green).color])
+    #expect(ColorRole.chatName(blue).color != ColorRole.chatName(green).color)
   }
 
   private func segments(of text: AttributedString, where matches: (AttributedString.Runs.Run) -> Bool) -> [String] {

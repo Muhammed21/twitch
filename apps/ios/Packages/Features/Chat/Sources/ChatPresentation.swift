@@ -5,6 +5,7 @@ import SwiftUI
 
 struct ChatLine: Equatable {
   let time: String
+  let authorID: UUID
   let author: String
   let body: String
 }
@@ -14,14 +15,19 @@ extension ChatLine {
     let style = Date.FormatStyle(locale: locale, timeZone: timeZone)
       .hour(.twoDigits(amPM: .omitted))
       .minute(.twoDigits)
-    self.init(time: message.sentAt.formatted(style), author: "\(message.author.displayName):", body: message.body)
+    self.init(
+      time: message.sentAt.formatted(style),
+      authorID: message.author.id,
+      author: "\(message.author.displayName):",
+      body: message.body
+    )
   }
 
   var styled: AttributedString {
     let separator = AttributedString(" ")
     return Self.styled(time, color: .textSecondary)
       + separator
-      + Self.styled(author, color: .link, font: TextRole.chatAuthor.font)
+      + Self.styled(author, color: .chatName(authorID), font: TextRole.chatAuthor.font)
       + separator
       + Self.styled(body, color: .textPrimary)
   }
