@@ -66,6 +66,7 @@ struct ChatLineTests {
 
     #expect(String(text.characters) == "04:13 yahway_810: message deleted")
     #expect(segments(of: text) { $0.foregroundColor == ColorRole.textSecondary.color } == ["04:13", "message deleted"])
+    #expect(segments(of: text) { $0.font == TextRole.chatMessage.font }.contains("message deleted"))
   }
 
   @Test("chaque auteur garde la couleur de pseudo qui lui est attribuée")
