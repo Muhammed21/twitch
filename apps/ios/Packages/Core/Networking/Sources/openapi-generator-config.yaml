@@ -12,6 +12,7 @@ filter:
     - PlaybackController_read
     - TimeoutsController_create
     - StreamKeyController_read
+    - StreamKeyController_rotate
     - ChannelsController_update
     - PresenceController_record
 additionalImports:
