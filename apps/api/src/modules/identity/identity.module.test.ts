@@ -20,7 +20,11 @@ describe("IdentityModule", () => {
           logSink: () => {},
           accessTokenVerifier: rejectingVerifier,
         }),
-        IdentityModule.register({ prisma, redis: createIdentityRedis() }),
+        IdentityModule.register({
+          prisma,
+          redis: createIdentityRedis(),
+          lastLiveOf: async () => undefined,
+        }),
       ],
     }).compile();
     await moduleRef.init();

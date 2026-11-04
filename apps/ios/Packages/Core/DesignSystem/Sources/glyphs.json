@@ -1,0 +1,94 @@
+{
+  "glyphs": [
+    {
+      "name": "homeOutline",
+      "source": "docs/reference-ui/profil/menu-compte--defaut.png",
+      "rect": {
+        "x": 82,
+        "y": 2328,
+        "width": 72,
+        "height": 72
+      },
+      "background": "#f7f7f7",
+      "opacity": {
+        "transparentAtOrBelow": 3,
+        "opaqueAtOrAbove": 705
+      }
+    },
+    {
+      "name": "homeFilled",
+      "source": "docs/reference-ui/accueil/flux-suivis--aucun-live.png",
+      "rect": {
+        "x": 82,
+        "y": 2328,
+        "width": 72,
+        "height": 72
+      },
+      "background": "#0e0e10",
+      "opacity": {
+        "transparentAtOrBelow": 8,
+        "opaqueAtOrAbove": 553
+      }
+    },
+    {
+      "name": "browseOutline",
+      "source": "docs/reference-ui/profil/menu-compte--defaut.png",
+      "rect": {
+        "x": 316,
+        "y": 2327,
+        "width": 72,
+        "height": 72
+      },
+      "background": "#f7f7f7",
+      "opacity": {
+        "transparentAtOrBelow": 3,
+        "opaqueAtOrAbove": 705
+      }
+    },
+    {
+      "name": "browseFilled",
+      "source": "docs/reference-ui/parcourir/liste-chaines-live--defaut.png",
+      "rect": {
+        "x": 316,
+        "y": 2327,
+        "width": 72,
+        "height": 72
+      },
+      "background": "#f7f7f7",
+      "opacity": {
+        "transparentAtOrBelow": 6,
+        "opaqueAtOrAbove": 381
+      }
+    },
+    {
+      "name": "plus",
+      "source": "docs/reference-ui/profil/menu-compte--defaut.png",
+      "rect": {
+        "x": 565,
+        "y": 2358,
+        "width": 48,
+        "height": 48
+      },
+      "background": "#e8e7ea",
+      "opacity": {
+        "transparentAtOrBelow": 3,
+        "opaqueAtOrAbove": 657
+      }
+    },
+    {
+      "name": "avatarPerson",
+      "source": "docs/reference-ui/accueil/flux-suivis--aucun-live.png",
+      "rect": {
+        "x": 1036,
+        "y": 2340,
+        "width": 48,
+        "height": 48
+      },
+      "background": "#c0fc07",
+      "opacity": {
+        "transparentAtOrBelow": 25,
+        "opaqueAtOrAbove": 451
+      }
+    }
+  ]
+}
