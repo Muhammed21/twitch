@@ -1,4 +1,12 @@
-import { DEV_ACCOUNT, DEV_CLIENT_ID, DEV_REDIRECT_URI, seedDevelopment } from "./seed-dev.ts";
+import {
+  ADMIN_ACCOUNT,
+  ADMIN_CLIENT_ID,
+  ADMIN_REDIRECT_URI,
+  DEV_ACCOUNT,
+  DEV_CLIENT_ID,
+  DEV_REDIRECT_URI,
+  seedDevelopment,
+} from "./seed-dev.ts";
 
 const result = await seedDevelopment(process.env);
 
@@ -13,6 +21,9 @@ process.stdout.write(
   [
     `Client OAuth ${DEV_CLIENT_ID} (${DEV_REDIRECT_URI}) : ${result.value.client}.`,
     `Compte de test ${DEV_ACCOUNT.username} (${DEV_ACCOUNT.email}) / ${DEV_ACCOUNT.password} : ${result.value.account}.`,
+    `Client OAuth ${ADMIN_CLIENT_ID} (${ADMIN_REDIRECT_URI}) : ${result.value.adminClient}.`,
+    `Compte d'administration ${ADMIN_ACCOUNT.username} (${ADMIN_ACCOUNT.email}) / ${ADMIN_ACCOUNT.password} : ${result.value.adminAccount}.`,
+    `Catégories créées : ${result.value.categories}. Chaînes de démo classées : ${result.value.channels}.`,
     "",
   ].join("\n"),
 );
