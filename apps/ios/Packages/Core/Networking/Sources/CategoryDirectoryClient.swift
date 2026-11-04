@@ -9,13 +9,17 @@ public struct CategoryDirectoryClient: CategoryDirectory {
     client = Client(apiBaseURL: apiBaseURL, transport: transport)
   }
 
-  public func categories(after _: CategoryCursor?) async throws -> CategoryPage {
+  public func categories(after cursor: CategoryCursor?) async throws -> CategoryPage {
     let output = try await unwrappingClientError {
-      try await client.categoriesControllerBrowse()
+      try await client.categoriesControllerBrowse(query: .init(cursor: cursor?.rawValue))
     }
     switch output {
     case let .ok(response):
-      return try CategoryPage(categories: response.body.json.items.compactMap(BrowseCategory.init), nextCursor: nil)
+      let body = try response.body.json
+      return CategoryPage(
+        categories: body.items.compactMap(BrowseCategory.init),
+        nextCursor: body.nextCursor.map(CategoryCursor.init)
+      )
     case let .default(_, response):
       throw try ServiceProblem(response.body.applicationProblemJson)
     }
@@ -30,7 +34,7 @@ extension BrowseCategory {
       name: category.name,
       imageURL: category.imageUrl.flatMap(URL.init(string:)),
       liveCount: category.liveCount,
-      viewers: category.viewerCount.flatMap { try? ViewerCount($0) }
+      viewers: try? ViewerCount(category.viewerCount)
     )
   }
 }

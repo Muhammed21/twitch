@@ -9,86 +9,94 @@ private func categoryJSON(
   slug: String = "just-chatting",
   imageURL: String? = nil,
   liveCount: Int = 3,
-  viewerCount: Int? = nil
+  viewerCount: Int = 0
 ) -> String {
   let image = imageURL.map { #","imageUrl":"\#($0)""# } ?? ""
-  let viewers = viewerCount.map { #","viewerCount":\#($0)"# } ?? ""
-  return #"{"slug":"\#(slug)","name":"Just Chatting","liveCount":\#(liveCount)\#(image)\#(viewers)}"#
+  return #"{"slug":"\#(slug)","name":"Just Chatting","liveCount":\#(liveCount),"viewerCount":\#(viewerCount)\#(image)}"#
 }
 
 private func makeClient(_ transport: FakeTransport) -> CategoryDirectoryClient {
   CategoryDirectoryClient(apiBaseURL: devConfiguration.apiBaseURL, transport: transport)
 }
 
-@Suite("Catégories en live sur GET /v1/categories")
+@Suite("Catégories en live paginées sur GET /v1/categories (ADR 0047)")
 struct CategoryDirectoryClientTests {
-  @Test("demande les catégories sans authentification et les décode dans l'ordre de l'API")
-  func browse() async throws {
-    let transport = FakeTransport(json: #"{"items":[\#(categoryJSON(viewerCount: 184_000)),\#(categoryJSON(slug: "fortnite", liveCount: 1))]}"#)
+  @Test("demande la première page sans curseur ni authentification, et décode catégories et curseur suivant")
+  func firstPage() async throws {
+    let items = "\(categoryJSON(viewerCount: 184_000)),\(categoryJSON(slug: "fortnite", liveCount: 1, viewerCount: 22000))"
+    let transport = FakeTransport(json: #"{"items":[\#(items)],"nextCursor":"c2"}"#)
 
-    let categories = try await makeClient(transport).categories(after: nil).categories
+    let page = try await makeClient(transport).categories(after: nil)
 
-    #expect(try categories == [
-      BrowseCategory(slug: CategorySlug("just-chatting"), name: "Just Chatting", imageURL: nil, liveCount: 3, viewers: ViewerCount(184_000)),
-      BrowseCategory(slug: CategorySlug("fortnite"), name: "Just Chatting", imageURL: nil, liveCount: 1, viewers: nil),
-    ])
+    #expect(try page == CategoryPage(
+      categories: [
+        BrowseCategory(slug: CategorySlug("just-chatting"), name: "Just Chatting", imageURL: nil, liveCount: 3, viewers: ViewerCount(184_000)),
+        BrowseCategory(slug: CategorySlug("fortnite"), name: "Just Chatting", imageURL: nil, liveCount: 1, viewers: ViewerCount(22000)),
+      ],
+      nextCursor: CategoryCursor("c2")
+    ))
     let request = try #require(await transport.requests.first)
     #expect(request.method == "GET")
     #expect(request.url == categoriesURL)
     #expect(request.headers["Authorization"] == nil)
   }
 
-  @Test("tant que l'API ne pagine pas les catégories, la liste tient en une page sans curseur suivant")
-  func singlePage() async throws {
-    let transport = FakeTransport(json: #"{"items":[\#(categoryJSON())]}"#)
+  @Test("renvoie le curseur reçu tel quel pour la page suivante ; sans nextCursor, la liste est finie")
+  func nextPage() async throws {
+    let transport = FakeTransport(json: #"{"items":[]}"#)
 
-    let page = try await makeClient(transport).categories(after: nil)
+    let page = try await makeClient(transport).categories(after: CategoryCursor("WyIxODQiXQ&x=1 2"))
 
-    #expect(page.nextCursor == nil)
+    #expect(page == CategoryPage(categories: [], nextCursor: nil))
+    let url = try #require(await transport.requests.first?.url)
+    let components = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false))
+    #expect(components.path == categoriesURL.path())
+    #expect(components.queryItems == [URLQueryItem(name: "cursor", value: "WyIxODQiXQ&x=1 2")])
   }
 
   @Test("lit la pochette d'une catégorie quand l'API la donne")
   func readsImage() async throws {
     let transport = FakeTransport(json: #"{"items":[\#(categoryJSON(imageURL: "https://cdn.example/just-chatting.png"))]}"#)
 
-    let categories = try await makeClient(transport).categories(after: nil).categories
+    let page = try await makeClient(transport).categories(after: nil)
 
-    #expect(categories.first?.imageURL == URL(string: "https://cdn.example/just-chatting.png"))
+    #expect(page.categories.first?.imageURL == URL(string: "https://cdn.example/just-chatting.png"))
   }
 
-  @Test("garde la catégorie et ignore un nombre de viewers négatif")
-  func ignoresNegativeViewerCount() async throws {
-    let transport = FakeTransport(json: #"{"items":[\#(categoryJSON(viewerCount: -1))]}"#)
+  @Test("lit zéro viewer, et ignore un nombre de viewers négatif sans perdre la catégorie", arguments: [(0, 0), (-1, nil)])
+  func viewerCount(count: Int, expected: Int?) async throws {
+    let transport = FakeTransport(json: #"{"items":[\#(categoryJSON(viewerCount: count))]}"#)
 
-    let categories = try await makeClient(transport).categories(after: nil).categories
+    let page = try await makeClient(transport).categories(after: nil)
 
-    #expect(categories.count == 1)
-    #expect(categories.first?.viewers == nil)
+    #expect(page.categories.count == 1)
+    #expect(try page.categories.first?.viewers == expected.map { try ViewerCount($0) })
   }
 
-  @Test("écarte une catégorie au slug invalide sans perdre les autres")
+  @Test("écarte une catégorie au slug invalide sans perdre le reste de la page")
   func dropsMalformedSlug() async throws {
-    let transport = FakeTransport(json: #"{"items":[\#(categoryJSON(slug: "Just Chatting")),\#(categoryJSON())]}"#)
+    let transport = FakeTransport(json: #"{"items":[\#(categoryJSON(slug: "Just Chatting")),\#(categoryJSON())],"nextCursor":"c2"}"#)
 
-    let categories = try await makeClient(transport).categories(after: nil).categories
+    let page = try await makeClient(transport).categories(after: nil)
 
-    #expect(categories.map(\.slug.rawValue) == ["just-chatting"])
+    #expect(page.categories.map(\.slug.rawValue) == ["just-chatting"])
+    #expect(page.nextCursor == CategoryCursor("c2"))
   }
 
-  @Test("tolère un champ ajouté à la catégorie et à la liste (ADR 0024, §8)")
+  @Test("tolère un champ ajouté à la catégorie et à la page (ADR 0024, §8)")
   func toleratesAddedFields() async throws {
     let transport = FakeTransport(json: #"{"items":[\#(categoryJSON().dropLast()),"tags":["IRL"]}],"total":1}"#)
 
-    let categories = try await makeClient(transport).categories(after: nil).categories
+    let page = try await makeClient(transport).categories(after: nil)
 
-    #expect(categories.count == 1)
+    #expect(page.categories.count == 1)
   }
 
   @Test("traduit une réponse d'erreur RFC 9457 en ServiceProblem")
   func translatesProblem() async throws {
-    let transport = FakeTransport(status: 503, json: #"{"type":"about:blank","title":"Service Unavailable","status":503}"#)
+    let transport = FakeTransport(status: 400, json: #"{"type":"about:blank","title":"Bad Request","status":400}"#)
 
-    await #expect(throws: ServiceProblem(type: "about:blank", title: "Service Unavailable", status: 503, detail: nil)) {
+    await #expect(throws: ServiceProblem(type: "about:blank", title: "Bad Request", status: 400, detail: nil)) {
       try await makeClient(transport).categories(after: nil)
     }
   }
