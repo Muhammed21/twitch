@@ -26,7 +26,6 @@ export type CategoryCreation = {
 };
 
 export interface CategoryCatalog {
-  findBySlug(slug: string): Promise<CategoryView | null>;
   create(creation: CategoryCreation): Promise<Result<CategoryView, "slug_taken">>;
 }
 

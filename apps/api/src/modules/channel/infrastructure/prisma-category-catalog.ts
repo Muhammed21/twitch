@@ -7,12 +7,10 @@ import type { CategoryCatalog } from "../application/category-admin.ts";
 import type { ChannelPrisma } from "./prisma-channel-registry.ts";
 
 const OUTBOX = { schema: "channel", table: "ChannelOutbox" };
-const VIEW = { id: true, slug: true, name: true, status: true } as const;
 
 const { channelCategoryCreated } = events.channel;
 
 export const prismaCategoryCatalog = (prisma: ChannelPrisma): CategoryCatalog => ({
-  findBySlug: (slug) => prisma.channelCategory.findUnique({ where: { slug }, select: VIEW }),
   create: ({ categoryId, slug, name, outboxEventId, occurredAt }) =>
     prisma.$transaction(async (tx) => {
       const { count } = await tx.channelCategory.createMany({

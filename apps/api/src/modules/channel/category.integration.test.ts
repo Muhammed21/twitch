@@ -73,7 +73,12 @@ describe("catalogue des catégories dans channel (ADR 0045)", () => {
       ok: true,
       value: { id: categoryId, slug, name: "Just Chatting", status: "active" },
     });
-    expect(await catalog.findBySlug(slug)).toEqual({
+    expect(
+      await prisma.channelCategory.findUnique({
+        where: { slug },
+        select: { id: true, slug: true, name: true, status: true },
+      }),
+    ).toEqual({
       id: categoryId,
       slug,
       name: "Just Chatting",

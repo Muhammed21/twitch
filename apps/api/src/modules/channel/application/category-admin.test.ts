@@ -45,7 +45,6 @@ const memoryCatalog = ({
 } = {}) => {
   const created: CategoryCreation[] = [];
   const catalog: CategoryCatalog = {
-    findBySlug: async (slug) => categories.find((category) => category.slug === slug) ?? null,
     create: async (creation) => {
       if (categories.some(({ slug }) => slug === creation.slug)) {
         return err("slug_taken");
