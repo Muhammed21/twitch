@@ -109,6 +109,41 @@ describe("Channel", () => {
   });
 });
 
+const makeCategory = (overrides: Record<string, unknown> = {}) => ({
+  id: "7c6d5e4f-3a2b-4c1d-8e9f-0a1b2c3d4e5f",
+  slug: "just-chatting",
+  name: "Just Chatting",
+  status: "active",
+  ...overrides,
+});
+
+describe("Category", () => {
+  it.each(["active", "merged", "retired"])("décode une catégorie à l'état %s", (status) => {
+    expect(responses.Category.parse(makeCategory({ status }))).toEqual(makeCategory({ status }));
+  });
+
+  it("publie les trois états connus d'une catégorie", () => {
+    expect(JSON.stringify(z.toJSONSchema(responses.Category))).toContain(
+      '"enum":["active","merged","retired"]',
+    );
+  });
+
+  it("garde un état ajouté plus tard par le serveur", () => {
+    expect(responses.Category.parse(makeCategory({ status: "hidden" }))).toMatchObject({
+      status: "hidden",
+    });
+  });
+
+  it.each([
+    ["avec un identifiant qui n'est pas un UUID", { id: "jeux" }],
+    ["sans slug", { slug: undefined }],
+    ["sans nom", { name: undefined }],
+    ["sans état", { status: undefined }],
+  ])("refuse une catégorie %s", (_name, overrides) => {
+    expect(responses.Category.safeParse(makeCategory(overrides)).success).toBe(false);
+  });
+});
+
 describe("StreamKey", () => {
   const makeStreamKey = (overrides: Record<string, unknown> = {}) => ({
     streamKey: "sk_live_0123456789abcdef",

@@ -240,4 +240,17 @@ describe("rôles de plateforme", () => {
   ] as const)("refuse la suspension à %s", (_name, assignments) => {
     expect(abilityOf(...assignments).can("suspend", channel(CHANNEL_A))).toBe(false);
   });
+
+  it("admin gère le catalogue des catégories", () => {
+    expect(abilityOf(onPlatform("admin")).can("administer", "Category")).toBe(true);
+  });
+
+  it.each([
+    ["staff", [onPlatform("staff")]],
+    ["support", [onPlatform("support")]],
+    ["owner", [onChannel("owner")]],
+    ["aucun", []],
+  ] as const)("refuse la gestion du catalogue des catégories à %s", (_name, assignments) => {
+    expect(abilityOf(...assignments).can("administer", "Category")).toBe(false);
+  });
 });
