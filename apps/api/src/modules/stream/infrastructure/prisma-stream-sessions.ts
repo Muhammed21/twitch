@@ -144,3 +144,14 @@ export const prismaPlaybackSessions = (prisma: StreamPrisma): PlaybackSessions =
     return channel?.providerChannelId ?? null;
   },
 });
+
+export const prismaLastLiveOf =
+  (prisma: StreamPrisma) =>
+  async (channelId: string): Promise<Date | undefined> => {
+    const latest = await prisma.streamSession.findFirst({
+      where: { channelId },
+      orderBy: { startedAt: "desc" },
+      select: { startedAt: true },
+    });
+    return latest?.startedAt;
+  };

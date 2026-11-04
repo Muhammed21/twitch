@@ -12,7 +12,7 @@ import {
   invalidToken,
   OptionalAccessTokenGuard,
 } from "../../../platform/authentication.ts";
-import type { Bootstrap } from "../application/read-bootstrap.ts";
+import type { Bootstrap, Profile } from "../application/read-bootstrap.ts";
 
 export const READ_BOOTSTRAP = Symbol("READ_BOOTSTRAP");
 
@@ -21,6 +21,17 @@ export type ReadBootstrap = (
 ) => Promise<Result<Bootstrap, "account_not_found">>;
 
 class MobileBootstrap extends responseDto(responses.MobileBootstrap) {}
+
+type BootstrapResponse = z.input<typeof responses.MobileBootstrap>;
+
+const toProfileResponse = ({
+  lastLiveAt,
+  ...profile
+}: Profile): NonNullable<BootstrapResponse["profile"]> =>
+  lastLiveAt === undefined ? profile : { ...profile, lastLiveAt: lastLiveAt.toISOString() };
+
+const toBootstrapResponse = ({ profile, ...bootstrap }: Bootstrap): BootstrapResponse =>
+  profile === undefined ? bootstrap : { ...bootstrap, profile: toProfileResponse(profile) };
 
 @Controller("mobile")
 @UseGuards(OptionalAccessTokenGuard)
@@ -31,11 +42,11 @@ export class MobileBootstrapController {
   @ZodResponse({ status: 200, type: MobileBootstrap })
   async read(
     @CurrentIdentity() identity: AccessTokenIdentity | undefined,
-  ): Promise<z.input<typeof responses.MobileBootstrap>> {
+  ): Promise<BootstrapResponse> {
     const bootstrap = await this.readBootstrap(identity?.userId);
     if (!bootstrap.ok) {
       throw invalidToken();
     }
-    return bootstrap.value;
+    return toBootstrapResponse(bootstrap.value);
   }
 }

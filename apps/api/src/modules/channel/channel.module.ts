@@ -12,7 +12,7 @@ import {
 import { type AuthzRedis, createAuthzContext } from "../../authz/authz-context.ts";
 import { errorDetails, type LogSink, writeLog } from "../../platform/logging.ts";
 import { startStreamConsumer, type StreamConsumerRedis } from "../../platform/stream-consumer.ts";
-import { createCategory } from "./application/category-admin.ts";
+import { createCategory, mergeCategory, retireCategory } from "./application/category-admin.ts";
 import { getChannel, updateChannelTitle } from "./application/channel-queries.ts";
 import { createChannelForAccount } from "./application/create-channel-for-account.ts";
 import { prismaCategoryCatalog } from "./infrastructure/prisma-category-catalog.ts";
@@ -70,7 +70,11 @@ export class ChannelModule implements OnModuleInit, OnModuleDestroy {
       newId: randomUUID,
       now: () => new Date(),
     };
-    const categoryAdmin: CategoryAdmin = { create: createCategory(categories) };
+    const categoryAdmin: CategoryAdmin = {
+      create: createCategory(categories),
+      merge: mergeCategory(categories),
+      retire: retireCategory(categories),
+    };
     return {
       module: ChannelModule,
       controllers: [ChannelsController, AdminCategoriesController],

@@ -43,7 +43,11 @@ type Answers = {
   readonly [Name in keyof CategoryAdmin]: Awaited<ReturnType<CategoryAdmin[Name]>>;
 };
 
-const ANSWERS: Answers = { create: ok(JUST_CHATTING) };
+const ANSWERS: Answers = {
+  create: ok(JUST_CHATTING),
+  merge: ok(JUST_CHATTING),
+  retire: ok(JUST_CHATTING),
+};
 
 const recordingAdmin = (answers: Answers) => {
   const calls: Calls = [];
@@ -51,6 +55,14 @@ const recordingAdmin = (answers: Answers) => {
     create: async (request) => {
       calls.push({ name: "create", request });
       return answers.create;
+    },
+    merge: async (request) => {
+      calls.push({ name: "merge", request });
+      return answers.merge;
+    },
+    retire: async (request) => {
+      calls.push({ name: "retire", request });
+      return answers.retire;
     },
   };
   return { admin, calls };
@@ -162,6 +174,106 @@ describe("POST /v1/admin/categories", () => {
 
       expect(response.status).toBe(400);
       expect(calls).toEqual([]);
+    });
+  });
+});
+
+describe("POST /v1/admin/categories/{slug}/merge", () => {
+  it("fusionne la catégorie du chemin dans la cible et rend la cible", async () => {
+    await withAdmin({}, async (base, calls) => {
+      const response = await post(`${base}/irl/merge`, { body: { targetSlug: "just-chatting" } });
+
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual(JUST_CHATTING);
+      expect(calls).toEqual([
+        {
+          name: "merge",
+          request: { actorId: ADMIN_ID, sourceSlug: "irl", targetSlug: "just-chatting" },
+        },
+      ]);
+    });
+  });
+
+  it("répond 403 sans le scope admin:category.manage", async () => {
+    await withAdmin({ scopes: [] }, async (base, calls) => {
+      const response = await post(`${base}/irl/merge`, { body: { targetSlug: "just-chatting" } });
+
+      expect(response.status).toBe(403);
+      expect(calls).toEqual([]);
+    });
+  });
+
+  it.each([
+    ["forbidden", 403, { title: "Action non autorisée" }],
+    ["category_not_found", 404, { title: "Catégorie introuvable" }],
+    [
+      "invalid_merge",
+      409,
+      {
+        title: "Fusion impossible",
+        detail: "La source et la cible sont deux catégories distinctes et actives.",
+      },
+    ],
+  ] as const)("répond au refus %s par un %i", async (error, status, problem) => {
+    await withAdmin({ answers: { merge: err(error) } }, async (base) => {
+      const response = await post(`${base}/irl/merge`, { body: { targetSlug: "just-chatting" } });
+
+      expect(response.status).toBe(status);
+      expect(await response.json()).toMatchObject({ status, ...problem });
+    });
+  });
+
+  it("répond 400 sans cible", async () => {
+    await withAdmin({}, async (base, calls) => {
+      const response = await post(`${base}/irl/merge`, { body: {} });
+
+      expect(response.status).toBe(400);
+      expect(calls).toEqual([]);
+    });
+  });
+});
+
+describe("POST /v1/admin/categories/{slug}/retire", () => {
+  it("retire la catégorie du chemin", async () => {
+    const retired: CategoryView = { ...JUST_CHATTING, status: "retired" };
+    await withAdmin({ answers: { retire: ok(retired) } }, async (base, calls) => {
+      const response = await post(`${base}/just-chatting/retire`);
+
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual(retired);
+      expect(calls).toEqual([
+        { name: "retire", request: { actorId: ADMIN_ID, slug: "just-chatting" } },
+      ]);
+    });
+  });
+
+  it("répond 403 sans le scope admin:category.manage", async () => {
+    await withAdmin({ scopes: ["openid"] }, async (base, calls) => {
+      const response = await post(`${base}/just-chatting/retire`);
+
+      expect(response.status).toBe(403);
+      expect(calls).toEqual([]);
+    });
+  });
+
+  it.each([
+    ["forbidden", 403, { title: "Action non autorisée" }],
+    ["category_not_found", 404, { title: "Catégorie introuvable" }],
+    ["category_inactive", 409, { title: "Catégorie déjà fusionnée ou retirée" }],
+    [
+      "category_in_use",
+      409,
+      {
+        title: "Catégorie encore utilisée",
+        detail: "Une chaîne utilise cette catégorie : fusionne-la dans une autre.",
+      },
+    ],
+  ] as const)("répond au refus %s par un %i", async (error, status, problem) => {
+    await withAdmin({ answers: { retire: err(error) } }, async (base) => {
+      const response = await post(`${base}/just-chatting/retire`);
+
+      expect(response.status).toBe(status);
+      expect(await response.json()).toMatchObject({ status, ...problem });
     });
   });
 });
