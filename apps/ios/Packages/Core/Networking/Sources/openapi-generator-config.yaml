@@ -10,6 +10,7 @@ filter:
     - LivesController_list
     - ChannelsController_read
     - PlaybackController_read
+    - TimeoutsController_create
 additionalImports:
   - Foundation
 typeOverrides:

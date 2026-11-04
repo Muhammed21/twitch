@@ -85,6 +85,15 @@ enum ChatText {
   static var placeholder: String { localized("chat.composer.placeholder") }
   static var send: String { localized("chat.composer.send") }
   static var unsent: String { localized("chat.rejection.unsent") }
+  static var timeOutAction: String { localized("chat.moderation.timeOut") }
+
+  static func moderation(_ notice: ChatSession.ModerationNotice) -> String {
+    switch notice {
+    case let .timedOut(name): String(format: localized("chat.moderation.timedOut"), name)
+    case .forbidden: localized("chat.moderation.forbidden")
+    case let .failed(name): String(format: localized("chat.moderation.failed"), name)
+    }
+  }
 
   static func rejection(_ reason: ChatRejectionReason) -> String {
     switch reason {

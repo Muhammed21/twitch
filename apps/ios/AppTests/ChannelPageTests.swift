@@ -26,6 +26,10 @@ private struct Tokens: AccessTokenProvider {
   }
 }
 
+private struct NoModeration: ChatModeration {
+  func timeout(_: UUID, in _: ChannelID, for _: Duration) {}
+}
+
 private actor StatusFeed: LiveStatusSource {
   private var current: AsyncThrowingStream<LiveStatus, any Error>.Continuation?
   private(set) var opened = 0
@@ -124,7 +128,14 @@ private struct Page {
   init() throws {
     let slug = try ChannelSlug("jean_dupont")
     live = LiveStatusChannel(channels: Channels(), source: feed, onEnded: {}, onLive: {})
-    chat = ChatSession(connector: chatFeed, tokens: Tokens(), channels: Channels(), jitter: { $0 })
+    chat = ChatSession(
+      connector: chatFeed,
+      tokens: Tokens(),
+      channels: Channels(),
+      moderation: NoModeration(),
+      viewer: { nil },
+      jitter: { $0 }
+    )
     tasks = [Task { [live] in await live.run(slug) }, Task { [chat] in await chat.run(slug) }]
   }
 
