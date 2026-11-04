@@ -1,5 +1,6 @@
 import { alreadyProcessed } from "@repo/db";
 
+import type { CategoryFollowLookup } from "../application/category-reads.ts";
 import type { CategoryFollowProjection } from "../application/project-discovery-event.ts";
 import { followerDelta } from "../domain/category-follow-view.ts";
 import type { DiscoveryPrisma } from "./prisma-live-channel-projection.ts";
@@ -53,4 +54,18 @@ export const prismaCategoryFollowProjection = (
           SET "followerCount" = "DiscoveryCategoryFollowerCount"."followerCount" + EXCLUDED."followerCount"
       `;
     }),
+});
+
+export const prismaCategoryFollowLookup = (prisma: DiscoveryPrisma): CategoryFollowLookup => ({
+  followerCountOf: async (categoryId) =>
+    (
+      await prisma.discoveryCategoryFollowerCount.findUnique({
+        where: { categoryId },
+        select: { followerCount: true },
+      })
+    )?.followerCount ?? 0,
+  isFollowing: async ({ userId, categoryId }) =>
+    (await prisma.discoveryCategoryFollow.count({
+      where: { userId, categoryId, following: true },
+    })) > 0,
 });

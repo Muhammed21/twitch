@@ -21,11 +21,21 @@ export interface CategoryAudienceLookup {
   of(categoryId: string): Promise<CategoryAudienceCounts | null>;
 }
 
-export type CategoryHeader = ResolvedCategory & CategoryAudienceCounts;
+export interface CategoryFollowLookup {
+  followerCountOf(categoryId: string): Promise<number>;
+  isFollowing(pair: { userId: string; categoryId: string }): Promise<boolean>;
+}
 
-export type ReadCategoryHeader = (
-  slug: string,
-) => Promise<Result<CategoryHeader, "category_not_found">>;
+export type CategoryHeader = ResolvedCategory &
+  CategoryAudienceCounts & {
+    readonly followerCount: number;
+    readonly isFollowing?: boolean;
+  };
+
+export type ReadCategoryHeader = (request: {
+  slug: string;
+  viewerId: string | undefined;
+}) => Promise<Result<CategoryHeader, "category_not_found">>;
 
 export type ListCategoryLives = (request: {
   slug: string;
@@ -65,15 +75,26 @@ export const readCategoryHeader =
   ({
     categories,
     audience,
+    follows,
   }: {
     categories: CategoryViewReader;
     audience: CategoryAudienceLookup;
+    follows: CategoryFollowLookup;
   }): ReadCategoryHeader =>
-  async (slug) => {
+  async ({ slug, viewerId }) => {
     const resolved = resolveSlug(await categories.aroundSlug(slug), slug);
     if (resolved === null) {
       return err("category_not_found");
     }
-    const counts = await audience.of(resolved.categoryId);
-    return ok({ ...resolved, liveCount: 0, viewerCount: 0, ...counts });
+    const { categoryId } = resolved;
+    const [counts, followerCount, viewer] = await Promise.all([
+      audience.of(categoryId),
+      follows.followerCountOf(categoryId),
+      viewerId === undefined
+        ? {}
+        : follows.isFollowing({ userId: viewerId, categoryId }).then((isFollowing) => ({
+            isFollowing,
+          })),
+    ]);
+    return ok({ ...resolved, liveCount: 0, viewerCount: 0, ...counts, followerCount, ...viewer });
   };

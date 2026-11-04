@@ -482,6 +482,9 @@ describe("catégories de Browse (ADR 0047)", () => {
       expect(slugs).not.toContain(retired.slug);
       expect(new Set(slugs).size).toBe(slugs.length);
 
+      await discovery.discoveryCategoryFollowerCount.create({
+        data: { categoryId: target.categoryId, followerCount: 4 },
+      });
       const header = await fetch(`${state.url}/v1/categories/${source.slug}`);
       expect(header.status).toBe(200);
       expect(responses.CategoryHeader.parse(await header.json())).toEqual({
@@ -491,12 +494,16 @@ describe("catégories de Browse (ADR 0047)", () => {
         liveCount: 2,
         viewerCount: 0,
         tags: ["Shooter", "RPG"],
+        followerCount: 4,
       });
       expect((await fetch(`${state.url}/v1/categories/${retired.slug}`)).status).toBe(404);
       const catalog = await fetch(`${state.url}/v1/categories/catalog`);
       expect(responses.CategoryCatalog.safeParse(await catalog.json()).success).toBe(true);
     } finally {
       await cleanUp();
+      await discovery.discoveryCategoryFollowerCount.deleteMany({
+        where: { categoryId: target.categoryId },
+      });
       await discovery.discoveryCategoryAudience.deleteMany({
         where: { categoryId: { in: categories.map(({ categoryId }) => categoryId) } },
       });
