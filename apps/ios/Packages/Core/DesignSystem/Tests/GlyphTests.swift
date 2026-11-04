@@ -37,6 +37,14 @@ struct GlyphTests {
     #expect(entries.allSatisfy { $0.source.hasPrefix("docs/reference-ui/") })
   }
 
+  @Test("chaque masque du catalogue a son entrée dans le manifeste, et l'inverse")
+  func manifestMatchesAssetCatalog() throws {
+    let catalog = try FileManager.default.contentsOfDirectory(atPath: sources.appendingPathComponent("Glyphs.xcassets").path)
+    let masks = Set(catalog.filter { $0.hasSuffix(".imageset") }.map { String($0.dropLast(".imageset".count)) })
+
+    #expect(try masks == Set(manifest().glyphs.map(\.name)))
+  }
+
   @Test("chaque glyphe est un masque @3x en gabarit, à la taille de sa découpe", arguments: Glyph.allCases)
   func loadsTemplateMask(glyph: Glyph) throws {
     let entry = try #require(manifest().glyphs.first { $0.name == glyph.rawValue })
