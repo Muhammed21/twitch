@@ -25,7 +25,7 @@ const { RealtimeChatSend, clientEvents, clientEventSchema } = realtime;
 
 export const SATURATED_ROOM = "saturated";
 
-const roomOf = (channelId: string): string => `room:${channelId}`;
+export const roomOf = (channelId: string): string => `room:${channelId}`;
 
 const isAck = (value: unknown): value is Ack => typeof value === "function";
 

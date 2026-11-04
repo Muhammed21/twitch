@@ -161,8 +161,17 @@ describe("Category", () => {
     ["sans slug", { slug: undefined }],
     ["sans nom", { name: undefined }],
     ["sans état", { status: undefined }],
+    ["avec une pochette qui n'est pas une URL", { imageUrl: "jc.webp" }],
   ])("refuse une catégorie %s", (_name, overrides) => {
     expect(responses.Category.safeParse(makeCategory(overrides)).success).toBe(false);
+  });
+
+  it("décode une catégorie avec sa pochette", () => {
+    const category = makeCategory({
+      imageUrl: "https://images.twitch.local/images/category/jc.webp",
+    });
+
+    expect(responses.Category.parse(category)).toEqual(category);
   });
 });
 
@@ -511,5 +520,34 @@ describe("Playback", () => {
     ["avec un schéma qui commence par https", { playbackUrl: "https2://video.example.test/live" }],
   ])("refuse une lecture %s", (_name, overrides) => {
     expect(responses.Playback.safeParse(makePlayback(overrides)).success).toBe(false);
+  });
+});
+
+describe("ImageUpload", () => {
+  const makeUpload = (overrides: Record<string, unknown> = {}) => ({
+    uploadId: "0b6e2f3a-1c4d-4e5f-8a9b-0c1d2e3f4a5b",
+    uploadUrl: "http://127.0.0.1:8333/twitch-local/incoming/u/avatar/0b6e?X-Amz-Signature=1",
+    headers: { "Content-Type": "image/jpeg", "Content-Length": "200000" },
+    expiresAt: "2026-11-04T12:05:00.000Z",
+    ...overrides,
+  });
+
+  it("décode l'URL de dépôt, ses en-têtes figés et son expiration", () => {
+    expect(responses.ImageUpload.parse(makeUpload())).toEqual(makeUpload());
+  });
+
+  it.each([
+    ["un identifiant qui n'est pas un UUID", { uploadId: "depot" }],
+    ["une URL de dépôt qui n'est pas une URL", { uploadUrl: "pas une url" }],
+    ["une URL de dépôt en ftp", { uploadUrl: "ftp://127.0.0.1/depot" }],
+    ["une URL de dépôt d'un schéma qui finit par http", { uploadUrl: "xhttp://127.0.0.1/depot" }],
+    [
+      "une URL de dépôt d'un schéma qui commence par https",
+      { uploadUrl: "httpsx://127.0.0.1/depot" },
+    ],
+    ["un en-tête qui n'est pas un texte", { headers: { "Content-Length": 200_000 } }],
+    ["une expiration qui n'est pas une date ISO", { expiresAt: "dans 5 minutes" }],
+  ])("refuse %s", (_name, overrides) => {
+    expect(responses.ImageUpload.safeParse(makeUpload(overrides)).success).toBe(false);
   });
 });

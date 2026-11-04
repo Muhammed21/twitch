@@ -39,7 +39,7 @@ pnpm generate       # artefacts générés : design tokens, catalogue de la docu
 ```sh
 pnpm infra:up
 docker compose --profile full up -d --build --wait api   # migrate, puis video, outbox-relay et l'API
-pnpm seed:dev                                            # client iOS et compte viewer_dev
+pnpm seed:dev                                            # clients, comptes et catégories de dev
 ```
 
 - `api` dépend d'`outbox-relay` : le relais publie `identity.account.registered`, qui crée la chaîne puis son canal vidéo.

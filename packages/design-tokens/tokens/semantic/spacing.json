@@ -95,10 +95,20 @@
       "$value": "{core.dimension.56}",
       "$description": "Hauteur des lignes du menu du compte, relevée sur l'app iOS Twitch (56 pt, profil/menu-compte--defaut)."
     },
+    "x70": {
+      "$type": "dimension",
+      "$value": "{core.dimension.70}",
+      "$description": "Hauteur de la bannière du profil, relevée sur l'app iOS Twitch (70 pt)."
+    },
     "x72": {
       "$type": "dimension",
       "$value": "{core.dimension.72}",
       "$description": "Largeur du bouton « + » de la barre d'onglets, relevée sur l'app iOS Twitch (72 pt)."
+    },
+    "x88": {
+      "$type": "dimension",
+      "$value": "{core.dimension.88}",
+      "$description": "Avatar de l'en-tête du profil, relevé sur l'app iOS Twitch (88 pt)."
     },
     "x300": {
       "$type": "dimension",

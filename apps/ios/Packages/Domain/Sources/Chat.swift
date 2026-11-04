@@ -67,6 +67,7 @@ public struct ChatMessage: Equatable, Sendable {
   public let author: ChatAuthor
   public let body: String
   public let sentAt: Date
+  public let isDeleted: Bool
 
   public init(
     id: UUID,
@@ -74,7 +75,8 @@ public struct ChatMessage: Equatable, Sendable {
     sessionID: UUID?,
     author: ChatAuthor,
     body: String,
-    sentAt: Date
+    sentAt: Date,
+    isDeleted: Bool = false
   ) {
     self.id = id
     self.channelID = channelID
@@ -82,6 +84,11 @@ public struct ChatMessage: Equatable, Sendable {
     self.author = author
     self.body = body
     self.sentAt = sentAt
+    self.isDeleted = isDeleted
+  }
+
+  public func deleted() -> ChatMessage {
+    ChatMessage(id: id, channelID: channelID, sessionID: sessionID, author: author, body: "", sentAt: sentAt, isDeleted: true)
   }
 }
 
@@ -90,8 +97,19 @@ public enum ChatSendOutcome: Equatable, Sendable {
   case rejected(ChatRejectionReason)
 }
 
+public struct ChatClearance: Equatable, Sendable {
+  public let channelID: ChannelID
+  public let authorID: UUID
+
+  public init(channelID: ChannelID, authorID: UUID) {
+    self.channelID = channelID
+    self.authorID = authorID
+  }
+}
+
 public enum ChatEvent: Equatable, Sendable {
   case message(ChatMessage)
+  case cleared(ChatClearance)
   case revoked(SessionRevocation)
 }
 

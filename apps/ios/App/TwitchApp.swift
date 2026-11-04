@@ -163,7 +163,7 @@ struct SignedInRoot: View {
       .toolbar(.hidden, for: .tabBar)
       .tag(AppTab.browse)
       NavigationStack(path: $router.profilePath) {
-        ProfileScreen(accountName: accountName) { slug in
+        ProfileScreen(account: account) { slug in
           router.push(.channel(slug))
         } settings: {
           SignedInScreen()
@@ -193,9 +193,9 @@ struct SignedInRoot: View {
     }
   }
 
-  private var accountName: String? {
+  private var account: Account? {
     guard case let .signedIn(account) = session.phase else { return nil }
-    return account?.name
+    return account
   }
 }
 

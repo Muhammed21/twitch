@@ -20,7 +20,7 @@ public struct ChatComposer: View {
       }
       HStack(spacing: LayoutRole.chatInset.points) {
         TextField(ChatText.placeholder, text: $draft)
-          .font(TextRole.chatMessage.font)
+          .font(TextRole.chatComposer.font)
           .foregroundStyle(ColorRole.textPrimary.color)
           .submitLabel(.send)
           .onSubmit(send)
@@ -34,7 +34,7 @@ public struct ChatComposer: View {
         if ChatDraft.sendable(draft) != nil {
           Button(action: send) {
             Image(systemName: "paperplane")
-              .font(TextRole.chatMessage.font)
+              .font(TextRole.chatComposer.font)
               .foregroundStyle(ColorRole.textPrimary.color)
           }
           .disabled(isSending)

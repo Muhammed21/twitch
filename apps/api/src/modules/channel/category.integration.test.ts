@@ -85,7 +85,7 @@ describe("catalogue des catégories dans channel (ADR 0045)", () => {
 
     expect(created).toEqual({
       ok: true,
-      value: { id: categoryId, slug, name: "Just Chatting", status: "active" },
+      value: { id: categoryId, slug, name: "Just Chatting", status: "active", imageKey: null },
     });
     expect(
       await prisma.channelCategory.findUnique({
@@ -209,6 +209,35 @@ describe("catalogue des catégories dans channel (ADR 0045)", () => {
       name: "channel.category.retired",
       version: 1,
       payload: { categoryId: category.id },
+    });
+  });
+
+  it("pose la pochette d'une catégorie active, avec channel.category.updated, et la refuse une fois retirée", async () => {
+    const category = await seedCategory();
+    const imageKey = `images/category/${randomUUID()}.webp`;
+    const outboxEventId = randomUUID();
+
+    const changed = await catalog.changeImage({
+      categoryId: category.id,
+      imageKey,
+      outboxEventId,
+      occurredAt: NOW,
+    });
+    await catalog.retire({ categoryId: category.id, outboxEventId: randomUUID(), occurredAt: NOW });
+    const afterRetire = await catalog.changeImage({
+      categoryId: category.id,
+      imageKey,
+      outboxEventId: randomUUID(),
+      occurredAt: NOW,
+    });
+
+    expect(changed).toEqual({ ok: true, value: { ...category, imageKey } });
+    expect(await catalog.findBySlug(category.slug)).toMatchObject({ imageKey });
+    expect(afterRetire).toEqual({ ok: false, error: "category_inactive" });
+    expect(await outboxEvent(outboxEventId)).toMatchObject({
+      name: "channel.category.updated",
+      version: 1,
+      payload: { categoryId: category.id, name: category.name, imageKey },
     });
   });
 });

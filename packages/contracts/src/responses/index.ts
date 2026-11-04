@@ -9,3 +9,4 @@ export { BrowseCategory, BrowseCategoryList } from "./browse-category.ts";
 export { MobileBootstrap, Profile } from "./mobile-bootstrap.ts";
 export { LiveStatus } from "./live-status.ts";
 export { Playback } from "./playback.ts";
+export { ImageUpload } from "./image-upload.ts";
