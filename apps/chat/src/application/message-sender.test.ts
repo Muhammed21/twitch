@@ -1,68 +1,77 @@
 import { describe, expect, it } from "vitest";
 
-import { type ChatterContext, chatterContextFor } from "@repo/authorization";
-import { err } from "@repo/result";
+import { type ChatterContext, chatterContextFor, type RoleAssignment } from "@repo/authorization";
+import { err, ok } from "@repo/result";
 
 import type { RoomState } from "../domain/decide.ts";
 import { createMessageSender } from "./message-sender.ts";
+import type { RateLimit, TokenRequest } from "./ports.ts";
 
 const NOW = new Date("2026-11-03T20:00:00.000Z");
 const ROOM: RoomState = { channelId: "channel-a", sessionId: null };
 
-const secondsFromNow = (seconds: number) => new Date(NOW.getTime() + seconds * 1000);
+const makeChatter = (...assignments: readonly RoleAssignment[]): ChatterContext =>
+  chatterContextFor({ userId: "user-1", assignments, now: NOW });
 
-const makeChatter = (userId = "user-1"): ChatterContext =>
-  chatterContextFor({ userId, assignments: [], now: NOW });
+const TIMED_OUT_HERE: RoleAssignment = {
+  role: "banned",
+  scope: { type: "channel", channelId: ROOM.channelId },
+  expiresAt: new Date(NOW.getTime() + 60_000),
+  revokedAt: null,
+};
 
-const sendBurst = (
-  sender: ReturnType<typeof createMessageSender>,
-  { chatter, count }: { chatter: ChatterContext; count: number },
-) =>
-  Array.from({ length: count }, () =>
-    sender.send({ chatter, room: ROOM, body: "salut", now: NOW }),
-  );
+const makeRateLimit = (admits: boolean) => {
+  const requests: TokenRequest[] = [];
+  const limit: RateLimit = {
+    take: async (request) => {
+      requests.push(request);
+      return admits;
+    },
+  };
+  return { limit, requests };
+};
 
 describe("envoi d'un message", () => {
-  it("accepte un message au nom du chatter, dans le salon donné", () => {
-    const sender = createMessageSender();
+  it("accepte un message admis par le rate limit, au nom du chatter, dans le salon donné", async () => {
+    const sender = createMessageSender(makeRateLimit(true).limit);
 
-    expect(sender.send({ chatter: makeChatter(), room: ROOM, body: "salut", now: NOW })).toEqual({
-      ok: true,
-      value: { channelId: ROOM.channelId, authorId: "user-1", body: "salut", sentAt: NOW },
-    });
+    expect(
+      await sender.send({ chatter: makeChatter(), room: ROOM, body: "salut", now: NOW }),
+    ).toEqual(ok({ channelId: ROOM.channelId, authorId: "user-1", body: "salut", sentAt: NOW }));
   });
 
-  it("retient le seau du chatter d'un message à l'autre : le sixième de la rafale est refusé", () => {
-    const sender = createMessageSender();
+  it("demande un jeton au seau du chatter, à l'instant du message", async () => {
+    const { limit, requests } = makeRateLimit(true);
 
-    const decisions = sendBurst(sender, { chatter: makeChatter(), count: 6 });
-
-    expect(decisions.map((decision) => decision.ok)).toEqual([true, true, true, true, true, false]);
-    expect(decisions[5]).toEqual(err("rate_limited"));
-  });
-
-  it("tient un seau par chatter", () => {
-    const sender = createMessageSender();
-    sendBurst(sender, { chatter: makeChatter("user-1"), count: 5 });
-
-    expect(sendBurst(sender, { chatter: makeChatter("user-2"), count: 1 })[0]?.ok).toBe(true);
-  });
-
-  it("oublie les seaux redevenus pleins et garde les seaux entamés", () => {
-    const sender = createMessageSender();
-    sendBurst(sender, { chatter: makeChatter("user-1"), count: 1 });
-    sender.send({
-      chatter: makeChatter("user-2"),
+    await createMessageSender(limit).send({
+      chatter: makeChatter(),
       room: ROOM,
       body: "salut",
-      now: secondsFromNow(1),
+      now: NOW,
     });
 
-    sender.sweep(secondsFromNow(1.5));
+    expect(requests).toEqual([{ userId: "user-1", now: NOW }]);
+  });
 
-    expect(sender.bucketCount()).toBe(1);
+  it("refuse rate_limited un message que le seau du chatter refuse", async () => {
+    const sender = createMessageSender(makeRateLimit(false).limit);
+
     expect(
-      sendBurst(sender, { chatter: makeChatter("user-1"), count: 5 }).every(({ ok }) => ok),
-    ).toBe(true);
+      await sender.send({ chatter: makeChatter(), room: ROOM, body: "salut", now: NOW }),
+    ).toEqual(err("rate_limited"));
+  });
+
+  it("refuse d'abord pour la sanction, sans prendre de jeton", async () => {
+    const { limit, requests } = makeRateLimit(false);
+
+    expect(
+      await createMessageSender(limit).send({
+        chatter: makeChatter(TIMED_OUT_HERE),
+        room: ROOM,
+        body: "salut",
+        now: NOW,
+      }),
+    ).toEqual(err("timed_out"));
+    expect(requests).toEqual([]);
   });
 });

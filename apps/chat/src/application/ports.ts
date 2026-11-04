@@ -19,6 +19,10 @@ export type SanctionedSockets = { sanction(sanction: ChatterSanction): void };
 
 export type SanctionMetrics = { sanctionApplied(sanctionedAt: Date): void };
 
+export type TokenRequest = { readonly userId: string; readonly now: Date };
+
+export type RateLimit = { take(request: TokenRequest): Promise<boolean> };
+
 export type LiveSession = { readonly channelId: string; readonly sessionId: string };
 
 export type LocalViewWriter = {

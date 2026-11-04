@@ -33,9 +33,9 @@ struct ChatSessionMessageTests {
     let burst = (0 ..< 50).map { message($0) }
 
     await connection.emit(burst.map { .message($0) })
-    try await waitUntil { await connection.delivered == burst.count }
+    try await waitUntil { await connection.isAwaitingEvent }
+    try await waitUntil { await clock.waits(on: batchInterval) == 1 }
 
-    #expect(await clock.waits(on: batchInterval) == 1)
     #expect(session.messages.isEmpty)
     await clock.fire(batchInterval)
     try await waitUntil { !session.messages.isEmpty }

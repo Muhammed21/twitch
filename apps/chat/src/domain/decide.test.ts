@@ -1,13 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import { type ChatterContext, chatterContextFor, type RoleAssignment } from "@repo/authorization";
-import { err, ok } from "@repo/result";
 
 import {
+  acceptMessage,
   type ChatMessage,
-  decide,
   isBucketFull,
+  RATE_LIMIT,
   type RoomState,
+  sanctionRejection,
+  takeToken,
   type TokenBucket,
 } from "./decide.ts";
 
@@ -46,57 +48,32 @@ const makeMessage = (overrides: Partial<ChatMessage> = {}): ChatMessage => ({
   ...overrides,
 });
 
-type Input = Parameters<typeof decide>[0];
+type Outcome = "accepted" | "rate_limited";
 
-const makeInput = (overrides: Partial<Input> = {}): Input => ({
-  chatter: makeChatter(),
-  room: OFFLINE_ROOM,
-  message: makeMessage(),
-  bucket: undefined,
-  now: NOW,
-  ...overrides,
-});
-
-const sendInSequence = ({
-  chatter,
-  at,
-}: {
-  chatter: ChatterContext;
-  at: readonly Date[];
-}): readonly ReturnType<typeof decide>[] =>
-  at.reduce<{ bucket: TokenBucket | undefined; decisions: readonly ReturnType<typeof decide>[] }>(
-    ({ bucket, decisions }, now) => {
-      const decision = decide(makeInput({ chatter, bucket, now }));
-      return {
-        bucket: decision.ok ? decision.value.bucket : bucket,
-        decisions: [...decisions, decision],
-      };
+const takeInSequence = (at: readonly Date[]): readonly Outcome[] =>
+  at.reduce<{ bucket: TokenBucket | undefined; outcomes: readonly Outcome[] }>(
+    ({ bucket, outcomes }, now) => {
+      const taken = takeToken({ bucket, now });
+      return taken === undefined
+        ? { bucket, outcomes: [...outcomes, "rate_limited"] }
+        : { bucket: taken, outcomes: [...outcomes, "accepted"] };
     },
-    { bucket: undefined, decisions: [] },
-  ).decisions;
+    { bucket: undefined, outcomes: [] },
+  ).outcomes;
 
-const outcomes = (decisions: readonly ReturnType<typeof decide>[]) =>
-  decisions.map((decision) => (decision.ok ? "accepted" : decision.error));
-
-describe("decide — message valide", () => {
+describe("acceptMessage — message valide", () => {
   it("accepte hors live un message horodaté, sans session, au nom du chatter", () => {
-    expect(decide(makeInput({ room: OFFLINE_ROOM }))).toEqual(
-      ok({
-        message: {
-          channelId: CHANNEL_ID,
-          authorId: AUTHOR_ID,
-          body: "Bonjour le chat",
-          sentAt: NOW,
-        },
-        bucket: { tokens: 4, refilledAt: NOW },
-      }),
-    );
+    const chatter = makeChatter();
+
+    expect(
+      acceptMessage({ chatter, room: OFFLINE_ROOM, message: makeMessage(), now: NOW }),
+    ).toEqual({ channelId: CHANNEL_ID, authorId: AUTHOR_ID, body: "Bonjour le chat", sentAt: NOW });
   });
 
   it("rattache à la session en cours un message posté pendant un live", () => {
-    const decision = decide(makeInput({ room: LIVE_ROOM }));
+    const chatter = makeChatter();
 
-    expect(decision.ok && decision.value.message).toEqual({
+    expect(acceptMessage({ chatter, room: LIVE_ROOM, message: makeMessage(), now: NOW })).toEqual({
       channelId: CHANNEL_ID,
       authorId: AUTHOR_ID,
       body: "Bonjour le chat",
@@ -106,58 +83,55 @@ describe("decide — message valide", () => {
   });
 });
 
-describe("decide — sanctions", () => {
+describe("sanctionRejection — sanctions", () => {
   it("refuse timed_out le message d'un chatter en timeout sur ce salon", () => {
-    expect(decide(makeInput({ chatter: makeChatter(banned()) }))).toEqual(err("timed_out"));
+    const chatter = makeChatter(banned());
+
+    expect(sanctionRejection({ chatter, channelId: CHANNEL_ID, now: NOW })).toBe("timed_out");
   });
 
-  it("accepte le message d'un chatter dont le timeout a expiré", () => {
+  it("laisse passer le message d'un chatter dont le timeout a expiré", () => {
     const chatter = makeChatter(banned({ expiresAt: secondsFromNow(60) }));
 
-    expect(decide(makeInput({ chatter, now: secondsFromNow(60) })).ok).toBe(true);
+    expect(
+      sanctionRejection({ chatter, channelId: CHANNEL_ID, now: secondsFromNow(60) }),
+    ).toBeUndefined();
   });
 
-  it("accepte le message d'un chatter en timeout sur un autre salon", () => {
+  it("laisse passer le message d'un chatter en timeout sur un autre salon", () => {
     const chatter = makeChatter(banned({ channelId: OTHER_CHANNEL_ID }));
 
-    expect(decide(makeInput({ chatter })).ok).toBe(true);
-  });
-
-  it("publie le message accepté dans le salon dont la sanction a été vérifiée", () => {
-    const chatter = makeChatter(banned({ channelId: CHANNEL_ID }));
-    const decision = decide(
-      makeInput({ chatter, room: { channelId: OTHER_CHANNEL_ID, sessionId: null } }),
-    );
-
-    expect(decision.ok && decision.value.message.channelId).toBe(OTHER_CHANNEL_ID);
+    expect(sanctionRejection({ chatter, channelId: CHANNEL_ID, now: NOW })).toBeUndefined();
   });
 
   it("donne le motif banned quand un ban sans échéance s'ajoute à un timeout", () => {
     const chatter = makeChatter(banned(), banned({ expiresAt: null }));
 
-    expect(decide(makeInput({ chatter }))).toEqual(err("banned"));
+    expect(sanctionRejection({ chatter, channelId: CHANNEL_ID, now: NOW })).toBe("banned");
   });
 
   it("refuse banned le message d'un chatter banni sans échéance", () => {
-    expect(decide(makeInput({ chatter: makeChatter(banned({ expiresAt: null })) }))).toEqual(
-      err("banned"),
-    );
+    const chatter = makeChatter(banned({ expiresAt: null }));
+
+    expect(sanctionRejection({ chatter, channelId: CHANNEL_ID, now: NOW })).toBe("banned");
   });
 
-  it("refuse d'abord pour la sanction, même quand le rate limit est épuisé", () => {
-    const chatter = makeChatter(banned());
+  it("ne sanctionne pas le propriétaire de la chaîne", () => {
+    const chatter = makeChatter(OWNER);
 
-    expect(decide(makeInput({ chatter, bucket: { tokens: 0, refilledAt: NOW } }))).toEqual(
-      err("timed_out"),
-    );
+    expect(sanctionRejection({ chatter, channelId: CHANNEL_ID, now: NOW })).toBeUndefined();
   });
 });
 
-describe("decide — rate limit global (1 message par seconde, rafale de 5)", () => {
+describe("takeToken — rate limit global (1 message par seconde, rafale de 5)", () => {
   const BURST = [NOW, NOW, NOW, NOW, NOW, NOW];
 
-  it("refuse rate_limited le sixième message de la rafale", () => {
-    expect(outcomes(sendInSequence({ chatter: makeChatter(), at: BURST }))).toEqual([
+  it("fixe la rafale à 5 jetons et rend un jeton toutes les 1000 ms", () => {
+    expect(RATE_LIMIT).toEqual({ burst: 5, millisecondsPerToken: 1000 });
+  });
+
+  it("refuse le sixième message de la rafale", () => {
+    expect(takeInSequence(BURST)).toEqual([
       "accepted",
       "accepted",
       "accepted",
@@ -167,47 +141,43 @@ describe("decide — rate limit global (1 message par seconde, rafale de 5)", ()
     ]);
   });
 
-  it("soumet le propriétaire de la chaîne au rate limit comme les autres", () => {
-    expect(outcomes(sendInSequence({ chatter: makeChatter(OWNER), at: BURST })).at(-1)).toBe(
-      "rate_limited",
-    );
+  it("débite un jeton d'un seau absent, qui vaut un seau plein", () => {
+    expect(takeToken({ bucket: undefined, now: NOW })).toEqual({ tokens: 4, refilledAt: NOW });
   });
 
   it("rend un jeton par seconde écoulée, pas avant", () => {
     const afterBurst = [NOW, NOW, NOW, NOW, NOW];
 
     expect(
-      outcomes(
-        sendInSequence({
-          chatter: makeChatter(),
-          at: [...afterBurst, secondsFromNow(0.999), secondsFromNow(1), secondsFromNow(1)],
-        }),
-      ).slice(5),
+      takeInSequence([
+        ...afterBurst,
+        secondsFromNow(0.999),
+        secondsFromNow(1),
+        secondsFromNow(1),
+      ]).slice(5),
     ).toEqual(["rate_limited", "accepted", "rate_limited"]);
   });
 
   it("plafonne la rafale à 5, même après une longue absence", () => {
-    const bucket: TokenBucket = { tokens: 0, refilledAt: NOW };
     const later = secondsFromNow(3600);
-    const decision = decide(makeInput({ bucket, now: later }));
 
-    expect(decision.ok && decision.value.bucket).toEqual({ tokens: 4, refilledAt: later });
+    expect(takeToken({ bucket: { tokens: 0, refilledAt: NOW }, now: later })).toEqual({
+      tokens: 4,
+      refilledAt: later,
+    });
   });
 
   it("consomme un jeton en tenant compte du temps écoulé depuis le dernier remplissage", () => {
     const bucket: TokenBucket = { tokens: 1.5, refilledAt: NOW };
-    const decision = decide(makeInput({ bucket, now: secondsFromNow(2) }));
 
-    expect(decision.ok && decision.value.bucket).toEqual({
+    expect(takeToken({ bucket, now: secondsFromNow(2) })).toEqual({
       tokens: 2.5,
       refilledAt: secondsFromNow(2),
     });
   });
 
-  it("refuse avec moins d'un jeton, sans rien consommer", () => {
-    expect(decide(makeInput({ bucket: { tokens: 0.5, refilledAt: NOW } }))).toEqual(
-      err("rate_limited"),
-    );
+  it("refuse avec moins d'un jeton", () => {
+    expect(takeToken({ bucket: { tokens: 0.5, refilledAt: NOW }, now: NOW })).toBeUndefined();
   });
 });
 

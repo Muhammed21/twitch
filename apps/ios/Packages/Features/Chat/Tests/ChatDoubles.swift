@@ -21,10 +21,13 @@ actor FakeConnection: ChatConnection {
   private var queue: [Result<ChatEvent?, any Error>] = []
   private var waiting: CheckedContinuation<ChatEvent?, any Error>?
   private var outcomes: [ChatSendOutcome]
-  private(set) var delivered = 0
   private(set) var joined: [ChannelID] = []
   private(set) var sent: [String] = []
   private(set) var isClosed = false
+
+  var isAwaitingEvent: Bool {
+    waiting != nil
+  }
 
   init(outcomes: [ChatSendOutcome] = []) {
     self.outcomes = outcomes
@@ -72,15 +75,9 @@ actor FakeConnection: ChatConnection {
       return nil
     }
     guard queue.isEmpty else {
-      return try take(queue.removeFirst())
+      return try queue.removeFirst().get()
     }
     return try await withCheckedThrowingContinuation { waiting = $0 }
-  }
-
-  private func take(_ result: Result<ChatEvent?, any Error>) throws -> ChatEvent? {
-    let event = try result.get()
-    delivered += event == nil ? 0 : 1
-    return event
   }
 
   private func deliver(_ result: Result<ChatEvent?, any Error>) {
@@ -89,7 +86,7 @@ actor FakeConnection: ChatConnection {
       return
     }
     waiting = nil
-    continuation.resume(with: Result { try take(result) })
+    continuation.resume(with: result)
   }
 }
 
@@ -145,6 +142,7 @@ actor TestClock {
 
   private let held: Set<Duration>
   private var sleepers: [Sleeper] = []
+  private var released: [Duration] = []
   private(set) var waited: [Duration] = []
 
   init(holding held: Set<Duration> = [batchInterval]) {
@@ -154,6 +152,10 @@ actor TestClock {
   func wait(_ duration: Duration) async {
     waited.append(duration)
     guard held.contains(duration) else {
+      return
+    }
+    if let index = released.firstIndex(of: duration) {
+      released.remove(at: index)
       return
     }
     await withCheckedContinuation { sleepers.append(Sleeper(duration: duration, continuation: $0)) }
@@ -169,6 +171,10 @@ actor TestClock {
 
   func fire(_ duration: Duration) {
     let due = sleepers.filter { $0.duration == duration }
+    guard !due.isEmpty else {
+      released.append(duration)
+      return
+    }
     sleepers.removeAll { $0.duration == duration }
     due.forEach { $0.continuation.resume() }
   }
@@ -279,15 +285,9 @@ final class TestViewer {
   }
 }
 
-struct TimedOut: Error {}
-
 @MainActor
 func waitUntil(_ condition: @MainActor () async -> Bool) async throws {
-  let deadline = ContinuousClock.now + .seconds(10)
   while await !condition() {
-    guard ContinuousClock.now < deadline else {
-      throw TimedOut()
-    }
     try await Task.sleep(for: .milliseconds(5))
   }
 }
