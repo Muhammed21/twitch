@@ -18,6 +18,8 @@ public final class MyChannelStore {
     case keyUnavailable
     case titleSaved
     case titleFailed
+    case keyRotated
+    case keyRotationFailed
   }
 
   public static let maxTitleLength = 140
@@ -97,7 +99,32 @@ public final class MyChannelStore {
       notice = nil
     } catch {
       log("my channel: stream key not read (\(Self.kind(of: error)))")
+      guard read == keyReads else {
+        return
+      }
       notice = .keyUnavailable
+    }
+  }
+
+  public func rotateKey() async {
+    guard case let .ready(owned) = phase else {
+      return
+    }
+    keyReads += 1
+    let read = keyReads
+    do {
+      let key = try await repository.rotateStreamKey(of: owned.id)
+      guard read == keyReads else {
+        return
+      }
+      streamKey = key
+      notice = .keyRotated
+    } catch {
+      log("my channel: stream key not rotated (\(Self.kind(of: error)))")
+      guard read == keyReads else {
+        return
+      }
+      notice = .keyRotationFailed
     }
   }
 
