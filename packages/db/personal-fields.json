@@ -6,6 +6,7 @@
   "audit.AuditEntry.userAgent",
   "authz.AuthzRoleAssignment.grantedBy",
   "authz.AuthzRoleAssignment.subjectId",
+  "channel.Channel.bannerKey",
   "channel.Channel.ownerId",
   "channel.Channel.slug",
   "discovery.DiscoveryLiveChannelView.slug",

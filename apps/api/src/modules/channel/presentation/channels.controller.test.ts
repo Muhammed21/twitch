@@ -11,6 +11,7 @@ import { configureApp } from "../../../platform/configure-app.ts";
 import { PlatformModule } from "../../../platform/platform.module.ts";
 import type { ChannelUpdateError, ChannelView } from "../application/channel-queries.ts";
 import {
+  CHANNEL_IMAGE_URL,
   ChannelsController,
   GET_CHANNEL,
   type GetChannel,
@@ -26,6 +27,7 @@ const CHANNEL: ChannelView = {
   title: "Speedrun du dimanche",
   ownerId: ACTOR_ID,
   category: null,
+  bannerKey: null,
 };
 
 const JUST_CHATTING = {
@@ -34,7 +36,10 @@ const JUST_CHATTING = {
   name: "Just Chatting",
 };
 
-const { category: _none, ...CHANNEL_RESPONSE } = CHANNEL;
+const { category: _none, bannerKey: _noBanner, ...CHANNEL_RESPONSE } = CHANNEL;
+
+const BANNER_KEY = "images/banner/b.webp";
+const imageUrlOf = (key: string) => `https://images.invalid/${key}`;
 
 const IDENTITY: AccessTokenIdentity = {
   userId: ACTOR_ID,
@@ -73,6 +78,7 @@ const withChannels = async (
     controllers: [ChannelsController],
     providers: [
       { provide: GET_CHANNEL, useValue: getChannel },
+      { provide: CHANNEL_IMAGE_URL, useValue: imageUrlOf },
       {
         provide: UPDATE_CHANNEL,
         useValue: (request: Parameters<UpdateChannel>[0]) => {
@@ -121,6 +127,20 @@ describe("GET /v1/channels/{slug}", () => {
         const response = await fetch(`${base}/${CHANNEL.slug}`);
 
         expect(await response.json()).toEqual({ ...CHANNEL_RESPONSE, category: JUST_CHATTING });
+      },
+    );
+  });
+
+  it("rend l'URL de la bannière quand la chaîne en a une", async () => {
+    await withChannels(
+      { getChannel: async () => ok({ ...CHANNEL, bannerKey: BANNER_KEY }) },
+      async (base) => {
+        const response = await fetch(`${base}/${CHANNEL.slug}`);
+
+        expect(await response.json()).toEqual({
+          ...CHANNEL_RESPONSE,
+          bannerUrl: imageUrlOf(BANNER_KEY),
+        });
       },
     );
   });

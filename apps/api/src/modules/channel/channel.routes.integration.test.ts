@@ -77,6 +77,7 @@ describe("lecture et modification d'une chaîne en base", () => {
       title: "",
       ownerId: channel.ownerId,
       category: null,
+      bannerKey: null,
     };
 
     expect(await directory.findBySlug(channel.slug)).toEqual(view);
@@ -105,6 +106,7 @@ describe("lecture et modification d'une chaîne en base", () => {
         title: "Speedrun du dimanche",
         ownerId: channel.ownerId,
         category: null,
+        bannerKey: null,
       },
     });
     expect(await prisma.channel.findUnique({ where: { id: channel.id } })).toMatchObject({

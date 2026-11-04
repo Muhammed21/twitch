@@ -19,6 +19,9 @@ import { MAX_TITLE_LENGTH } from "../domain/channel-title.ts";
 
 export const GET_CHANNEL = Symbol("GET_CHANNEL");
 export const UPDATE_CHANNEL = Symbol("UPDATE_CHANNEL");
+export const CHANNEL_IMAGE_URL = Symbol("CHANNEL_IMAGE_URL");
+
+export type ImageUrlOf = (key: string) => string;
 
 export type GetChannel = (slug: string) => Promise<Result<ChannelView, "channel_not_found">>;
 
@@ -26,7 +29,7 @@ export type UpdateChannel = (
   request: ChannelUpdate,
 ) => Promise<Result<ChannelView, ChannelUpdateError>>;
 
-class Channel extends responseDto(responses.Channel) {}
+export class Channel extends responseDto(responses.Channel) {}
 
 const CategoryChoice = z
   .strictObject({ id: Uuid.transform((id) => id.toLowerCase()).optional() })
@@ -40,12 +43,18 @@ class UpdateChannelRequest extends createZodDto(
     }),
 ) {}
 
-type ChannelResponse = z.input<typeof responses.Channel>;
+export type ChannelResponse = z.input<typeof responses.Channel>;
 
-const toResponse = ({ category, ...channel }: ChannelView): ChannelResponse =>
-  category === null ? channel : { ...channel, category };
+export const presentChannel =
+  (imageUrlOf: ImageUrlOf) =>
+  ({ category, bannerKey, ...channel }: ChannelView): ChannelResponse => ({
+    ...channel,
+    ...(category === null ? {} : { category }),
+    ...(bannerKey === null ? {} : { bannerUrl: imageUrlOf(bannerKey) }),
+  });
 
-const channelNotFound = () => new ProblemException({ status: 404, title: "Chaîne introuvable" });
+export const channelNotFound = () =>
+  new ProblemException({ status: 404, title: "Chaîne introuvable" });
 
 const PROBLEMS: Readonly<Record<ChannelUpdateError, () => ProblemException>> = {
   channel_not_found: channelNotFound,
@@ -69,6 +78,7 @@ export class ChannelsController {
   constructor(
     @Inject(GET_CHANNEL) private readonly getChannel: GetChannel,
     @Inject(UPDATE_CHANNEL) private readonly updateChannel: UpdateChannel,
+    @Inject(CHANNEL_IMAGE_URL) private readonly imageUrlOf: ImageUrlOf,
   ) {}
 
   @Get(":slug")
@@ -78,7 +88,7 @@ export class ChannelsController {
     if (!found.ok) {
       throw channelNotFound();
     }
-    return toResponse(found.value);
+    return presentChannel(this.imageUrlOf)(found.value);
   }
 
   @Patch(":id")
@@ -102,6 +112,6 @@ export class ChannelsController {
     if (!updated.ok) {
       throw PROBLEMS[updated.error]();
     }
-    return toResponse(updated.value);
+    return presentChannel(this.imageUrlOf)(updated.value);
   }
 }

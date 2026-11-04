@@ -110,7 +110,8 @@ Une nouvelle outbox s'ajoute à `OUTBOXES` (`src/outbox-relay/outbox-relay.ts`),
 
 Routes :
 
-- `GET /v1/channels/{slug}` rend la chaîne (`Channel` : `id`, `slug`, `title`, `ownerId`), sans jeton ; un slug inconnu répond 404 ;
+- `GET /v1/channels/{slug}` rend la chaîne (`Channel` : `id`, `slug`, `title`, `ownerId`, et `bannerUrl` quand elle a une bannière), sans jeton ; un slug inconnu répond 404 ;
+- `PUT /v1/me/banner { uploadId }` (jeton requis) confirme un envoi de `POST /v1/images/uploads` (purpose `banner`, ADR 0044) pour la chaîne du jeton : `channel` garde la clé de l'image servie, supprime l'ancienne après l'enregistrement et rend la `Channel` relue ; 404 sans chaîne, 422 pour une image refusée ;
 - `PATCH /v1/channels/{id}` (jeton requis, corps `{ "title": string }`) change le titre : 404 pour une chaîne inconnue ou un identifiant qui n'est pas un UUID, 403 sans le droit `update` sur la chaîne (propriétaire ou editor, perdu par un banni, ADR 0006), puis 422 pour un titre de plus de 140 caractères une fois rogné. Le titre et `channel.metadata.updated` (`{ channelId, title }`) s'écrivent dans la même transaction.
 
 L'API consomme `events.identity` dans le groupe `channel` (`platform/stream-consumer.ts`, ADR 0034), sous le nom de consommateur `<machine>-<pid>` et le client Redis `api-stream-consumer` :
