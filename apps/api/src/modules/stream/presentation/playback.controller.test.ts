@@ -11,6 +11,7 @@ import { GET_PLAYBACK, PlaybackController } from "./playback.controller.ts";
 
 const LIVE_CHANNEL_ID = "00000000-0000-4000-8000-000000000001";
 const OFFLINE_CHANNEL_ID = "00000000-0000-4000-8000-000000000002";
+const LETTERED_LIVE_CHANNEL_ID = "9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69";
 const PROVIDER_CHANNEL_ID = "0c9f3b2e-4d5a-4b6c-8d7e-9f0a1b2c3d4e";
 const PLAYBACK_BASE_URL = "http://127.0.0.1:3002";
 
@@ -33,7 +34,9 @@ const withPlayback = async (
         useValue: getPlayback({
           sessions: {
             liveProviderChannelOf: async (channelId) =>
-              channelId === LIVE_CHANNEL_ID ? PROVIDER_CHANNEL_ID : null,
+              [LIVE_CHANNEL_ID, LETTERED_LIVE_CHANNEL_ID].includes(channelId)
+                ? PROVIDER_CHANNEL_ID
+                : null,
           },
           baseUrl,
         }),
@@ -76,6 +79,14 @@ describe("GET /v1/channels/{channelId}/playback (ADR 0031 §6)", () => {
       );
     },
   );
+
+  it("rend la playlist de la chaîne en live dont l'UUID arrive en majuscules", async () => {
+    await withPlayback(async (get) => {
+      const response = await get(LETTERED_LIVE_CHANNEL_ID.toUpperCase());
+
+      expect(response.status).toBe(200);
+    });
+  });
 
   it("répond 404 pour une chaîne sans session ouverte", async () => {
     await withPlayback(async (get) => {
