@@ -52,7 +52,7 @@ Une catégorie a :
 - un nom affiché, de 1 à 50 caractères ;
 - une pochette optionnelle (§6).
 
-Son état vaut `active`, `merged` ou `retired`. Seule une catégorie `active` se pose sur une chaîne et apparaît dans les lectures.
+Son état vaut `active`, `merged` ou `retired`. Seule une catégorie `active` se pose sur une chaîne et apparaît dans les listes. Une lecture par slug suit `mergedIntoId` : le slug d'une catégorie `merged` mène à sa cible, et `GET /v1/categories/{slug}/lives` rend les lives de la cible. Le slug d'une catégorie `retired` répond `404`.
 
 ### 2. Fusion
 
@@ -66,14 +66,16 @@ Une fusion dans soi-même, depuis ou vers une catégorie qui n'est pas `active`,
 
 ### 3. Retrait
 
-Le retrait d'une catégorie qu'une chaîne utilise encore est refusé par un `409`. Une catégorie inutilisée passe à `retired`, et l'outbox reçoit `channel.category.retired { categoryId }`. Une catégorie retirée ne revient pas : on en crée une nouvelle.
+Le retrait d'une catégorie qu'une chaîne utilise encore est refusé par un `409`. Une catégorie inutilisée passe à `retired`, et l'outbox reçoit `channel.category.retired { categoryId }`. Une catégorie retirée ne revient pas. Le slug reste unique parmi toutes les catégories, fusionnées et retirées comprises : une nouvelle catégorie prend donc un autre slug.
 
 ### 4. Administration
 
 Les routes d'administration (`/v1/admin/categories…`) exigent deux conditions cumulées, comme l'ADR 0007 :
 
 - le jeton porte le scope `admin:category.manage` ;
-- son titulaire a le rôle de plateforme `admin`, qui donne l'action `administer` sur `Category` (ADR 0006).
+- son titulaire a le rôle de plateforme `admin`.
+
+L'ADR 0006 ne donne au rôle `admin` que des capacités de plateforme explicites (`platform:channel.suspend`). Cet ADR lui ajoute l'action `administer` sur le sujet `Category`. L'action n'est pas `manage`, qui vaut dans CASL pour toutes les actions.
 
 Le scope n'est accordé à aucun client iOS. L'en-tête `X-Acting-User` arrive avec la coquille Payload (ADR 0007).
 
@@ -93,7 +95,7 @@ La catégorie porte une clé d'objet optionnelle. L'image passe par la brique d'
 
 - Aucune chaîne ne perd sa catégorie sans qu'un administrateur ait dit où elle va.
 - Une fusion produit un seul event, et `discovery` la rejoue sans dépendre de l'ordre des events par chaîne.
-- Les anciens slugs restent connus : une lecture peut rediriger une catégorie fusionnée vers sa cible.
+- Les anciens slugs restent connus : une lecture par le slug d'une catégorie fusionnée mène à sa cible (§1).
 
 ### Négatives
 
