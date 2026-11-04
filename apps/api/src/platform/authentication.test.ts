@@ -10,6 +10,7 @@ import {
   type AccessTokenVerifier,
   CurrentIdentity,
   rejectingVerifier,
+  requiredScopeGuard,
 } from "./authentication.ts";
 import { configureApp } from "./configure-app.ts";
 import { PlatformModule } from "./platform.module.ts";
@@ -32,6 +33,33 @@ class PrivateController {
   }
 }
 
+@Controller("scoped")
+@UseGuards(AccessTokenGuard, requiredScopeGuard("openid"))
+class ScopedController {
+  @Get()
+  read() {
+    return {};
+  }
+}
+
+@Controller("admin-only")
+@UseGuards(AccessTokenGuard, requiredScopeGuard("admin:category.manage"))
+class AdminOnlyController {
+  @Get()
+  read() {
+    return {};
+  }
+}
+
+@Controller("scope-without-token")
+@UseGuards(requiredScopeGuard("openid"))
+class ScopeWithoutTokenController {
+  @Get()
+  read() {
+    return {};
+  }
+}
+
 const VALID_TOKEN = "jeton-valide";
 
 const fakeVerifier: AccessTokenVerifier = {
@@ -44,7 +72,7 @@ const fakeVerifier: AccessTokenVerifier = {
 };
 
 const withApp = async (
-  run: (request: (init?: RequestInit) => Promise<Response>) => Promise<void>,
+  run: (request: (init?: RequestInit, path?: string) => Promise<Response>) => Promise<void>,
 ) => {
   const moduleRef = await Test.createTestingModule({
     imports: [
@@ -54,13 +82,18 @@ const withApp = async (
         accessTokenVerifier: fakeVerifier,
       }),
     ],
-    controllers: [PrivateController],
+    controllers: [
+      PrivateController,
+      ScopedController,
+      AdminOnlyController,
+      ScopeWithoutTokenController,
+    ],
   }).compile();
   const app = configureApp(moduleRef.createNestApplication({ logger: false }));
   await app.listen(0, "127.0.0.1");
   const url = await app.getUrl();
   try {
-    await run((init) => fetch(`${url}/v1/private`, init));
+    await run((init, path = "private") => fetch(`${url}/v1/${path}`, init));
   } finally {
     await app.close();
   }
@@ -124,6 +157,33 @@ describe("garde des jetons d'accès (ADR 0005, RFC 6750)", () => {
       const response = await request({ headers: { authorization: `bearer ${VALID_TOKEN}` } });
 
       expect(response.status).toBe(200);
+    });
+  });
+});
+
+describe("garde d'un scope du jeton (ADR 0007, ADR 0045)", () => {
+  it("laisse passer un jeton qui porte le scope", async () => {
+    await withApp(async (request) => {
+      const response = await request(bearer(VALID_TOKEN), "scoped");
+
+      expect(response.status).toBe(200);
+    });
+  });
+
+  it("refuse en 403 un jeton valide qui ne porte pas le scope", async () => {
+    await withApp(async (request) => {
+      const response = await request(bearer(VALID_TOKEN), "admin-only");
+
+      expect(response.status).toBe(403);
+      expect(await response.json()).toMatchObject({ status: 403, title: "Action non autorisée" });
+    });
+  });
+
+  it("refuse en 403 une route dont aucune garde n'a établi l'identité", async () => {
+    await withApp(async (request) => {
+      const response = await request(bearer(VALID_TOKEN), "scope-without-token");
+
+      expect(response.status).toBe(403);
     });
   });
 });
