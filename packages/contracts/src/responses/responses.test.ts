@@ -161,8 +161,17 @@ describe("Category", () => {
     ["sans slug", { slug: undefined }],
     ["sans nom", { name: undefined }],
     ["sans état", { status: undefined }],
+    ["avec une pochette qui n'est pas une URL", { imageUrl: "jc.webp" }],
   ])("refuse une catégorie %s", (_name, overrides) => {
     expect(responses.Category.safeParse(makeCategory(overrides)).success).toBe(false);
+  });
+
+  it("décode une catégorie avec sa pochette", () => {
+    const category = makeCategory({
+      imageUrl: "https://images.twitch.local/images/category/jc.webp",
+    });
+
+    expect(responses.Category.parse(category)).toEqual(category);
   });
 });
 

@@ -2,8 +2,32 @@ import Foundation
 import Profile
 import Testing
 
+private let lastLiveCases: [(TimeInterval, String)] = [
+  (86340, "Last live 23h ago"),
+  (2700, "Last live 45m ago"),
+  (277_200, "Last live 3d ago"),
+  (20, "Last live 0m ago"),
+]
+
 @Suite("Textes de ma chaîne")
 struct ProfileTextTests {
+  @Test(
+    "le dernier live s'affiche en durée courte, comme « Last live 23h ago » sur profil/menu-compte--defaut",
+    arguments: lastLiveCases
+  )
+  func lastLive(elapsed: TimeInterval, expected: String) {
+    let now = Date(timeIntervalSince1970: 1_800_000_000)
+
+    #expect(ProfileText.lastLive(at: now.addingTimeInterval(-elapsed), now: now, locale: Locale(identifier: "en_US")) == expected)
+  }
+
+  @Test("un dernier live daté dans le futur, horloge décalée, s'affiche comme à l'instant")
+  func lastLiveInFuture() {
+    let now = Date(timeIntervalSince1970: 1_800_000_000)
+
+    #expect(ProfileText.lastLive(at: now.addingTimeInterval(120), now: now, locale: Locale(identifier: "en_US")) == "Last live 0m ago")
+  }
+
   @Test("les réglages OBS recommandés : H.264, AAC, image clé toutes les 2 s, 6 000 kb/s au plus")
   func obsSettings() {
     let rows = ProfileText.obsSettings.map { "\(String(localized: $0.label)): \(String(localized: $0.value))" }

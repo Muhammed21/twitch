@@ -87,6 +87,8 @@ enum ChatText {
   static var send: String { localized("chat.composer.send") }
   static var unsent: String { localized("chat.rejection.unsent") }
   static var timeOutAction: String { localized("chat.moderation.timeOut") }
+  static var welcome: String { localized("chat.feed.welcome") }
+  static var unread: String { localized("chat.feed.unread") }
 
   static func moderation(_ notice: ChatSession.ModerationNotice) -> String {
     switch notice {

@@ -10,8 +10,10 @@ public enum TextRole: Sendable {
   case body
   case chatMessage
   case chatAuthor
+  case chatComposer
   case title
   case tabLabel
+  case profileDetail
   case widgetTitle
   case channelName
   case cardDetail
@@ -26,10 +28,12 @@ public enum TextRole: Sendable {
     case .dialogMessage: .dialogMessage
     case .display: .displayText
     case .body: .bodyText
-    case .chatMessage: .supportingText
-    case .chatAuthor: .actionLabel
+    case .chatMessage: .chatText
+    case .chatAuthor: .chatAuthorText
+    case .chatComposer: .supportingText
     case .title: .titleText
     case .tabLabel: .tabLabel
+    case .profileDetail: .supportingText
     case .widgetTitle: .actionLabel
     case .channelName: .displayText
     case .cardDetail: .supportingText
@@ -57,6 +61,9 @@ public enum LayoutRole: Sendable {
   case dialogRadius
   case chatInset
   case chatRowGap
+  case chatUnreadGap
+  case chatUnreadLabelGap
+  case chatUnreadLineWidth
   case composerHeight
   case composerPadding
   case composerRadius
@@ -76,6 +83,14 @@ public enum LayoutRole: Sendable {
   case createGlyphSize
   case avatarRingWidth
   case avatarRingGap
+  case profileBannerHeight
+  case profileAvatarSize
+  case profileAvatarOverlap
+  case profileAvatarGlyphInset
+  case profileAvatarGap
+  case profileNameTop
+  case profileBioTop
+  case profileHeaderBottom
   case widgetInset
   case widgetGap
   case widgetHeaderHeight
@@ -116,6 +131,9 @@ public enum LayoutRole: Sendable {
     case .dialogRadius: Radius.xxl
     case .chatInset: Spacing.x8
     case .chatRowGap: Spacing.x20
+    case .chatUnreadGap: Spacing.x2
+    case .chatUnreadLabelGap: Spacing.x4
+    case .chatUnreadLineWidth: Spacing.x1
     case .composerHeight: Spacing.x40
     case .composerPadding: Spacing.x12
     case .composerRadius: Radius.lg
@@ -135,6 +153,14 @@ public enum LayoutRole: Sendable {
     case .createGlyphSize: Spacing.x16
     case .avatarRingWidth: Spacing.x2
     case .avatarRingGap: Spacing.x1
+    case .profileBannerHeight: Spacing.x70
+    case .profileAvatarSize: Spacing.x88
+    case .profileAvatarOverlap: Spacing.x16
+    case .profileAvatarGlyphInset: Spacing.x20
+    case .profileAvatarGap: Spacing.x8
+    case .profileNameTop: Spacing.x8
+    case .profileBioTop: Spacing.x20
+    case .profileHeaderBottom: Spacing.x16
     case .widgetInset: Spacing.x14
     case .widgetGap: Spacing.x8
     case .widgetHeaderHeight: Spacing.x40
