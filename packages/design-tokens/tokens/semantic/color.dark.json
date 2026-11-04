@@ -129,6 +129,11 @@
           "$value": "{core.color.indigo.75}",
           "$description": "Couleur de pseudo dans le chat, attribuée à un auteur d'après son identifiant."
         }
+      },
+      "unread": {
+        "$type": "color",
+        "$value": "{core.color.red.70}",
+        "$description": "Filet et libellé « New » qui séparent les messages lus des non lus dans le chat. Convention : aucune capture du chat en thème sombre, même rouge que les pseudos rouges."
       }
     },
     "navigation": {
