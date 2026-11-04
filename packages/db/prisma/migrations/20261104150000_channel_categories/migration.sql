@@ -19,8 +19,6 @@ CREATE TABLE "channel"."ChannelCategory" (
 -- CreateIndex
 CREATE UNIQUE INDEX "ChannelCategory_slug_key" ON "channel"."ChannelCategory"("slug");
 
--- CreateIndex
-CREATE INDEX "Channel_categoryId_idx" ON "channel"."Channel"("categoryId");
-
 -- AddForeignKey
-ALTER TABLE "channel"."Channel" ADD CONSTRAINT "Channel_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "channel"."ChannelCategory"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+-- Table chaude (ADR 0008) : NOT VALID évite de parcourir Channel sous verrou ; la validation suit dans 20261104150200.
+ALTER TABLE "channel"."Channel" ADD CONSTRAINT "Channel_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "channel"."ChannelCategory"("id") ON DELETE RESTRICT ON UPDATE CASCADE NOT VALID;
