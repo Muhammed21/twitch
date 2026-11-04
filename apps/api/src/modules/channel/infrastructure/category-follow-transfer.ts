@@ -11,7 +11,7 @@ const utc = (date: Date) => date.toISOString();
 export const transferFollows = (
   tx: Transaction,
   { sourceId, targetId, occurredAt }: { sourceId: string; targetId: string; occurredAt: Date },
-) =>
+): Promise<number> =>
   tx.$executeRaw`
     WITH "moved" AS (
       INSERT INTO "channel"."ChannelCategoryFollow"
@@ -50,7 +50,7 @@ export const closeFollows = (
     reason,
     occurredAt,
   }: { categoryId: string; reason: "category_merged" | "category_retired"; occurredAt: Date },
-) =>
+): Promise<number> =>
   tx.$executeRaw`
     WITH "closed" AS (
       UPDATE "channel"."ChannelCategoryFollow"
