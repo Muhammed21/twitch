@@ -118,8 +118,8 @@
         },
         "50": {
           "$type": "color",
-          "$value": "#eb1a18",
-          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : fond du badge LIVE posé sur la miniature, mesuré #eb1a18 en clair et #ea1917 en sombre (parcourir/liste-chaines-live--defaut et --theme-sombre)."
+          "$value": "#eb0400",
+          "$description": "Rouge du badge LIVE de la charte twitch.tv. Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : mesuré #eb1a18 en clair et #ea1917 en sombre (parcourir/liste-chaines-live--defaut et --theme-sombre). La valeur de la charte, plus foncée, garde le libellé blanc au-dessus de 4,5:1."
         },
         "60": {
           "$type": "color",

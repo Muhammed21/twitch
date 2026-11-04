@@ -194,11 +194,11 @@ public extension Color {
             : UIColor(red: 0, green: 0, blue: 0, alpha: 1)
     })
     /// Fond du badge LIVE d'une carte de live, identique dans les deux thèmes.
-    /// clair #EB1A18 · sombre #EB1A18
+    /// clair #EB0400 · sombre #EB0400
     static let liveBadge = Color(uiColor: UIColor { trait in
         trait.userInterfaceStyle == .dark
-            ? UIColor(red: 0.922, green: 0.102, blue: 0.094, alpha: 1)
-            : UIColor(red: 0.922, green: 0.102, blue: 0.094, alpha: 1)
+            ? UIColor(red: 0.922, green: 0.016, blue: 0, alpha: 1)
+            : UIColor(red: 0.922, green: 0.016, blue: 0, alpha: 1)
     })
     /// Libellé « LIVE » posé sur le badge.
     /// clair #FFFFFF · sombre #FFFFFF
@@ -271,8 +271,8 @@ public extension Color {
         public static let avatarDefaultDark = Color(.sRGB, red: 0.749, green: 1, blue: 0, opacity: 1)
         public static let avatarOnDefaultLight = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 1)
         public static let avatarOnDefaultDark = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 1)
-        public static let liveBadgeLight = Color(.sRGB, red: 0.922, green: 0.102, blue: 0.094, opacity: 1)
-        public static let liveBadgeDark = Color(.sRGB, red: 0.922, green: 0.102, blue: 0.094, opacity: 1)
+        public static let liveBadgeLight = Color(.sRGB, red: 0.922, green: 0.016, blue: 0, opacity: 1)
+        public static let liveBadgeDark = Color(.sRGB, red: 0.922, green: 0.016, blue: 0, opacity: 1)
         public static let liveOnBadgeLight = Color(.sRGB, red: 1, green: 1, blue: 1, opacity: 1)
         public static let liveOnBadgeDark = Color(.sRGB, red: 1, green: 1, blue: 1, opacity: 1)
         public static let mediaOnOverlayLight = Color(.sRGB, red: 1, green: 1, blue: 1, opacity: 1)

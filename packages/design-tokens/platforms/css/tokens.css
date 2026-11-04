@@ -29,7 +29,7 @@
   --color-border-subtle: #d9d9d9;
   --color-avatar-default: #bfff00;
   --color-avatar-on-default: #000000;
-  --color-live-badge: #eb1a18;
+  --color-live-badge: #eb0400;
   --color-live-on-badge: #ffffff;
   --color-media-on-overlay: #ffffff;
   --typography-display-text-font: -apple-system-headline;
@@ -113,7 +113,7 @@
     --color-border-subtle: #2d2d2f;
     --color-avatar-default: #bfff00;
     --color-avatar-on-default: #000000;
-    --color-live-badge: #eb1a18;
+    --color-live-badge: #eb0400;
     --color-live-on-badge: #ffffff;
     --color-media-on-overlay: #ffffff;
   }
