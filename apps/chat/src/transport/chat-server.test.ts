@@ -8,6 +8,7 @@ import { WebSocket } from "ws";
 
 import type { RevokedSessions } from "@repo/auth-verifier";
 
+import { createLocalTokenBuckets } from "../application/local-token-buckets.ts";
 import { createMessageSender } from "../application/message-sender.ts";
 import { createRoomRegistry } from "../application/room-registry.ts";
 import { redisRevokedSessions } from "../infrastructure/redis-revoked-sessions.ts";
@@ -39,7 +40,7 @@ const startServer = async (
     },
     chatters: { displayNameOf: async () => "Alice", sanctionsOf: async () => [] },
     rooms: createRoomRegistry({ find: async () => undefined }),
-    messages: createMessageSender(),
+    messages: createMessageSender(createLocalTokenBuckets()),
     saturation: SATURATION_LIMITS,
     adapter: LocalAdapter,
   });
