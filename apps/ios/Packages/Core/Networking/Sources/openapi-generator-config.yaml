@@ -16,6 +16,7 @@ filter:
     - ChannelsController_update
     - PresenceController_record
     - CategoriesController_browse
+    - CategoriesController_lives
 additionalImports:
   - Foundation
 typeOverrides:
