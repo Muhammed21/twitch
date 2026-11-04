@@ -13,6 +13,7 @@ filter:
     - TimeoutsController_create
     - StreamKeyController_read
     - ChannelsController_update
+    - PresenceController_record
 additionalImports:
   - Foundation
 typeOverrides:
