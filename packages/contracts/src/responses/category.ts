@@ -9,6 +9,7 @@ export const Category = z
     name: z.string(),
     status: openEnum(["active", "merged", "retired"]),
     imageUrl: z.url().optional(),
+    tags: z.array(z.string()),
   })
   .meta({ id: "Category" });
 

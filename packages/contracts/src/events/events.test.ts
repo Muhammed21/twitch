@@ -201,6 +201,7 @@ describe("channel.category.updated", () => {
     categoryId: CATEGORY_ID,
     name: "Just Chatting",
     imageKey: "images/category/3a4b5c6d-7e8f-4a0b-9c1d-2e3f4a5b6c7d.webp",
+    tags: ["IRL"],
     ...overrides,
   });
 
@@ -214,6 +215,7 @@ describe("channel.category.updated", () => {
   it.each([
     ["avec sa pochette", makeUpdated()],
     ["sans pochette", makeUpdated({ imageKey: null })],
+    ["sans tag", makeUpdated({ tags: [] })],
   ])("décode la catégorie %s", (_name, updated) => {
     expect(events.channel.channelCategoryUpdated.payload.parse(updated)).toEqual(updated);
   });
@@ -222,8 +224,15 @@ describe("channel.category.updated", () => {
     ["sans catégorie", makeUpdated({ categoryId: undefined })],
     ["sans nom", makeUpdated({ name: undefined })],
     ["sans clé de pochette", makeUpdated({ imageKey: undefined })],
+    ["avec des tags qui ne sont pas une liste", makeUpdated({ tags: "IRL" })],
   ])("refuse un changement %s", (_name, updated) => {
     expect(events.channel.channelCategoryUpdated.payload.safeParse(updated).success).toBe(false);
+  });
+
+  it("lit un changement publié avant les tags comme une catégorie sans tag (ADR 0050 §3)", () => {
+    expect(
+      events.channel.channelCategoryUpdated.payload.parse(makeUpdated({ tags: undefined })),
+    ).toMatchObject({ tags: [] });
   });
 });
 
