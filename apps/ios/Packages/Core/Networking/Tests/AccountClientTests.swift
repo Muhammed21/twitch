@@ -61,6 +61,25 @@ struct AccountClientTests {
 
     #expect(account.bio == nil)
     #expect(account.lastLiveAt == nil)
+    #expect(account.avatarURL == nil)
+  }
+
+  @Test("lit l'adresse de l'avatar quand l'API la donne")
+  func readsAvatar() async throws {
+    let transport = FakeTransport(json: meJSON(extraFields: #","avatarUrl":"https://cdn.twitch.local/avatars/viewer.jpg""#))
+
+    let account = try await makeClient(transport: transport).currentAccount()
+
+    #expect(account.avatarURL == URL(string: "https://cdn.twitch.local/avatars/viewer.jpg"))
+  }
+
+  @Test("ignore une adresse d'avatar qui n'est pas http ou https")
+  func ignoresForeignAvatar() async throws {
+    let transport = FakeTransport(json: meJSON(extraFields: #","avatarUrl":"file:///etc/passwd""#))
+
+    let account = try await makeClient(transport: transport).currentAccount()
+
+    #expect(account.avatarURL == nil)
   }
 
   @Test("tolère un champ ajouté par le serveur (ADR 0024, §8)")

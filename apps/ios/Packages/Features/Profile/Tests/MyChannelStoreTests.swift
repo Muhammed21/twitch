@@ -8,12 +8,13 @@ private func makeStore(
   _ repository: any MyChannelRepository,
   title: String = "Speedrun du dimanche",
   category: ChannelCategory? = nil,
+  banner: URL? = nil,
   pasteboard: Pasteboard = Pasteboard(),
   log: LogBook = LogBook()
 ) -> MyChannelStore {
   MyChannelStore(
     repository: repository,
-    channels: FakeChannels(title: title, category: category),
+    channels: FakeChannels(title: title, category: category, banner: banner),
     copy: { pasteboard.copy($0) },
     log: { log.write($0) }
   )
@@ -55,7 +56,7 @@ struct MyChannelStoreTests {
 
   @Test("oublie la chaîne, le titre, la catégorie et la clé à la fin de session, puis recharge celle du compte suivant")
   func resetsAtSessionEnd() async throws {
-    let store = try makeStore(FakeMyChannel(owned: .success(makeOwnedChannel())), category: honorOfKings)
+    let store = try makeStore(FakeMyChannel(owned: .success(makeOwnedChannel())), category: honorOfKings, banner: bannerURL)
     await store.load()
     await store.revealKey()
 
@@ -65,6 +66,7 @@ struct MyChannelStoreTests {
     #expect(store.title.isEmpty)
     #expect(store.category == nil)
     #expect(store.streamKey == nil)
+    #expect(store.bannerURL == nil)
 
     await store.loadIfNeeded()
 

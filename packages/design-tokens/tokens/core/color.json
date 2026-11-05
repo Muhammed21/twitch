@@ -69,6 +69,11 @@
         }
       },
       "purple": {
+        "35": {
+          "$type": "color",
+          "$value": "#5c2da8",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : haut de la bannière par défaut d'Edit Profile, mesuré #5c2da8 (profil/modifier-profil--defaut)."
+        },
         "40": {
           "$type": "color",
           "$value": "#5c16c5",

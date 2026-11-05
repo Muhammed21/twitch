@@ -33,6 +33,22 @@ struct ChannelClientTests {
     #expect(request.headers["Authorization"] == nil)
   }
 
+  @Test("lit l'adresse de la bannière quand la chaîne en a une")
+  func readsBanner() async throws {
+    let transport = FakeTransport(json: channelJSON().dropLast() + #","bannerUrl":"https://cdn.twitch.local/banners/jean.jpg"}"#)
+
+    let channel = try await makeClient(transport).channel(withSlug: ChannelSlug("jean_dupont"))
+
+    #expect(channel.bannerURL == URL(string: "https://cdn.twitch.local/banners/jean.jpg"))
+  }
+
+  @Test("sans bannière, l'adresse reste absente")
+  func noBanner() async throws {
+    let channel = try await makeClient(FakeTransport(json: channelJSON())).channel(withSlug: ChannelSlug("jean_dupont"))
+
+    #expect(channel.bannerURL == nil)
+  }
+
   @Test("lit la catégorie de la chaîne quand elle en a une")
   func readsCategory() async throws {
     let category = #","category":{"id":"1c9e4a52-7d3b-4f8e-a6b1-2d5c8e9f0a13","slug":"honor-of-kings","name":"Honor of Kings"}}"#

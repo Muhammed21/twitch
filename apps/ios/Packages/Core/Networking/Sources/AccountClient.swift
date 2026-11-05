@@ -37,6 +37,13 @@ public struct AccountClient: AccountRepository, ProfileEditor {
 
 extension Account {
   init(_ current: Components.Schemas.Me) {
-    self.init(id: current.id, name: current.name, email: current.email, bio: current.bio, lastLiveAt: current.lastLiveAt)
+    self.init(
+      id: current.id,
+      name: current.name,
+      email: current.email,
+      bio: current.bio,
+      lastLiveAt: current.lastLiveAt,
+      avatarURL: current.avatarUrl.flatMap { URL(webAddress: $0) }
+    )
   }
 }

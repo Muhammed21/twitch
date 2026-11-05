@@ -29,7 +29,8 @@ extension Channel {
       slug: ChannelSlug(body.slug),
       title: body.title,
       ownerID: body.ownerId,
-      category: body.category.map(ChannelCategory.init)
+      category: body.category.map(ChannelCategory.init),
+      bannerURL: body.bannerUrl.flatMap { URL(webAddress: $0) }
     )
   }
 }
