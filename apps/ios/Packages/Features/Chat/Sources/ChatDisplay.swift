@@ -17,19 +17,15 @@ public struct ChatDisplay: Equatable, Sendable {
     self.init(textSize: preferences.chatTextSize, showsTimestamps: preferences.showsChatTimestamps)
   }
 
-  public var messageRole: TextRole {
-    switch textSize {
-    case .small: .chatMessageSmall
-    case .medium: .chatMessage
-    case .large: .chatMessageLarge
-    }
+  public var line: ChatLineStyle {
+    ChatLineStyle(scale: scale, showsTimestamps: showsTimestamps)
   }
 
-  var authorRole: TextRole {
+  private var scale: ChatTextScale {
     switch textSize {
-    case .small: .chatAuthorSmall
-    case .medium: .chatAuthor
-    case .large: .chatAuthorLarge
+    case .small: .small
+    case .medium: .medium
+    case .large: .large
     }
   }
 }
