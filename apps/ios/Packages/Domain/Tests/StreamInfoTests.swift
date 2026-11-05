@@ -29,10 +29,20 @@ struct StreamInfoTests {
 
   @Test(
     "un tag hors format est refusé",
-    arguments: [String(repeating: "a", count: 26), "   ", "speed run", "speed-run", "fps!", "jeu🎮"]
+    arguments: [
+      String(repeating: "a", count: 26), "   ", "speed run", "speed-run", "fps!", "jeu🎮", "\u{0301}",
+      "ア" + String(repeating: "\u{3099}", count: 4),
+    ]
   )
   func rejects(raw: String) {
     #expect(ChannelTag.normalized(raw) == nil)
+  }
+
+  @Test("un caractère porte au plus trois marques, comme l'API")
+  func acceptsThreeMarks() {
+    let tag = "ア" + String(repeating: "\u{3099}", count: 3)
+
+    #expect(ChannelTag.normalized(tag) == tag.precomposedStringWithCanonicalMapping)
   }
 
   @Test("ajouter un tag le normalise et le place à la fin")

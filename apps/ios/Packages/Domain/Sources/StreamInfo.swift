@@ -9,12 +9,19 @@ public enum ChannelTag {
     let tag = String(String.UnicodeScalarView(withoutLatinMarks(decomposed.unicodeScalars)))
       .precomposedStringWithCanonicalMapping
       .lowercased()
-    let isWord = tag.unicodeScalars.allSatisfy { allowed.contains($0) }
-    guard !tag.isEmpty, tag.count <= maxLength, isWord else { return nil }
+    guard !tag.isEmpty, tag.count <= maxLength, tag.allSatisfy(isAllowed) else { return nil }
     return tag
   }
 
-  private static let allowed = CharacterSet.letters.union(.decimalDigits).union(.nonBaseCharacters)
+  private static let maxMarksPerCharacter = 3
+  private static let bases = CharacterSet.letters.subtracting(.nonBaseCharacters).union(.decimalDigits)
+
+  private static func isAllowed(_ character: Character) -> Bool {
+    guard let base = character.unicodeScalars.first, bases.contains(base) else { return false }
+    let marks = character.unicodeScalars.dropFirst()
+    return marks.count <= maxMarksPerCharacter && marks.allSatisfy { CharacterSet.nonBaseCharacters.contains($0) }
+  }
+
   private static let latin: [ClosedRange<UInt32>] = [0x41 ... 0x5A, 0x61 ... 0x7A, 0xC0 ... 0x24F, 0x1E00 ... 0x1EFF]
 
   private static func withoutLatinMarks(_ scalars: String.UnicodeScalarView) -> [Unicode.Scalar] {
