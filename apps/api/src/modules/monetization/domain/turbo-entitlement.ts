@@ -210,7 +210,7 @@ export const transferTurbo = ({
     : create({
         id: newId(),
         userId: toUserId,
-        status: "active",
+        status: source.status,
         expiresAt: source.expiresAt,
         willRenew: source.willRenew,
         providerReference: source.providerReference,
