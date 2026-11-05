@@ -1,6 +1,6 @@
 # 0016 — Répartition des responsabilités PostHog / RevenueCat sur les flags et l'expérimentation
 
-- Statut : Accepté
+- Statut : Accepté — rendu du paywall, et attribution de la variante de Turbo en tranche 1, amendés par [0051](0051-parcours-de-personnalisation-apres-inscription-et-paywall-turbo-natif-en-tranche-1.md)
 - Date : 2026-09-22
 - Décideurs : Muhammed Cavus
 
