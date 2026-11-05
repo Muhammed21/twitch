@@ -206,9 +206,9 @@ Convention de l'ADR 0012 : `objet:action_au_passé`, propriétés en `snake_case
 | `purchase:failed`                  | `product_id`, `variant`, `error_code`                      | Échec de l'achat                                       |
 | `purchase:restored`                | `has_active_entitlement`                                   | Fin d'une restauration                                 |
 
-- `step` est un enum fermé : `intro`, `categories`, `interests`, `content_preferences`, `live_language`, `appearance`, `video_autoplay`, `notifications`, `chat`, `summary`. `preference` aussi : `appearance`, `video_autoplay`, `chat_text_size`, `chat_timestamps`, `live_language`, `content_filters`, `interests`.
+- `step` est un enum fermé : `intro`, `categories`, `interests`, `content_preferences`, `live_language`, `appearance`, `video_autoplay`, `notifications`, `chat`, `summary`. `preference` aussi : `appearance`, `video_autoplay`, `chat_text_size`, `chat_timestamps`, `live_language`, `content_filters`, `interests`. `step_count` vaut 10 ; le paywall se mesure par `paywall:*` avec `placement: onboarding`.
 - Le revenu ne part jamais du client (ADR 0012 §3). Il arrive par l'intégration native RevenueCat → PostHog, serveur à serveur, sans réémission par notre webhook (ADR 0016, Notes).
-- Suivre une catégorie est un fait métier, donc capturé côté serveur (ADR 0012 §3) avec l'`AnalyticsPort` de l'API. Jusque-là, le parcours en porte le compte dans `selection_count`.
+- Suivre une catégorie est un fait métier, donc capturé côté serveur (ADR 0012 §3) avec l'`AnalyticsPort` de `channel` (PR 29 du plan). Le parcours en porte le compte dans `selection_count`.
 - `identify()` à la transition vers « connecté », une fois ; `reset()` à la déconnexion (ADR 0012 §2). Les deux vivent dans `Core/Analytics`.
 - Le flag `exp_paywall_variant` (valeurs `control`, `variant_b`…) vient de `bootstrap`.
 
