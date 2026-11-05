@@ -68,6 +68,17 @@ const seedChannel = async (ownerId: string) => {
   return channel;
 };
 
+const seedTurboEntitlement = async ({ userId, expiresAt }: { userId: string; expiresAt: Date }) => {
+  await asMigrator((client) =>
+    client.query(
+      `INSERT INTO "monetization"."MonetizationEntitlement"
+         ("id", "userId", "scope", "status", "source", "expiresAt", "lastEventAt", "updatedAt")
+       VALUES ($1, $2, 'PLATFORM', 'ACTIVE', 'APPLE_IAP', $3, now(), now())`,
+      [randomUUID(), userId, expiresAt],
+    ),
+  );
+};
+
 const seedStreamSession = async ({
   channelId,
   startedAt,
@@ -1029,6 +1040,23 @@ describe("identity : caractérisation OAuth de l'ADR 0026, contre le vrai better
       });
 
       expect(await response.json()).toMatchObject({ profile: { id: userId, channel } });
+    });
+  });
+
+  it("rend l'entitlement Turbo actif du compte dans GET /v1/mobile/bootstrap", async () => {
+    await withApi(async (base) => {
+      const { tokens } = await signIn(base);
+      const { userId } = identityOf(tokens.access_token);
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      await seedTurboEntitlement({ userId, expiresAt });
+
+      const response = await fetch(`${base}/v1/mobile/bootstrap`, {
+        headers: { authorization: `Bearer ${tokens.access_token}` },
+      });
+
+      expect(await response.json()).toMatchObject({
+        entitlements: [{ scope: "platform", expiresAt: expiresAt.toISOString() }],
+      });
     });
   });
 

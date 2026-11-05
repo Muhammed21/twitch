@@ -535,10 +535,23 @@ const makeProfile = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
+describe("EntitlementList", () => {
+  it("décode la liste des entitlements actifs du compte", () => {
+    const list = { entitlements: [{ scope: "platform", expiresAt: "2026-12-08T09:00:00.000Z" }] };
+
+    expect(responses.EntitlementList.parse(list)).toEqual(list);
+  });
+
+  it("refuse une réponse sans liste", () => {
+    expect(responses.EntitlementList.safeParse({}).success).toBe(false);
+  });
+});
+
 describe("MobileBootstrap", () => {
   const makeBootstrap = (overrides: Record<string, unknown> = {}) => ({
     minSupportedVersion: "1.4.0",
     flags: { session_replay: false },
+    entitlements: [],
     ...overrides,
   });
 
@@ -607,6 +620,36 @@ describe("MobileBootstrap", () => {
     };
 
     expect(responses.MobileBootstrap.parse(makeBootstrap({ profile })).profile).toEqual(profile);
+  });
+
+  it("décode un entitlement Turbo actif et son échéance", () => {
+    const entitlements = [{ scope: "platform", expiresAt: "2026-12-08T09:00:00.000Z" }];
+
+    expect(responses.MobileBootstrap.parse(makeBootstrap({ entitlements })).entitlements).toEqual(
+      entitlements,
+    );
+  });
+
+  it("garde une portée d'entitlement ajoutée plus tard par le serveur", () => {
+    const entitlements = [{ scope: "channel", expiresAt: "2026-12-08T09:00:00.000Z" }];
+
+    expect(responses.MobileBootstrap.parse(makeBootstrap({ entitlements })).entitlements).toEqual(
+      entitlements,
+    );
+  });
+
+  it.each([
+    ["sans liste d'entitlements", { entitlements: undefined }],
+    [
+      "avec une échéance qui n'est pas une date ISO",
+      { entitlements: [{ scope: "platform", expiresAt: "demain" }] },
+    ],
+    [
+      "avec une portée vide",
+      { entitlements: [{ scope: "", expiresAt: "2026-12-08T09:00:00.000Z" }] },
+    ],
+  ])("refuse un bootstrap %s", (_name, overrides) => {
+    expect(responses.MobileBootstrap.safeParse(makeBootstrap(overrides)).success).toBe(false);
   });
 
   it("décode une version minimale à plusieurs chiffres par composant", () => {

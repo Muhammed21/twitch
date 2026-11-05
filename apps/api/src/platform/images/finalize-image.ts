@@ -60,7 +60,7 @@ export const finalizeImage = ({
     if (!Uuid.safeParse(uploadId).success) {
       return err("upload_not_found");
     }
-    const deposit = incomingKey({ userId, purpose, uploadId });
+    const deposit = incomingKey({ userId, purpose, uploadId: uploadId.toLowerCase() });
     const stored = await storage.read({ key: deposit, maxBytes: IMAGE_PURPOSES[purpose].maxBytes });
     if (stored.kind === "missing") {
       return err("upload_not_found");

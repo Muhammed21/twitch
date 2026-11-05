@@ -13,12 +13,15 @@ private struct FakeBootstrap: BootstrapSource {
   }
 }
 
-private func bootstrap(minimum: String, sessionReplay: Bool = false) throws -> FakeBootstrap {
+private func bootstrap(minimum: String, sessionReplay: Bool = false, entitlements: [Entitlement] = []) throws -> FakeBootstrap {
   try FakeBootstrap(result: .success(AppBootstrap(
     minSupportedVersion: AppVersion(minimum),
-    flags: FeatureFlags(sessionReplay: sessionReplay)
+    flags: FeatureFlags(sessionReplay: sessionReplay),
+    entitlements: entitlements
   )))
 }
+
+private let turbo = Entitlement(scope: .platform, expiresAt: Date(timeIntervalSince1970: 1_796_720_400))
 
 private actor SequencedBootstrap: BootstrapSource {
   private var replies: [String?]
@@ -47,7 +50,11 @@ private actor BootstrapThenFailure: BootstrapSource {
   func bootstrap() async throws -> AppBootstrap {
     guard !hasReplied else { throw BootstrapDown() }
     hasReplied = true
-    return try AppBootstrap(minSupportedVersion: AppVersion("1.0.0"), flags: FeatureFlags(sessionReplay: false, paywallVariant: variant))
+    return try AppBootstrap(
+      minSupportedVersion: AppVersion("1.0.0"),
+      flags: FeatureFlags(sessionReplay: false, paywallVariant: variant),
+      entitlements: [turbo]
+    )
   }
 }
 
@@ -98,6 +105,35 @@ struct LaunchStoreTests {
     await store.run()
 
     #expect(store.flags == FeatureFlags(sessionReplay: true))
+  }
+
+  @Test("les entitlements rendus par le serveur sont transportés")
+  func carriesEntitlements() async throws {
+    let store = try LaunchStore(source: bootstrap(minimum: "1.0.0", entitlements: [turbo]), currentVersion: AppVersion("1.4.0"))
+
+    await store.run()
+
+    #expect(store.entitlements == [turbo])
+  }
+
+  @Test("un bootstrap en échec après un changement de compte ne garde pas les entitlements du compte précédent")
+  func entitlementsForgottenAfterAccountChange() async throws {
+    let store = try LaunchStore(source: bootstrapThenFailure(variant: "control"), currentVersion: AppVersion("1.4.0"))
+
+    await store.run(accountID: viewerID)
+    await store.run(accountID: otherViewerID)
+
+    #expect(store.entitlements.isEmpty)
+  }
+
+  @Test("un bootstrap en échec pour le même compte garde ses entitlements")
+  func entitlementsKeptOnFailureForSameAccount() async throws {
+    let store = try LaunchStore(source: bootstrapThenFailure(variant: "control"), currentVersion: AppVersion("1.4.0"))
+
+    await store.run(accountID: viewerID)
+    await store.run(accountID: viewerID)
+
+    #expect(store.entitlements == [turbo])
   }
 
   @Test("la variante du paywall reçue est figée pour la session du compte (ADR 0016)")
@@ -168,5 +204,6 @@ struct LaunchStoreTests {
 
     #expect(store.flags == .safeDefaults)
     #expect(!store.isUpdateRequired)
+    #expect(store.entitlements.isEmpty)
   }
 }

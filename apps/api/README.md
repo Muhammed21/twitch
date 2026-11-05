@@ -22,6 +22,7 @@ API NestJS 11 (ADR 0002, 0009). Architecture et découpage : [plan de l'API](../
 | `DATABASE_URL_MODERATION`          | Rôle `app_moderation`, sanctions, requis                                                                                                                         |
 | `DATABASE_URL_MONETIZATION`        | Rôle `app_monetization`, entitlements et webhooks reçus, requis                                                                                                  |
 | `REVENUECAT_WEBHOOK_AUTHORIZATION` | Valeur exacte de l'en-tête `Authorization` du webhook RevenueCat ; absente ou vide, `POST /v1/webhooks/revenuecat` répond 503                                    |
+| `REVENUECAT_SECRET_API_KEY`        | Clé secrète v1 de l'API REST RevenueCat ; absente ou vide, `POST /v1/me/entitlements/sync` répond 503                                                            |
 | `BETTER_AUTH_SECRET`               | Secret de better-auth, au moins 32 caractères, requis                                                                                                            |
 | `BETTER_AUTH_URL`                  | URL publique de l'API, origine de confiance de better-auth, requis                                                                                               |
 | `REDIS_URL`                        | Redis (`redis://` ou `rediss://`) : liste de révocation des sessions et Pub/Sub, requis                                                                          |
@@ -190,6 +191,17 @@ Le limiteur de `platform/rate-limit.ts` compte dans Redis par fenêtre fixe, sou
 - l'en-tête `Authorization` est comparé en temps constant à `REVENUECAT_WEBHOOK_AUTHORIZATION` ; sans cette variable, la route répond 503 sans rien écrire ;
 - un en-tête absent ou faux répond 401 ; un corps hors contrat (JSON sans `api_version`, ni `event.id`, `event.type` et `event.event_timestamp_ms` entier) répond 400. Les deux sont archivés dans `MonetizationRejectedWebhook` et journalisés en erreur, jamais interprétés ;
 - un événement valide est inséré dans `MonetizationProcessedWebhookEvent`, clé `(provider, eventId)`, avec son payload brut et `processedAt` nul, puis la route répond 200 sans aucun traitement métier. Un doublon répond 200 sans seconde ligne.
+
+Un job périodique (1 s, 50 événements par passe) traite les lignes où `processedAt` est nul, une par transaction, `FOR UPDATE SKIP LOCKED`, sous un verrou consultatif par utilisateur :
+
+- seuls les événements qui portent l'entitlement `turbo` et un `app_user_id` UUID sont traduits : `INITIAL_PURCHASE`, `RENEWAL`, `CANCELLATION` (remboursement si `cancel_reason` vaut `CUSTOMER_SUPPORT`), `EXPIRATION`, `SUBSCRIPTION_PAUSED`, `REFUND`, `BILLING_ISSUE` et `TRANSFER` ; les autres sont marqués traités avec leur raison (`unhandled_type`, `other_entitlement`, `unknown_user`, `malformed`) et journalisés en alerte ;
+- un événement antérieur au dernier appliqué est marqué `stale` sans rien écrire ;
+- `MonetizationEntitlement` et l'outbox s'écrivent dans la même transaction : `monetization.entitlement.granted` `{userId, scope, expiresAt}` quand l'échéance change, `monetization.entitlement.revoked` `{userId, scope}` quand l'accès se coupe, avec l'horodatage de l'événement RevenueCat pour `occurredAt` ;
+- un échec annule les écritures du traitement, incrémente `attempts` et reprogramme `nextAttemptAt` avec le backoff de l'outbox.
+
+`GET /v1/mobile/bootstrap` rend `entitlements`, la liste des entitlements actifs du compte (`{ scope, expiresAt }`, portée en enum ouvert), lue par `createActiveEntitlementsReader` : statut `ACTIVE` ou `GRACE` et échéance future. Un client anonyme reçoit une liste vide ; si `monetization` ne répond pas, la liste est vide, l'erreur est journalisée et `bootstrap` répond quand même.
+
+`POST /v1/me/entitlements/sync` relit l'abonné du jeton chez RevenueCat (`GET /v1/subscribers/{app_user_id}`, clé `REVENUECAT_SECRET_API_KEY`, 5 s au plus), traduit son entitlement `turbo` en observation (actif, en grâce ou absent) et l'applique par le même use-case que le webhook, avec la même règle d'ordre (`request_date_ms`). Elle rend la liste des entitlements actifs (`EntitlementList`). Sans clé, ou si RevenueCat ne répond pas, elle répond 503 sans toucher à l'entitlement ; au-delà de 10 appels en 10 minutes par compte, 429 avec `Retry-After` (ADR 0042).
 
 ## Autorisation (ADR 0006)
 
