@@ -50,16 +50,16 @@ struct PaywallTextTests {
   func legalWithLinks() throws {
     let legal = PaywallText.legal(terms: terms, privacy: privacy)
 
-    #expect(String(legal.characters) == "By subscribing, you agree to Twitch's Terms of Sale and acknowledge our Privacy Notice")
-    #expect(try links(in: legal) == ["Terms of Sale": #require(terms), "Privacy Notice": #require(privacy)])
+    #expect(String(legal.characters) == "By subscribing, you agree to the Terms of Use (EULA) and acknowledge our Privacy Notice")
+    #expect(try links(in: legal) == ["Terms of Use (EULA)": #require(terms), "Privacy Notice": #require(privacy)])
   }
 
   @Test("sans adresse de confidentialité, la phrase reste entière et seul le lien des conditions existe")
   func legalWithoutPrivacy() throws {
     let legal = PaywallText.legal(terms: terms, privacy: nil)
 
-    #expect(String(legal.characters) == "By subscribing, you agree to Twitch's Terms of Sale and acknowledge our Privacy Notice")
-    #expect(try links(in: legal) == ["Terms of Sale": #require(terms)])
+    #expect(String(legal.characters) == "By subscribing, you agree to the Terms of Use (EULA) and acknowledge our Privacy Notice")
+    #expect(try links(in: legal) == ["Terms of Use (EULA)": #require(terms)])
   }
 
   @Test(

@@ -98,6 +98,42 @@ struct PaywallStoreTests {
     #expect(store.notice == .purchaseFailed)
   }
 
+  @Test("pendant un achat, une restauration est refusée")
+  func noRestoreWhilePurchasing() async {
+    let purchases = FakePurchases(offering: defaultOffering)
+    purchases.holdsPurchases = true
+    let store = makeStore(purchases)
+    await store.load()
+
+    let purchase = Task { await store.subscribe(monthly) }
+    await purchases.waitForHeldPurchase()
+    await store.restore()
+
+    #expect(purchases.calls.contains(.restore) == false)
+    #expect(store.isRestoring == false)
+    purchases.releasePurchase()
+    await purchase.value
+  }
+
+  @Test("pendant une restauration, un achat est refusé")
+  func noPurchaseWhileRestoring() async {
+    let purchases = FakePurchases(offering: defaultOffering)
+    purchases.holdsRestores = true
+    let store = makeStore(purchases)
+    await store.load()
+
+    let restore = Task { await store.restore() }
+    await purchases.waitForHeldRestore()
+
+    #expect(store.isRestoring)
+    await store.subscribe(monthly)
+    #expect(purchases.calls.contains(.purchase(monthly)) == false)
+    #expect(store.purchasing == nil)
+    purchases.releaseRestore()
+    await restore.value
+    #expect(store.isRestoring == false)
+  }
+
   @Test("pendant un achat, le paywall le montre et refuse un second achat")
   func purchasing() async {
     let purchases = FakePurchases(offering: defaultOffering)
