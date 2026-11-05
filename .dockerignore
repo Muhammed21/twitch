@@ -9,3 +9,7 @@
 .git
 docs
 docker/tests
+.claude
+.idea
+apps/ios/**
+!apps/ios/package.json
