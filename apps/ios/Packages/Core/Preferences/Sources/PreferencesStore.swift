@@ -19,8 +19,10 @@ public final class PreferencesStore {
   public func update(_ update: PreferenceUpdate, source: PreferenceSource) {
     let next = current.applying(update)
     guard next != current else { return }
+    let announced = current.update(for: update.preference).value != update.value
     repository.save(next)
     current = next
+    guard announced else { return }
     onChange(PreferenceChanged(preference: update.preference, value: update.value, source: source))
   }
 
