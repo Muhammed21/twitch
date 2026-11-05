@@ -42,5 +42,6 @@
   "identity.IdentityUser.username",
   "identity.IdentityVerification.identifier",
   "monetization.MonetizationEntitlement.userId",
-  "monetization.MonetizationProcessedWebhookEvent.payload"
+  "monetization.MonetizationProcessedWebhookEvent.payload",
+  "monetization.MonetizationRejectedWebhook.body"
 ]
