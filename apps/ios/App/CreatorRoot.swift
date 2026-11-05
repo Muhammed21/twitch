@@ -43,10 +43,7 @@ struct CreatorRoot: View {
       } onStreamManager: {
         router.create()
       } onEditStreamInfo: {
-        Task {
-          await myChannel.loadIfNeeded()
-          isEditingStreamInfo = true
-        }
+        Task { isEditingStreamInfo = await myChannel.loadForEditing() }
       }
       .toolbar(.hidden, for: .tabBar)
       .tag(DashboardTab.home)
