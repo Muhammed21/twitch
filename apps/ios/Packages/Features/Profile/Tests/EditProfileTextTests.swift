@@ -7,33 +7,50 @@ import Testing
 struct EditProfileTextTests {
   @Test("le bouton, le titre, la section About et la ligne Bio")
   func labels() {
-    #expect(String(localized: EditProfileText.edit) == "Edit Profile")
-    #expect(String(localized: EditProfileText.title) == "Edit Profile")
-    #expect(String(localized: EditProfileText.about) == "About")
-    #expect(String(localized: EditProfileText.bio) == "Bio")
-    #expect(String(localized: EditProfileText.bioPlaceholder) == "Who you are in fewer than 300 characters.")
+    #expect(english(EditProfileText.edit) == "Edit Profile")
+    #expect(english(EditProfileText.title) == "Edit Profile")
+    #expect(english(EditProfileText.about) == "About")
+    #expect(english(EditProfileText.bio) == "Bio")
+    #expect(english(EditProfileText.bioPlaceholder) == "Who you are in fewer than 300 characters.")
   }
 
   @Test("le compteur de la bio, comme « 277 characters remaining »", arguments: [(277, "277 characters remaining"), (300, "300 characters remaining")])
   func remaining(count: Int, expected: String) {
-    #expect(String(localized: EditProfileText.remaining(count)) == expected)
+    #expect(english(EditProfileText.remaining(count)) == expected)
+  }
+
+  @Test(
+    "en français, le compteur de la bio s'accorde au nombre",
+    arguments: [(0, "0 caractère restant"), (1, "1 caractère restant"), (277, "277 caractères restants")]
+  )
+  func remainingInFrench(count: Int, expected: String) {
+    #expect(french(EditProfileText.remaining(count)) == expected)
+  }
+
+  @Test("en français, l'écran s'intitule Modifier le profil et ses sections suivent")
+  func frenchLabels() {
+    #expect(french(EditProfileText.title) == "Modifier le profil")
+    #expect(french(EditProfileText.about) == "À propos")
+    #expect(french(EditProfileText.picture) == "Photo de profil")
+    #expect(french(EditProfileText.banner) == "Bannière de profil")
+    #expect(french(EditProfileText.bannerHint) == "1200\u{00A0}×\u{00A0}480 recommandé, moins de 10\u{00A0}Mo")
   }
 
   @Test("la section Brand, ses deux lignes et son pied")
   func brand() {
-    #expect(String(localized: EditProfileText.brand) == "Brand")
-    #expect(String(localized: EditProfileText.picture) == "Profile Picture")
-    #expect(String(localized: EditProfileText.pictureHint) == "JPEG, PNG, GIF and less than 10MB")
-    #expect(String(localized: EditProfileText.banner) == "Profile Banner")
-    #expect(String(localized: EditProfileText.bannerHint) == "Recommended 1200×480 and less than 10MB")
-    #expect(String(localized: EditProfileText.brandFooter) == "Customize you and your channel's visual appearance across Twitch.")
+    #expect(english(EditProfileText.brand) == "Brand")
+    #expect(english(EditProfileText.picture) == "Profile Picture")
+    #expect(english(EditProfileText.pictureHint) == "JPEG, PNG, GIF and less than 10MB")
+    #expect(english(EditProfileText.banner) == "Profile Banner")
+    #expect(english(EditProfileText.bannerHint) == "Recommended 1200×480 and less than 10MB")
+    #expect(english(EditProfileText.brandFooter) == "Customize you and your channel's visual appearance across Twitch.")
   }
 
   @Test("la feuille d'actions de la photo")
   func photoMenu() {
-    #expect(String(localized: EditProfileText.chooseExisting) == "Choose existing photo")
-    #expect(String(localized: EditProfileText.takePhoto) == "Take photo")
-    #expect(String(localized: EditProfileText.close) == "Close")
+    #expect(english(EditProfileText.chooseExisting) == "Choose existing photo")
+    #expect(english(EditProfileText.takePhoto) == "Take photo")
+    #expect(english(EditProfileText.close) == "Close")
   }
 
   @Test(
@@ -53,7 +70,7 @@ struct EditProfileTextTests {
   )
   @MainActor
   func failure(phase: ProfileImageStore.Phase, expected: String) {
-    #expect(EditProfileText.notice(for: phase).map { String(localized: $0) } == expected)
+    #expect(EditProfileText.notice(for: phase).map { english($0) } == expected)
   }
 
   @Test("rien ne s'annonce tant qu'aucun envoi n'a échoué", arguments: [ProfileImageStore.Phase.idle, .sending(.avatar), .sending(.banner)])

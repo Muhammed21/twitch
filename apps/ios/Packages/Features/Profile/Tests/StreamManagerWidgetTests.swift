@@ -11,7 +11,7 @@ struct StreamManagerWidgetTests {
 
   @Test("chaque widget a son titre et son identifiant de dock")
   func titlesAndIdentifiers() {
-    #expect(StreamManagerWidget.allCases.map { String(localized: $0.title) } == ["Stream Info", "Stream Key", "OBS Settings"])
+    #expect(StreamManagerWidget.allCases.map { english($0.title) } == ["Stream Info", "Stream Key", "OBS Settings"])
     #expect(StreamManagerWidget.allCases.map(\.accessibilityIdentifier) == [
       "streamManager.widget.streamInfo",
       "streamManager.widget.streamKey",

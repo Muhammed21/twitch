@@ -26,6 +26,6 @@ struct ChannelHeaderTests {
   func title() {
     #expect(ChannelText.title("Speedrun", channelNotFound: false) == "Speedrun")
     #expect(ChannelText.title(nil, channelNotFound: false) == "")
-    #expect(ChannelText.title(nil, channelNotFound: true) == "This channel doesn't exist.")
+    #expect(ChannelText.title(nil, channelNotFound: true) == shown(english: "This channel doesn't exist.", french: "Cette chaîne n'existe pas."))
   }
 }

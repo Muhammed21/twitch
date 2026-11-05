@@ -12,10 +12,10 @@ struct HomeTextTests {
 
   @Test(
     "les viewers s'abrègent comme « 3K viewers » sur parcourir/liste-chaines-live--defaut",
-    arguments: [(0, "0 viewers"), (842, "842 viewers"), (3000, "3K viewers"), (14200, "14K viewers")]
+    arguments: [(0, "0"), (842, "842"), (3000, "3K"), (14200, "14K")]
   )
   func viewers(count: Int, expected: String) throws {
-    #expect(try HomeCardText.viewers(ViewerCount(count), locale: Locale(identifier: "en_US")) == expected)
+    #expect(try HomeCardText.viewers(ViewerCount(count), locale: Locale(identifier: "en_US")) == shown(english: "\(expected) viewers", french: "\(expected) spectateurs"))
   }
 
   @Test("sans compteur lu par l'API, la carte n'affiche pas de viewers")

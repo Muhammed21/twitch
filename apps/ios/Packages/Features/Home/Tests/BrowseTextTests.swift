@@ -21,9 +21,9 @@ struct BrowseTextTests {
   @Test("les onglets reprennent les libellés de la capture, Categories en premier")
   func tabs() {
     #expect(BrowseTab.allCases == [.categories, .liveChannels])
-    #expect(BrowseTab.categories.title == "Categories")
-    #expect(BrowseTab.liveChannels.title == "Live Channels")
-    #expect(BrowseText.tabTitle == "Browse")
+    #expect(BrowseTab.categories.title == shown(english: "Categories", french: "Catégories"))
+    #expect(BrowseTab.liveChannels.title == shown(english: "Live Channels", french: "Chaînes live"))
+    #expect(BrowseText.tabTitle == shown(english: "Browse", french: "Parcourir"))
   }
 
   @Test("Browse s'ouvre sur l'onglet Categories")
