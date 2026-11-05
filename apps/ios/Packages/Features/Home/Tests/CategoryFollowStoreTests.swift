@@ -1,5 +1,7 @@
 import Domain
+import Foundation
 import Home
+import os
 import Testing
 
 private struct FollowDown: Error {}
@@ -40,13 +42,30 @@ private actor FakeFollowing: CategoryFollowing {
   }
 }
 
+private final class TestClock: Sendable {
+  private let current = OSAllocatedUnfairLock(initialState: Date(timeIntervalSince1970: 1_800_000_000))
+
+  var now: Date {
+    current.withLock { $0 }
+  }
+
+  func advance(by seconds: TimeInterval) {
+    current.withLock { $0 = $0.addingTimeInterval(seconds) }
+  }
+}
+
+@MainActor
+private func makeStore(_ following: FakeFollowing, clock: TestClock = TestClock()) throws -> CategoryFollowStore {
+  try CategoryFollowStore(category: CategorySlug("just-chatting"), following: following, now: { clock.now })
+}
+
 @MainActor
 @Suite("Bouton Follow d'une catégorie : état optimiste, retour en arrière sur erreur")
 struct CategoryFollowStoreTests {
   @Test("suivre bascule le bouton et le compteur avant la réponse, puis garde l'état après le 204")
   func optimisticFollow() async throws {
     let following = FakeFollowing(holds: true)
-    let store = try CategoryFollowStore(category: CategorySlug("just-chatting"), following: following)
+    let store = try makeStore(following)
     store.show(FollowState(isFollowing: false, followers: 41))
 
     let toggling = Task { await store.toggle() }
@@ -66,7 +85,7 @@ struct CategoryFollowStoreTests {
   @Test("ne plus suivre envoie DELETE et retire un follower")
   func unfollow() async throws {
     let following = FakeFollowing()
-    let store = try CategoryFollowStore(category: CategorySlug("just-chatting"), following: following)
+    let store = try makeStore(following)
     store.show(FollowState(isFollowing: true, followers: 42))
 
     await store.toggle()
@@ -77,7 +96,7 @@ struct CategoryFollowStoreTests {
 
   @Test("une erreur remet l'état d'avant et le signale")
   func revertsOnFailure() async throws {
-    let store = try CategoryFollowStore(category: CategorySlug("just-chatting"), following: FakeFollowing(fails: true))
+    let store = try makeStore(FakeFollowing(fails: true))
     store.show(FollowState(isFollowing: false, followers: 41))
 
     await store.toggle()
@@ -90,7 +109,7 @@ struct CategoryFollowStoreTests {
   @Test("pendant une écriture, un second appui n'envoie rien")
   func ignoresSecondTapWhilePending() async throws {
     let following = FakeFollowing(holds: true)
-    let store = try CategoryFollowStore(category: CategorySlug("just-chatting"), following: following)
+    let store = try makeStore(following)
     store.show(FollowState(isFollowing: false, followers: 41))
     let first = Task { await store.toggle() }
     while await following.calls.isEmpty {
@@ -108,7 +127,7 @@ struct CategoryFollowStoreTests {
   @Test("sans état connu (lecture pas encore faite, ou pas de compte), toucher ne fait rien")
   func noStateNoWrite() async throws {
     let following = FakeFollowing()
-    let store = try CategoryFollowStore(category: CategorySlug("just-chatting"), following: following)
+    let store = try makeStore(following)
 
     await store.toggle()
 
@@ -119,7 +138,7 @@ struct CategoryFollowStoreTests {
   @Test("une nouvelle lecture remplace l'état, sauf pendant une écriture")
   func readDuringWriteIsIgnored() async throws {
     let following = FakeFollowing(holds: true)
-    let store = try CategoryFollowStore(category: CategorySlug("just-chatting"), following: following)
+    let store = try makeStore(following)
     store.show(FollowState(isFollowing: false, followers: 41))
     let toggling = Task { await store.toggle() }
     while await following.calls.isEmpty {
@@ -134,5 +153,59 @@ struct CategoryFollowStoreTests {
 
     #expect(afterWrite == FollowState(isFollowing: true, followers: 42))
     #expect(store.state == FollowState(isFollowing: true, followers: 50))
+  }
+
+  @Test("une lecture en retard qui contredit l'écriture réussie est ignorée pendant le délai")
+  func staleReadAfterWriteIsIgnored() async throws {
+    let clock = TestClock()
+    let store = try makeStore(FakeFollowing(), clock: clock)
+    store.show(FollowState(isFollowing: false, followers: 41))
+    await store.toggle()
+
+    clock.advance(by: CategoryFollowStore.readGrace - 1)
+    store.show(FollowState(isFollowing: false, followers: 41))
+
+    #expect(store.state == FollowState(isFollowing: true, followers: 42))
+  }
+
+  @Test("une lecture qui confirme l'écriture est prise, puis les lectures suivantes aussi")
+  func confirmingReadIsTaken() async throws {
+    let store = try makeStore(FakeFollowing())
+    store.show(FollowState(isFollowing: false, followers: 41))
+    await store.toggle()
+
+    store.show(FollowState(isFollowing: true, followers: 43))
+    store.show(FollowState(isFollowing: false, followers: 42))
+
+    #expect(store.state == FollowState(isFollowing: false, followers: 42))
+  }
+
+  @Test("passé le délai, une lecture qui contredit l'écriture est prise")
+  func contradictingReadAfterGraceIsTaken() async throws {
+    let clock = TestClock()
+    let store = try makeStore(FakeFollowing(), clock: clock)
+    store.show(FollowState(isFollowing: false, followers: 41))
+    await store.toggle()
+
+    clock.advance(by: CategoryFollowStore.readGrace)
+    store.show(FollowState(isFollowing: false, followers: 41))
+
+    #expect(store.state == FollowState(isFollowing: false, followers: 41))
+  }
+
+  @Test("après une écriture en échec, la lecture suivante est prise")
+  func readAfterFailureIsTaken() async throws {
+    let store = try makeStore(FakeFollowing(fails: true))
+    store.show(FollowState(isFollowing: false, followers: 41))
+    await store.toggle()
+
+    store.show(FollowState(isFollowing: true, followers: 44))
+
+    #expect(store.state == FollowState(isFollowing: true, followers: 44))
+  }
+
+  @Test("le délai de tolérance d'une lecture est de 10 s")
+  func readGrace() {
+    #expect(CategoryFollowStore.readGrace == 10)
   }
 }
