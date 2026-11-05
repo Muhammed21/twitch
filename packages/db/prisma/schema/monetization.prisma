@@ -1,0 +1,79 @@
+// Contexte monetization (ADR 0014, ADR 0051) : les droits d'un utilisateur, tenus par le serveur.
+
+enum MonetizationEntitlementScope {
+  CHANNEL
+  PLATFORM
+
+  @@schema("monetization")
+}
+
+enum MonetizationEntitlementStatus {
+  ACTIVE
+  GRACE
+  EXPIRED
+  REVOKED
+
+  @@schema("monetization")
+}
+
+enum MonetizationEntitlementSource {
+  APPLE_IAP
+
+  @@schema("monetization")
+}
+
+/// Droit d'un utilisateur (ADR 0013, ADR 0051 §2). Un seul PLATFORM actif (ACTIVE, GRACE) par utilisateur : index unique partiel de la migration.
+model MonetizationEntitlement {
+  id                String                        @id @db.Uuid
+  /// @personal
+  userId            String                        @db.Uuid
+  scope             MonetizationEntitlementScope
+  channelId         String?                       @db.Uuid
+  tier              String?
+  status            MonetizationEntitlementStatus
+  source            MonetizationEntitlementSource
+  /// Identifiant de l'achat chez le fournisseur (transaction d'origine).
+  providerReference String?
+  expiresAt         DateTime?
+  willRenew         Boolean                       @default(true)
+  /// Horodatage fournisseur du dernier événement appliqué : un événement antérieur est ignoré (ADR 0014).
+  lastEventAt       DateTime
+  createdAt         DateTime                      @default(now())
+  updatedAt         DateTime                      @updatedAt
+
+  @@index([userId, scope])
+  @@schema("monetization")
+}
+
+/// Événement reçu d'un fournisseur, unique par (provider, eventId) (ADR 0014). Traité hors de la requête : processedAt nul tant qu'il attend.
+model MonetizationProcessedWebhookEvent {
+  provider      String
+  eventId       String
+  /// @personal
+  payload       Json
+  receivedAt    DateTime  @default(now())
+  processedAt   DateTime?
+  outcome       String?
+  attempts      Int       @default(0)
+  nextAttemptAt DateTime  @default(now())
+  lastError     String?
+
+  @@id([provider, eventId])
+  @@index([processedAt, nextAttemptAt])
+  @@schema("monetization")
+}
+
+model MonetizationOutbox {
+  id            String    @id @db.Uuid
+  name          String
+  version       Int
+  payload       Json
+  occurredAt    DateTime
+  publishedAt   DateTime?
+  attempts      Int       @default(0)
+  nextAttemptAt DateTime  @default(now())
+  lastError     String?
+
+  @@index([publishedAt, nextAttemptAt])
+  @@schema("monetization")
+}
