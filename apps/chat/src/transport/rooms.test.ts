@@ -35,15 +35,27 @@ const listDirectory = (rooms: readonly RoomState[]): RoomDirectory => ({
 
 const KNOWN_CHATTERS: ChatterProfiles = {
   displayNameOf: async (userId) => DISPLAY_NAMES.get(userId) ?? null,
+  avatarKeyOf: async () => null,
   sanctionsOf: async () => [],
+};
+
+const AVATAR_KEY = "images/avatar/alice.webp";
+
+const imageUrlOf = (key: string) => `https://images.twitch.example/${key}`;
+
+const CHATTERS_WITH_AVATAR: ChatterProfiles = {
+  ...KNOWN_CHATTERS,
+  avatarKeyOf: async (userId) => (userId === ALICE ? AVATAR_KEY : null),
 };
 
 const startServer = async ({
   directory,
   chatters = KNOWN_CHATTERS,
+  images,
 }: {
   directory: RoomDirectory;
   chatters?: ChatterProfiles;
+  images?: (key: string) => string;
 }) => {
   const authority = await makeTokenAuthority();
   const rooms = createRoomRegistry(directory);
@@ -59,6 +71,7 @@ const startServer = async ({
     messages: createMessageSender(createLocalTokenBuckets()),
     saturation: SATURATION_LIMITS,
     adapter: LocalAdapter,
+    ...(images === undefined ? {} : { imageUrlOf: images }),
   });
   onTestFinished(() => server.close());
 
@@ -124,6 +137,63 @@ describe("salons et diffusion", () => {
       sentAt: expect.any(String),
     });
     expect(await atAlice).toEqual(await atBob);
+  });
+
+  it("donne à l'auteur l'URL de son avatar", async () => {
+    const room = makeOfflineRoom();
+    const { connectAs } = await startServer({
+      directory: listDirectory([room]),
+      chatters: CHATTERS_WITH_AVATAR,
+      images: imageUrlOf,
+    });
+    const alice = await connectAs(ALICE);
+    alice.emit("room:join", { channelId: room.channelId });
+    const received = nextMessage(alice);
+
+    expect(await send(alice, room.channelId)).toBeUndefined();
+
+    expect(realtime.RealtimeChatMessage.parse(await received).author).toStrictEqual({
+      id: ALICE,
+      displayName: "Alice",
+      avatarUrl: imageUrlOf(AVATAR_KEY),
+    });
+  });
+
+  it("ne donne pas d'avatar à l'auteur sans base publique des images", async () => {
+    const room = makeOfflineRoom();
+    const { connectAs } = await startServer({
+      directory: listDirectory([room]),
+      chatters: CHATTERS_WITH_AVATAR,
+    });
+    const alice = await connectAs(ALICE);
+    alice.emit("room:join", { channelId: room.channelId });
+    const received = nextMessage(alice);
+
+    expect(await send(alice, room.channelId)).toBeUndefined();
+
+    expect(realtime.RealtimeChatMessage.parse(await received).author).toStrictEqual({
+      id: ALICE,
+      displayName: "Alice",
+    });
+  });
+
+  it("ne donne pas d'avatar à l'auteur qui n'en a pas posé", async () => {
+    const room = makeOfflineRoom();
+    const { connectAs } = await startServer({
+      directory: listDirectory([room]),
+      chatters: CHATTERS_WITH_AVATAR,
+      images: imageUrlOf,
+    });
+    const bob = await connectAs(BOB);
+    bob.emit("room:join", { channelId: room.channelId });
+    const received = nextMessage(bob);
+
+    expect(await send(bob, room.channelId)).toBeUndefined();
+
+    expect(realtime.RealtimeChatMessage.parse(await received).author).toStrictEqual({
+      id: BOB,
+      displayName: "Bob",
+    });
   });
 
   it("rattache un message posté pendant un live à la session en cours", async () => {
@@ -418,6 +488,7 @@ describe("profil du chatter", () => {
         displayNameOf: async () => {
           throw new Error("Redis injoignable");
         },
+        avatarKeyOf: async () => null,
         sanctionsOf: async () => [],
       },
     });

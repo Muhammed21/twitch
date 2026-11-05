@@ -22,6 +22,7 @@ import { unlessOffline, withSettledCommands } from "./infrastructure/settled-com
 import { sharedRateLimit } from "./infrastructure/shared-rate-limit.ts";
 import { startStreamTail } from "./infrastructure/stream-tail.ts";
 import { type ChatLog, startChatServer } from "./transport/chat-server.ts";
+import { imageUrlOf } from "./transport/image-url.ts";
 
 const BUCKET_SWEEP_INTERVAL_MS = 10_000;
 const REVALIDATION_INTERVAL_MS = 5 * 60_000;
@@ -122,6 +123,7 @@ try {
       withSettledCommands(fanOutSubscriber, logFanOutFailure),
       { key: FAN_OUT_KEY },
     ),
+    ...(config.imageBaseUrl === undefined ? {} : { imageUrlOf: imageUrlOf(config.imageBaseUrl) }),
   }).catch((error: unknown) => {
     destroyRedis();
     throw error;

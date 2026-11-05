@@ -19,7 +19,11 @@ const server = await startChatServer({
   port: 0,
   verifier: authority.verifier({ isRevoked: async (sid) => sid === REVOKED_SESSION }),
   log: () => {},
-  chatters: { displayNameOf: async () => "Viewer iOS", sanctionsOf: async () => [] },
+  chatters: {
+    displayNameOf: async () => "Viewer iOS",
+    avatarKeyOf: async () => null,
+    sanctionsOf: async () => [],
+  },
   rooms: createRoomRegistry({
     find: async (id) => (id === channelId ? { channelId, sessionId: null } : undefined),
   }),
