@@ -110,7 +110,8 @@ struct RootView: View {
         session: session,
         preferences: preferences,
         sources: personalization,
-        paywall: PersonalizationPaywall(purchases: purchases, variant: launch.flags.paywallVariant, links: paywallLinks)
+        paywall: PersonalizationPaywall(purchases: purchases, launch: launch, links: paywallLinks),
+        router: router
       )
     case .signedIn:
       SignedInRoot()
