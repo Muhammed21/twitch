@@ -18,6 +18,7 @@ filter:
     - CategoryCatalogController_read
     - CategoriesController_browse
     - CategoriesController_lives
+    - ImagesController_prepareUpload
 additionalImports:
   - Foundation
 typeOverrides:
