@@ -24,6 +24,10 @@ public enum TextRole: Sendable {
   case cardDetail
   case liveBadge
   case viewerCount
+  case feedOverlay
+  case feedChannelName
+  case feedTitle
+  case filterChip
   case tag
   case followerCount
   case followLabel
@@ -87,6 +91,10 @@ public enum TextRole: Sendable {
     case .cardDetail: .supportingText
     case .liveBadge: .liveBadge
     case .viewerCount: .viewerCount
+    case .feedOverlay: .metaText
+    case .feedChannelName: .displayText
+    case .feedTitle: .viewerCount
+    case .filterChip: .headingText
     case .tag: .tagText
     case .followerCount: .viewerCount
     case .followLabel: .displayText
@@ -227,6 +235,27 @@ public enum LayoutRole: Sendable {
   case cardAvatarGlyphInset
   case cardAvatarGap
   case cardLineGap
+  case feedBadgeInset
+  case feedBadgePaddingH
+  case feedBadgeDotGap
+  case feedViewersInset
+  case feedViewersPaddingH
+  case feedViewersRadius
+  case feedOverlayPaddingV
+  case feedInfoInset
+  case feedInfoTop
+  case feedAvatarSize
+  case feedAvatarGap
+  case feedTitleTop
+  case feedDividerTop
+  case feedDividerWidth
+  case feedDividerHeight
+  case feedDividerBottom
+  case filterChipsTop
+  case filterChipsBottom
+  case filterChipHeight
+  case filterChipPaddingH
+  case filterChipGap
   case profileEditTop
   case profileEditTrailing
   case editSectionLabelGap
