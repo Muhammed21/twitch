@@ -6,5 +6,5 @@ public enum NotificationAuthorization: Equatable, Sendable {
 
 public protocol NotificationPermission: Sendable {
   func authorization() async -> NotificationAuthorization
-  func request() async -> Bool
+  func request() async -> Bool?
 }

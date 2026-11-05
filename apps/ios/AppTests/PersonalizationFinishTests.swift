@@ -39,7 +39,7 @@ private struct UndecidedNotifications: NotificationPermission {
     .notDetermined
   }
 
-  func request() async -> Bool {
+  func request() async -> Bool? {
     false
   }
 }

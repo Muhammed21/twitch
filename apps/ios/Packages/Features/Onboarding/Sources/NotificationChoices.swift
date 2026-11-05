@@ -24,7 +24,10 @@ public final class NotificationChoices {
       authorization = current
       return current
     }
-    let isGranted = await permission.request()
+    guard let isGranted = await permission.request() else {
+      authorization = current
+      return current
+    }
     let answered: NotificationAuthorization = isGranted ? .granted : .denied
     authorization = answered
     onAnswer(isGranted)

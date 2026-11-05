@@ -4,10 +4,10 @@ import Testing
 
 private actor FakePermission: NotificationPermission {
   private var current: NotificationAuthorization
-  private let answer: Bool
+  private let answer: Bool?
   private(set) var requests = 0
 
-  init(current: NotificationAuthorization, answer: Bool = true) {
+  init(current: NotificationAuthorization, answer: Bool? = true) {
     self.current = current
     self.answer = answer
   }
@@ -16,9 +16,9 @@ private actor FakePermission: NotificationPermission {
     current
   }
 
-  func request() async -> Bool {
+  func request() async -> Bool? {
     requests += 1
-    current = answer ? .granted : .denied
+    current = answer.map { $0 ? .granted : .denied } ?? current
     return answer
   }
 }
@@ -46,6 +46,19 @@ struct NotificationChoicesTests {
     #expect(result == (isGranted ? .granted : .denied))
     #expect(answers.all == [isGranted])
     #expect(await permission.requests == 1)
+  }
+
+  @Test("une demande qui échoue sans réponse garde l'autorisation non décidée et n'émet rien")
+  func requestFails() async {
+    let permission = FakePermission(current: .notDetermined, answer: nil)
+    let answers = Answers()
+    let choices = NotificationChoices(permission: permission, onAnswer: { answers.record($0) })
+
+    let result = await choices.turnOn()
+
+    #expect(result == .notDetermined)
+    #expect(choices.authorization == .notDetermined)
+    #expect(answers.all.isEmpty)
   }
 
   @Test("une autorisation déjà décidée ne relance pas l'alerte et n'émet rien", arguments: [NotificationAuthorization.granted, .denied])

@@ -11,7 +11,7 @@ struct SystemNotificationPermission: NotificationPermission {
     }
   }
 
-  func request() async -> Bool {
-    await (try? UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])) ?? false
+  func request() async -> Bool? {
+    try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])
   }
 }
