@@ -42,6 +42,9 @@
   --color-turbo-start: #b537f3;
   --color-turbo-end: #ff2f8e;
   --color-icon-disabled: #bfbfc2;
+  --color-illustration-ink: #000000;
+  --color-illustration-outline: #323338;
+  --color-illustration-fill: #ffffff;
   --typography-display-text-font: -apple-system-headline;
   --typography-display-text-weight: 600;
   --typography-heading-text-font: -apple-system-subheadline;
@@ -175,5 +178,8 @@
     --color-turbo-start: #b537f3;
     --color-turbo-end: #ff2f8e;
     --color-icon-disabled: #53535f;
+    --color-illustration-ink: #000000;
+    --color-illustration-outline: #323338;
+    --color-illustration-fill: #ffffff;
   }
 }
