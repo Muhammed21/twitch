@@ -50,13 +50,29 @@ public enum SessionRevocation: Hashable, Sendable {
   }
 }
 
+public enum ChatBadge: Equatable, Sendable {
+  case turbo
+  case unknown(String)
+
+  public init(rawValue: String) {
+    switch rawValue {
+    case "turbo": self = .turbo
+    default: self = .unknown(rawValue)
+    }
+  }
+}
+
 public struct ChatAuthor: Equatable, Sendable {
   public let id: UUID
   public let displayName: String
+  public let badges: [ChatBadge]
+  public let color: String?
 
-  public init(id: UUID, displayName: String) {
+  public init(id: UUID, displayName: String, badges: [ChatBadge] = [], color: String? = nil) {
     self.id = id
     self.displayName = displayName
+    self.badges = badges
+    self.color = color
   }
 }
 

@@ -69,4 +69,12 @@ struct GlyphTests {
     #expect(EditRowAccessory.edit.glyph == .editPencil)
     #expect(EditRowAccessory.disclosure.glyph == nil)
   }
+
+  @Test("un glyphe se dessine dans le texte à la taille demandée, en gabarit teinté par le texte")
+  func inlineGlyph() throws {
+    let image = try #require(Glyph.turboBattery.inline(side: LayoutRole.chatBadgeSize.points))
+
+    #expect(image.size == CGSize(width: LayoutRole.chatBadgeSize.points, height: LayoutRole.chatBadgeSize.points))
+    #expect(image.renderingMode == .alwaysTemplate)
+  }
 }
