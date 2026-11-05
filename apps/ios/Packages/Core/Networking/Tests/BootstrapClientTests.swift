@@ -5,8 +5,10 @@ import Testing
 
 private let bootstrapURL = URL(string: "http://127.0.0.1:3000/v1/mobile/bootstrap")!
 
-private func makeClient(_ transport: FakeTransport) -> BootstrapClient {
-  BootstrapClient(apiBaseURL: devConfiguration.apiBaseURL, transport: transport)
+private let signedOut = FakeTokenProvider(failure: .signedOut)
+
+private func makeClient(_ transport: FakeTransport, tokens: FakeTokenProvider = signedOut) -> BootstrapClient {
+  BootstrapClient(apiBaseURL: devConfiguration.apiBaseURL, transport: transport, tokens: tokens, now: { Date(timeIntervalSince1970: 0) })
 }
 
 @Suite("Bootstrap sur GET /v1/mobile/bootstrap")
@@ -22,6 +24,25 @@ struct BootstrapClientTests {
     #expect(request.method == "GET")
     #expect(request.url == bootstrapURL)
     #expect(request.headers["Authorization"] == nil)
+  }
+
+  @Test("connectée, la session présente son jeton : le serveur évalue les flags pour l'utilisateur")
+  func authenticatedWhenSignedIn() async throws {
+    let transport = FakeTransport(json: #"{"minSupportedVersion":"1.4.0","flags":{"session_replay":false}}"#)
+
+    _ = try await makeClient(transport, tokens: FakeTokenProvider()).bootstrap()
+
+    let request = try #require(await transport.requests.first)
+    #expect(request.headers["Authorization"] == "Bearer access-1")
+  }
+
+  @Test("décode la variante du paywall évaluée par le serveur (ADR 0016)")
+  func decodesPaywallVariant() async throws {
+    let transport = FakeTransport(json: #"{"minSupportedVersion":"1.4.0","flags":{"session_replay":false,"exp_paywall_variant":"variant_b"}}"#)
+
+    let bootstrap = try await makeClient(transport, tokens: FakeTokenProvider()).bootstrap()
+
+    #expect(bootstrap.flags == FeatureFlags(sessionReplay: false, paywallVariant: "variant_b"))
   }
 
   @Test("tolère le profil, un flag et un champ ajoutés (ADR 0024, §8)")
