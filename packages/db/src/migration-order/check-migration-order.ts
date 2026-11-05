@@ -30,9 +30,10 @@ const migrationsBeforeBase = ({
   if (latestBase === undefined) {
     return [];
   }
+  const baseNames = new Set(base.map(({ name }) => name));
   const baseChecksums = new Set(base.map(({ checksum }) => checksum));
   return current
-    .filter(({ checksum }) => !baseChecksums.has(checksum))
+    .filter(({ name, checksum }) => !baseNames.has(name) && !baseChecksums.has(checksum))
     .filter((migration) => timestampOf(migration) <= latestBase.slice(0, 14))
     .map(
       ({ name }) =>
@@ -40,10 +41,30 @@ const migrationsBeforeBase = ({
     );
 };
 
+const modifiedMigrations = ({
+  current,
+  base,
+}: {
+  readonly current: readonly Migration[];
+  readonly base: readonly Migration[];
+}): readonly string[] =>
+  current
+    .filter(({ name, checksum }) =>
+      base.some((shipped) => shipped.name === name && shipped.checksum !== checksum),
+    )
+    .map(
+      ({ name }) =>
+        `${name} modifiée : une migration livrée ne change pas, ajoutez-en une nouvelle`,
+    );
+
 export const checkMigrationOrder = ({
   current,
   base,
 }: {
   readonly current: readonly Migration[];
   readonly base: readonly Migration[];
-}): readonly string[] => [...sharedTimestamps(current), ...migrationsBeforeBase({ current, base })];
+}): readonly string[] => [
+  ...sharedTimestamps(current),
+  ...modifiedMigrations({ current, base }),
+  ...migrationsBeforeBase({ current, base }),
+];

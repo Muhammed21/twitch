@@ -79,17 +79,33 @@ describe("checkMigrationOrder", () => {
     ).toEqual([]);
   });
 
-  it("traite comme nouvelle une migration au nom connu mais au contenu inédit", () => {
+  it("refuse une migration de la branche de base dont le contenu a changé, sans pousser à la renommer", () => {
     expect(
       checkMigrationOrder({
         current: [
+          makeMigration("20261009140042_socle"),
           makeMigration("20261104170000_discovery_categories", "sql-modifié"),
-          ...BASE.slice(2),
+          makeMigration("20261106120000_channel_banner_key"),
         ],
         base: BASE,
       }),
     ).toEqual([
-      "20261104170000_discovery_categories doit être postérieure à 20261106120000_channel_banner_key, la dernière migration de la branche de base",
+      "20261104170000_discovery_categories modifiée : une migration livrée ne change pas, ajoutez-en une nouvelle",
+    ]);
+  });
+
+  it("refuse la dernière migration de la branche de base quand son contenu a changé", () => {
+    expect(
+      checkMigrationOrder({
+        current: [
+          makeMigration("20261009140042_socle"),
+          makeMigration("20261104170000_discovery_categories"),
+          makeMigration("20261106120000_channel_banner_key", "sql-modifié"),
+        ],
+        base: BASE,
+      }),
+    ).toEqual([
+      "20261106120000_channel_banner_key modifiée : une migration livrée ne change pas, ajoutez-en une nouvelle",
     ]);
   });
 
