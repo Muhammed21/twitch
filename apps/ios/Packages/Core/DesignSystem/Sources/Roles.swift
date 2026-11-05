@@ -22,6 +22,7 @@ public enum TextRole: Sendable {
   case viewerCount
   case tag
   case followerCount
+  case followLabel
   case categoryName
   case fieldHint
   case fieldText
@@ -54,6 +55,7 @@ public enum TextRole: Sendable {
     case .viewerCount: .viewerCount
     case .tag: .tagText
     case .followerCount: .viewerCount
+    case .followLabel: .displayText
     case .categoryName: .actionLabel
     case .fieldHint: .hintText
     case .fieldText: .supportingText
@@ -123,6 +125,9 @@ public enum LayoutRole: Sendable {
   case categoryHeaderLineGap
   case followButtonHeight
   case followButtonColumnGap
+  case followingButtonWidth
+  case followGlyphGap
+  case followingGlyphGap
   case profileBannerHeight
   case profileAvatarSize
   case profileAvatarOverlap
@@ -227,6 +232,9 @@ public enum LayoutRole: Sendable {
     case .categoryHeaderLineGap: Spacing.x4
     case .followButtonHeight: Spacing.x40
     case .followButtonColumnGap: Spacing.x16
+    case .followingButtonWidth: Spacing.x84
+    case .followGlyphGap: Spacing.x14
+    case .followingGlyphGap: Spacing.x6
     case .profileBannerHeight: Spacing.x70
     case .profileAvatarSize: Spacing.x88
     case .profileAvatarOverlap: Spacing.x16
