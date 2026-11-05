@@ -4,7 +4,7 @@ import Observation
 
 public enum Route: Hashable, Sendable {
   case channel(ChannelSlug)
-  case category(CategorySlug, name: String)
+  case category(CategoryHeading)
 
   private static let scheme = "twitch"
   private static let channelHost = "channel"

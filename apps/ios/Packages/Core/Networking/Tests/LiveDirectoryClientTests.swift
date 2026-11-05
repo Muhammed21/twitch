@@ -116,6 +116,34 @@ struct LiveDirectoryClientTests {
     #expect(live.viewers == nil)
   }
 
+  @Test(
+    "lit la vignette http(s) d'un live et écarte une autre adresse",
+    arguments: [
+      ("https://cdn.example/lives/jean_dupont.jpg", URL(string: "https://cdn.example/lives/jean_dupont.jpg")),
+      ("http://127.0.0.1:3000/v1/lives/jean_dupont/thumbnail.jpg", URL(string: "http://127.0.0.1:3000/v1/lives/jean_dupont/thumbnail.jpg")),
+      ("file:///etc/passwd", nil),
+      ("javascript:alert(1)", nil),
+    ]
+  )
+  func readsThumbnail(thumbnailURL: String, expected: URL?) async throws {
+    let transport = FakeTransport(json: #"{"items":[\#(liveJSON().dropLast()),"thumbnailUrl":"\#(thumbnailURL)"}]}"#)
+
+    let page = try await makeClient(transport).lives(after: nil)
+
+    let live = try #require(page.lives.first)
+    #expect(live.thumbnailURL == expected)
+  }
+
+  @Test("sans vignette, le live garde l'aperçu gris")
+  func missingThumbnail() async throws {
+    let transport = FakeTransport(json: #"{"items":[\#(liveJSON())]}"#)
+
+    let page = try await makeClient(transport).lives(after: nil)
+
+    let live = try #require(page.lives.first)
+    #expect(live.thumbnailURL == nil)
+  }
+
   @Test("tolère un champ ajouté au live et à la page (ADR 0024, §8)")
   func toleratesAddedFields() async throws {
     let transport = FakeTransport(json: #"{"items":[\#(liveJSON().dropLast()),"thumbnail":"t.png"}],"total":1}"#)

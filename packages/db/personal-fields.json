@@ -9,6 +9,7 @@
   "channel.Channel.bannerKey",
   "channel.Channel.ownerId",
   "channel.Channel.slug",
+  "channel.ChannelCategoryFollow.userId",
   "discovery.DiscoveryLiveChannelView.slug",
   "identity.IdentityAccount.accessToken",
   "identity.IdentityAccount.accountId",
