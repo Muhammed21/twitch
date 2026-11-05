@@ -38,6 +38,8 @@ struct TwitchApp: App {
         .environment(stores.myChannel)
         .environment(stores.categorySearch)
         .environment(stores.profileEdit)
+        .environment(stores.categoryChoices)
+        .environment(stores.interestChoices)
         .environment(stores.profileImages)
         .environment(stores.preferences)
     }
@@ -240,6 +242,8 @@ struct Stores {
   let profileEdit: ProfileEditStore
   let profileImages: ProfileImageStore
   let preferences: PreferencesStore
+  let categoryChoices: CategoryChoices
+  let interestChoices: InterestChoices
 }
 
 @MainActor
@@ -276,6 +280,7 @@ enum Composition {
       playback: PlaybackClient(apiBaseURL: configuration.apiBaseURL, transport: transport),
       controller: player
     )
+    let preferences = PersonalizationRoot.preferences()
     let sessionStore = Self.sessionStore(configuration: configuration, session: session, transport: transport, now: now)
     return Stores(
       session: sessionStore,
@@ -300,7 +305,9 @@ enum Composition {
       categorySearch: CategorySearch(catalog: CategoryCatalogClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
       profileEdit: Self.profileEdit(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
       profileImages: Self.profileImages(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
-      preferences: PersonalizationRoot.preferences()
+      preferences: preferences,
+      categoryChoices: Self.categoryChoices(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
+      interestChoices: InterestChoices(tags: CategoryTagClient(apiBaseURL: configuration.apiBaseURL, transport: transport), preferences: preferences)
     )
   }
 

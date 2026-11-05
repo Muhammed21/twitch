@@ -81,8 +81,7 @@ struct RootScreenTests {
 
   @Test("le parcours s'ouvre sur l'intro et se termine sur le récap")
   func personalizationSteps() {
-    #expect(PersonalizationRoot.steps.first == .intro)
-    #expect(PersonalizationRoot.steps.last == .summary)
+    #expect(PersonalizationRoot.steps == [.intro, .categories, .interests, .summary])
   }
 
   @Test("le splash passe avant « You're All Set! »")

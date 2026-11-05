@@ -1,4 +1,6 @@
 import DesignSystem
+import Domain
+import Foundation
 import SwiftUI
 
 struct IntroPage: View {
@@ -37,6 +39,26 @@ public enum PersonalizationText {
   public static var next: String { String(localized: "journey.next", bundle: .module) }
   public static var skip: String { String(localized: "journey.skip", bundle: .module) }
   public static var back: String { String(localized: "journey.back", bundle: .module) }
+
+  public static var categoriesTitle: String { String(localized: "journey.categories.title", bundle: .module) }
+  public static var categoriesMessage: String { String(localized: "journey.categories.message", bundle: .module) }
+  public static var categoriesEmpty: String { String(localized: "journey.categories.empty", bundle: .module) }
+  public static var categoriesFailed: String { String(localized: "journey.categories.failed", bundle: .module) }
+  public static var followFailed: String { String(localized: "journey.categories.followFailed", bundle: .module) }
+  public static var interestsTitle: String { String(localized: "journey.interests.title", bundle: .module) }
+  public static var interestsMessage: String { String(localized: "journey.interests.message", bundle: .module) }
+  public static var interestsEmpty: String { String(localized: "journey.interests.empty", bundle: .module) }
+  public static var interestsFailed: String { String(localized: "journey.interests.failed", bundle: .module) }
+  public static var retry: String { String(localized: "journey.retry", bundle: .module) }
+
+  public static func viewers(_ count: ViewerCount?, locale: Locale) -> String? {
+    count.map {
+      String(
+        format: String(localized: "journey.categories.viewers", bundle: .module),
+        $0.value.formatted(.number.notation(.compactName).locale(locale))
+      )
+    }
+  }
 
   public static func progress(page: Int, of count: Int) -> String {
     String(format: String(localized: "journey.progress", bundle: .module), page, count)

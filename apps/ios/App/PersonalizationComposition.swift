@@ -1,12 +1,13 @@
 import Auth
 import Domain
 import Foundation
+import Networking
 import Onboarding
 import Preferences
 import SwiftUI
 
 struct PersonalizationRoot: View {
-  static let steps: [PersonalizationStep] = [.intro, .summary]
+  static let steps: [PersonalizationStep] = [.intro, .categories, .interests, .summary]
 
   @State private var journey: PersonalizationJourney
 
@@ -39,6 +40,20 @@ struct PersonalizationRoot: View {
     PreferencesStore(
       repository: UserDefaultsPreferences(suiteName: nil, language: LiveLanguage(localeIdentifier: Locale.current.identifier)),
       onChange: { _ in }
+    )
+  }
+}
+
+extension Composition {
+  static func categoryChoices(
+    apiBaseURL: URL,
+    transport: ClientVersionTransport,
+    tokens: OAuthSession,
+    now: @escaping @Sendable () -> Date
+  ) -> CategoryChoices {
+    CategoryChoices(
+      directory: CategoryDirectoryClient(apiBaseURL: apiBaseURL, transport: transport),
+      following: CategoryFollowClient(apiBaseURL: apiBaseURL, transport: transport, tokens: tokens, now: now)
     )
   }
 }

@@ -18,4 +18,11 @@ struct JourneyMotionTests {
     #expect(JourneyMotion.pageEdges(direction: .forward) == (.trailing, .leading))
     #expect(JourneyMotion.pageEdges(direction: .backward) == (.leading, .trailing))
   }
+
+  @Test("un choix réagit par un ressort court de 0,3 s ; avec Réduire les animations, le même fondu")
+  func selection() {
+    #expect(JourneyMotion.selectionResponse == 0.3)
+    #expect(JourneyMotion.selection(reduceMotion: false) == .spring(response: 0.3, dampingFraction: 0.86))
+    #expect(JourneyMotion.selection(reduceMotion: true) == .easeInOut(duration: 0.2))
+  }
 }

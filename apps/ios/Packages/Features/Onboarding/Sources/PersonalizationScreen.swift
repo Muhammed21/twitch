@@ -26,6 +26,8 @@ public struct PersonalizationScreen: View {
   @ViewBuilder private var page: some View {
     switch journey.step {
     case .intro: IntroPage()
+    case .categories: CategoriesPage()
+    case .interests: InterestsPage()
     case .summary: SummaryPage()
     default: EmptyView()
     }
@@ -69,13 +71,22 @@ struct JourneyPage<Content: View>: View {
   private let message: String
   private let primary: String
   private let selectionCount: Int
+  private let onContinue: () -> Void
   private let content: Content
 
-  init(title: String, message: String, primary: String, selectionCount: Int = 0, @ViewBuilder content: () -> Content) {
+  init(
+    title: String,
+    message: String,
+    primary: String,
+    selectionCount: Int = 0,
+    onContinue: @escaping () -> Void = {},
+    @ViewBuilder content: () -> Content
+  ) {
     self.title = title
     self.message = message
     self.primary = primary
     self.selectionCount = selectionCount
+    self.onContinue = onContinue
     self.content = content()
   }
 
@@ -92,9 +103,13 @@ struct JourneyPage<Content: View>: View {
       content
         .padding(.top, LayoutRole.journeyContentGap.points)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-      Button(primary) { journey.complete(selectionCount: selectionCount) }
-        .buttonStyle(ActionButtonStyle(.primary))
-        .accessibilityIdentifier("journey.continue")
+      Button(primary) {
+        onContinue()
+        journey.complete(selectionCount: selectionCount)
+      }
+      .buttonStyle(ActionButtonStyle(.primary))
+      .accessibilityIdentifier("journey.continue")
+      .padding(.top, LayoutRole.journeyMessageGap.points)
     }
     .padding([.horizontal, .bottom], LayoutRole.screenInset.points)
     .padding(.top, LayoutRole.journeyContentGap.points)

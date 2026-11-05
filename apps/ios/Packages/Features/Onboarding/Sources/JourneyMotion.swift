@@ -4,11 +4,18 @@ public enum JourneyMotion {
   public static let pageResponse: TimeInterval = 0.5
   public static let pageDamping: Double = 0.86
   public static let fadeDuration: TimeInterval = 0.2
+  public static let selectionResponse: TimeInterval = 0.3
 
   public static func page(reduceMotion: Bool) -> Animation {
     reduceMotion
       ? .easeInOut(duration: fadeDuration)
       : .spring(response: pageResponse, dampingFraction: pageDamping)
+  }
+
+  public static func selection(reduceMotion: Bool) -> Animation {
+    reduceMotion
+      ? .easeInOut(duration: fadeDuration)
+      : .spring(response: selectionResponse, dampingFraction: pageDamping)
   }
 
   public static func pageEdges(direction: JourneyDirection) -> (insertion: Edge, removal: Edge) {
