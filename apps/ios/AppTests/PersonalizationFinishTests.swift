@@ -1,6 +1,8 @@
 import Domain
 import Foundation
+import Navigation
 import Onboarding
+import Paywall
 import Preferences
 import Testing
 @testable import Twitch
@@ -22,10 +24,17 @@ private final class EndingRecorder {
 private final class StubPurchases: Purchases {
   let isAvailable: Bool
   let turbo: Result<Bool, PurchasesFailure>
+  let outcome: Result<PurchaseOutcome, PurchasesFailure>
+  private(set) var attributes: [String: String] = [:]
 
-  init(isAvailable: Bool = true, turbo: Result<Bool, PurchasesFailure> = .success(false)) {
+  init(
+    isAvailable: Bool = true,
+    turbo: Result<Bool, PurchasesFailure> = .success(false),
+    outcome: Result<PurchaseOutcome, PurchasesFailure> = .success(.cancelled)
+  ) {
     self.isAvailable = isAvailable
     self.turbo = turbo
+    self.outcome = outcome
   }
 
   func offering(_: String?) async throws(PurchasesFailure) -> SubscriptionOffering {
@@ -33,7 +42,7 @@ private final class StubPurchases: Purchases {
   }
 
   func purchase(_: SubscriptionPackage) async throws(PurchasesFailure) -> PurchaseOutcome {
-    .cancelled
+    try outcome.get()
   }
 
   func restore() async throws(PurchasesFailure) -> Bool {
@@ -44,7 +53,10 @@ private final class StubPurchases: Purchases {
     try turbo.get()
   }
 
-  func setAttribute(_: String, for _: String) {}
+  func setAttribute(_ value: String, for key: String) {
+    attributes[key] = value
+  }
+
   func logIn(_: UUID) async {}
   func logOut() async {}
 }
@@ -77,6 +89,36 @@ private struct UndecidedNotifications: NotificationPermission {
   func request() async -> Bool? {
     false
   }
+}
+
+private struct LateVariant: BootstrapSource {
+  let variant: String
+
+  func bootstrap() async throws -> AppBootstrap {
+    try AppBootstrap(minSupportedVersion: AppVersion("1.0.0"), flags: FeatureFlags(sessionReplay: false, paywallVariant: variant))
+  }
+}
+
+private let monthly = SubscriptionPackage(id: "$rc_monthly", offeringID: "default", period: .month, localizedPrice: "4,99 €")
+private let noLinks = PaywallLinks(terms: nil, privacy: nil)
+
+@MainActor
+private func makeLaunch(variant: String) throws -> LaunchStore {
+  try LaunchStore(source: LateVariant(variant: variant), currentVersion: AppVersion("1.0.0"))
+}
+
+@MainActor
+private func purchaseEnding(
+  _ purchases: StubPurchases,
+  account: UUID,
+  preferences: PreferencesStore,
+  router: Router,
+  recorder: EndingRecorder
+) throws -> PaywallStore {
+  try PersonalizationRoot.paywallStore(
+    PersonalizationPaywall(purchases: purchases, launch: makeLaunch(variant: "control"), links: noLinks),
+    onSubscribed: PersonalizationRoot.ending(account: { account }, preferences: preferences, router: router, finish: recorder.close)
+  )
 }
 
 @MainActor
@@ -184,5 +226,81 @@ struct PersonalizationFinishTests {
     #expect(next.categories !== first.categories)
     #expect(next.interests !== first.interests)
     #expect(next.notifications !== first.notifications)
+  }
+
+  @Test("une variante arrivée après l'ouverture du parcours est celle envoyée à l'achat (#294)")
+  func lateVariantReachesPurchase() async throws {
+    let purchases = StubPurchases(outcome: .success(.subscribed))
+    let launch = try makeLaunch(variant: "variant_b")
+    let store = PersonalizationRoot.paywallStore(
+      PersonalizationPaywall(purchases: purchases, launch: launch, links: noLinks),
+      onSubscribed: {}
+    )
+
+    await launch.run(accountID: UUID())
+    await store.subscribe(monthly)
+
+    #expect(purchases.attributes == ["ph_paywall_variant": "variant_b"])
+  }
+
+  @Test("un achat réussi marque le parcours terminé pour ce compte et ouvre l'onglet Accueil")
+  func purchaseGoesHome() async throws {
+    let preferences = makePreferences()
+    let recorder = EndingRecorder()
+    let router = Router()
+    router.selectedTab = .profile
+    let account = UUID()
+    let purchases = StubPurchases(outcome: .success(.subscribed))
+    let store = try purchaseEnding(purchases, account: account, preferences: preferences, router: router, recorder: recorder)
+
+    await store.subscribe(monthly)
+
+    #expect(preferences.hasCompletedOnboarding(account))
+    #expect(router.selectedTab == .home)
+    #expect(recorder.endings == ["home"])
+  }
+
+  @Test("un achat annulé reste sur le paywall, sans terminer le parcours")
+  func cancelledPurchaseStays() async throws {
+    let preferences = makePreferences()
+    let recorder = EndingRecorder()
+    let account = UUID()
+    let store = try purchaseEnding(StubPurchases(), account: account, preferences: preferences, router: Router(), recorder: recorder)
+
+    await store.subscribe(monthly)
+
+    #expect(!preferences.hasCompletedOnboarding(account))
+    #expect(recorder.endings.isEmpty)
+    #expect(store.notice == nil)
+  }
+
+  @Test("un achat en échec reste sur le paywall et affiche l'erreur")
+  func failedPurchaseStays() async throws {
+    let preferences = makePreferences()
+    let recorder = EndingRecorder()
+    let account = UUID()
+    let purchases = StubPurchases(outcome: .failure(.failed(code: "payment_pending")))
+    let store = try purchaseEnding(purchases, account: account, preferences: preferences, router: Router(), recorder: recorder)
+
+    await store.subscribe(monthly)
+
+    #expect(!preferences.hasCompletedOnboarding(account))
+    #expect(recorder.endings.isEmpty)
+    #expect(store.notice == .purchaseFailed)
+  }
+
+  @Test("« Plus tard » termine aussi le parcours et ouvre l'onglet Accueil")
+  func laterGoesHome() {
+    let preferences = makePreferences()
+    let recorder = EndingRecorder()
+    let router = Router()
+    router.selectedTab = .browse
+    let account = UUID()
+
+    PersonalizationRoot.ending(account: { account }, preferences: preferences, router: router, finish: recorder.close)()
+
+    #expect(preferences.hasCompletedOnboarding(account))
+    #expect(router.selectedTab == .home)
+    #expect(recorder.endings == ["home"])
   }
 }

@@ -24,12 +24,19 @@ public final class PaywallStore {
 
   private let purchases: any Purchases
   private let offeringID: String?
-  private let variant: String?
+  private let variant: @MainActor () -> String?
+  private let onSubscribed: @MainActor () -> Void
 
-  public init(purchases: any Purchases, offeringID: String?, variant: String? = nil) {
+  public init(
+    purchases: any Purchases,
+    offeringID: String?,
+    variant: @escaping @MainActor () -> String? = { nil },
+    onSubscribed: @escaping @MainActor () -> Void = {}
+  ) {
     self.purchases = purchases
     self.offeringID = offeringID
     self.variant = variant
+    self.onSubscribed = onSubscribed
   }
 
   public func load() async {
@@ -53,12 +60,12 @@ public final class PaywallStore {
     notice = nil
     purchasing = package
     defer { purchasing = nil }
-    if let variant {
+    if let variant = variant() {
       purchases.setAttribute(variant, for: "ph_paywall_variant")
     }
     do {
       if try await purchases.purchase(package) == .subscribed {
-        phase = .subscribed
+        subscribed()
       }
     } catch {
       notice = .purchaseFailed
@@ -72,12 +79,17 @@ public final class PaywallStore {
     defer { isRestoring = false }
     do {
       if try await purchases.restore() {
-        phase = .subscribed
+        subscribed()
       } else {
         notice = .nothingToRestore
       }
     } catch {
       notice = .restoreFailed
     }
+  }
+
+  private func subscribed() {
+    phase = .subscribed
+    onSubscribed()
   }
 }
