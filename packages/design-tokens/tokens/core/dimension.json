@@ -116,6 +116,11 @@
         "$value": "56px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : hauteur des lignes du menu du compte."
       },
+      "63": {
+        "$type": "dimension",
+        "$value": "63px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9607) : largeur du filet qui sépare deux lives du flux de l'accueil, 189 px à @3x."
+      },
       "70": {
         "$type": "dimension",
         "$value": "70px",
