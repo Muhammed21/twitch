@@ -26,6 +26,7 @@ describe("IdentityModule", () => {
           prisma,
           redis: createIdentityRedis(),
           lastLiveOf: async () => undefined,
+          bannerUrlOf: async () => undefined,
           images: createImageBrick({
             storage: memoryImageStorage().storage,
             publicBaseUrl: "http://images.invalid",

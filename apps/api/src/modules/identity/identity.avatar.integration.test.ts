@@ -79,6 +79,7 @@ const withIdentity = async (userId: string, run: (base: string) => Promise<void>
         prisma: createContextClient({ context: "identity", env: process.env }),
         redis: createIdentityRedis(),
         lastLiveOf: async () => undefined,
+        bannerUrlOf: async () => undefined,
         images,
         logSink: () => {},
       }),

@@ -7,6 +7,7 @@ export type Account = {
   readonly bio?: string;
   readonly lastLiveAt?: Date;
   readonly avatarUrl?: string;
+  readonly bannerUrl?: string;
 };
 
 export type ReadProfile = (userId: string) => Promise<Result<Account, "account_not_found">>;

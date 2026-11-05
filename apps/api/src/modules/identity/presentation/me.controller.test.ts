@@ -152,6 +152,17 @@ describe("avatar dans GET /v1/me", () => {
   });
 });
 
+describe("bannière dans GET /v1/me", () => {
+  it("rend l'URL publique de la bannière de la chaîne du compte", async () => {
+    const bannerUrl = "https://images.twitch.example/images/banner/b.webp";
+    const currentAccount: GetCurrentAccount = async () => ok({ ...ACCOUNT, bannerUrl });
+
+    await withMe({ currentAccount }, async (base) => {
+      expect(await (await get(base)).json()).toStrictEqual({ ...ACCOUNT, bannerUrl });
+    });
+  });
+});
+
 describe("PUT /v1/me/avatar", () => {
   it("confirme l'envoi en avatar de l'identité du jeton et rend le compte relu", async () => {
     const currentAccount: GetCurrentAccount = async () => ok({ ...ACCOUNT, avatarUrl: AVATAR_URL });
