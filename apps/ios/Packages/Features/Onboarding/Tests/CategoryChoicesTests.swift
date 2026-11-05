@@ -147,6 +147,17 @@ struct CategoryChoicesTests {
     #expect(choices.selectionCount == 2)
   }
 
+  @Test("le récap nomme les catégories suivies, dans l'ordre de la liste")
+  func followedNames() async throws {
+    let choices = try CategoryChoices(directory: FakeDirectory([.success(makePage("fortnite", "music", "art"))]), following: FakeFollowing())
+    await choices.load()
+
+    try await choices.toggle(CategorySlug("art"))
+    try await choices.toggle(CategorySlug("fortnite"))
+
+    #expect(choices.followedNames == ["Fortnite", "Art"])
+  }
+
   @Test("un toucher pendant un appel en cours est ignoré")
   func ignoresWhilePending() async throws {
     let following = GatedFollowing()

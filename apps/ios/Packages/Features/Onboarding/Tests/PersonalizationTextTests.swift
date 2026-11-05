@@ -92,6 +92,14 @@ struct PersonalizationTextTests {
     ])
   }
 
+  @Test("la page 8 reprend les boutons et la note de permission-notifications--defaut")
+  func notifications() {
+    #expect(PersonalizationText.notificationsTitle == "Never miss your favorite stream!")
+    #expect(PersonalizationText.turnOnNotifications == "Turn on Notifications")
+    #expect(PersonalizationText.remindMeLater == "Remind me later")
+    #expect(PersonalizationText.notificationsFooter == "You can change this anytime in the iOS Settings.")
+  }
+
   @Test("la page 9 règle la taille du texte et l'horodatage du chat")
   func chat() {
     #expect(PersonalizationText.chatTitle == "Set up your chat")

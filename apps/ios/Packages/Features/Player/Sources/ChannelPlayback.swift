@@ -8,13 +8,20 @@ public final class ChannelPlayback {
   private let channels: any ChannelRepository
   private let playback: any PlaybackSource
   private let controller: PlayerController
+  private let allowsAutoplay: @MainActor () -> Bool
   @ObservationIgnored private var opened = 0
   @ObservationIgnored private var live: AsyncStream<Void>.Continuation?
 
-  public init(channels: any ChannelRepository, playback: any PlaybackSource, controller: PlayerController) {
+  public init(
+    channels: any ChannelRepository,
+    playback: any PlaybackSource,
+    controller: PlayerController,
+    allowsAutoplay: @escaping @MainActor () -> Bool = { true }
+  ) {
     self.channels = channels
     self.playback = playback
     self.controller = controller
+    self.allowsAutoplay = allowsAutoplay
   }
 
   public func open(_ slug: ChannelSlug) async {
@@ -22,9 +29,9 @@ public final class ChannelPlayback {
     let screen = opened
     let (lives, signal) = AsyncStream<Void>.makeStream(bufferingPolicy: .bufferingNewest(1))
     live = signal
-    var loaded = await play(slug)
+    var loaded = await play(slug, starts: true)
     for await _ in lives {
-      loaded = await play(slug) || loaded
+      loaded = await play(slug, starts: allowsAutoplay()) || loaded
     }
     guard loaded, opened == screen else { return }
     controller.stop()
@@ -34,14 +41,18 @@ public final class ChannelPlayback {
     live?.yield()
   }
 
-  private func play(_ slug: ChannelSlug) async -> Bool {
+  private func play(_ slug: ChannelSlug, starts: Bool) async -> Bool {
     let url = await url(of: slug)
     guard !Task.isCancelled else { return false }
     guard let url else {
       controller.stop()
       return false
     }
-    controller.load(url)
+    if starts {
+      controller.load(url)
+    } else {
+      controller.prepare(url)
+    }
     return true
   }
 

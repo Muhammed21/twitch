@@ -10,6 +10,14 @@ public enum VideoAutoplay: String, CaseIterable, Sendable {
   case wifiAndMobileData = "wifi_and_mobile_data"
   case wifiOnly = "wifi_only"
   case never
+
+  public func allowsPlayback(onExpensiveNetwork isExpensive: Bool) -> Bool {
+    switch self {
+    case .wifiAndMobileData: true
+    case .wifiOnly: !isExpensive
+    case .never: false
+    }
+  }
 }
 
 public enum ChatTextSize: String, CaseIterable, Sendable {
