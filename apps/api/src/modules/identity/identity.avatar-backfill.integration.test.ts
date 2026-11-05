@@ -53,6 +53,23 @@ const avatarEventsOf = async (accountId: string) =>
 
 const runBackfill = () => identity.$executeRawUnsafe(BACKFILL);
 
+const runBackfillInTimeZone = (timeZone: string) =>
+  identity.$transaction([
+    identity.$executeRawUnsafe(`SET LOCAL TIME ZONE '${timeZone}'`),
+    identity.$executeRawUnsafe(BACKFILL),
+  ]);
+
+const schedulingOf = async (accountId: string) =>
+  (await identity.identityOutbox.findMany({ where: { name: "identity.avatar.changed" } }))
+    .filter(
+      ({ payload }) =>
+        typeof payload === "object" &&
+        payload !== null &&
+        "accountId" in payload &&
+        payload.accountId === accountId,
+    )
+    .map(({ occurredAt, nextAttemptAt }) => ({ occurredAt, nextAttemptAt }));
+
 describe("rattrapage des avatars posés avant identity.avatar.changed", () => {
   it("écrit l'event de l'avatar d'un compte, à publier par le relais", async () => {
     const accountId = await seedUser({ avatarKey: AVATAR_KEY });
@@ -62,6 +79,20 @@ describe("rattrapage des avatars posés avant identity.avatar.changed", () => {
     expect(await avatarEventsOf(accountId)).toEqual([
       { version: 1, payload: { accountId, avatarKey: AVATAR_KEY }, publishedAt: null },
     ]);
+  });
+
+  it("date l'event et sa première publication en UTC, quel que soit le fuseau de la session", async () => {
+    const accountId = await seedUser({ avatarKey: AVATAR_KEY });
+    const before = new Date(Date.now() - 1000);
+
+    await runBackfillInTimeZone("Europe/Paris");
+
+    const after = new Date(Date.now() + 1000);
+    const [scheduling] = await schedulingOf(accountId);
+    expect(scheduling?.occurredAt.getTime()).toBeGreaterThanOrEqual(before.getTime());
+    expect(scheduling?.occurredAt.getTime()).toBeLessThanOrEqual(after.getTime());
+    expect(scheduling?.nextAttemptAt.getTime()).toBeGreaterThanOrEqual(before.getTime());
+    expect(scheduling?.nextAttemptAt.getTime()).toBeLessThanOrEqual(after.getTime());
   });
 
   it("n'écrit rien pour un compte sans avatar", async () => {
