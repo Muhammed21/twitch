@@ -20,7 +20,7 @@ private func messageJSON(
   Data(
     #"""
     {"id":"\#(messageID)","channelId":"\#(channelID)"\#(session),\#
-    "author":{"id":"\#(authorID)","displayName":"Viewer de test"},\#
+    "author":{"id":"\#(authorID)","displayName":"Viewer de test","badges":[]},\#
     "body":"Bonjour le chat","sentAt":"\#(sentAt)"\#(extra)}
     """#.utf8
   )

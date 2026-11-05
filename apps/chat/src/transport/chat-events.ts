@@ -15,6 +15,7 @@ export type ChatSession = {
     readonly id: string;
     readonly displayName: string;
     readonly avatarUrl?: string;
+    readonly badges: readonly string[];
   };
   readonly credentials: { readonly sid: string; readonly token: string };
 };

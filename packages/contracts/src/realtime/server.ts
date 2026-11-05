@@ -1,12 +1,14 @@
 import { z } from "zod";
 
-import { extensibleUnion, openEnum, Uuid } from "../conventions/schemas.ts";
+import { ChatColor, extensibleUnion, openEnum, Uuid } from "../conventions/schemas.ts";
 
 const RealtimeChatAuthor = z
   .looseObject({
     id: Uuid,
     displayName: z.string(),
     avatarUrl: z.url({ protocol: /^https?$/ }).optional(),
+    badges: z.array(openEnum(["turbo"])),
+    color: ChatColor.optional(),
   })
   .meta({ id: "RealtimeChatAuthor" });
 

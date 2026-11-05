@@ -11,8 +11,10 @@ import { PlatformModule } from "../../../platform/platform.module.ts";
 import {
   CHANGE_AVATAR,
   CHANGE_BIO,
+  CHANGE_CHAT_COLOR,
   type ChangeAvatar,
   type ChangeBio,
+  type ChangeChatColor,
   GET_CURRENT_ACCOUNT,
   type GetCurrentAccount,
   MeController,
@@ -43,16 +45,24 @@ const withMe = async (
     currentAccount = accountOf(ACCOUNT),
     changeBio = async () => ok(undefined),
     changeAvatar = async () => ok(undefined),
-  }: { currentAccount?: GetCurrentAccount; changeBio?: ChangeBio; changeAvatar?: ChangeAvatar },
+    changeChatColor = async () => ok(undefined),
+  }: {
+    currentAccount?: GetCurrentAccount;
+    changeBio?: ChangeBio;
+    changeAvatar?: ChangeAvatar;
+    changeChatColor?: ChangeChatColor;
+  },
   run: (
     base: string,
     bioChanges: Parameters<ChangeBio>[0][],
     openApi: ReturnType<typeof buildOpenApiDocument>,
     avatarChanges: Parameters<ChangeAvatar>[0][],
+    chatColorChanges: Parameters<ChangeChatColor>[0][],
   ) => Promise<void>,
 ) => {
   const bioChanges: Parameters<ChangeBio>[0][] = [];
   const avatarChanges: Parameters<ChangeAvatar>[0][] = [];
+  const chatColorChanges: Parameters<ChangeChatColor>[0][] = [];
   const moduleRef = await Test.createTestingModule({
     imports: [
       PlatformModule.register({
@@ -78,12 +88,25 @@ const withMe = async (
           return changeAvatar(change);
         },
       },
+      {
+        provide: CHANGE_CHAT_COLOR,
+        useValue: (change: Parameters<ChangeChatColor>[0]) => {
+          chatColorChanges.push(change);
+          return changeChatColor(change);
+        },
+      },
     ],
   }).compile();
   const app = configureApp(moduleRef.createNestApplication({ logger: false }));
   await app.listen(0, "127.0.0.1");
   try {
-    await run(`${await app.getUrl()}/v1/me`, bioChanges, buildOpenApiDocument(app), avatarChanges);
+    await run(
+      `${await app.getUrl()}/v1/me`,
+      bioChanges,
+      buildOpenApiDocument(app),
+      avatarChanges,
+      chatColorChanges,
+    );
   } finally {
     await app.close();
   }
@@ -304,6 +327,85 @@ describe("PATCH /v1/me", () => {
 
       expect(response.status).toBe(400);
       expect(bioChanges).toEqual([]);
+    });
+  });
+});
+
+describe("PUT /v1/me/chat-color (ADR 0051)", () => {
+  it("change la couleur de pseudo du compte du jeton et rend le compte relu", async () => {
+    const currentAccount: GetCurrentAccount = async () => ok({ ...ACCOUNT, chatColor: "#9146FF" });
+
+    await withMe({ currentAccount }, async (base, _bio, _openApi, _avatar, chatColorChanges) => {
+      const response = await put(`${base}/chat-color`, { chatColor: "#9146ff" });
+
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({ ...ACCOUNT, chatColor: "#9146FF" });
+      expect(chatColorChanges).toEqual([{ userId: USER_ID, chatColor: "#9146ff" }]);
+    });
+  });
+
+  it("revient à la couleur par défaut avec null", async () => {
+    await withMe({}, async (base, _bio, _openApi, _avatar, chatColorChanges) => {
+      expect((await put(`${base}/chat-color`, { chatColor: null })).status).toBe(200);
+      expect(chatColorChanges).toEqual([{ userId: USER_ID, chatColor: null }]);
+    });
+  });
+
+  it("refuse en 400 RFC 9457 une couleur hors du format #RRGGBB", async () => {
+    await withMe({ changeChatColor: async () => err("invalid_chat_color") }, async (base) => {
+      const response = await put(`${base}/chat-color`, { chatColor: "violet" });
+
+      expect(response.status).toBe(400);
+      expect(response.headers.get("content-type")).toContain("application/problem+json");
+      expect(await response.json()).toMatchObject({
+        title: "Couleur de pseudo invalide",
+        detail: "La couleur s'écrit #RRGGBB, en hexadécimal.",
+      });
+    });
+  });
+
+  it.each([
+    ["sans couleur", {}],
+    ["avec une couleur qui n'est pas du texte", { chatColor: 9_520_895 }],
+    ["avec un champ inconnu", { chatColor: "#9146FF", badge: "turbo" }],
+  ])("refuse en 400 un corps %s, sans appeler le use-case", async (_name, body) => {
+    await withMe({}, async (base, _bio, _openApi, _avatar, chatColorChanges) => {
+      expect((await put(`${base}/chat-color`, body)).status).toBe(400);
+      expect(chatColorChanges).toEqual([]);
+    });
+  });
+
+  it("refuse en 401 un jeton dont le compte n'existe plus", async () => {
+    await withMe({ changeChatColor: async () => err("account_not_found") }, async (base) => {
+      const response = await put(`${base}/chat-color`, { chatColor: "#9146FF" });
+
+      expect(response.status).toBe(401);
+      expect(response.headers.get("www-authenticate")).toBe('Bearer error="invalid_token"');
+    });
+  });
+
+  it("figure dans l'OpenAPI, avec le corps ChatColorRequest et la réponse Me", async () => {
+    await withMe({}, async (_base, _bio, openApi) => {
+      expect(openApi).toMatchObject({
+        paths: {
+          "/v1/me/chat-color": {
+            put: {
+              requestBody: {
+                content: {
+                  "application/json": {
+                    schema: { $ref: "#/components/schemas/ChatColorRequest" },
+                  },
+                },
+              },
+              responses: {
+                200: {
+                  content: { "application/json": { schema: { $ref: "#/components/schemas/Me" } } },
+                },
+              },
+            },
+          },
+        },
+      });
     });
   });
 });

@@ -168,6 +168,7 @@ export const startChatServer = async ({
       author: {
         id: userId,
         displayName,
+        badges: [],
         ...(avatarKey === null || imageUrlOf === undefined
           ? {}
           : { avatarUrl: imageUrlOf(avatarKey) }),
