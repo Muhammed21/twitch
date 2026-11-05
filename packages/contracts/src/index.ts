@@ -3,3 +3,4 @@ export { checkResponseSchema, type ConventionViolation } from "./conventions/che
 export * as responses from "./responses/index.ts";
 export * as events from "./events/index.ts";
 export * as realtime from "./realtime/index.ts";
+export * as analytics from "./analytics/index.ts";

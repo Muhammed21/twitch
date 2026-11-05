@@ -21,6 +21,11 @@ const featureFlagsSchema = z.discriminatedUnion("FEATURE_FLAGS_PROVIDER", [
   }),
 ]);
 
+const optionalSecret = z
+  .string()
+  .optional()
+  .transform((value) => (value === "" ? undefined : value));
+
 const baseSchema = z.object({
   API_PORT: z.coerce.number().int().min(1).max(65_535).default(3000),
   DATABASE_URL_HEALTH: z.string().regex(/^postgres(ql)?:\/\/\S+$/),
@@ -45,6 +50,7 @@ const baseSchema = z.object({
   S3_ACCESS_KEY_ID: z.string().min(1),
   S3_SECRET_ACCESS_KEY: z.string().min(1),
   S3_PUBLIC_BASE_URL: z.url({ protocol: /^https?$/ }),
+  REVENUECAT_WEBHOOK_AUTHORIZATION: optionalSecret,
 });
 
 const envSchema = baseSchema.and(videoSchema).and(featureFlagsSchema);
@@ -79,6 +85,10 @@ export type ImageStorageConfig = {
   readonly publicBaseUrl: string;
 };
 
+export type RevenueCatConfig = {
+  readonly webhookAuthorization: string | undefined;
+};
+
 export type AppConfig = {
   readonly port: number;
   readonly databaseUrlHealth: string;
@@ -93,6 +103,7 @@ export type AppConfig = {
   readonly mobileMinSupportedVersion: string;
   readonly trustedProxyCount: number;
   readonly images: ImageStorageConfig;
+  readonly revenueCat: RevenueCatConfig;
 };
 
 export const loadEnv = (env: Readonly<Record<string, string | undefined>>): AppConfig => {
@@ -133,5 +144,6 @@ export const loadEnv = (env: Readonly<Record<string, string | undefined>>): AppC
       secretAccessKey: variables.S3_SECRET_ACCESS_KEY,
       publicBaseUrl: variables.S3_PUBLIC_BASE_URL,
     },
+    revenueCat: { webhookAuthorization: variables.REVENUECAT_WEBHOOK_AUTHORIZATION },
   };
 };

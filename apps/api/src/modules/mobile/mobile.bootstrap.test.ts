@@ -10,7 +10,12 @@ import { buildOpenApiDocument } from "../../openapi/build-document.ts";
 import type { AccessTokenVerifier } from "../../platform/authentication.ts";
 import { configureApp } from "../../platform/configure-app.ts";
 import { PlatformModule } from "../../platform/platform.module.ts";
-import type { FeatureFlags, FindOwnedChannel, ReadProfile } from "./application/read-bootstrap.ts";
+import type {
+  FeatureFlags,
+  FindOwnedChannel,
+  ReadEntitlements,
+  ReadProfile,
+} from "./application/read-bootstrap.ts";
 import { MobileModule } from "./mobile.module.ts";
 
 const USER_ID = "4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b";
@@ -43,6 +48,13 @@ const withoutChannel: FindOwnedChannel = async () => null;
 
 const channelOfUser: FindOwnedChannel = async (ownerId) => (ownerId === USER_ID ? CHANNEL : null);
 
+const withoutEntitlements: ReadEntitlements = async () => [];
+
+const TURBO_EXPIRES_AT = "2026-12-08T09:00:00.000Z";
+
+const turboSubscriber: ReadEntitlements = async (userId) =>
+  userId === USER_ID ? [{ scope: "platform", expiresAt: new Date(TURBO_EXPIRES_AT) }] : [];
+
 const makeFeatureFlags = (
   evaluation: () => Promise<Readonly<Record<string, unknown>>>,
 ): FeatureFlags & { readonly evaluatedFor: readonly string[] } => {
@@ -64,7 +76,13 @@ const withBootstrap = async (
     featureFlags = flagsEvaluatedAs({}),
     readProfile = existingProfile,
     ownedChannel = withoutChannel,
-  }: { featureFlags?: FeatureFlags; readProfile?: ReadProfile; ownedChannel?: FindOwnedChannel },
+    readEntitlements = withoutEntitlements,
+  }: {
+    featureFlags?: FeatureFlags;
+    readProfile?: ReadProfile;
+    ownedChannel?: FindOwnedChannel;
+    readEntitlements?: ReadEntitlements;
+  },
   run: (
     get: (headers?: Record<string, string>) => Promise<Response>,
     logs: readonly Readonly<Record<string, unknown>>[],
@@ -85,6 +103,7 @@ const withBootstrap = async (
         featureFlags,
         readProfile,
         ownedChannel,
+        readEntitlements,
         minSupportedVersion: "1.4.0",
         logSink,
       }),
@@ -113,6 +132,7 @@ describe("GET /v1/mobile/bootstrap (ADR 0009, ADR 0012)", () => {
       expect(await response.json()).toEqual({
         minSupportedVersion: "1.4.0",
         flags: { session_replay: false },
+        entitlements: [],
       });
       expect(featureFlags.evaluatedFor).toEqual([]);
     });
@@ -129,9 +149,59 @@ describe("GET /v1/mobile/bootstrap (ADR 0009, ADR 0012)", () => {
         minSupportedVersion: "1.4.0",
         flags: { session_replay: true },
         profile: PROFILE,
+        entitlements: [],
       });
       expect(featureFlags.evaluatedFor).toEqual([USER_ID]);
       expect(logs).toEqual([]);
+    });
+  });
+
+  it("rend l'entitlement Turbo actif d'un abonné, avec son échéance", async () => {
+    await withBootstrap({ readEntitlements: turboSubscriber }, async (get) => {
+      const response = await get(authenticated);
+
+      expect(response.status).toBe(200);
+      expect(responses.MobileBootstrap.parse(await response.json()).entitlements).toEqual([
+        { scope: "platform", expiresAt: TURBO_EXPIRES_AT },
+      ]);
+    });
+  });
+
+  it("rend une liste d'entitlements vide à un client anonyme, sans la lire", async () => {
+    const readFor: string[] = [];
+    const readEntitlements: ReadEntitlements = async (userId) => {
+      readFor.push(userId);
+      return turboSubscriber(userId);
+    };
+
+    await withBootstrap({ readEntitlements }, async (get) => {
+      expect(responses.MobileBootstrap.parse(await (await get()).json()).entitlements).toEqual([]);
+      expect(readFor).toEqual([]);
+    });
+  });
+
+  it("rend une liste d'entitlements vide et journalise l'erreur quand monetization est indisponible", async () => {
+    const readEntitlements: ReadEntitlements = async () => {
+      throw new Error("monetization injoignable");
+    };
+
+    await withBootstrap({ readEntitlements }, async (get, logs) => {
+      const response = await get(authenticated);
+
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({
+        minSupportedVersion: "1.4.0",
+        flags: { session_replay: false },
+        profile: PROFILE,
+        entitlements: [],
+      });
+      expect(logs).toEqual([
+        expect.objectContaining({
+          level: "error",
+          msg: "entitlements non lus : liste vide servie",
+          error: "monetization injoignable",
+        }),
+      ]);
     });
   });
 
@@ -217,6 +287,7 @@ describe("GET /v1/mobile/bootstrap (ADR 0009, ADR 0012)", () => {
         minSupportedVersion: "1.4.0",
         flags: { session_replay: false },
         profile: PROFILE,
+        entitlements: [],
       });
     });
   });
@@ -251,6 +322,43 @@ describe("GET /v1/mobile/bootstrap (ADR 0009, ADR 0012)", () => {
     });
   });
 
+  it("rend la variante du paywall évaluée par PostHog pour l'utilisateur du jeton (ADR 0016)", async () => {
+    await withBootstrap(
+      { featureFlags: flagsEvaluatedAs({ exp_paywall_variant: "variant_b" }) },
+      async (get) => {
+        const body = responses.MobileBootstrap.parse(await (await get(authenticated)).json());
+
+        expect(body.flags).toEqual({ session_replay: false, exp_paywall_variant: "variant_b" });
+      },
+    );
+  });
+
+  it.each([
+    ["absente de l'évaluation", {}],
+    ["désactivée pour l'utilisateur", { exp_paywall_variant: false }],
+    ["vide", { exp_paywall_variant: "" }],
+  ])(
+    "ne rend aucune variante du paywall %s : le client n'émet alors aucune exposition",
+    async (_, evaluated) => {
+      await withBootstrap({ featureFlags: flagsEvaluatedAs(evaluated) }, async (get) => {
+        const body = responses.MobileBootstrap.parse(await (await get(authenticated)).json());
+
+        expect(body.flags).toEqual({ session_replay: false });
+      });
+    },
+  );
+
+  it("ne rend aucune variante du paywall à un client anonyme", async () => {
+    await withBootstrap(
+      { featureFlags: flagsEvaluatedAs({ exp_paywall_variant: "variant_b" }) },
+      async (get) => {
+        const body = responses.MobileBootstrap.parse(await (await get()).json());
+
+        expect(body.flags).toEqual({ session_replay: false });
+      },
+    );
+  });
+
   it("ne renvoie pas un flag que le registre ne connaît pas", async () => {
     await withBootstrap(
       { featureFlags: flagsEvaluatedAs({ session_replay: true, flag_inconnu: true }) },
@@ -274,6 +382,7 @@ describe("GET /v1/mobile/bootstrap (ADR 0009, ADR 0012)", () => {
           featureFlags: flagsEvaluatedAs({}),
           readProfile: existingProfile,
           ownedChannel: withoutChannel,
+          readEntitlements: withoutEntitlements,
           minSupportedVersion: "1.4.0",
           logSink: () => {},
         }),

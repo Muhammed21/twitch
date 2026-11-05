@@ -13,13 +13,14 @@ let package = Package(
     ),
     .library(name: "Auth", targets: ["Auth"]),
     .library(name: "Domain", targets: ["Domain"]),
-    .library(name: "Networking", targets: ["Networking"]),
+    .library(name: "Networking", targets: ["Networking", "Analytics"]),
   ],
   dependencies: [
     .package(path: "../../../packages/design-tokens/platforms/swift"),
     .package(url: "https://github.com/apple/swift-openapi-generator", exact: "1.13.1"),
     .package(url: "https://github.com/apple/swift-openapi-runtime", exact: "1.12.2"),
     .package(url: "https://github.com/apple/swift-http-types", exact: "1.8.0"),
+    .package(url: "https://github.com/PostHog/posthog-ios", exact: "3.92.0"),
   ],
   targets: [
     .target(
@@ -48,6 +49,32 @@ let package = Package(
       name: "NetworkingTests",
       dependencies: ["Networking", "Domain"],
       path: "Core/Networking/Tests",
+      swiftSettings: [.swiftLanguageMode(.v6)]
+    ),
+    .target(
+      name: "Analytics",
+      dependencies: [
+        "Domain",
+        .product(name: "PostHog", package: "posthog-ios"),
+      ],
+      path: "Core/Analytics/Sources",
+      swiftSettings: [.swiftLanguageMode(.v6)]
+    ),
+    .target(
+      name: "AnalyticsTesting",
+      dependencies: ["Domain"],
+      path: "Core/Analytics/Testing",
+      swiftSettings: [.swiftLanguageMode(.v6)]
+    ),
+    .testTarget(
+      name: "AnalyticsTests",
+      dependencies: [
+        "Analytics",
+        "AnalyticsTesting",
+        "Domain",
+        .product(name: "PostHog", package: "posthog-ios"),
+      ],
+      path: "Core/Analytics/Tests",
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
     .target(
@@ -147,7 +174,7 @@ let package = Package(
       dependencies: [.product(name: "DesignTokens", package: "swift")],
       path: "Core/DesignSystem/Sources",
       exclude: ["glyphs.json"],
-      resources: [.process("Glyphs.xcassets")],
+      resources: [.process("Glyphs.xcassets"), .copy("Sounds")],
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
     .testTarget(

@@ -6,6 +6,9 @@ model DiscoveryLiveChannelView {
   /// Copie du slug de la chaîne, nul tant que channel.created n'est pas arrivé.
   /// @personal
   slug           String?
+  /// Propriétaire de la chaîne, copié de channel.created : l'avatar du live est le sien.
+  /// @personal
+  ownerId        String?   @db.Uuid
   title          String    @default("")
   /// occurredAt du dernier channel.metadata.updated appliqué : un titre plus ancien est ignoré.
   titleChangedAt DateTime?
@@ -82,5 +85,18 @@ model DiscoveryProcessedEvent {
   processedAt DateTime @default(now())
 
   @@unique([eventId, handlerName])
+  @@schema("discovery")
+}
+
+/// Copie de l'avatar de chaque compte, alimentée par identity.avatar.changed (ADR 0003, ADR 0044).
+model DiscoveryAccountAvatar {
+  /// @personal
+  accountId String   @id @db.Uuid
+  /// Clé d'objet de l'avatar ; l'URL publique se calcule à la lecture.
+  /// @personal
+  avatarKey String
+  /// occurredAt du dernier identity.avatar.changed appliqué : un avatar plus ancien est ignoré.
+  changedAt DateTime
+
   @@schema("discovery")
 }

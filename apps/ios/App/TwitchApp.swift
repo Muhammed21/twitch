@@ -40,6 +40,7 @@ struct TwitchApp: App {
         .environment(stores.profileEdit)
         .environment(stores.profileImages)
         .environment(stores.preferences)
+        .environment(\.feedbackPlayer, stores.feedback)
     }
   }
 }
@@ -65,7 +66,7 @@ struct RootView: View {
           myChannel.reset()
         }
       }
-      .task { await launch.run() }
+      .task(id: session.accountID) { await launch.run(accountID: session.accountID) }
       .task { await session.run() }
   }
 
@@ -243,29 +244,15 @@ struct Stores {
   let profileImages: ProfileImageStore
   let preferences: PreferencesStore
   let personalization: PersonalizationSources
+  let feedback: FeedbackPlayer
 }
 
 @MainActor
 enum Composition {
-  nonisolated static func clientVersion(info: [String: Any]) -> String? {
-    info["CFBundleShortVersionString"] as? String
-  }
-
-  nonisolated static func chatBaseURL(info: [String: Any]) -> URL? {
-    guard let value = info["CHAT_BASE_URL"] as? String, let url = URL(string: value), url.host() != nil else {
-      return nil
-    }
-    return url
-  }
-
   static func stores(info: [String: Any]) -> Stores {
     let configuration = oauthConfiguration(info: info)
-    guard let version = clientVersion(info: info), let currentVersion = try? AppVersion(version) else {
-      fatalError("Info.plist : CFBundleShortVersionString manquant ou mal formé.")
-    }
-    guard let chatBaseURL = chatBaseURL(info: info) else {
-      fatalError("Info.plist : CHAT_BASE_URL manquant ou mal formé.")
-    }
+    let (version, currentVersion) = requiredVersion(info: info)
+    let chatBaseURL = requiredChatBaseURL(info: info)
     let transport = ClientVersionTransport(wrapping: URLSessionHTTPTransport(), version: version)
     let session = OAuthSession(
       endpoint: TokenEndpoint(configuration: configuration, transport: transport),
@@ -283,7 +270,10 @@ enum Composition {
     let sessionStore = Self.sessionStore(configuration: configuration, session: session, transport: transport, now: now)
     return Stores(
       session: sessionStore,
-      launch: LaunchStore(source: BootstrapClient(apiBaseURL: configuration.apiBaseURL, transport: transport), currentVersion: currentVersion),
+      launch: LaunchStore(
+        source: BootstrapClient(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
+        currentVersion: currentVersion
+      ),
       home: HomeStore(directory: LiveDirectoryClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
       browse: BrowseStore(directory: CategoryDirectoryClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
       categoryLives: CategoryLivesCatalog(source: CategoryLivesClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
@@ -305,7 +295,8 @@ enum Composition {
       profileEdit: Self.profileEdit(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
       profileImages: Self.profileImages(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
       preferences: preferences,
-      personalization: Self.personalizationSources(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now)
+      personalization: Self.personalizationSources(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
+      feedback: FeedbackPlayer()
     )
   }
 
