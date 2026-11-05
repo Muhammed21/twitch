@@ -128,6 +128,19 @@ public extension LayoutRole {
     case .journeyChipPaddingH: Spacing.x16
     case .journeyChipPaddingV: Spacing.x8
     case .journeyChipGap: Spacing.x8
+    case .sheetInset: Spacing.x16
+    case .sheetCardGap: Spacing.x8
+    case .sheetCardRadius: Radius.lg
+    case .sheetRadius: Radius.sheet
+    case .sheetCancelHeight: Spacing.x40
+    case .sheetHeroPadding: Spacing.x20
+    case .sheetHeroLineGap: Spacing.x10
+    case .sheetHeroGlyphGap: Spacing.x12
+    case .sheetRowPadding: Spacing.x15
+    case .sheetRowGlyphGap: Spacing.x10
+    case .sheetRowLineGap: Spacing.x4
+    case .transitionGlitchHeight: Spacing.x32
+    case .transitionTitleGap: Spacing.x20
     }
   }
 }

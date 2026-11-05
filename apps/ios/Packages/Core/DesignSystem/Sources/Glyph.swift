@@ -10,6 +10,8 @@ public enum Glyph: String, CaseIterable, Sendable {
   case avatarPerson
   case editPencil
   case turboBattery
+  case broadcast
+  case leaveDashboard
 
   public var image: Image {
     Image(rawValue, bundle: .module).renderingMode(.template)

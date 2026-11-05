@@ -47,6 +47,7 @@ struct TwitchApp: App {
       .environment(stores.profileEdit)
       .environment(stores.profileImages)
       .environment(stores.preferences)
+      .environment(stores.creatorMode)
       .environment(\.feedbackPlayer, stores.feedback)
     }
   }
@@ -60,6 +61,7 @@ struct RootView: View {
   @Environment(LaunchStore.self) private var launch
   @Environment(Router.self) private var router
   @Environment(MyChannelStore.self) private var myChannel
+  @Environment(CreatorMode.self) private var creatorMode
   @Environment(PreferencesStore.self) private var preferences
   @State private var isSplashVisible = true
 
@@ -73,6 +75,7 @@ struct RootView: View {
         if RootScreen.resetsNavigation(from: old, to: new) {
           router.reset()
           myChannel.reset()
+          creatorMode.reset()
         }
       }
       .task(id: session.accountID) { await launch.run(accountID: session.accountID) }
@@ -119,6 +122,7 @@ struct RootView: View {
 
 struct SignedInRoot: View {
   @Environment(Router.self) private var router
+  @Environment(CreatorMode.self) private var creatorMode
   @Environment(SessionStore.self) private var session
 
   static let leadingTabs = [
@@ -171,6 +175,7 @@ struct SignedInRoot: View {
       .toolbar(.hidden, for: .tabBar)
       .tag(AppTab.profile)
     }
+    .creatorModePresentation { router.create() }
     .fullScreenCover(isPresented: $router.isShowingStreamManager) {
       NavigationStack {
         StreamManagerScreen { router.isShowingStreamManager = false }
@@ -184,7 +189,7 @@ struct SignedInRoot: View {
           create: TabBarCreate(
             label: ProfileText.streamManagerTitle,
             accessibilityIdentifier: "root.create"
-          ) { router.create() },
+          ) { creatorMode.showActions() },
           trailing: Self.trailingTabs
         )
       }
@@ -263,6 +268,7 @@ struct Stores {
   let personalization: PersonalizationSources
   let purchases: StorePurchases
   let feedback: FeedbackPlayer
+  let creatorMode: CreatorMode
 }
 
 @MainActor
@@ -314,7 +320,8 @@ enum Composition {
       preferences: preferences,
       personalization: Self.personalizationSources(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
       purchases: StorePurchases.live(info: info),
-      feedback: FeedbackPlayer()
+      feedback: FeedbackPlayer(),
+      creatorMode: Self.creatorMode(defaults: .standard)
     )
   }
 

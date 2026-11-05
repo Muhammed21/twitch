@@ -46,6 +46,12 @@ public enum TextRole: Sendable {
   case paywallHeadline
   case paywallBody
   case paywallLegal
+  case sheetHero
+  case sheetHeroDetail
+  case sheetRowTitle
+  case sheetRowDetail
+  case sheetCancel
+  case transitionTitle
 
   public var font: Font {
     switch self {
@@ -93,6 +99,12 @@ public enum TextRole: Sendable {
     case .paywallHeadline: .displayText
     case .paywallBody: .supportingText
     case .paywallLegal: .viewerCount
+    case .sheetHero: .sheetHeroText
+    case .sheetHeroDetail: .supportingText
+    case .sheetRowTitle: .sheetRowTitle
+    case .sheetRowDetail: .viewerCount
+    case .sheetCancel: .supportingText
+    case .transitionTitle: .actionLabel
     }
   }
 }
@@ -222,6 +234,19 @@ public enum LayoutRole: Sendable {
   case journeyChipPaddingH
   case journeyChipPaddingV
   case journeyChipGap
+  case sheetInset
+  case sheetCardGap
+  case sheetCardRadius
+  case sheetRadius
+  case sheetCancelHeight
+  case sheetHeroPadding
+  case sheetHeroLineGap
+  case sheetHeroGlyphGap
+  case sheetRowPadding
+  case sheetRowGlyphGap
+  case sheetRowLineGap
+  case transitionGlitchHeight
+  case transitionTitleGap
 }
 
 public enum ActionButtonKind: Sendable {
