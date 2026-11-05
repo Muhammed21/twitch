@@ -123,6 +123,15 @@ public enum BrowseText {
     count.map { $0.value.formatted(.number.notation(.compactName).locale(locale)) }
   }
 
+  static func followers(_ count: Int, locale: Locale) -> AttributedString {
+    let number = count.formatted(.number.notation(.compactName).locale(locale))
+    return AttributedString(localized: "category.followers \(number)", bundle: .module)
+  }
+
+  static func followLabel(isFollowing: Bool) -> String {
+    isFollowing ? localized("category.following") : localized("category.follow")
+  }
+
   static func localized(_ key: String.LocalizationValue) -> String {
     String(localized: key, bundle: .module)
   }

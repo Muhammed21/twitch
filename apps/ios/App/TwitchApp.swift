@@ -27,6 +27,7 @@ struct TwitchApp: App {
         .environment(stores.home)
         .environment(stores.browse)
         .environment(stores.categoryLives)
+        .environment(stores.categoryHeaders)
         .environment(stores.router)
         .environment(stores.player)
         .environment(stores.channelPlayback)
@@ -251,6 +252,7 @@ struct Stores {
   let home: HomeStore
   let browse: BrowseStore
   let categoryLives: CategoryLivesCatalog
+  let categoryHeaders: CategoryHeaderCatalog
   let router: Router
   let player: PlayerController
   let channelPlayback: ChannelPlayback
@@ -303,15 +305,11 @@ enum Composition {
       home: HomeStore(directory: LiveDirectoryClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
       browse: BrowseStore(directory: CategoryDirectoryClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
       categoryLives: CategoryLivesCatalog(source: CategoryLivesClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
+      categoryHeaders: Self.categoryHeaders(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
       router: Router(),
       player: player,
       channelPlayback: channelPlayback,
-      liveStatus: LiveStatusChannel(
-        channels: channels,
-        source: LiveStatusClient(apiBaseURL: configuration.apiBaseURL, transport: URLSessionLineTransport()),
-        onEnded: { player.end() },
-        onLive: { channelPlayback.channelWentLive() }
-      ),
+      liveStatus: Self.liveStatus(apiBaseURL: configuration.apiBaseURL, channels: channels, player: player, playback: channelPlayback),
       presence: Self.presence(configuration: configuration, channels: channels, session: session, transport: transport, now: now),
       chat: ChatSession(
         connector: ChatSocketConnector(chatBaseURL: chatBaseURL),
@@ -352,6 +350,20 @@ enum Composition {
     } catch {
       fatalError("Info.plist : configuration OAuth invalide (\(error)).")
     }
+  }
+
+  private static func liveStatus(
+    apiBaseURL: URL,
+    channels: ChannelClient,
+    player: PlayerController,
+    playback: ChannelPlayback
+  ) -> LiveStatusChannel {
+    LiveStatusChannel(
+      channels: channels,
+      source: LiveStatusClient(apiBaseURL: apiBaseURL, transport: URLSessionLineTransport()),
+      onEnded: { player.end() },
+      onLive: { playback.channelWentLive() }
+    )
   }
 
   private static func presence(
