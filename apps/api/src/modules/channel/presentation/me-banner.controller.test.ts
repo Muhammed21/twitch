@@ -24,6 +24,10 @@ const makeChannel = (overrides: Partial<ChannelView> = {}): ChannelView => ({
   title: "Speedrun du dimanche",
   ownerId: USER_ID,
   category: null,
+  tags: [],
+  language: null,
+  contentLabels: [],
+  isBrandedContent: false,
   bannerKey: null,
   ...overrides,
 });
@@ -90,7 +94,7 @@ describe("PUT /v1/me/banner", () => {
   it("confirme l'envoi en bannière de l'identité du jeton et rend la chaîne avec son URL", async () => {
     await withBanner({}, async (base, changes) => {
       const response = await put(base, { uploadId: UPLOAD_ID });
-      const { category: _none, bannerKey: _key, ...channel } = makeChannel();
+      const { category: _none, bannerKey: _key, language: _noLanguage, ...channel } = makeChannel();
 
       expect(response.status).toBe(200);
       expect(await response.json()).toStrictEqual({

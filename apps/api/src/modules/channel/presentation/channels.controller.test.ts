@@ -28,6 +28,10 @@ const CHANNEL: ChannelView = {
   ownerId: ACTOR_ID,
   category: null,
   bannerKey: null,
+  tags: [],
+  language: null,
+  contentLabels: [],
+  isBrandedContent: false,
 };
 
 const JUST_CHATTING = {
@@ -36,7 +40,19 @@ const JUST_CHATTING = {
   name: "Just Chatting",
 };
 
-const { category: _none, bannerKey: _noBanner, ...CHANNEL_RESPONSE } = CHANNEL;
+const {
+  category: _none,
+  bannerKey: _noBanner,
+  language: _noLanguage,
+  ...CHANNEL_RESPONSE
+} = CHANNEL;
+
+const STREAM_INFO = {
+  tags: ["francais", "speedrun"],
+  language: "fr",
+  contentLabels: ["gambling", "profanity"],
+  isBrandedContent: true,
+} as const;
 
 const BANNER_KEY = "images/banner/b.webp";
 const imageUrlOf = (key: string) => `https://images.invalid/${key}`;
@@ -141,6 +157,17 @@ describe("GET /v1/channels/{slug}", () => {
           ...CHANNEL_RESPONSE,
           bannerUrl: imageUrlOf(BANNER_KEY),
         });
+      },
+    );
+  });
+
+  it("rend les tags, la langue, la classification et le contenu promotionnel", async () => {
+    await withChannels(
+      { getChannel: async () => ok({ ...CHANNEL, ...STREAM_INFO }) },
+      async (base) => {
+        const response = await fetch(`${base}/${CHANNEL.slug}`);
+
+        expect(await response.json()).toEqual({ ...CHANNEL_RESPONSE, ...STREAM_INFO });
       },
     );
   });
@@ -274,13 +301,68 @@ describe("PATCH /v1/channels/{id}", () => {
     });
   });
 
+  it("change les infos du stream, et rend la chaîne", async () => {
+    await withChannels(
+      { updateTitle: async () => ok({ ...CHANNEL, ...STREAM_INFO }) },
+      async (base, calls) => {
+        const response = await patch(`${base}/${CHANNEL.id}`, {
+          tags: ["Français", "SpeedRun"],
+          language: "fr",
+          contentLabels: ["profanity", "gambling"],
+          isBrandedContent: true,
+        });
+
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({ ...CHANNEL_RESPONSE, ...STREAM_INFO });
+        expect(calls.titleUpdates).toEqual([
+          {
+            actorId: ACTOR_ID,
+            channelId: CHANNEL.id,
+            tags: ["Français", "SpeedRun"],
+            language: "fr",
+            contentLabels: ["profanity", "gambling"],
+            isBrandedContent: true,
+          },
+        ]);
+      },
+    );
+  });
+
+  it.each([
+    ["les tags", { tags: [] }],
+    ["la langue", { language: "en" }],
+    ["la classification", { contentLabels: [] }],
+    ["le contenu promotionnel", { isBrandedContent: false }],
+  ])("accepte un corps qui ne change que %s", async (_name, body) => {
+    await withChannels({}, async (base, calls) => {
+      const response = await patch(`${base}/${CHANNEL.id}`, body);
+
+      expect(response.status).toBe(200);
+      expect(calls.titleUpdates).toEqual([{ actorId: ACTOR_ID, channelId: CHANNEL.id, ...body }]);
+    });
+  });
+
+  it("répond 422 pour des tags invalides", async () => {
+    await withChannels({ updateTitle: async () => err("invalid_tags") }, async (base) => {
+      const response = await patch(`${base}/${CHANNEL.id}`, { tags: ["speed run"] });
+
+      expect(response.status).toBe(422);
+      expect(await response.json()).toMatchObject({
+        status: 422,
+        title: "Tags invalides",
+        detail:
+          "Une chaîne porte au plus 10 tags, différents, de 1 à 25 lettres ou chiffres chacun.",
+      });
+    });
+  });
+
   it("refuse un corps vide en disant ce qu'il doit changer", async () => {
     await withChannels({}, async (base) => {
       const response = await patch(`${base}/${CHANNEL.id}`, {});
 
       expect(response.status).toBe(400);
       expect(JSON.stringify(await response.json())).toContain(
-        "Le corps change le titre, la catégorie, ou les deux.",
+        "Le corps change au moins une info du stream.",
       );
     });
   });
@@ -300,6 +382,13 @@ describe("PATCH /v1/channels/{id}", () => {
     ["avec un champ inconnu dans la catégorie", { category: { slug: "irl" } }],
     ["avec un titre qui n'est pas un texte", { title: 42 }],
     ["avec un champ inconnu", { title: "Titre", slug: "autre" }],
+    ["avec des tags qui ne sont pas une liste", { tags: "irl" }],
+    ["avec un tag qui n'est pas un texte", { tags: [42] }],
+    ["avec une langue hors de la liste", { language: "nl" }],
+    ["avec une langue nulle", { language: null }],
+    ["avec un descripteur hors de la liste", { contentLabels: ["horror"] }],
+    ["avec une classification qui n'est pas une liste", { contentLabels: "gambling" }],
+    ["avec un contenu promotionnel qui n'est pas un booléen", { isBrandedContent: "oui" }],
   ])("répond 400 à un corps %s", async (_name, body) => {
     await withChannels({}, async (base, calls) => {
       const response = await patch(`${base}/${CHANNEL.id}`, body);

@@ -6,7 +6,7 @@ import Testing
 private let channelURL = URL(string: "http://127.0.0.1:3000/v1/channels/jean_dupont")!
 
 private func channelJSON(slug: String = "jean_dupont") -> String {
-  #"{"id":"0f5e2d7a-3c41-4b8e-9a6d-1e2f3a4b5c6d","slug":"\#(slug)","title":"Speedrun","ownerId":"4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b"}"#
+  #"{"id":"0f5e2d7a-3c41-4b8e-9a6d-1e2f3a4b5c6d","slug":"\#(slug)","title":"Speedrun","ownerId":"4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b","tags":[],"contentLabels":[],"isBrandedContent":false}"#
 }
 
 private func makeClient(_ transport: FakeTransport) -> ChannelClient {
