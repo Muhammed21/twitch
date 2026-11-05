@@ -9,7 +9,7 @@ let package = Package(
     .library(name: "DesignSystem", targets: ["DesignSystem"]),
     .library(
       name: "Onboarding",
-      targets: ["Onboarding", "Home", "Navigation", "Player", "Channel", "ChatTransport", "Chat", "Profile"]
+      targets: ["Onboarding", "Home", "Navigation", "Player", "Channel", "ChatTransport", "Chat", "Profile", "Purchases"]
     ),
     .library(name: "Auth", targets: ["Auth"]),
     .library(name: "Domain", targets: ["Domain"]),
@@ -20,6 +20,7 @@ let package = Package(
     .package(url: "https://github.com/apple/swift-openapi-generator", exact: "1.13.1"),
     .package(url: "https://github.com/apple/swift-openapi-runtime", exact: "1.12.2"),
     .package(url: "https://github.com/apple/swift-http-types", exact: "1.8.0"),
+    .package(url: "https://github.com/RevenueCat/purchases-ios-spm", exact: "5.96.1"),
   ],
   targets: [
     .target(
@@ -181,6 +182,24 @@ let package = Package(
       name: "ProfileTests",
       dependencies: ["Profile", "Domain"],
       path: "Features/Profile/Tests",
+      swiftSettings: [.swiftLanguageMode(.v6)]
+    ),
+    .target(
+      name: "Purchases",
+      dependencies: ["Domain", .product(name: "RevenueCat", package: "purchases-ios-spm")],
+      path: "Core/Purchases/Sources",
+      swiftSettings: [.swiftLanguageMode(.v6)]
+    ),
+    .target(
+      name: "PurchasesTesting",
+      dependencies: ["Domain"],
+      path: "Core/Purchases/Testing",
+      swiftSettings: [.swiftLanguageMode(.v6)]
+    ),
+    .testTarget(
+      name: "PurchasesTests",
+      dependencies: ["Purchases", "PurchasesTesting", "Domain"],
+      path: "Core/Purchases/Tests",
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
   ]

@@ -11,6 +11,7 @@ import Networking
 import Onboarding
 import Player
 import Profile
+import Purchases
 import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
@@ -264,6 +265,7 @@ struct Stores {
   let categorySearch: CategorySearch
   let profileEdit: ProfileEditStore
   let profileImages: ProfileImageStore
+  let purchases: StorePurchases
 }
 
 @MainActor
@@ -323,7 +325,8 @@ enum Composition {
       myChannel: Self.myChannel(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, channels: channels),
       categorySearch: CategorySearch(catalog: CategoryCatalogClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
       profileEdit: Self.profileEdit(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
-      profileImages: Self.profileImages(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now)
+      profileImages: Self.profileImages(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
+      purchases: StorePurchases.live(info: info)
     )
   }
 
