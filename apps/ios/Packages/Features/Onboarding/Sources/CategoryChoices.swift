@@ -29,6 +29,11 @@ public final class CategoryChoices {
     followed.count
   }
 
+  public var followedNames: [String] {
+    guard case let .loaded(categories) = state else { return [] }
+    return categories.filter { followed.contains($0.slug) }.map(\.name)
+  }
+
   public func isFollowing(_ slug: CategorySlug) -> Bool {
     followed.contains(slug)
   }
