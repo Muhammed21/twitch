@@ -15,6 +15,13 @@ export type AcceptedMessage = ChatMessage & {
   readonly sessionId?: string;
 };
 
+export type TurboStanding = {
+  readonly expiresAt: Date | null;
+  readonly chatColor: string | null;
+};
+
+export type TurboPerks = { readonly badges: readonly "turbo"[]; readonly color?: string };
+
 export type SanctionRejection = "timed_out" | "banned";
 
 export type Rejection = SanctionRejection | "rate_limited";
@@ -75,3 +82,12 @@ export const acceptMessage = ({
   sentAt: now,
   ...(room.sessionId === null ? {} : { sessionId: room.sessionId }),
 });
+
+export const turboPerks = ({ turbo, now }: { turbo: TurboStanding; now: Date }): TurboPerks => {
+  if (turbo.expiresAt === null || turbo.expiresAt.getTime() <= now.getTime()) {
+    return { badges: [] };
+  }
+  return turbo.chatColor === null
+    ? { badges: ["turbo"] }
+    : { badges: ["turbo"], color: turbo.chatColor };
+};

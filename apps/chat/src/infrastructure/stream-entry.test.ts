@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseStreamEntry } from "./stream-entry.ts";
+import { eventStreamsOf, parseStreamEntry } from "./stream-entry.ts";
 
 const makeEntry = (overrides: Record<string, string> = {}): Record<string, string> => ({
   id: "7f3c2a10-0000-4000-8000-000000000001",
@@ -46,5 +46,18 @@ describe("lecture d'une entrée écrite par le relais d'outbox de l'API", () => 
     const { occurredAt: _occurredAt, ...entry } = makeEntry();
 
     expect(parseStreamEntry(entry)).toBeNull();
+  });
+});
+
+describe("streams lus pour une table de handlers (ADR 0034)", () => {
+  it("lit le stream de chaque contexte dont un event est traité, une seule fois, trié", () => {
+    expect(
+      eventStreamsOf([
+        "monetization.entitlement.granted",
+        "identity.account.registered",
+        "monetization.entitlement.revoked",
+        "channel.created",
+      ]),
+    ).toEqual(["events.channel", "events.identity", "events.monetization"]);
   });
 });

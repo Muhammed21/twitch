@@ -22,6 +22,7 @@ import { startChatServer } from "./chat-server.ts";
 import { readMetrics } from "./testing/metrics.ts";
 import { SATURATION_LIMITS } from "./testing/saturation.ts";
 import { makeTokenAuthority } from "./testing/tokens.ts";
+import { NO_TURBO } from "./testing/turbo.ts";
 
 const REDIS_URL = process.env["REDIS_URL"] ?? "redis://127.0.0.1:6379";
 
@@ -46,6 +47,7 @@ const startCluster = async (room: RoomState) => {
     );
   const startInstance = async () => {
     const server = await startChatServer({
+      turbos: NO_TURBO,
       port: 0,
       verifier: authority.verifier(),
       log: () => {},

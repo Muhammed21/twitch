@@ -36,6 +36,12 @@ const makeViews = () => {
     sanctionChatter: async (sanction) => {
       writes.push({ sanctionChatter: sanction });
     },
+    changeTurbo: async (turbo) => {
+      writes.push({ changeTurbo: turbo });
+    },
+    changeChatColor: async (color) => {
+      writes.push({ changeChatColor: color });
+    },
   };
   return { views, writes };
 };
@@ -97,8 +103,9 @@ const setup = (rooms: readonly RoomState[] = []) => {
 
 const { channelCreated } = events.channel;
 const { streamStarted, streamEnded } = events.stream;
-const { accountRegistered, avatarChanged } = events.identity;
+const { accountRegistered, avatarChanged, chatColorChanged } = events.identity;
 const { userTimedOut } = events.moderation;
+const { entitlementGranted, entitlementRevoked } = events.monetization;
 
 describe("projection des events dans les vues locales du chat", () => {
   it("traite les events de chaîne, de live, de compte et de timeout", () => {
@@ -106,7 +113,10 @@ describe("projection des events dans les vues locales du chat", () => {
       "channel.created",
       "identity.account.registered",
       "identity.avatar.changed",
+      "identity.chat_color.changed",
       "moderation.user.timed_out",
+      "monetization.entitlement.granted",
+      "monetization.entitlement.revoked",
       "stream.ended",
       "stream.started",
     ]);
@@ -212,6 +222,98 @@ describe("projection des events dans les vues locales du chat", () => {
       },
     ]);
   });
+
+  it("enregistre l'échéance Turbo d'un abonné de la plateforme, datée par l'event", async () => {
+    const { handle, writes } = setup();
+    const userId = randomUUID();
+    const occurredAt = new Date("2026-11-08T09:00:00.000Z");
+
+    await handle({
+      name: entitlementGranted.name,
+      version: 1,
+      occurredAt,
+      payload: { userId, scope: "platform", expiresAt: "2026-12-08T09:00:00.000Z" },
+    });
+
+    expect(writes).toEqual([
+      {
+        changeTurbo: {
+          userId,
+          expiresAt: new Date("2026-12-08T09:00:00.000Z"),
+          changedAt: occurredAt,
+        },
+      },
+    ]);
+  });
+
+  it("retire l'échéance Turbo d'un abonné révoqué, datée par l'event", async () => {
+    const { handle, writes } = setup();
+    const userId = randomUUID();
+    const occurredAt = new Date("2026-11-09T09:00:00.000Z");
+
+    await handle({
+      name: entitlementRevoked.name,
+      version: 1,
+      occurredAt,
+      payload: { userId, scope: "platform" },
+    });
+
+    expect(writes).toEqual([{ changeTurbo: { userId, expiresAt: null, changedAt: occurredAt } }]);
+  });
+
+  it.each([
+    [
+      entitlementGranted.name,
+      { userId: randomUUID(), scope: "channel", expiresAt: "2026-12-08T09:00:00.000Z" },
+    ],
+    [entitlementRevoked.name, { userId: randomUUID(), scope: "channel" }],
+  ])("ignore %s d'une portée autre que la plateforme", async (name, payload) => {
+    const { handle, writes, logs } = setup();
+
+    await handle({ name, version: 1, payload });
+
+    expect(writes).toEqual([]);
+    expect(logs).toEqual([]);
+  });
+
+  it("écarte en le journalisant un entitlement hors contrat", async () => {
+    const { handle, writes, logs } = setup();
+
+    await handle({
+      name: entitlementGranted.name,
+      version: 1,
+      payload: { userId: randomUUID(), scope: "platform" },
+    });
+
+    expect(writes).toEqual([]);
+    expect(logs).toEqual([
+      {
+        level: "error",
+        msg: "event écarté : payload hors contrat",
+        event: entitlementGranted.name,
+      },
+    ]);
+  });
+
+  it.each([["#9147FF"], [null]])(
+    "enregistre la couleur de pseudo %s d'un compte, datée par l'event",
+    async (chatColor) => {
+      const { handle, writes } = setup();
+      const accountId = randomUUID();
+      const occurredAt = new Date("2026-11-08T10:00:00.000Z");
+
+      await handle({
+        name: chatColorChanged.name,
+        version: 1,
+        occurredAt,
+        payload: { accountId, chatColor },
+      });
+
+      expect(writes).toEqual([
+        { changeChatColor: { userId: accountId, chatColor, changedAt: occurredAt } },
+      ]);
+    },
+  );
 
   it("rattache à la session du live le salon chargé d'une chaîne qui démarre un live", async () => {
     const room: RoomState = { channelId: randomUUID(), sessionId: null };

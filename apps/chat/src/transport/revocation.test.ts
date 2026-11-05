@@ -11,6 +11,7 @@ import { startChatServer, type TokenVerifier } from "./chat-server.ts";
 import { LocalAdapter } from "./testing/local-adapter.ts";
 import { SATURATION_LIMITS } from "./testing/saturation.ts";
 import { makeTokenAuthority } from "./testing/tokens.ts";
+import { NO_TURBO } from "./testing/turbo.ts";
 
 const deferred = <T>() => {
   const settle: { resolve: (value: T) => void } = { resolve: () => undefined };
@@ -43,6 +44,7 @@ const startServer = async ({ chatters = ALICE }: { chatters?: ChatterProfiles } 
     },
   };
   const server = await startChatServer({
+    turbos: NO_TURBO,
     port: 0,
     verifier: controlled,
     log: () => undefined,

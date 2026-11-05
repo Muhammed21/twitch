@@ -16,6 +16,7 @@ import { startChatServer } from "./chat-server.ts";
 import { LocalAdapter } from "./testing/local-adapter.ts";
 import { SATURATION_LIMITS } from "./testing/saturation.ts";
 import { makeTokenAuthority } from "./testing/tokens.ts";
+import { NO_TURBO } from "./testing/turbo.ts";
 
 const SOCKET_PATH = "/socket.io/?EIO=4&transport=websocket";
 
@@ -28,6 +29,7 @@ const startServer = async (
   const logs: Readonly<Record<string, unknown>>[] = [];
   const verifiedTokens: string[] = [];
   const server = await startChatServer({
+    turbos: NO_TURBO,
     port: 0,
     verifier: {
       verify: (token) => {

@@ -13,6 +13,7 @@ import { startChatServer } from "./chat-server.ts";
 import { LocalAdapter } from "./testing/local-adapter.ts";
 import { SATURATION_LIMITS } from "./testing/saturation.ts";
 import { makeTokenAuthority } from "./testing/tokens.ts";
+import { NO_TURBO } from "./testing/turbo.ts";
 
 const ALICE = randomUUID();
 const BOB = randomUUID();
@@ -45,6 +46,7 @@ const startServer = async ({
   const verifier = authority.verifier();
   const verified = new Set<string>();
   const server = await startChatServer({
+    turbos: NO_TURBO,
     port: 0,
     verifier: {
       verify: async (token) => {
