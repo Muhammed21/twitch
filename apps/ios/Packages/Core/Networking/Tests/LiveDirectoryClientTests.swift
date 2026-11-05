@@ -144,6 +144,32 @@ struct LiveDirectoryClientTests {
     #expect(live.thumbnailURL == nil)
   }
 
+  @Test(
+    "lit l'avatar http(s) du streamer et écarte une autre adresse",
+    arguments: [
+      ("https://cdn.example/avatars/jean_dupont.png", URL(string: "https://cdn.example/avatars/jean_dupont.png")),
+      ("file:///etc/passwd", nil),
+    ]
+  )
+  func readsAvatar(avatarURL: String, expected: URL?) async throws {
+    let transport = FakeTransport(json: #"{"items":[\#(liveJSON().dropLast()),"avatarUrl":"\#(avatarURL)"}]}"#)
+
+    let page = try await makeClient(transport).lives(after: nil)
+
+    let live = try #require(page.lives.first)
+    #expect(live.avatarURL == expected)
+  }
+
+  @Test("sans avatar, le live garde l'avatar par défaut")
+  func missingAvatar() async throws {
+    let transport = FakeTransport(json: #"{"items":[\#(liveJSON())]}"#)
+
+    let page = try await makeClient(transport).lives(after: nil)
+
+    let live = try #require(page.lives.first)
+    #expect(live.avatarURL == nil)
+  }
+
   @Test("tolère un champ ajouté au live et à la page (ADR 0024, §8)")
   func toleratesAddedFields() async throws {
     let transport = FakeTransport(json: #"{"items":[\#(liveJSON().dropLast()),"thumbnail":"t.png"}],"total":1}"#)
