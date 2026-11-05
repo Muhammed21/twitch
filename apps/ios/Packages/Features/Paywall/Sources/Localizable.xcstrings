@@ -56,7 +56,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "By subscribing, you agree to Twitch's "
+            "value" : "By subscribing, you agree to the "
           }
         }
       }
@@ -76,7 +76,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Terms of Sale"
+            "value" : "Terms of Use (EULA)"
           }
         }
       }
