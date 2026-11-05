@@ -356,7 +356,6 @@ enum Composition {
     )
   }
 
-
   private static func sessionStore(
     configuration: OAuthConfiguration,
     session: OAuthSession,
