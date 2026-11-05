@@ -36,7 +36,7 @@ public enum ChatPreview {
   }
 
   private static func text(_ key: String.LocalizationValue, locale: Locale) -> String {
-    var resource = LocalizedStringResource(key, table: "ChatPreview", bundle: .module)
+    var resource = LocalizedStringResource(key, bundle: .module)
     resource.locale = locale
     return String(localized: resource)
   }
