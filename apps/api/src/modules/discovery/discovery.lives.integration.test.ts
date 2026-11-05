@@ -123,6 +123,14 @@ afterAll(async () => {
   await stream.$disconnect();
 });
 
+const ownedBy = async (channelId: string, ownerId: string) =>
+  discovery.discoveryLiveChannelView.update({ where: { channelId }, data: { ownerId } });
+
+const seedAvatar = async (accountId: string, avatarKey: string) =>
+  discovery.discoveryAccountAvatar.create({
+    data: { accountId, avatarKey, changedAt: new Date("2026-11-05T10:00:00.000Z") },
+  });
+
 const cleanUp = () =>
   discovery.discoveryLiveChannelView.deleteMany({ where: { channelId: { in: seeded } } });
 
@@ -187,6 +195,39 @@ describe("GET /v1/lives (jalon A3)", () => {
       ]);
     } finally {
       await cleanUp();
+    }
+  });
+
+  it("donne à un live l'avatar du propriétaire de sa chaîne, ici et dans sa catégorie", async () => {
+    const category = {
+      categoryId: randomUUID(),
+      slug: `cat-${randomUUID().slice(0, 8)}`,
+      name: "Cat",
+    };
+    await discovery.discoveryCategoryView.create({ data: category });
+    const streamer = randomUUID();
+    const withoutAvatar = randomUUID();
+    await seedAvatar(streamer, "images/avatar/streamer.webp");
+    const withAvatarLive = await seedLiveView({ minute: 92 });
+    const withoutAvatarLive = await seedLiveView({ minute: 91 });
+    await ownedBy(withAvatarLive.channelId, streamer);
+    await ownedBy(withoutAvatarLive.channelId, withoutAvatar);
+    await discovery.discoveryLiveChannelView.updateMany({
+      where: { channelId: { in: [withAvatarLive.channelId, withoutAvatarLive.channelId] } },
+      data: { categoryId: category.categoryId },
+    });
+    const listed = [
+      { ...asListed(withAvatarLive), avatarUrl: coverUrl("images/avatar/streamer.webp") },
+      asListed(withoutAvatarLive),
+    ].map((live) => ({ ...live, category: { slug: category.slug, name: "Cat" } }));
+    try {
+      expect((await page("?limit=2")).items).toEqual(listed);
+      const response = await fetch(`${state.url}/v1/categories/${category.slug}/lives`);
+      expect(responses.LivePage.parse(await response.json()).items).toEqual(listed);
+    } finally {
+      await cleanUp();
+      await discovery.discoveryAccountAvatar.delete({ where: { accountId: streamer } });
+      await discovery.discoveryCategoryView.delete({ where: { categoryId: category.categoryId } });
     }
   });
 
@@ -549,13 +590,19 @@ const planOfLivePage = async (after: { startedAt: Date; channelId: string } | un
     await client.query("BEGIN");
     await client.query(`
       INSERT INTO "discovery"."DiscoveryLiveChannelView"
-        ("channelId", "slug", "title", "liveSessionId", "liveStartedAt")
-      SELECT gen_random_uuid(), 'volume_' || n, '',
+        ("channelId", "slug", "ownerId", "title", "liveSessionId", "liveStartedAt")
+      SELECT gen_random_uuid(), 'volume_' || n, md5('owner_' || n)::uuid, '',
              CASE WHEN n % 10 = 0 THEN gen_random_uuid() END,
              CASE WHEN n % 10 = 0 THEN timestamp '2026-01-01' + n * interval '1 second' END
         FROM generate_series(1, 50000) AS n
     `);
+    await client.query(`
+      INSERT INTO "discovery"."DiscoveryAccountAvatar" ("accountId", "avatarKey", "changedAt")
+      SELECT md5('owner_' || n)::uuid, 'images/avatar/' || n || '.webp', timestamp '2026-01-01'
+        FROM generate_series(1, 50000, 2) AS n
+    `);
     await client.query(`ANALYZE "discovery"."DiscoveryLiveChannelView"`);
+    await client.query(`ANALYZE "discovery"."DiscoveryAccountAvatar"`);
     const { text, values } = livePageQuery({ after, take: 21 });
     const { rows } = await client.query(`EXPLAIN (FORMAT JSON) ${text}`, [...values]);
     return JSON.stringify(rows);
