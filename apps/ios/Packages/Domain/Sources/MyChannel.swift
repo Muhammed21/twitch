@@ -32,5 +32,5 @@ public protocol MyChannelRepository: Sendable {
   func ownedChannel() async throws -> OwnedChannel?
   func streamKey(of channel: ChannelID) async throws -> StreamKey
   func rotateStreamKey(of channel: ChannelID) async throws -> StreamKey
-  func update(_ channel: ChannelID, info: StreamInfo, category: CategoryChange) async throws -> Channel
+  func update(_ channel: ChannelID, change: StreamInfoChange) async throws -> Channel
 }

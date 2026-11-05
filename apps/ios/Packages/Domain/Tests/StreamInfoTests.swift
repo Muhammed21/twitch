@@ -80,6 +80,30 @@ struct StreamInfoTests {
     #expect(checked.toggling(.gambling).contentLabels == [])
   }
 
+  @Test("un brouillon inchangé n'envoie que son titre et garde la catégorie")
+  func unchangedDraft() {
+    let current = makeInfo(tags: ["irl"])
+
+    #expect(StreamInfoChange.from(current, to: current) == StreamInfoChange(title: "", category: .keep))
+  }
+
+  @Test("seuls les champs que le brouillon change partent vers l'API")
+  func changedFields() throws {
+    let current = makeInfo(tags: ["irl"])
+    var draft = try #require(current.adding(tag: "fps")).toggling(.gambling)
+    draft.language = .french
+    draft.isBrandedContent = true
+
+    #expect(StreamInfoChange.from(current, to: draft) == StreamInfoChange(
+      title: "",
+      category: .keep,
+      tags: ["irl", "fps"],
+      language: .french,
+      contentLabels: [.gambling],
+      isBrandedContent: true
+    ))
+  }
+
   @Test("une langue se nomme dans sa propre langue")
   func nativeName() {
     #expect(LiveLanguage.english.nativeName == "English")

@@ -198,7 +198,7 @@ public final class MyChannelStore {
       return false
     }
     do {
-      let channel = try await repository.update(owned.id, info: draft, category: CategoryChange.from(category, to: draft.category))
+      let channel = try await repository.update(owned.id, change: StreamInfoChange.from(info, to: draft))
       info = streamInfo(of: channel, language: draft.language)
       notice = .titleSaved
       return true

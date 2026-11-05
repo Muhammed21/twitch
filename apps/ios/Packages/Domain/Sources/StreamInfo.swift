@@ -93,3 +93,43 @@ public extension LiveLanguage {
     return own.localizedString(forLanguageCode: rawValue)?.capitalized(with: own) ?? rawValue
   }
 }
+
+public struct StreamInfoChange: Equatable, Sendable {
+  public let title: String
+  public let category: CategoryChange
+  public let tags: [String]?
+  public let language: LiveLanguage?
+  public let contentLabels: Set<ContentLabel>?
+  public let isBrandedContent: Bool?
+
+  public init(
+    title: String,
+    category: CategoryChange,
+    tags: [String]? = nil,
+    language: LiveLanguage? = nil,
+    contentLabels: Set<ContentLabel>? = nil,
+    isBrandedContent: Bool? = nil
+  ) {
+    self.title = title
+    self.category = category
+    self.tags = tags
+    self.language = language
+    self.contentLabels = contentLabels
+    self.isBrandedContent = isBrandedContent
+  }
+
+  public static func from(_ current: StreamInfo, to draft: StreamInfo) -> StreamInfoChange {
+    StreamInfoChange(
+      title: draft.title,
+      category: CategoryChange.from(current.category, to: draft.category),
+      tags: changed(current.tags, draft.tags),
+      language: changed(current.language, draft.language) ?? nil,
+      contentLabels: changed(current.contentLabels, draft.contentLabels),
+      isBrandedContent: changed(current.isBrandedContent, draft.isBrandedContent)
+    )
+  }
+
+  private static func changed<Value: Equatable>(_ current: Value, _ draft: Value) -> Value? {
+    current == draft ? nil : draft
+  }
+}
