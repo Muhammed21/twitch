@@ -13,6 +13,8 @@ const prisma = createContextClient({ context: "monetization", env: process.env }
 
 const seededEventIds: string[] = [];
 
+const seededUserIds: string[] = [];
+
 const withApi = async (
   env: Readonly<Record<string, string | undefined>>,
   run: (url: string) => Promise<void>,
@@ -62,6 +64,12 @@ const rejectedWith = (marker: string) =>
   prisma.monetizationRejectedWebhook.findMany({ where: { body: { contains: marker } } });
 
 afterAll(async () => {
+  await prisma.monetizationEntitlement.deleteMany({ where: { userId: { in: seededUserIds } } });
+  await prisma.monetizationOutbox.deleteMany({
+    where: {
+      OR: seededUserIds.map((userId) => ({ payload: { path: ["userId"], equals: userId } })),
+    },
+  });
   await prisma.monetizationProcessedWebhookEvent.deleteMany({
     where: { eventId: { in: seededEventIds } },
   });
@@ -86,6 +94,7 @@ describe("POST /v1/webhooks/revenuecat (ADR 0014, ADR 0051 §2)", () => {
 
   it("traite l'achat reçu hors de la requête : l'entitlement Turbo apparaît ensuite", async () => {
     const userId = randomUUID();
+    seededUserIds.push(userId);
     const eventId = randomUUID();
     seededEventIds.push(eventId);
     const body = JSON.stringify({
@@ -119,7 +128,6 @@ describe("POST /v1/webhooks/revenuecat (ADR 0014, ADR 0051 §2)", () => {
     expect(await prisma.monetizationEntitlement.findMany({ where: { userId } })).toEqual([
       expect.objectContaining({ scope: "PLATFORM", status: "ACTIVE" }),
     ]);
-    await prisma.monetizationEntitlement.deleteMany({ where: { userId } });
   });
 
   it("enregistre en 200 un événement dont une chaîne contient NUL, sans ce caractère", async () => {

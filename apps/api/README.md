@@ -102,6 +102,8 @@ Une nouvelle outbox s'ajoute à `OUTBOXES` (`src/outbox-relay/outbox-relay.ts`),
 
 `pnpm --filter @repo/api discovery:rebuild` reconstruit `DiscoveryLiveChannelView` depuis `ChannelOutbox` et `StreamOutbox`. La commande lit l'historique avec `readOutboxHistory` (`@repo/db`) par `DATABASE_URL_PROJECTION_REBUILD` (rôle `app_projection_rebuild`), et écrit la projection par `DATABASE_URL_DISCOVERY`. Elle remplace la vue sous verrou exclusif et marque traités les events repris. Un event consommé pendant la reconstruction attend la fin du verrou ; au-delà de 5 s, l'entrée est reprise 30 s plus tard.
 
+`discovery` consomme aussi `events.identity` : `identity.avatar.changed` tient `DiscoveryAccountAvatar` (clé de l'avatar de chaque compte, l'event le plus récent par `occurredAt` l'emporte). `DiscoveryLiveChannelView.ownerId` vient de `channel.created` (la migration `20261108100100_discovery_live_channel_owner_backfill` le copie de l'historique de `ChannelOutbox` pour les chaînes déjà projetées), et chaque live de `GET /v1/lives` et `GET /v1/categories/{slug}/lives` porte `avatarUrl` quand son propriétaire a un avatar. La reconstruction ne touche pas `DiscoveryAccountAvatar`, qu'aucune outbox lue ne décrit.
+
 ## Chaînes (ADR 0003, ADR 0035)
 
 `modules/channel` crée la chaîne d'un compte à la réception de `identity.account.registered` :

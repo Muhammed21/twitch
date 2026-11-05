@@ -1648,6 +1648,10 @@
             "type": "string",
             "format": "uri"
           },
+          "avatarUrl": {
+            "type": "string",
+            "format": "uri"
+          },
           "category": {
             "$ref": "#/components/schemas/LiveCategory"
           }
@@ -1929,6 +1933,10 @@
             "properties": {
               "session_replay": {
                 "type": "boolean"
+              },
+              "exp_paywall_variant": {
+                "type": "string",
+                "minLength": 1
               }
             },
             "required": [

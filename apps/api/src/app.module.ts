@@ -96,6 +96,7 @@ export class AppModule {
       prisma: DiscoveryPrisma;
       channelConsumerRedis: StreamConsumerRedis;
       streamConsumerRedis: StreamConsumerRedis;
+      identityConsumerRedis: StreamConsumerRedis;
     };
     mobile: { featureFlags: FeatureFlagsConfig; minSupportedVersion: string };
     images: { storage: ImageStorage; publicBaseUrl: string; counter: WindowCounter };

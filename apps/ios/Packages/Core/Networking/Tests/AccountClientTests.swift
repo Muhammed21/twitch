@@ -142,7 +142,7 @@ struct AccountClientTests {
     let transport = FakeTransport(json: meJSON())
 
     await #expect(throws: SessionError.signedOut) {
-      try await makeClient(transport: transport, tokens: FakeTokenProvider(failure: .signedOut)).currentAccount()
+      try await makeClient(transport: transport, tokens: FakeTokenProvider(failure: SessionError.signedOut)).currentAccount()
     }
     #expect(await transport.requests.isEmpty)
   }

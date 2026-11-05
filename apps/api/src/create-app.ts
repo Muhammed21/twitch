@@ -108,6 +108,7 @@ export const createApp = async ({
         prisma: createContextClient({ context: "discovery", env }),
         channelConsumerRedis: connectedConsumerRedis(),
         streamConsumerRedis: connectedConsumerRedis(),
+        identityConsumerRedis: connectedConsumerRedis(),
       },
       mobile: {
         featureFlags: config.featureFlags,

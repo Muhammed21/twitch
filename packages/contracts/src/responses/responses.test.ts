@@ -345,6 +345,17 @@ describe("LivePage", () => {
     expect(responses.LivePage.parse(page)).toEqual(page);
   });
 
+  it("décode l'URL de l'avatar du streamer d'un live, en HTTP comme en HTTPS", () => {
+    const page = {
+      items: [
+        makeLive({ avatarUrl: "https://cdn.twitch.local/images/avatar/a.webp" }),
+        makeLive({ avatarUrl: "http://127.0.0.1:8333/twitch-local/images/avatar/a.webp" }),
+      ],
+    };
+
+    expect(responses.LivePage.parse(page)).toEqual(page);
+  });
+
   it("décode la catégorie d'un live, avec ou sans pochette", () => {
     const page = {
       items: [
@@ -370,6 +381,8 @@ describe("LivePage", () => {
       "avec une vignette d'un schéma qui commence par https",
       { thumbnailUrl: "httpsx://v.example/t.jpg" },
     ],
+    ["avec un avatar qui n'est pas une URL", { avatarUrl: "avatar.webp" }],
+    ["avec un avatar hors HTTP", { avatarUrl: "ftp://cdn.twitch.local/a.webp" }],
     ["avec une catégorie sans nom", { category: { slug: "irl" } }],
     [
       "avec une pochette qui n'est pas une URL",
@@ -638,6 +651,15 @@ describe("MobileBootstrap", () => {
     ).toBe("10.12.103");
   });
 
+  it("décode la variante du paywall assignée par PostHog, facultative (ADR 0016)", () => {
+    const flags = { session_replay: false, exp_paywall_variant: "variant_b" };
+
+    expect(responses.MobileBootstrap.parse(makeBootstrap({ flags })).flags).toEqual(flags);
+    expect(responses.MobileBootstrap.parse(makeBootstrap()).flags).toEqual({
+      session_replay: false,
+    });
+  });
+
   it("garde un flag ajouté plus tard par le serveur", () => {
     const flags = { session_replay: true, chat_coalescence: true };
 
@@ -649,6 +671,11 @@ describe("MobileBootstrap", () => {
     ["une version minimale avec un suffixe", { minSupportedVersion: "1.4.0-beta" }],
     ["une version minimale avec un préfixe", { minSupportedVersion: "v1.4.0" }],
     ["un flag session_replay qui n'est pas booléen", { flags: { session_replay: "oui" } }],
+    [
+      "une variante du paywall qui n'est pas une chaîne",
+      { flags: { session_replay: false, exp_paywall_variant: true } },
+    ],
+    ["une variante du paywall vide", { flags: { session_replay: false, exp_paywall_variant: "" } }],
     ["sans flags", { flags: undefined }],
     ["une chaîne de profil sans slug", { profile: makeProfile({ channel: { id: CHANNEL_ID } }) }],
     [

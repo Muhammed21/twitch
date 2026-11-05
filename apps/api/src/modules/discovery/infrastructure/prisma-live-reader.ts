@@ -12,6 +12,7 @@ const LiveRows = z.array(
     title: z.string(),
     startedAt: z.date(),
     categoryId: z.string().nullable(),
+    avatarKey: z.string().nullable(),
   }),
 );
 
@@ -35,8 +36,10 @@ export const livePageQuery = ({
     categoryIds === undefined ? "" : `AND "categoryId" = ANY($${values.length + 1}::uuid[])`;
   return {
     text: `SELECT "channelId"::text AS "channelId", "slug", "title",
-                  "liveStartedAt" AT TIME ZONE 'UTC' AS "startedAt", "categoryId"::text AS "categoryId"
+                  "liveStartedAt" AT TIME ZONE 'UTC' AS "startedAt", "categoryId"::text AS "categoryId",
+                  "avatarKey"
              FROM "discovery"."DiscoveryLiveChannelView"
+             LEFT JOIN "discovery"."DiscoveryAccountAvatar" ON "accountId" = "ownerId"
             WHERE ${LIVE} ${after === undefined ? "" : SEEK} ${inCategories}
             ORDER BY "liveStartedAt" DESC, "channelId" ASC
             LIMIT $1`,
