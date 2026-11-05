@@ -55,6 +55,35 @@ struct CategoryDetailClientTests {
     #expect(await transport.requests.map { $0.headers["Authorization"] } == ["Bearer access-1", "Bearer access-2"])
   }
 
+  @Test("un jeton refusé deux fois : l'en-tête est relu sans jeton, sans état de suivi")
+  func rejectedTwice() async throws {
+    let transport = FakeTransport { request in
+      request.headers["Authorization"] == nil
+        ? HTTPResponse(status: 200, body: Data(headerJSON().utf8))
+        : HTTPResponse(status: 401, body: Data(#"{"type":"about:blank","title":"Unauthorized","status":401}"#.utf8))
+    }
+
+    let detail = try await makeClient(transport).detail(of: CategorySlug("just-chatting"))
+
+    #expect(detail == CategoryDetail(tags: ["IRL", "English"], followers: 41, isFollowing: nil))
+    #expect(await transport.requests.map { $0.headers["Authorization"] } == ["Bearer access-1", "Bearer access-2", nil])
+  }
+
+  @Test("une session terminée au renouvellement : l'en-tête est relu sans jeton")
+  func renewalSignedOut() async throws {
+    let transport = FakeTransport { request in
+      request.headers["Authorization"] == nil
+        ? HTTPResponse(status: 200, body: Data(headerJSON().utf8))
+        : HTTPResponse(status: 401, body: Data(#"{"type":"about:blank","title":"Unauthorized","status":401}"#.utf8))
+    }
+
+    let detail = try await makeClient(transport, tokens: FakeTokenProvider(renewalFailure: .signedOut))
+      .detail(of: CategorySlug("just-chatting"))
+
+    #expect(detail.isFollowing == nil)
+    #expect(await transport.requests.map { $0.headers["Authorization"] } == ["Bearer access-1", nil])
+  }
+
   @Test("une catégorie inconnue remonte son problème")
   func unknown() async throws {
     let client = makeClient(FakeTransport(status: 404, json: notFoundJSON))

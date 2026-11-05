@@ -52,7 +52,9 @@ struct OptionalBearerAuthentication: ClientMiddleware {
     guard let renewed = try await signedIn({ try await tokens.accessTokenRejected(token, at: now()) }) else {
       return try await next(request, body, baseURL)
     }
-    return try await next(Self.authorize(request, with: renewed), body, baseURL)
+    let second = try await next(Self.authorize(request, with: renewed), body, baseURL)
+    guard second.0.status == .unauthorized else { return second }
+    return try await next(request, body, baseURL)
   }
 
   private func signedIn(_ token: () async throws -> String) async throws -> String? {
