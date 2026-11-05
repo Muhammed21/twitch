@@ -320,10 +320,12 @@ enum Composition {
       purchases: StorePurchases.live(info: info),
       feedback: FeedbackPlayer(),
       creatorMode: Self.creatorMode(defaults: .standard),
-      dashboardLiveFigures: DashboardLiveFigures(
-        source: LiveStatusClient(apiBaseURL: configuration.apiBaseURL, transport: URLSessionLineTransport())
-      )
+      dashboardLiveFigures: Self.dashboardLiveFigures(apiBaseURL: configuration.apiBaseURL)
     )
+  }
+
+  private static func dashboardLiveFigures(apiBaseURL: URL) -> DashboardLiveFigures {
+    DashboardLiveFigures(source: LiveStatusClient(apiBaseURL: apiBaseURL, transport: URLSessionLineTransport()))
   }
 
   private static func oauthConfiguration(info: [String: Any]) -> OAuthConfiguration {
