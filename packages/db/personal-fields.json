@@ -27,6 +27,7 @@
   "identity.IdentityTwoFactor.backupCodes",
   "identity.IdentityTwoFactor.secret",
   "identity.IdentityTwoFactor.userId",
+  "identity.IdentityUser.avatarKey",
   "identity.IdentityUser.bio",
   "identity.IdentityUser.birthDate",
   "identity.IdentityUser.displayUsername",

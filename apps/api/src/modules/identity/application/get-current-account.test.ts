@@ -21,6 +21,8 @@ const directoryOf = (accounts: readonly StoredAccount[]): AccountDirectory => ({
 
 const NEVER_STREAMED: LastLiveOf = async () => undefined;
 
+const imageUrlOf = (key: string) => `https://images.twitch.example/${key}`;
+
 const lastLiveOf =
   (userId: string, startedAt: Date): LastLiveOf =>
   async (id) =>
@@ -31,15 +33,30 @@ describe("compte de l'utilisateur authentifié", () => {
     const read = getCurrentAccount({
       directory: directoryOf([ACCOUNT]),
       lastLiveOf: NEVER_STREAMED,
+      imageUrlOf,
     });
 
     expect(await read(ACCOUNT.id)).toEqual({ ok: true, value: ACCOUNT });
+  });
+
+  it("rend l'URL publique de l'avatar, sans sa clé de stockage", async () => {
+    const read = getCurrentAccount({
+      directory: directoryOf([{ ...ACCOUNT, avatarKey: "images/avatar/a.webp" }]),
+      lastLiveOf: NEVER_STREAMED,
+      imageUrlOf,
+    });
+
+    expect(await read(ACCOUNT.id)).toStrictEqual({
+      ok: true,
+      value: { ...ACCOUNT, avatarUrl: "https://images.twitch.example/images/avatar/a.webp" },
+    });
   });
 
   it("rend la bio écrite par l'utilisateur", async () => {
     const read = getCurrentAccount({
       directory: directoryOf([{ ...ACCOUNT, bio: "Speedrun le dimanche" }]),
       lastLiveOf: NEVER_STREAMED,
+      imageUrlOf,
     });
 
     expect(await read(ACCOUNT.id)).toEqual({
@@ -52,6 +69,7 @@ describe("compte de l'utilisateur authentifié", () => {
     const read = getCurrentAccount({
       directory: directoryOf([ACCOUNT]),
       lastLiveOf: lastLiveOf(ACCOUNT.id, LAST_LIVE),
+      imageUrlOf,
     });
 
     expect(await read(ACCOUNT.id)).toEqual({
@@ -64,6 +82,7 @@ describe("compte de l'utilisateur authentifié", () => {
     const read = getCurrentAccount({
       directory: directoryOf([ACCOUNT]),
       lastLiveOf: NEVER_STREAMED,
+      imageUrlOf,
     });
 
     const account = await read(ACCOUNT.id);
@@ -75,6 +94,7 @@ describe("compte de l'utilisateur authentifié", () => {
     const read = getCurrentAccount({
       directory: directoryOf([]),
       lastLiveOf: lastLiveOf(ACCOUNT.id, LAST_LIVE),
+      imageUrlOf,
     });
 
     expect(await read(ACCOUNT.id)).toEqual({ ok: false, error: "account_not_found" });

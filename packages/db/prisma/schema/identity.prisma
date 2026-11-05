@@ -18,6 +18,9 @@ model IdentityUser {
   image            String?
   /// @personal
   bio              String?
+  /// @personal
+  /// Clé d'objet de l'avatar (ADR 0044) ; l'URL publique se calcule à la lecture.
+  avatarKey        String?
   /// @not-personal
   twoFactorEnabled Boolean?                    @default(false)
   createdAt        DateTime                    @default(now())

@@ -163,6 +163,15 @@ describe("GET /v1/mobile/bootstrap (ADR 0009, ADR 0012)", () => {
     });
   });
 
+  it("rend l'URL de l'avatar dans le profil", async () => {
+    const avatarUrl = "https://images.twitch.example/images/avatar/a.webp";
+    const readProfile: ReadProfile = async () => ok({ ...PROFILE, avatarUrl });
+
+    await withBootstrap({ readProfile }, async (get) => {
+      expect((await (await get(authenticated)).json()).profile).toEqual({ ...PROFILE, avatarUrl });
+    });
+  });
+
   it.each([
     ["un jeton invalide", { authorization: `Bearer ${INVALID_TOKEN}` }],
     ["un en-tête Authorization qui n'est pas Bearer", { authorization: "Basic dXNlcjpwYXNz" }],
