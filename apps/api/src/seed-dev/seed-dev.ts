@@ -236,12 +236,15 @@ const seedCategories = (env: Env): Promise<number> =>
         });
         const current = await catalog.findBySlug(slug);
         if (current !== null && !sameTags(current.tags, tags)) {
-          await catalog.changeTags({
+          const tagged = await catalog.changeTags({
             categoryId: current.id,
             tags,
             outboxEventId: randomUUID(),
             occurredAt: new Date(),
           });
+          if (!tagged.ok) {
+            throw new Error(`tags de la catégorie ${slug} inchangés : ${tagged.error}`);
+          }
         }
         return [...done, created.ok];
       },
