@@ -25,9 +25,26 @@ export const authorizationMatches = ({
   received: string | undefined;
 }): boolean => received !== undefined && timingSafeEqual(sha256(expected), sha256(received));
 
+const NUL = "\u0000";
+
+const withoutNul = (value: unknown): unknown => {
+  if (typeof value === "string") {
+    return value.replaceAll(NUL, "");
+  }
+  if (Array.isArray(value)) {
+    return value.map(withoutNul);
+  }
+  if (typeof value === "object" && value !== null) {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, entry]) => [key.replaceAll(NUL, ""), withoutNul(entry)]),
+    );
+  }
+  return value;
+};
+
 const parseJson = (body: Buffer): unknown => {
   try {
-    return JSON.parse(body.toString("utf8"));
+    return withoutNul(JSON.parse(body.toString("utf8")));
   } catch {
     return undefined;
   }

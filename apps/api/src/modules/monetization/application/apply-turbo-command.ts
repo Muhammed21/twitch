@@ -37,7 +37,7 @@ const decide = async (
     return applyTurboEvent({ current: await ledger.current(event.userId), event, newId });
   }
   const { fromUserIds, toUserId, occurredAt } = command;
-  await ledger.lock([...fromUserIds, toUserId]);
+  await ledger.lock([...new Set([...fromUserIds, toUserId])].toSorted());
   const origins = await Promise.all(fromUserIds.map((userId) => ledger.current(userId)));
   return transferTurbo({
     origins,
