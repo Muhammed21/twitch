@@ -38,3 +38,8 @@ export const parseStreamEntry = (message: Readonly<Record<string, string>>): Str
   const { name, version, occurredAt } = entry.data;
   return { name, version, occurredAt, payload: payload.value };
 };
+
+const contextOf = (eventName: string): string => eventName.slice(0, eventName.indexOf("."));
+
+export const eventStreamsOf = (eventNames: readonly string[]): readonly string[] =>
+  [...new Set(eventNames.map((name) => `events.${contextOf(name)}`))].toSorted();

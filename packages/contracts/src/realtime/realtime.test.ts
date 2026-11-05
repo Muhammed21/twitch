@@ -17,7 +17,7 @@ const makeSend = (overrides: Record<string, unknown> = {}) => ({
 const makeChatMessage = (overrides: Record<string, unknown> = {}) => ({
   id: MESSAGE_ID,
   channelId: CHANNEL_ID,
-  author: { id: AUTHOR_ID, displayName: "Viewer de test" },
+  author: { id: AUTHOR_ID, displayName: "Viewer de test", badges: [] },
   body: "Bonjour le chat",
   sentAt: "2026-11-03T20:15:00.000Z",
   ...overrides,
@@ -128,7 +128,19 @@ describe("schémas nommés", () => {
 describe("contrat publié pour le client Swift", () => {
   it("nomme l'auteur d'un message pour qu'il devienne un type à part", () => {
     expect(definitionOf(realtime.RealtimeChatMessage, "RealtimeChatAuthor")).toMatchObject({
-      required: ["id", "displayName"],
+      required: ["id", "displayName", "badges"],
+    });
+  });
+
+  it("publie les badges connus de l'auteur, en plus d'un badge libre, et sa couleur nommée", () => {
+    expect(definitionOf(realtime.RealtimeChatMessage, "RealtimeChatAuthor")).toMatchObject({
+      properties: {
+        badges: {
+          type: "array",
+          items: { anyOf: [{ enum: ["turbo"] }, { type: "string" }] },
+        },
+        color: { $ref: "#/$defs/ChatColor" },
+      },
     });
   });
 
@@ -184,10 +196,30 @@ describe("chat:message", () => {
     const author = {
       id: AUTHOR_ID,
       displayName: "Viewer de test",
+      badges: [],
       avatarUrl: "https://images.twitch.example/images/avatar/a.webp",
     };
 
     expect(realtime.RealtimeChatMessage.parse(makeChatMessage({ author })).author).toEqual(author);
+  });
+
+  it("décode le badge Turbo et la couleur choisie de l'auteur", () => {
+    const author = {
+      id: AUTHOR_ID,
+      displayName: "Viewer de test",
+      badges: ["turbo"],
+      color: "#9147FF",
+    };
+
+    expect(realtime.RealtimeChatMessage.parse(makeChatMessage({ author })).author).toEqual(author);
+  });
+
+  it("garde un badge que le contrat ne connaît pas encore", () => {
+    const author = { id: AUTHOR_ID, displayName: "Viewer de test", badges: ["partner"] };
+
+    expect(realtime.RealtimeChatMessage.parse(makeChatMessage({ author })).author.badges).toEqual([
+      "partner",
+    ]);
   });
 
   it("garde un champ ajouté plus tard par le serveur", () => {
@@ -201,10 +233,13 @@ describe("chat:message", () => {
     ["sans chaîne", makeChatMessage({ channelId: undefined })],
     ["à une session qui n'est pas un UUID", makeChatMessage({ sessionId: "live-1" })],
     ["sans auteur", makeChatMessage({ author: undefined })],
-    ["à un auteur sans nom d'affichage", makeChatMessage({ author: { id: AUTHOR_ID } })],
+    [
+      "à un auteur sans nom d'affichage",
+      makeChatMessage({ author: { id: AUTHOR_ID, badges: [] } }),
+    ],
     [
       "à un auteur sans identifiant",
-      makeChatMessage({ author: { displayName: "Viewer de test" } }),
+      makeChatMessage({ author: { displayName: "Viewer de test", badges: [] } }),
     ],
     [
       "à un auteur dont l'avatar n'est pas une URL HTTP",
@@ -212,10 +247,21 @@ describe("chat:message", () => {
         author: {
           id: AUTHOR_ID,
           displayName: "Viewer de test",
+          badges: [],
           avatarUrl: "ftp://images.twitch.example/a.webp",
         },
       }),
     ],
+    [
+      "à un auteur sans badges",
+      makeChatMessage({ author: { id: AUTHOR_ID, displayName: "Viewer de test" } }),
+    ],
+    ...["#9147ff", "9147FF", "#9147F", "violet"].map((color) => [
+      `à un auteur de couleur ${color}`,
+      makeChatMessage({
+        author: { id: AUTHOR_ID, displayName: "Viewer de test", badges: [], color },
+      }),
+    ]),
     ["sans corps", makeChatMessage({ body: undefined })],
     ["à une date qui n'est pas ISO 8601", makeChatMessage({ sentAt: "hier soir" })],
   ])("refuse un message %s", (_name, payload) => {

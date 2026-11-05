@@ -7,6 +7,7 @@ import { startChatServer } from "./chat-server.ts";
 import { LocalAdapter } from "./testing/local-adapter.ts";
 import { SATURATION_LIMITS } from "./testing/saturation.ts";
 import { makeTokenAuthority } from "./testing/tokens.ts";
+import { NO_TURBO } from "./testing/turbo.ts";
 
 const activeTimers = () =>
   process.getActiveResourcesInfo().filter((resource) => resource === "Timeout").length;
@@ -16,6 +17,7 @@ describe("arrêt du chat", () => {
     const before = activeTimers();
     const authority = await makeTokenAuthority();
     const server = await startChatServer({
+      turbos: NO_TURBO,
       port: 0,
       verifier: authority.verifier(),
       log: () => undefined,

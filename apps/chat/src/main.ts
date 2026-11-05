@@ -14,12 +14,17 @@ import { loadEnv } from "./config/env.ts";
 import { createConsumerRedis, startEventConsumer } from "./infrastructure/event-consumer.ts";
 import { redisConnectionLog } from "./infrastructure/redis-connection-log.ts";
 import { redisLocalViewWriter } from "./infrastructure/redis-local-view-writer.ts";
-import { redisChatterProfiles, redisRoomDirectory } from "./infrastructure/redis-local-views.ts";
+import {
+  redisChatterProfiles,
+  redisRoomDirectory,
+  redisTurboProfiles,
+} from "./infrastructure/redis-local-views.ts";
 import { redisRevokedSessions } from "./infrastructure/redis-revoked-sessions.ts";
 import { redisTokenBuckets } from "./infrastructure/redis-token-buckets.ts";
 import { subscribeToSessionRevocations } from "./infrastructure/session-revocation-subscriber.ts";
 import { unlessOffline, withSettledCommands } from "./infrastructure/settled-commands.ts";
 import { sharedRateLimit } from "./infrastructure/shared-rate-limit.ts";
+import { eventStreamsOf } from "./infrastructure/stream-entry.ts";
 import { startStreamTail } from "./infrastructure/stream-tail.ts";
 import { type ChatLog, startChatServer } from "./transport/chat-server.ts";
 import { imageUrlOf } from "./transport/image-url.ts";
@@ -27,7 +32,6 @@ import { imageUrlOf } from "./transport/image-url.ts";
 const BUCKET_SWEEP_INTERVAL_MS = 10_000;
 const REVALIDATION_INTERVAL_MS = 5 * 60_000;
 const SHUTDOWN_SPREAD_MS = 30_000;
-const EVENT_STREAMS = ["events.channel", "events.stream", "events.identity", "events.moderation"];
 const SANCTION_STREAM = "events.moderation";
 const CONSUMER_GROUP = "chat";
 const CLAIM_IDLE_MS = 30_000;
@@ -108,6 +112,7 @@ try {
   );
   const rooms = createRoomRegistry(redisRoomDirectory(redis));
   const server = await startChatServer({
+    turbos: redisTurboProfiles(redis),
     port: config.httpPort,
     verifier: createAccessTokenVerifier({
       ...config.accessTokens,
@@ -128,16 +133,13 @@ try {
     destroyRedis();
     throw error;
   });
+  const handlers = chatEventHandlers({ views: redisLocalViewWriter(redis), rooms, log });
   const consumer = startEventConsumer({
     redis: consumerRedis,
-    streams: EVENT_STREAMS,
+    streams: eventStreamsOf(Object.keys(handlers)),
     group: CONSUMER_GROUP,
     consumer: `${hostname()}-${process.pid}`,
-    handlers: chatEventHandlers({
-      views: redisLocalViewWriter(redis),
-      rooms,
-      log,
-    }),
+    handlers,
     claimIdleMs: CLAIM_IDLE_MS,
     blockMs: BLOCK_MS,
     onError: ({ stream, entryId, error }) =>
