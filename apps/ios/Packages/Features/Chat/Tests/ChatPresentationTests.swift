@@ -8,13 +8,18 @@ import Testing
 private let english = Locale(identifier: "en_US")
 private let utc = TimeZone(identifier: "UTC") ?? .current
 
-private func sent(at text: String, by author: UUID = UUID()) -> ChatMessage {
+private func sent(
+  at text: String,
+  by author: UUID = UUID(),
+  badges: [ChatBadge] = [],
+  color: String? = nil
+) -> ChatMessage {
   let date = (try? Date(text, strategy: .iso8601)) ?? Date()
   return ChatMessage(
     id: UUID(),
     channelID: channel,
     sessionID: nil,
-    author: ChatAuthor(id: author, displayName: "yahway_810"),
+    author: ChatAuthor(id: author, displayName: "yahway_810", badges: badges, color: color),
     body: "valid",
     sentAt: date
   )
@@ -80,6 +85,35 @@ struct ChatLineTests {
 
     #expect(colors == [ColorRole.chatName(blue).color, ColorRole.chatName(green).color])
     #expect(ColorRole.chatName(blue).color != ColorRole.chatName(green).color)
+  }
+
+  @Test("un auteur Turbo porte le badge Turbo ; un badge inconnu n'affiche rien")
+  func badges() {
+    let line = ChatLine(sent(at: "2026-11-03T04:13:00Z", badges: [.unknown("vip"), .turbo]), locale: english, timeZone: utc)
+
+    #expect(line.badges == [.turbo])
+    #expect(ChatLine(sent(at: "2026-11-03T04:13:00Z"), locale: english, timeZone: utc).badges.isEmpty)
+  }
+
+  @Test("le badge Turbo est la batterie du bouton d'abonnement (abonnement/turbo--defaut)")
+  func turboGlyph() {
+    #expect(ChatBadge.turbo.glyph == .turboBattery)
+    #expect(ChatBadge.unknown("vip").glyph == nil)
+  }
+
+  @Test("la couleur choisie dans la palette remplace la couleur attribuée", arguments: ChatNameColor.allCases)
+  func chosenColor(color: ChatNameColor) {
+    let text = ChatLine(sent(at: "2026-11-03T04:13:00Z", color: color.hex), locale: english, timeZone: utc).styled
+
+    #expect(segments(of: text) { $0.foregroundColor == color.color } == ["yahway_810:"])
+  }
+
+  @Test("une couleur hors palette, ou aucune couleur, laisse la couleur attribuée", arguments: ["#123456", "red", nil] as [String?])
+  func colorOutsidePalette(color: String?) {
+    let author = UUID()
+    let text = ChatLine(sent(at: "2026-11-03T04:13:00Z", by: author, color: color), locale: english, timeZone: utc).styled
+
+    #expect(segments(of: text) { $0.foregroundColor == ColorRole.chatName(author).color } == ["yahway_810:"])
   }
 
   private func segments(of text: AttributedString, where matches: (AttributedString.Runs.Run) -> Bool) -> [String] {

@@ -10,8 +10,12 @@ import {
 
 import { errorDetails, type LogSink, writeLog } from "../../platform/logging.ts";
 import { startPeriodicJob } from "../../platform/periodic-job.ts";
+import type { WindowCounter } from "../../platform/rate-limit.ts";
 import { type ProcessWebhook, processWebhook } from "./application/process-webhook.ts";
 import { receiveRevenueCatWebhook } from "./application/receive-revenuecat-webhook.ts";
+import { syncTurboEntitlement } from "./application/sync-turbo-entitlement.ts";
+import { prismaActiveEntitlements } from "./infrastructure/prisma-active-entitlements.ts";
+import { prismaTurboLedger } from "./infrastructure/prisma-turbo-ledger.ts";
 import {
   type MonetizationPrisma,
   prismaWebhookInbox,
@@ -19,9 +23,20 @@ import {
 import { prismaWebhookQueue, type WebhookQueue } from "./infrastructure/prisma-webhook-queue.ts";
 import { translateRevenueCatEvent } from "./infrastructure/revenuecat-events.ts";
 import {
+  revenueCatSubscriberSource,
+  type RevenueCatFetch,
+} from "./infrastructure/revenuecat-subscriber-source.ts";
+import {
   authorizationMatches,
   readRevenueCatWebhook,
 } from "./infrastructure/revenuecat-webhook.ts";
+import { entitlementsSyncRateLimit } from "./presentation/entitlements-sync-rate-limit.ts";
+import {
+  ENTITLEMENTS_SYNC_RATE_LIMIT,
+  EntitlementsSyncController,
+  READ_ACTIVE_ENTITLEMENTS,
+  SYNC_TURBO_ENTITLEMENT,
+} from "./presentation/entitlements-sync.controller.ts";
 import {
   RECEIVE_REVENUECAT_WEBHOOK,
   RevenueCatWebhookController,
@@ -39,7 +54,10 @@ const WEBHOOKS_PER_PASS = 50;
 type MonetizationDependencies = {
   prisma: MonetizationPrisma;
   webhookAuthorization: string | undefined;
+  secretApiKey: string | undefined;
+  counter: WindowCounter;
   logSink: LogSink;
+  revenueCatFetch?: RevenueCatFetch;
   webhookProcessingIntervalMs?: number;
 };
 
@@ -81,12 +99,32 @@ export class MonetizationModule implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   static register(dependencies: MonetizationDependencies): DynamicModule {
-    const { prisma, webhookAuthorization, logSink } = dependencies;
+    const { prisma, webhookAuthorization, secretApiKey, counter, logSink, revenueCatFetch } =
+      dependencies;
     return {
       module: MonetizationModule,
-      controllers: [RevenueCatWebhookController],
+      controllers: [RevenueCatWebhookController, EntitlementsSyncController],
       providers: [
         { provide: MONETIZATION_DEPENDENCIES, useValue: dependencies },
+        {
+          provide: SYNC_TURBO_ENTITLEMENT,
+          useValue:
+            secretApiKey === undefined
+              ? undefined
+              : syncTurboEntitlement({
+                  observe: revenueCatSubscriberSource({
+                    apiKey: secretApiKey,
+                    ...(revenueCatFetch === undefined ? {} : { fetch: revenueCatFetch }),
+                  }),
+                  transact: (work) => prisma.$transaction((tx) => work(prismaTurboLedger(tx))),
+                  newId: randomUUID,
+                }),
+        },
+        { provide: READ_ACTIVE_ENTITLEMENTS, useValue: prismaActiveEntitlements({ prisma }) },
+        {
+          provide: ENTITLEMENTS_SYNC_RATE_LIMIT,
+          useValue: entitlementsSyncRateLimit({ counter, now: () => new Date() }),
+        },
         {
           provide: RECEIVE_REVENUECAT_WEBHOOK,
           useValue: receiveRevenueCatWebhook({

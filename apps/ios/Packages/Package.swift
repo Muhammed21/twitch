@@ -206,7 +206,7 @@ let package = Package(
     ),
     .testTarget(
       name: "AuthTests",
-      dependencies: ["Auth", "Domain", "Networking", "DesignSystem"],
+      dependencies: ["Auth", "AnalyticsTesting", "Domain", "Networking", "DesignSystem"],
       path: "Features/Auth/Tests",
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),

@@ -22,6 +22,7 @@ API NestJS 11 (ADR 0002, 0009). Architecture et découpage : [plan de l'API](../
 | `DATABASE_URL_MODERATION`          | Rôle `app_moderation`, sanctions, requis                                                                                                                         |
 | `DATABASE_URL_MONETIZATION`        | Rôle `app_monetization`, entitlements et webhooks reçus, requis                                                                                                  |
 | `REVENUECAT_WEBHOOK_AUTHORIZATION` | Valeur exacte de l'en-tête `Authorization` du webhook RevenueCat ; absente ou vide, `POST /v1/webhooks/revenuecat` répond 503                                    |
+| `REVENUECAT_SECRET_API_KEY`        | Clé secrète v1 de l'API REST RevenueCat ; absente ou vide, `POST /v1/me/entitlements/sync` répond 503                                                            |
 | `BETTER_AUTH_SECRET`               | Secret de better-auth, au moins 32 caractères, requis                                                                                                            |
 | `BETTER_AUTH_URL`                  | URL publique de l'API, origine de confiance de better-auth, requis                                                                                               |
 | `REDIS_URL`                        | Redis (`redis://` ou `rediss://`) : liste de révocation des sessions et Pub/Sub, requis                                                                          |
@@ -199,6 +200,8 @@ Un job périodique (1 s, 50 événements par passe) traite les lignes où `proce
 - un échec annule les écritures du traitement, incrémente `attempts` et reprogramme `nextAttemptAt` avec le backoff de l'outbox.
 
 `GET /v1/mobile/bootstrap` rend `entitlements`, la liste des entitlements actifs du compte (`{ scope, expiresAt }`, portée en enum ouvert), lue par `createActiveEntitlementsReader` : statut `ACTIVE` ou `GRACE` et échéance future. Un client anonyme reçoit une liste vide ; si `monetization` ne répond pas, la liste est vide, l'erreur est journalisée et `bootstrap` répond quand même.
+
+`POST /v1/me/entitlements/sync` relit l'abonné du jeton chez RevenueCat (`GET /v1/subscribers/{app_user_id}`, clé `REVENUECAT_SECRET_API_KEY`, 5 s au plus), traduit son entitlement `turbo` en observation (actif, en grâce ou absent) et l'applique par le même use-case que le webhook, avec la même règle d'ordre (`request_date_ms`). Elle rend la liste des entitlements actifs (`EntitlementList`). Sans clé, ou si RevenueCat ne répond pas, elle répond 503 sans toucher à l'entitlement ; au-delà de 10 appels en 10 minutes par compte, 429 avec `Retry-After` (ADR 0042).
 
 ## Autorisation (ADR 0006)
 

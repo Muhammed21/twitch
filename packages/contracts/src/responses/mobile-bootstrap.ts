@@ -29,6 +29,10 @@ export const Entitlement = z
   })
   .meta({ id: "Entitlement" });
 
+export const EntitlementList = z
+  .looseObject({ entitlements: z.array(Entitlement) })
+  .meta({ id: "EntitlementList" });
+
 export const MobileBootstrap = z
   .looseObject({
     minSupportedVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
