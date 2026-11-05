@@ -34,12 +34,22 @@ export type ContentLabel = (typeof CONTENT_LABELS)[number];
 
 export type ChannelTag = string & { readonly __brand: "ChannelTag" };
 
-const TAG_FORMAT = new RegExp(`^[\\p{L}\\p{N}]{1,${MAX_CHANNEL_TAG_LENGTH}}$`, "u");
+const TAG_FORMAT = /^[\p{L}\p{M}\p{N}]+$/u;
+
+const graphemes = new Intl.Segmenter();
 
 const normalizedTag = (raw: string): string =>
-  raw.trim().normalize("NFD").replace(/\p{M}/gu, "").normalize("NFC").toLowerCase();
+  raw
+    .trim()
+    .normalize("NFD")
+    .replace(/(\p{Script=Latin})\p{M}+/gu, "$1")
+    .normalize("NFC")
+    .toLowerCase();
 
-const isTag = (value: string): value is ChannelTag => TAG_FORMAT.test(value);
+const isTag = (value: string): value is ChannelTag => {
+  const length = Array.from(graphemes.segment(value)).length;
+  return length <= MAX_CHANNEL_TAG_LENGTH && TAG_FORMAT.test(value);
+};
 
 const isUnique = (tags: readonly string[]): boolean => new Set(tags).size === tags.length;
 

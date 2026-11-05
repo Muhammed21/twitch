@@ -34,6 +34,14 @@ describe("tags d'une chaîne", () => {
     expect(parseChannelTags(["fps2", "日本語"])).toEqual({ ok: true, value: ["fps2", "日本語"] });
   });
 
+  it("garde les marques des écritures non latines, comme le dakuten japonais", () => {
+    expect(parseChannelTags(["ゲーム"])).toEqual({ ok: true, value: ["ゲーム"] });
+  });
+
+  it("compte une lettre et ses marques non latines pour un caractère", () => {
+    expect(parseChannelTags(["कि".repeat(25)])).toEqual({ ok: true, value: ["कि".repeat(25)] });
+  });
+
   it("accepte 10 tags", () => {
     expect(parseChannelTags(tagsOf(10))).toEqual({ ok: true, value: tagsOf(10) });
   });
