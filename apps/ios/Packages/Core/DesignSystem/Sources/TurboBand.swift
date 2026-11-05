@@ -25,42 +25,36 @@ public struct TurboBand: View {
 
   public var body: some View {
     TurboWave()
-      .fill(
-        LinearGradient(
-          colors: [ColorRole.turboStart.color, ColorRole.turboEnd.color],
-          startPoint: .topLeading,
-          endPoint: .bottomTrailing
-        )
-      )
+      .fill(TurboGradient.fill)
       .frame(height: PaywallLayout.bandHeight.points)
       .accessibilityHidden(true)
   }
 }
 
+public enum TurboGradient {
+  public static let fill = LinearGradient(
+    colors: [ColorRole.turboStart.color, ColorRole.turboEnd.color],
+    startPoint: .topLeading,
+    endPoint: .bottomTrailing
+  )
+}
+
 public enum PaywallLayout: CaseIterable, Sendable {
   case bandHeight
   case headlineTop
-  case taglineGap
-  case actionTop
-  case buttonInset
-  case billingGap
-  case packageGap
   case legalGap
-  case cardTop
-  case cardPadding
+  case markSize
+  case savingsPaddingH
+  case savingsPaddingV
 
   public var points: CGFloat {
     switch self {
     case .bandHeight: Spacing.x72
     case .headlineTop: Spacing.x12
-    case .taglineGap: Spacing.x12
-    case .actionTop: Spacing.x24
-    case .buttonInset: Spacing.x44
-    case .billingGap: Spacing.x8
-    case .packageGap: Spacing.x16
     case .legalGap: Spacing.x12
-    case .cardTop: Spacing.x20
-    case .cardPadding: Spacing.x20
+    case .markSize: Spacing.x36
+    case .savingsPaddingH: Spacing.x6
+    case .savingsPaddingV: Spacing.x2
     }
   }
 }

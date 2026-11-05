@@ -8,6 +8,12 @@
             "state" : "translated",
             "value" : "No results found"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun résultat"
+          }
         }
       }
     },
@@ -17,6 +23,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't search categories."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de rechercher des catégories."
           }
         }
       }
@@ -28,6 +40,12 @@
             "state" : "translated",
             "value" : "Search"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechercher"
+          }
         }
       }
     },
@@ -37,6 +55,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "About"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À propos"
           }
         }
       }
@@ -48,6 +72,12 @@
             "state" : "translated",
             "value" : "Profile Banner"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bannière de profil"
+          }
         }
       }
     },
@@ -57,6 +87,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't save your banner. Try again."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d'enregistrer votre bannière. Réessayez."
           }
         }
       }
@@ -68,6 +104,12 @@
             "state" : "translated",
             "value" : "Recommended 1200×480 and less than 10MB"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1200 × 480 recommandé, moins de 10 Mo"
+          }
         }
       }
     },
@@ -77,6 +119,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your banner is over 10MB. Choose a smaller one."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre bannière dépasse 10 Mo. Choisissez-en une plus légère."
           }
         }
       }
@@ -88,12 +136,24 @@
             "state" : "translated",
             "value" : "Your banner must be at least 1200×480."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre bannière doit mesurer au moins 1200 × 480."
+          }
         }
       }
     },
     "editProfile.bio" : {
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bio"
+          }
+        },
+        "fr" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bio"
@@ -108,6 +168,12 @@
             "state" : "translated",
             "value" : "Couldn't save your bio. Try again."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d'enregistrer votre bio. Réessayez."
+          }
         }
       }
     },
@@ -117,6 +183,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Who you are in fewer than 300 characters."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qui vous êtes, en moins de 300 caractères."
           }
         }
       }
@@ -128,6 +200,24 @@
             "state" : "translated",
             "value" : "%lld characters remaining"
           }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld caractère restant"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld caractères restants"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -137,6 +227,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Brand"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image de marque"
           }
         }
       }
@@ -148,6 +244,12 @@
             "state" : "translated",
             "value" : "Customize you and your channel's visual appearance across Twitch."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personnalisez votre apparence et celle de votre chaîne sur Twitch."
+          }
         }
       }
     },
@@ -157,6 +259,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No camera is available on this device."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun appareil photo n'est disponible sur cet appareil."
           }
         }
       }
@@ -168,6 +276,12 @@
             "state" : "translated",
             "value" : "Allow camera access in Settings to take a photo."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autorisez l'accès à l'appareil photo dans Réglages pour prendre une photo."
+          }
         }
       }
     },
@@ -177,6 +291,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose existing photo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisir une photo existante"
           }
         }
       }
@@ -188,6 +308,12 @@
             "state" : "translated",
             "value" : "Close"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fermer"
+          }
         }
       }
     },
@@ -197,6 +323,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Take photo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prendre une photo"
           }
         }
       }
@@ -208,6 +340,12 @@
             "state" : "translated",
             "value" : "Profile Picture"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo de profil"
+          }
         }
       }
     },
@@ -217,6 +355,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't save your profile picture. Try again."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d'enregistrer votre photo de profil. Réessayez."
           }
         }
       }
@@ -228,6 +372,12 @@
             "state" : "translated",
             "value" : "JPEG, PNG, GIF and less than 10MB"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JPEG, PNG ou GIF, moins de 10 Mo"
+          }
         }
       }
     },
@@ -237,6 +387,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your profile picture is over 10MB. Choose a smaller one."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre photo de profil dépasse 10 Mo. Choisissez-en une plus légère."
           }
         }
       }
@@ -248,6 +404,12 @@
             "state" : "translated",
             "value" : "Your profile picture must be at least 256×256."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre photo de profil doit mesurer au moins 256 × 256."
+          }
         }
       }
     },
@@ -257,6 +419,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Edit Profile"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modifier le profil"
           }
         }
       }
@@ -268,6 +436,12 @@
             "state" : "translated",
             "value" : "Cancel"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annuler"
+          }
         }
       }
     },
@@ -277,6 +451,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Category"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Catégorie"
           }
         }
       }
@@ -288,6 +468,12 @@
             "state" : "translated",
             "value" : "Search for a category"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechercher une catégorie"
+          }
         }
       }
     },
@@ -297,6 +483,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "All content must adhere to and be categorized according to our guidelines."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tout contenu doit respecter nos règles et être classé dans la bonne catégorie."
           }
         }
       }
@@ -308,6 +500,12 @@
             "state" : "translated",
             "value" : "Remove category"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retirer la catégorie"
+          }
         }
       }
     },
@@ -317,6 +515,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Done"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistrer"
           }
         }
       }
@@ -328,6 +532,12 @@
             "state" : "translated",
             "value" : "Edit Stream Info"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modifier les infos du stream"
+          }
         }
       }
     },
@@ -337,6 +547,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld remaining"
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld restant"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld restants"
+                }
+              }
+            }
           }
         }
       }
@@ -348,12 +576,24 @@
             "state" : "translated",
             "value" : "Audio encoder"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encodeur audio"
+          }
         }
       }
     },
     "obs.audioEncoder.value" : {
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AAC"
+          }
+        },
+        "fr" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "AAC"
@@ -368,6 +608,12 @@
             "state" : "translated",
             "value" : "Keyframe interval"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intervalle d'images clés"
+          }
         }
       }
     },
@@ -377,6 +623,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "2 s"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 s"
           }
         }
       }
@@ -388,6 +640,12 @@
             "state" : "translated",
             "value" : "Maximum bitrate"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Débit maximal"
+          }
         }
       }
     },
@@ -397,6 +655,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "6,000 Kbps"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6 000 Kbit/s"
           }
         }
       }
@@ -408,12 +672,24 @@
             "state" : "translated",
             "value" : "Video encoder"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encodeur vidéo"
+          }
         }
       }
     },
     "obs.videoEncoder.value" : {
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "H.264"
+          }
+        },
+        "fr" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "H.264"
@@ -428,6 +704,12 @@
             "state" : "translated",
             "value" : "Edit Profile"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modifier le profil"
+          }
         }
       }
     },
@@ -437,6 +719,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't load your channel."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de charger votre chaîne."
           }
         }
       }
@@ -448,6 +736,12 @@
             "state" : "translated",
             "value" : "Last live %@ ago"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dernier live il y a %@"
+          }
         }
       }
     },
@@ -457,6 +751,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "My Channel"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ma chaîne"
           }
         }
       }
@@ -468,6 +768,12 @@
             "state" : "translated",
             "value" : "Your channel is on its way. Check back in a moment."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre chaîne arrive. Revenez dans un instant."
+          }
         }
       }
     },
@@ -477,6 +783,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Try Again"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réessayer"
           }
         }
       }
@@ -488,6 +800,12 @@
             "state" : "translated",
             "value" : "Settings"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paramètres"
+          }
         }
       }
     },
@@ -497,6 +815,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stream Manager"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gestionnaire de stream"
           }
         }
       }
@@ -508,6 +832,12 @@
             "state" : "translated",
             "value" : "Profile"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profil"
+          }
         }
       }
     },
@@ -517,6 +847,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Close"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fermer"
           }
         }
       }
@@ -528,6 +864,12 @@
             "state" : "translated",
             "value" : "Copy"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copier"
+          }
         }
       }
     },
@@ -537,6 +879,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Edit"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modifier"
           }
         }
       }
@@ -548,6 +896,12 @@
             "state" : "translated",
             "value" : "Hide"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer"
+          }
         }
       }
     },
@@ -557,6 +911,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stream key copied."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clé de stream copiée."
           }
         }
       }
@@ -568,6 +928,12 @@
             "state" : "translated",
             "value" : "Stream key reset. Update it in your streaming software."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clé de stream réinitialisée. Mettez-la à jour dans votre logiciel de streaming."
+          }
         }
       }
     },
@@ -577,6 +943,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't reset your stream key."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de réinitialiser votre clé de stream."
           }
         }
       }
@@ -588,6 +960,12 @@
             "state" : "translated",
             "value" : "Couldn't load your stream key."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de charger votre clé de stream."
+          }
         }
       }
     },
@@ -597,6 +975,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't update your stream info."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de mettre à jour les infos de votre stream."
           }
         }
       }
@@ -608,6 +992,12 @@
             "state" : "translated",
             "value" : "Stream info updated successfully."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Infos du stream mises à jour."
+          }
         }
       }
     },
@@ -617,6 +1007,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reset"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réinitialiser"
           }
         }
       }
@@ -628,6 +1024,12 @@
             "state" : "translated",
             "value" : "Your current key will stop working right away."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre clé actuelle cessera immédiatement de fonctionner."
+          }
         }
       }
     },
@@ -637,6 +1039,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reset your stream key?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réinitialiser votre clé de stream ?"
           }
         }
       }
@@ -648,6 +1056,12 @@
             "state" : "translated",
             "value" : "Server"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serveur"
+          }
         }
       }
     },
@@ -657,6 +1071,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Show"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher"
           }
         }
       }
@@ -668,6 +1088,12 @@
             "state" : "translated",
             "value" : "Stream Key"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clé de stream"
+          }
         }
       }
     },
@@ -677,6 +1103,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Title"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Titre"
           }
         }
       }
@@ -688,6 +1120,12 @@
             "state" : "translated",
             "value" : "OBS Settings"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paramètres OBS"
+          }
         }
       }
     },
@@ -698,6 +1136,12 @@
             "state" : "translated",
             "value" : "Stream Info"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Infos du stream"
+          }
         }
       }
     },
@@ -707,6 +1151,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stream Key"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clé de stream"
           }
         }
       }

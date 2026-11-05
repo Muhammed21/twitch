@@ -1,4 +1,5 @@
 import Auth
+import DesignSystem
 import Domain
 import Foundation
 import Navigation
@@ -26,6 +27,7 @@ struct PersonalizationRoot: View {
   @State private var notifications: NotificationChoices
   @State private var presentation: PaywallPresentation
   @State private var paywall: PaywallStore
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
   private let links: PaywallLinks
   private let onClose: () -> Void
 
@@ -66,14 +68,22 @@ struct PersonalizationRoot: View {
   }
 
   var body: some View {
-    PersonalizationScreen()
-      .environment(journey)
-      .environment(categories)
-      .environment(interests)
-      .environment(notifications)
-      .fullScreenCover(isPresented: Binding(get: { presentation.isShown }, set: { presentation.isShown = $0 })) {
+    ZStack {
+      if presentation.isShown {
         PaywallScreen(store: paywall, links: links, onClose: onClose)
+          .transition(PaywallStepTransition(reduceMotion: reduceMotion))
+      } else {
+        PersonalizationScreen()
+          .environment(journey)
+          .environment(categories)
+          .environment(interests)
+          .environment(notifications)
+          .transition(PaywallStepTransition(reduceMotion: reduceMotion))
       }
+    }
+    .clipped()
+    .background(ColorRole.background.color.ignoresSafeArea())
+    .animation(MotionRole.journeyPage, value: presentation.isShown)
   }
 
   @MainActor
@@ -125,6 +135,19 @@ struct PersonalizationRoot: View {
       repository: UserDefaultsPreferences(suiteName: nil, language: LiveLanguage(localeIdentifier: Locale.current.identifier)),
       onChange: { _ in }
     )
+  }
+}
+
+struct PaywallStepTransition: Transition {
+  let reduceMotion: Bool
+
+  func body(content: Content, phase: TransitionPhase) -> some View {
+    let shift = JourneyMotion.pageShift(phase: phase, direction: .forward, reduceMotion: reduceMotion)
+    content
+      .visualEffect { effect, proxy in
+        effect.offset(x: shift * proxy.size.width)
+      }
+      .opacity(JourneyMotion.pageOpacity(phase: phase, reduceMotion: reduceMotion))
   }
 }
 

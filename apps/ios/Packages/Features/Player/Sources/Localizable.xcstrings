@@ -8,6 +8,12 @@
             "state" : "translated",
             "value" : "This stream has ended."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce stream est terminé."
+          }
         }
       }
     },
@@ -17,6 +23,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This stream couldn't play."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de lire ce stream."
           }
         }
       }
@@ -28,6 +40,12 @@
             "state" : "translated",
             "value" : "Play"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lecture"
+          }
         }
       }
     },
@@ -38,6 +56,12 @@
             "state" : "translated",
             "value" : "Live video playing"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vidéo live en cours de lecture"
+          }
         }
       }
     },
@@ -47,6 +71,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Try Again"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réessayer"
           }
         }
       }

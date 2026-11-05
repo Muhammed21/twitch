@@ -8,6 +8,12 @@
             "state" : "translated",
             "value" : "This version of Twitch is no longer supported. Update the app to keep watching."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette version de Twitch n'est plus prise en charge. Mettez l'app à jour pour continuer à regarder."
+          }
         }
       }
     },
@@ -17,6 +23,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Update Required"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mise à jour requise"
           }
         }
       }

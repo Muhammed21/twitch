@@ -83,7 +83,8 @@ final class RevenueCatBackend: PurchasesBackend {
             id: package.identifier,
             offeringID: offering.identifier,
             period: $0,
-            localizedPrice: package.storeProduct.localizedPriceString
+            localizedPrice: package.storeProduct.localizedPriceString,
+            price: package.storeProduct.price
           )
         }
       }

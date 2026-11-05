@@ -57,7 +57,7 @@ struct ChatLineTests {
   @Test("la ligne affichée réunit l'heure, l'auteur et le corps, chacun dans son style")
   func styled() {
     let author = UUID()
-    let text = ChatLine(sent(at: "2026-11-03T04:13:00Z", by: author), locale: english, timeZone: utc).styled(timestamped)
+    let text = ChatLine(sent(at: "2026-11-03T04:13:00Z", by: author), locale: english, timeZone: utc).styled(timestamped.line)
 
     #expect(String(text.characters) == "04:13 yahway_810: valid")
     #expect(segments(of: text) { $0.foregroundColor == ColorRole.textSecondary.color } == ["04:13"])
@@ -68,7 +68,7 @@ struct ChatLineTests {
 
   @Test("un message supprimé garde son heure et son auteur, et dit « message deleted » en texte secondaire")
   func deletedMessage() {
-    let text = ChatLine(sent(at: "2026-11-03T04:13:00Z").deleted(), locale: english, timeZone: utc).styled(timestamped)
+    let text = ChatLine(sent(at: "2026-11-03T04:13:00Z").deleted(), locale: english, timeZone: utc).styled(timestamped.line)
 
     #expect(String(text.characters) == "04:13 yahway_810: message deleted")
     #expect(segments(of: text) { $0.foregroundColor == ColorRole.textSecondary.color } == ["04:13", "message deleted"])
@@ -78,7 +78,7 @@ struct ChatLineTests {
   @Test("sans horodatage, la ligne commence par l'auteur")
   func withoutTimestamp() {
     let text = ChatLine(sent(at: "2026-11-03T04:13:00Z"), locale: english, timeZone: utc)
-      .styled(ChatDisplay(textSize: .medium, showsTimestamps: false))
+      .styled(ChatDisplay(textSize: .medium, showsTimestamps: false).line)
 
     #expect(String(text.characters) == "yahway_810: valid")
   }
@@ -93,9 +93,9 @@ struct ChatLineTests {
   )
   func textSize(size: ChatTextSize, message: TextRole, author: TextRole) {
     let display = ChatDisplay(textSize: size, showsTimestamps: true)
-    let text = ChatLine(sent(at: "2026-11-03T04:13:00Z"), locale: english, timeZone: utc).styled(display)
+    let text = ChatLine(sent(at: "2026-11-03T04:13:00Z"), locale: english, timeZone: utc).styled(display.line)
 
-    #expect(display.messageRole == message)
+    #expect(display.line.messageRole == message)
     #expect(segments(of: text) { $0.font == author.font } == ["yahway_810:"])
     #expect(segments(of: text) { $0.font == message.font } == ["04:13", "valid"])
   }
@@ -120,7 +120,7 @@ struct ChatLineTests {
     let blue = try #require(UUID(uuidString: "00000000-0000-0000-0000-000000000007"))
     let green = try #require(UUID(uuidString: "00000000-0000-0000-0000-000000000004"))
     let colors = [blue, green].map { author in
-      let text = ChatLine(sent(at: "2026-11-03T04:13:00Z", by: author), locale: english, timeZone: utc).styled(timestamped)
+      let text = ChatLine(sent(at: "2026-11-03T04:13:00Z", by: author), locale: english, timeZone: utc).styled(timestamped.line)
       return text.runs.first { String(text[$0.range].characters) == "yahway_810:" }?.foregroundColor
     }
 
@@ -132,7 +132,7 @@ struct ChatLineTests {
   func badges() {
     let line = ChatLine(sent(at: "2026-11-03T04:13:00Z", badges: [.unknown("vip"), .turbo]), locale: english, timeZone: utc)
 
-    #expect(line.badges == [.turbo])
+    #expect(line.badges == [.turboBattery])
     #expect(ChatLine(sent(at: "2026-11-03T04:13:00Z"), locale: english, timeZone: utc).badges.isEmpty)
   }
 
@@ -144,7 +144,7 @@ struct ChatLineTests {
 
   @Test("la couleur choisie dans la palette remplace la couleur attribuée", arguments: ChatNameColor.allCases)
   func chosenColor(color: ChatNameColor) {
-    let text = ChatLine(sent(at: "2026-11-03T04:13:00Z", color: color.hex), locale: english, timeZone: utc).styled(timestamped)
+    let text = ChatLine(sent(at: "2026-11-03T04:13:00Z", color: color.hex), locale: english, timeZone: utc).styled(timestamped.line)
 
     #expect(segments(of: text) { $0.foregroundColor == color.color } == ["yahway_810:"])
   }
@@ -152,7 +152,7 @@ struct ChatLineTests {
   @Test("une couleur hors palette, ou aucune couleur, laisse la couleur attribuée", arguments: ["#123456", "red", nil] as [String?])
   func colorOutsidePalette(color: String?) {
     let author = UUID()
-    let text = ChatLine(sent(at: "2026-11-03T04:13:00Z", by: author, color: color), locale: english, timeZone: utc).styled(timestamped)
+    let text = ChatLine(sent(at: "2026-11-03T04:13:00Z", by: author, color: color), locale: english, timeZone: utc).styled(timestamped.line)
 
     #expect(segments(of: text) { $0.foregroundColor == ColorRole.chatName(author).color } == ["yahway_810:"])
   }

@@ -3,8 +3,8 @@ import Paywall
 import PurchasesTesting
 import Testing
 
-private let monthly = SubscriptionPackage(id: "$rc_monthly", offeringID: "default", period: .month, localizedPrice: "4,99 €")
-private let annual = SubscriptionPackage(id: "$rc_annual", offeringID: "default", period: .year, localizedPrice: "49,99 €")
+private let monthly = SubscriptionPackage(id: "$rc_monthly", offeringID: "default", period: .month, localizedPrice: "4,99 €", price: 4.99)
+private let annual = SubscriptionPackage(id: "$rc_annual", offeringID: "default", period: .year, localizedPrice: "49,99 €", price: 49.99)
 private let defaultOffering = SubscriptionOffering(id: "default", packages: [monthly, annual])
 
 @MainActor

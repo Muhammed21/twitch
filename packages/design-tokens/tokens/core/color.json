@@ -27,6 +27,11 @@
           "$value": "#2d2d2f",
           "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : filet au-dessus de la barre d'onglets, thème sombre (accueil/flux-suivis--aucun-live)."
         },
+        "20": {
+          "$type": "color",
+          "$value": "#323338",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9625, IMG_9626) : contour et ombre des illustrations d'état vide du tableau de bord, mesuré #323338 sur le fond #f7f7f8."
+        },
         "35": {
           "$type": "color",
           "$value": "#53535f",

@@ -6,7 +6,7 @@ import Testing
 private let viewerID = UUID(uuidString: "6F9619FF-8B86-D011-B42D-00C04FC964FF") ?? UUID()
 
 private func makePackage(_ id: String, in offering: String, period: SubscriptionPeriod = .month) -> SubscriptionPackage {
-  SubscriptionPackage(id: id, offeringID: offering, period: period, localizedPrice: "4,99 €")
+  SubscriptionPackage(id: id, offeringID: offering, period: period, localizedPrice: "4,99 €", price: 4.99)
 }
 
 private func makeOffering(_ id: String) -> SubscriptionOffering {

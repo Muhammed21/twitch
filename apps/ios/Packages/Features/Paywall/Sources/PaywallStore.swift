@@ -20,6 +20,7 @@ public final class PaywallStore {
   public private(set) var phase: Phase = .loading
   public private(set) var notice: Notice?
   public private(set) var purchasing: SubscriptionPackage?
+  public private(set) var selected: SubscriptionPackage?
   public private(set) var isRestoring = false
 
   private let purchases: any Purchases
@@ -49,10 +50,17 @@ public final class PaywallStore {
       return
     }
     do {
-      phase = try await .ready(purchases.offering(offeringID))
+      let offering = try await purchases.offering(offeringID)
+      selected = PaywallOffer.preferred(in: offering)
+      phase = .ready(offering)
     } catch {
       phase = .unavailable
     }
+  }
+
+  public func select(_ package: SubscriptionPackage) {
+    guard purchasing == nil, !isRestoring else { return }
+    selected = package
   }
 
   public func subscribe(_ package: SubscriptionPackage) async {
