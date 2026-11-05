@@ -85,7 +85,7 @@ describe("application d'une commande Turbo", () => {
       },
     });
 
-    expect(locks).toEqual([[USER_ID, unknownOrigin, OTHER_USER_ID]]);
+    expect(locks).toEqual([[OTHER_USER_ID, unknownOrigin, USER_ID]]);
     expect(rows()).toEqual([
       { ...origin, status: "revoked", lastEventAt: OCCURRED_AT },
       expect.objectContaining({ id: NEW_ID, userId: OTHER_USER_ID, status: "active" }),
@@ -94,5 +94,22 @@ describe("application d'une commande Turbo", () => {
       { type: "revoked", userId: USER_ID, occurredAt: OCCURRED_AT },
       { type: "granted", userId: OTHER_USER_ID, expiresAt: EXPIRES_AT, occurredAt: OCCURRED_AT },
     ]);
+  });
+
+  it("verrouille les comptes d'un transfert triés et sans doublon, pour qu'un transfert inverse ne bloque pas", async () => {
+    const { ledger, locks } = memoryTurboLedger();
+
+    await applyTurboCommand({
+      ledger,
+      newId,
+      command: {
+        kind: "transfer",
+        fromUserIds: [USER_ID, OTHER_USER_ID, USER_ID],
+        toUserId: OTHER_USER_ID,
+        occurredAt: OCCURRED_AT,
+      },
+    });
+
+    expect(locks).toEqual([[OTHER_USER_ID, USER_ID]]);
   });
 });
