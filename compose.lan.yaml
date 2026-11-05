@@ -5,15 +5,22 @@
 # (http://<adresse>:3002) : c'est l'URL que l'iPhone joint pour lire le live.
 # Pour envoyer une image (ADR 0044), S3_PUBLIC_ENDPOINT (http://<adresse>:8333) et
 # S3_PUBLIC_BASE_URL (http://<adresse>:8333/twitch-local) prennent aussi cette adresse.
+# BETTER_AUTH_URL (http://<adresse>:<API_PORT>) aussi : les pages de connexion refusent (403)
+# un formulaire dont l'origine n'est pas celle de l'API, et la ressource OAuth en dépend.
+# Le chat la reprend comme CHAT_API_BASE_URL : sinon il refuse (401) les jetons émis pour elle.
 
 services:
   api:
     ports: !override
       - "${API_PORT:-3000}:3000"
+    environment:
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:?BETTER_AUTH_URL doit prendre l'adresse de la machine sur le réseau local}
 
   chat:
     ports: !override
       - "${CHAT_HTTP_PORT:-3001}:3001"
+    environment:
+      CHAT_API_BASE_URL: ${BETTER_AUTH_URL:?BETTER_AUTH_URL doit prendre l'adresse de la machine sur le réseau local}
 
   video:
     ports: !override
