@@ -8,6 +8,14 @@ private struct Catalog: CustomTestStringConvertible {
 
   var keys: [String] { keys(in: "en") }
 
+  var tables: Set<String> {
+    Set(
+      ["strings", "stringsdict"]
+        .flatMap { bundle.urls(forResourcesWithExtension: $0, subdirectory: nil, localization: "en") ?? [] }
+        .map { $0.deletingPathExtension().lastPathComponent }
+    )
+  }
+
   func keys(in language: String) -> [String] {
     ["Localizable.strings", "Localizable.stringsdict"]
       .compactMap { bundle.url(forResource: $0, withExtension: nil, subdirectory: nil, localization: language) }
@@ -44,6 +52,11 @@ struct LocalizationCatalogTests {
       "Packages_Dashboard.bundle", "Packages_Home.bundle", "Packages_Onboarding.bundle",
       "Packages_Paywall.bundle", "Packages_Player.bundle", "Packages_Profile.bundle",
     ]))
+  }
+
+  @Test("chaque fonctionnalité range ses chaînes dans son seul catalogue Localizable", arguments: catalogs)
+  private func singleTable(catalog: Catalog) {
+    #expect(catalog.tables == ["Localizable"])
   }
 
   @Test("chaque catalogue est entièrement traduit en français", arguments: catalogs)

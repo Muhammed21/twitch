@@ -321,6 +321,70 @@
         }
       }
     },
+    "journey.chat.preview" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preview"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aperçu"
+          }
+        }
+      }
+    },
+    "journey.chat.preview.clutch" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That clutch was unreal!"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce clutch était irréel !"
+          }
+        }
+      }
+    },
+    "journey.chat.preview.goodGame" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GG, see you next stream"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GG, à la prochaine !"
+          }
+        }
+      }
+    },
+    "journey.chat.preview.readable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This text size is easy to read"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette taille de texte se lit bien"
+          }
+        }
+      }
+    },
     "journey.chat.section" : {
       "localizations" : {
         "en" : {
