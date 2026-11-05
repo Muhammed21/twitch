@@ -54,7 +54,7 @@
       "foreground": "color.text.secondary",
       "background": "color.surface.secondary",
       "min": 4.5,
-      "note": "Placeholder d'un champ de recherche"
+      "note": "Placeholder d'un champ de recherche, tag d'une catégorie"
     },
     {
       "foreground": "color.text.link",

@@ -5,7 +5,7 @@ export { Channel } from "./channel.ts";
 export { StreamKey } from "./stream-key.ts";
 export { Timeout } from "./timeout.ts";
 export { Live, LiveCategory, LivePage } from "./live-page.ts";
-export { BrowseCategory, BrowseCategoryList } from "./browse-category.ts";
+export { BrowseCategory, BrowseCategoryList, CategoryHeader } from "./browse-category.ts";
 export { MobileBootstrap, Profile } from "./mobile-bootstrap.ts";
 export { LiveStatus } from "./live-status.ts";
 export { Playback } from "./playback.ts";

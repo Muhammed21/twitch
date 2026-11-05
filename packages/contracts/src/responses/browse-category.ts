@@ -7,6 +7,7 @@ export const BrowseCategory = z
     imageUrl: z.url().optional(),
     liveCount: z.int().min(1),
     viewerCount: z.int().min(0),
+    tags: z.array(z.string()),
   })
   .meta({ id: "BrowseCategory" });
 
@@ -16,3 +17,14 @@ export const BrowseCategoryList = z
     nextCursor: z.string().optional(),
   })
   .meta({ id: "BrowseCategoryList" });
+
+export const CategoryHeader = z
+  .looseObject({
+    slug: z.string(),
+    name: z.string(),
+    imageUrl: z.url().optional(),
+    liveCount: z.int().min(0),
+    viewerCount: z.int().min(0),
+    tags: z.array(z.string()),
+  })
+  .meta({ id: "CategoryHeader" });

@@ -22,6 +22,7 @@ const makeCategory = (overrides: Partial<CategoryView> = {}): CategoryView => ({
   status: "active",
   mergedIntoId: null,
   imageKey: null,
+  tags: [],
   ...overrides,
 });
 
@@ -158,6 +159,7 @@ const makeBrowsed = (overrides: Partial<BrowsedCategory> = {}): BrowsedCategory 
   categoryId: IRL,
   slug: "irl",
   imageKey: null,
+  tags: [],
   name: "IRL",
   liveCount: 2,
   viewerCount: 70,

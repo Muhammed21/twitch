@@ -72,9 +72,15 @@ describe("Me", () => {
   });
 
   it("garde un champ ajouté plus tard par le serveur", () => {
-    expect(responses.Me.parse(makeMe({ avatarUrl: "https://cdn/a.png" }))).toMatchObject({
-      avatarUrl: "https://cdn/a.png",
-    });
+    expect(responses.Me.parse(makeMe({ pronouns: "iel" }))).toMatchObject({ pronouns: "iel" });
+  });
+
+  it("décode l'URL de l'avatar, en HTTP comme en HTTPS", () => {
+    const local = makeMe({ avatarUrl: "http://127.0.0.1:8333/twitch-local/images/avatar/a.webp" });
+    const production = makeMe({ avatarUrl: "https://images.twitch.example/images/avatar/a.webp" });
+
+    expect(responses.Me.parse(local)).toEqual(local);
+    expect(responses.Me.parse(production)).toEqual(production);
   });
 
   it.each([
@@ -83,6 +89,10 @@ describe("Me", () => {
     ["sans e-mail", { email: undefined }],
     ["une bio qui n'est pas une chaîne", { bio: 42 }],
     ["une date de dernier live qui n'est pas une date ISO", { lastLiveAt: "hier" }],
+    ["un avatar qui n'est pas une URL", { avatarUrl: "avatar.webp" }],
+    ["un avatar hors HTTP", { avatarUrl: "ftp://images.twitch.example/a.webp" }],
+    ["un avatar d'un schéma qui finit par http", { avatarUrl: "xhttp://i.example/a.webp" }],
+    ["un avatar d'un schéma qui commence par https", { avatarUrl: "httpsx://i.example/a.webp" }],
   ])("refuse %s", (_name, overrides) => {
     expect(responses.Me.safeParse(makeMe(overrides)).success).toBe(false);
   });
@@ -358,14 +368,15 @@ describe("BrowseCategoryList", () => {
     name: "Just Chatting",
     liveCount: 3,
     viewerCount: 40,
+    tags: ["IRL"],
     ...overrides,
   });
 
-  it("décode les catégories en live, avec leurs viewers et leur pochette", () => {
+  it("décode les catégories en live, avec leurs viewers, leur pochette et leurs tags", () => {
     const list = {
       items: [
         makeBrowseCategory({ viewerCount: 1200, imageUrl: "https://cdn.twitch.local/jc.webp" }),
-        makeBrowseCategory({ slug: "irl", name: "IRL", liveCount: 1, viewerCount: 0 }),
+        makeBrowseCategory({ slug: "irl", name: "IRL", liveCount: 1, viewerCount: 0, tags: [] }),
       ],
     };
 
@@ -384,10 +395,51 @@ describe("BrowseCategoryList", () => {
     ["avec un nombre de viewers négatif", { viewerCount: -1 }],
     ["sans nombre de viewers", { viewerCount: undefined }],
     ["avec une pochette qui n'est pas une URL", { imageUrl: "jc.webp" }],
+    ["sans tags", { tags: undefined }],
+    ["avec un tag qui n'est pas un texte", { tags: [1] }],
   ])("refuse une catégorie %s", (_name, overrides) => {
     expect(
       responses.BrowseCategoryList.safeParse({ items: [makeBrowseCategory(overrides)] }).success,
     ).toBe(false);
+  });
+});
+
+describe("CategoryHeader (ADR 0050)", () => {
+  const makeHeader = (overrides: Record<string, unknown> = {}) => ({
+    slug: "fortnite",
+    name: "Fortnite",
+    imageUrl: "https://cdn.twitch.local/images/category/fortnite.webp",
+    liveCount: 12,
+    viewerCount: 22000,
+    tags: ["Shooter", "RPG"],
+    ...overrides,
+  });
+
+  it.each([
+    ["avec sa pochette, son audience et ses tags", makeHeader()],
+    [
+      "sans pochette, sans live ni tag",
+      makeHeader({ imageUrl: undefined, liveCount: 0, viewerCount: 0, tags: [] }),
+    ],
+  ])("décode l'en-tête d'une catégorie %s", (_name, header) => {
+    expect(responses.CategoryHeader.parse(header)).toEqual(header);
+  });
+
+  it("garde un champ ajouté plus tard par le serveur", () => {
+    expect(responses.CategoryHeader.parse(makeHeader({ followerCount: 3 }))).toMatchObject({
+      followerCount: 3,
+    });
+  });
+
+  it.each([
+    ["sans slug", { slug: undefined }],
+    ["sans nom", { name: undefined }],
+    ["avec une pochette qui n'est pas une URL", { imageUrl: "fortnite.webp" }],
+    ["avec un nombre de lives négatif", { liveCount: -1 }],
+    ["sans nombre de viewers", { viewerCount: undefined }],
+    ["sans tags", { tags: undefined }],
+  ])("refuse un en-tête %s", (_name, overrides) => {
+    expect(responses.CategoryHeader.safeParse(makeHeader(overrides)).success).toBe(false);
   });
 });
 
@@ -427,6 +479,20 @@ describe("MobileBootstrap", () => {
     const profile = makeProfile({ bio: "Speedrun", lastLiveAt: "2026-11-03T20:15:00.000Z" });
 
     expect(responses.MobileBootstrap.parse(makeBootstrap({ profile })).profile).toEqual(profile);
+  });
+
+  it("décode l'URL de l'avatar du profil", () => {
+    const profile = makeProfile({
+      avatarUrl: "https://images.twitch.example/images/avatar/a.webp",
+    });
+
+    expect(responses.MobileBootstrap.parse(makeBootstrap({ profile })).profile).toEqual(profile);
+  });
+
+  it("refuse un profil dont l'avatar n'est pas une URL HTTP", () => {
+    const profile = makeProfile({ avatarUrl: "ftp://images.twitch.example/a.webp" });
+
+    expect(responses.MobileBootstrap.safeParse(makeBootstrap({ profile })).success).toBe(false);
   });
 
   it("refuse un profil dont la date du dernier live n'est pas une date ISO", () => {

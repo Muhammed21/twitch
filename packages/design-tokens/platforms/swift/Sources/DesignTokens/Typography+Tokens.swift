@@ -36,4 +36,6 @@ public extension Font {
     static let chatAuthorText = Font.caption.weight(.medium)
     /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/creer/edition-infos-diffusion--defaut) : aide sous un champ, « All content must adhere to and be categorized according to our » large de 358 pt, hauteur de capitale 8,7 pt, soit 12 pt régulier, text style iOS caption.
     static let hintText = Font.caption.weight(.regular)
+    /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/parcourir/liste-categories--defaut) : tag « IRL » sous une catégorie, capitales de 8,3 pt de haut et fût de 1,5 pt, soit 12 pt semibold, text style iOS caption.
+    static let tagText = Font.caption.weight(.semibold)
 }

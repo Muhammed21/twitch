@@ -446,13 +446,14 @@ const browseAll = async (cursor?: string): Promise<readonly BrowsedItem[]> => {
 };
 
 describe("catégories de Browse (ADR 0047)", () => {
-  it("classe l'audience calculée par lots, fusions suivies, même par deux calculs simultanés, et la pagine par curseur sans doublon", async () => {
+  it("classe l'audience calculée par lots, fusions suivies, même par deux calculs simultanés, la pagine par curseur sans doublon, et rend l'en-tête d'une catégorie (ADR 0050)", async () => {
     const suffix = randomUUID().slice(0, 8);
     const target = {
       categoryId: randomUUID(),
       slug: `cible-${suffix}`,
       name: "Cible",
       imageKey: "images/category/cible.webp",
+      tags: ["Shooter", "RPG"],
     };
     const other = { categoryId: randomUUID(), slug: `autre-${suffix}`, name: "Autre" };
     const source = {
@@ -496,16 +497,32 @@ describe("catégories de Browse (ADR 0047)", () => {
         imageUrl: coverUrl("images/category/cible.webp"),
         liveCount: 2,
         viewerCount: 0,
+        tags: ["Shooter", "RPG"],
       });
       expect(browsed).toContainEqual({
         slug: other.slug,
         name: "Autre",
         liveCount: 1,
         viewerCount: 0,
+        tags: [],
       });
       expect(slugs).not.toContain(source.slug);
       expect(slugs).not.toContain(retired.slug);
       expect(new Set(slugs).size).toBe(slugs.length);
+
+      const header = await fetch(`${state.url}/v1/categories/${source.slug}`);
+      expect(header.status).toBe(200);
+      expect(responses.CategoryHeader.parse(await header.json())).toEqual({
+        slug: target.slug,
+        name: "Cible",
+        imageUrl: coverUrl("images/category/cible.webp"),
+        liveCount: 2,
+        viewerCount: 0,
+        tags: ["Shooter", "RPG"],
+      });
+      expect((await fetch(`${state.url}/v1/categories/${retired.slug}`)).status).toBe(404);
+      const catalog = await fetch(`${state.url}/v1/categories/catalog`);
+      expect(responses.CategoryCatalog.safeParse(await catalog.json()).success).toBe(true);
     } finally {
       await cleanUp();
       await discovery.discoveryCategoryAudience.deleteMany({

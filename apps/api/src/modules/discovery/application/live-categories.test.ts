@@ -16,6 +16,7 @@ const makeCategory = (overrides: Partial<CategoryView> = {}): CategoryView => ({
   status: "active",
   mergedIntoId: null,
   imageKey: null,
+  tags: [],
   ...overrides,
 });
 

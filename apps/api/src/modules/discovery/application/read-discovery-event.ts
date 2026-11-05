@@ -38,6 +38,8 @@ const {
   channelCategoryMerged,
   channelCategoryRetired,
   channelCategoryUpdated,
+  channelCategoryFollowed,
+  channelCategoryUnfollowed,
 } = events.channel;
 const { streamStarted, streamEnded } = events.stream;
 
@@ -79,11 +81,32 @@ export const DISCOVERY_EVENT_READERS: Readonly<
   })),
   [channelCategoryUpdated.name]: reader(
     channelCategoryUpdated,
-    ({ categoryId, name, imageKey }) => ({
+    ({ categoryId, name, imageKey, tags }) => ({
       kind: "category-updated",
       categoryId,
       name,
       imageKey,
+      tags,
+    }),
+  ),
+  [channelCategoryFollowed.name]: reader(
+    channelCategoryFollowed,
+    ({ userId, categoryId, version }) => ({
+      kind: "category-follow-changed",
+      userId,
+      categoryId,
+      following: true,
+      version,
+    }),
+  ),
+  [channelCategoryUnfollowed.name]: reader(
+    channelCategoryUnfollowed,
+    ({ userId, categoryId, version }) => ({
+      kind: "category-follow-changed",
+      userId,
+      categoryId,
+      following: false,
+      version,
     }),
   ),
   [streamStarted.name]: reader(streamStarted, ({ channelId, sessionId, startedAt }) => ({

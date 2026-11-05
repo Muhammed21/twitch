@@ -112,6 +112,47 @@
         ]
       }
     },
+    "/v1/me/avatar": {
+      "put": {
+        "operationId": "MeController_avatar",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AvatarUploadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erreur au format RFC 9457",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Me"
+        ]
+      }
+    },
     "/v1/channels/{slug}": {
       "get": {
         "operationId": "ChannelsController_read",
@@ -470,6 +511,70 @@
         },
         "tags": [
           "CategoryCatalog"
+        ]
+      }
+    },
+    "/v1/me/followed-categories/{slug}": {
+      "put": {
+        "operationId": "FollowedCategoriesController_follow",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "default": {
+            "description": "Erreur au format RFC 9457",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "FollowedCategories"
+        ]
+      },
+      "delete": {
+        "operationId": "FollowedCategoriesController_unfollow",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "default": {
+            "description": "Erreur au format RFC 9457",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "FollowedCategories"
         ]
       }
     },
@@ -887,6 +992,46 @@
         ]
       }
     },
+    "/v1/categories/{slug}": {
+      "get": {
+        "operationId": "CategoriesController_header",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryHeader"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erreur au format RFC 9457",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Categories"
+        ]
+      }
+    },
     "/v1/mobile/bootstrap": {
       "get": {
         "operationId": "MobileBootstrapController_read",
@@ -1014,6 +1159,10 @@
             "type": "string",
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "format": "uri"
           }
         },
         "required": [
@@ -1033,6 +1182,18 @@
         },
         "required": [
           "bio"
+        ],
+        "additionalProperties": false
+      },
+      "AvatarUploadRequest": {
+        "type": "object",
+        "properties": {
+          "uploadId": {
+            "$ref": "#/components/schemas/Uuid"
+          }
+        },
+        "required": [
+          "uploadId"
         ],
         "additionalProperties": false
       },
@@ -1427,13 +1588,20 @@
             "type": "integer",
             "minimum": 0,
             "maximum": 9007199254740991
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
           "slug",
           "name",
           "liveCount",
-          "viewerCount"
+          "viewerCount",
+          "tags"
         ],
         "additionalProperties": {}
       },
@@ -1452,6 +1620,45 @@
         },
         "required": [
           "items"
+        ],
+        "additionalProperties": {}
+      },
+      "CategoryHeader": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "imageUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "liveCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "viewerCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "liveCount",
+          "viewerCount",
+          "tags"
         ],
         "additionalProperties": {}
       },
@@ -1474,6 +1681,10 @@
             "type": "string",
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "format": "uri"
           },
           "channel": {
             "$ref": "#/components/schemas/OwnedChannel"

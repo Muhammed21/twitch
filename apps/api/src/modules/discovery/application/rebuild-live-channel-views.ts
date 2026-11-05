@@ -1,5 +1,9 @@
+import {
+  applyCategoryFollowEvent,
+  type CategoryFollowView,
+} from "../domain/category-follow-view.ts";
 import { applyCategoryEvent, type CategoryView } from "../domain/category-view.ts";
-import { isCategoryEvent } from "../domain/discovery-event.ts";
+import { isCategoryEvent, isCategoryFollowEvent } from "../domain/discovery-event.ts";
 import { applyDiscoveryEvent, type LiveChannelView } from "../domain/live-channel-view.ts";
 import { DISCOVERY_EVENT_READERS, type PublishedEvent } from "./read-discovery-event.ts";
 
@@ -12,6 +16,7 @@ export interface OutboxHistory {
 export type RebuiltProjection = {
   readonly views: readonly LiveChannelView[];
   readonly categories: readonly CategoryView[];
+  readonly follows: readonly CategoryFollowView[];
   readonly eventIds: readonly string[];
   readonly skipped: number;
 };
@@ -30,6 +35,7 @@ export type RebuildReport = {
 type Accumulator = {
   readonly views: Map<string, LiveChannelView>;
   readonly categories: Map<string, CategoryView>;
+  readonly follows: Map<string, CategoryFollowView>;
   readonly eventIds: string[];
   readonly skippedIds: string[];
 };
@@ -46,7 +52,13 @@ const foldInto =
       accumulator.skippedIds.push(event.id);
       return;
     }
-    if (isCategoryEvent(decoded)) {
+    if (isCategoryFollowEvent(decoded)) {
+      const pair = `${decoded.userId}:${decoded.categoryId}`;
+      const next = applyCategoryFollowEvent(accumulator.follows.get(pair) ?? null, decoded);
+      if (next !== null) {
+        accumulator.follows.set(pair, next);
+      }
+    } else if (isCategoryEvent(decoded)) {
       const { categoryId } = decoded;
       accumulator.categories.set(
         categoryId,
@@ -86,6 +98,7 @@ const project = async (history: OutboxHistory, pageSize: number): Promise<Rebuil
   const accumulator: Accumulator = {
     views: new Map(),
     categories: new Map(),
+    follows: new Map(),
     eventIds: [],
     skippedIds: [],
   };
@@ -93,6 +106,7 @@ const project = async (history: OutboxHistory, pageSize: number): Promise<Rebuil
   return {
     views: [...accumulator.views.values()],
     categories: [...accumulator.categories.values()],
+    follows: [...accumulator.follows.values()],
     eventIds: accumulator.eventIds,
     skipped: accumulator.skippedIds.length,
   };

@@ -30,7 +30,8 @@ extension LiveChannel {
       session: StreamSession(channelID: ChannelID(live.channelId), startedAt: live.startedAt),
       slug: slug,
       title: live.title,
-      viewers: live.viewerCount.flatMap { try? ViewerCount($0) }
+      viewers: live.viewerCount.flatMap { try? ViewerCount($0) },
+      thumbnailURL: live.thumbnailUrl.flatMap { URL(webAddress: $0) }
     )
   }
 }
