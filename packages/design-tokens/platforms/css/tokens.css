@@ -67,6 +67,8 @@
   --typography-chat-author-text-weight: 500;
   --typography-hint-text-font: -apple-system-caption1;
   --typography-hint-text-weight: 400;
+  --typography-tag-text-font: -apple-system-caption1;
+  --typography-tag-text-weight: 600;
   --spacing-x1: 1px;
   --spacing-x2: 2px;
   --spacing-x3: 3px;

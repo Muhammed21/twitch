@@ -20,6 +20,7 @@ public enum TextRole: Sendable {
   case cardDetail
   case liveBadge
   case viewerCount
+  case tag
   case categoryName
   case fieldHint
   case fieldText
@@ -44,6 +45,7 @@ public enum TextRole: Sendable {
     case .cardDetail: .supportingText
     case .liveBadge: .liveBadge
     case .viewerCount: .viewerCount
+    case .tag: .tagText
     case .categoryName: .actionLabel
     case .fieldHint: .hintText
     case .fieldText: .supportingText
@@ -99,6 +101,12 @@ public enum LayoutRole: Sendable {
   case categoryNameTop
   case liveDotSize
   case liveDotGap
+  case categoryTagPaddingH
+  case categoryTagPaddingV
+  case categoryTagGap
+  case categoryHeaderCoverWidth
+  case categoryHeaderGap
+  case categoryHeaderLineGap
   case profileBannerHeight
   case profileAvatarSize
   case profileAvatarOverlap
@@ -186,6 +194,12 @@ public enum LayoutRole: Sendable {
     case .categoryNameTop: Spacing.x4
     case .liveDotSize: Spacing.x8
     case .liveDotGap: Spacing.x6
+    case .categoryTagPaddingH: Spacing.x8
+    case .categoryTagPaddingV: Spacing.x3
+    case .categoryTagGap: Spacing.x4
+    case .categoryHeaderCoverWidth: Spacing.x72
+    case .categoryHeaderGap: Spacing.x16
+    case .categoryHeaderLineGap: Spacing.x4
     case .profileBannerHeight: Spacing.x70
     case .profileAvatarSize: Spacing.x88
     case .profileAvatarOverlap: Spacing.x16
