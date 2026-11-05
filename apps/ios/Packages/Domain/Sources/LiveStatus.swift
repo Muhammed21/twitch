@@ -1,6 +1,8 @@
+import Foundation
+
 public enum LiveStatus: Equatable, Sendable {
   case offline
-  case live(viewers: ViewerCount?)
+  case live(viewers: ViewerCount?, startedAt: Date? = nil)
 }
 
 public struct LiveStatusUnavailable: Error, Equatable, Sendable {
