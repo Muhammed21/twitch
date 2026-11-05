@@ -196,6 +196,8 @@ Un job périodique (1 s, 50 événements par passe) traite les lignes où `proce
 - `MonetizationEntitlement` et l'outbox s'écrivent dans la même transaction : `monetization.entitlement.granted` `{userId, scope, expiresAt}` quand l'échéance change, `monetization.entitlement.revoked` `{userId, scope}` quand l'accès se coupe, avec l'horodatage de l'événement RevenueCat pour `occurredAt` ;
 - un échec annule les écritures du traitement, incrémente `attempts` et reprogramme `nextAttemptAt` avec le backoff de l'outbox.
 
+`GET /v1/mobile/bootstrap` rend `entitlements`, la liste des entitlements actifs du compte (`{ scope, expiresAt }`, portée en enum ouvert), lue par `createActiveEntitlementsReader` : statut `ACTIVE` ou `GRACE` et échéance future. Un client anonyme reçoit une liste vide ; si `monetization` ne répond pas, la liste est vide, l'erreur est journalisée et `bootstrap` répond quand même.
+
 ## Autorisation (ADR 0006)
 
 Les droits se décident dans les use-cases, à partir de `AuthzContext` (`@repo/authorization`) ; un garde NestJS ne porte aucune règle métier. `apps/api/src/authz/` implémente ce port sur PostgreSQL et Redis :

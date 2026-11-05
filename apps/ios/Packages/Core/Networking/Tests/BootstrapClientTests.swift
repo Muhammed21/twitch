@@ -13,7 +13,7 @@ private func makeClient(_ transport: FakeTransport) -> BootstrapClient {
 struct BootstrapClientTests {
   @Test("décode la version minimale et les flags d'une réponse réelle, sans en-tête Authorization")
   func decodesRealResponse() async throws {
-    let transport = FakeTransport(json: #"{"minSupportedVersion":"1.4.0","flags":{"session_replay":true}}"#)
+    let transport = FakeTransport(json: #"{"minSupportedVersion":"1.4.0","flags":{"session_replay":true},"entitlements":[]}"#)
 
     let bootstrap = try await makeClient(transport).bootstrap()
 
@@ -28,7 +28,7 @@ struct BootstrapClientTests {
   func toleratesAddedFields() async throws {
     let transport = FakeTransport(json: #"""
     {"minSupportedVersion":"1.4.0","flags":{"session_replay":false,"new_flag":"on"},
-     "profile":{"id":"4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b","name":"Viewer","email":"v@twitch.local"},"motd":"hi"}
+     "profile":{"id":"4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b","name":"Viewer","email":"v@twitch.local"},"entitlements":[],"motd":"hi"}
     """#)
 
     let bootstrap = try await makeClient(transport).bootstrap()
@@ -36,9 +36,33 @@ struct BootstrapClientTests {
     #expect(bootstrap.flags == FeatureFlags(sessionReplay: false))
   }
 
+  @Test("décode l'entitlement Turbo actif et son échéance")
+  func decodesTurboEntitlement() async throws {
+    let transport = FakeTransport(json: #"""
+    {"minSupportedVersion":"1.4.0","flags":{"session_replay":false},
+     "entitlements":[{"scope":"platform","expiresAt":"2026-12-08T09:00:00.000Z"}]}
+    """#)
+
+    let bootstrap = try await makeClient(transport).bootstrap()
+
+    #expect(bootstrap.entitlements == [Entitlement(scope: .platform, expiresAt: Date(timeIntervalSince1970: 1_796_720_400))])
+  }
+
+  @Test("ignore sans erreur un entitlement de portée inconnue (ADR 0024)")
+  func ignoresUnknownScope() async throws {
+    let transport = FakeTransport(json: #"""
+    {"minSupportedVersion":"1.4.0","flags":{"session_replay":false},
+     "entitlements":[{"scope":"channel","expiresAt":"2026-12-08T09:00:00.000Z","channelId":"c-1"}]}
+    """#)
+
+    let bootstrap = try await makeClient(transport).bootstrap()
+
+    #expect(bootstrap.entitlements.isEmpty)
+  }
+
   @Test("refuse une version minimale mal formée")
   func rejectsMalformedVersion() async throws {
-    let transport = FakeTransport(json: #"{"minSupportedVersion":"1.4","flags":{"session_replay":false}}"#)
+    let transport = FakeTransport(json: #"{"minSupportedVersion":"1.4","flags":{"session_replay":false},"entitlements":[]}"#)
 
     await #expect(throws: AppVersionError.malformed("1.4")) {
       try await makeClient(transport).bootstrap()

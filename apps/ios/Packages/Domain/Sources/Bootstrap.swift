@@ -1,3 +1,5 @@
+import Foundation
+
 public enum AppVersionError: Error, Equatable, Sendable {
   case malformed(String)
 }
@@ -41,13 +43,29 @@ public struct FeatureFlags: Equatable, Sendable {
   }
 }
 
+public struct Entitlement: Equatable, Sendable {
+  public enum Scope: Equatable, Sendable {
+    case platform
+  }
+
+  public let scope: Scope
+  public let expiresAt: Date
+
+  public init(scope: Scope, expiresAt: Date) {
+    self.scope = scope
+    self.expiresAt = expiresAt
+  }
+}
+
 public struct AppBootstrap: Equatable, Sendable {
   public let minSupportedVersion: AppVersion
   public let flags: FeatureFlags
+  public let entitlements: [Entitlement]
 
-  public init(minSupportedVersion: AppVersion, flags: FeatureFlags) {
+  public init(minSupportedVersion: AppVersion, flags: FeatureFlags, entitlements: [Entitlement] = []) {
     self.minSupportedVersion = minSupportedVersion
     self.flags = flags
+    self.entitlements = entitlements
   }
 }
 

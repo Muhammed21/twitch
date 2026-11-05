@@ -8,6 +8,7 @@ import SwiftUI
 final class LaunchStore {
   private(set) var flags = FeatureFlags.safeDefaults
   private(set) var isUpdateRequired = false
+  private(set) var entitlements: [Entitlement] = []
 
   private let source: any BootstrapSource
   private let currentVersion: AppVersion
@@ -20,6 +21,7 @@ final class LaunchStore {
   func run() async {
     guard let bootstrap = try? await source.bootstrap() else { return }
     flags = bootstrap.flags
+    entitlements = bootstrap.entitlements
     isUpdateRequired = currentVersion < bootstrap.minSupportedVersion
   }
 }

@@ -41,6 +41,7 @@ describe("bootstrap mobile de l'API assemblée", () => {
       expect(await response.json()).toEqual({
         minSupportedVersion: "2.3.4",
         flags: { session_replay: false },
+        entitlements: [],
       });
     } finally {
       await app.close();
