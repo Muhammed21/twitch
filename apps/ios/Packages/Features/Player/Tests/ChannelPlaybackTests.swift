@@ -153,7 +153,7 @@ struct ChannelPlaybackTests {
     #expect(screen.player.calls.last == "stop")
   }
 
-  @Test("lecture auto désactivée, un passage en live charge le flux en pause sans démarrer la lecture")
+  @Test("lecture auto désactivée, un passage en live attend le geste avant de charger le flux")
   func liveWithoutAutoplay() async throws {
     let screen = ChannelScreen(playback: FakePlayback(urls: [nil, liveURL]), allowsAutoplay: false)
     let slug = try jeanDupont()
@@ -161,12 +161,11 @@ struct ChannelPlaybackTests {
     try await waitUntil { screen.player.calls == ["stop"] }
 
     screen.playback.channelWentLive()
-    try await waitUntil { screen.player.calls.count == 2 }
+    try await waitUntil { screen.controller.state == .paused }
 
-    #expect(screen.player.calls == ["stop", "load \(liveURL.absoluteString)"])
-    #expect(screen.controller.state == .paused)
+    #expect(screen.player.calls == ["stop"])
     screen.controller.resume()
-    #expect(screen.player.calls.last == "play")
+    #expect(screen.player.calls == ["stop", "load \(liveURL.absoluteString)", "play"])
     opening.cancel()
     await opening.value
   }

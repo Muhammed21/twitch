@@ -200,6 +200,32 @@ struct PlayerEndTests {
     #expect(player.calls.last == "stop")
   }
 
+  @Test("préparer un live attend le geste de l'utilisateur, sans rien charger")
+  func prepare() {
+    let player = FakeMediaPlayer()
+    let controller = PlayerController(player: player)
+
+    controller.prepare(streamURL)
+
+    #expect(controller.state == .paused)
+    #expect(player.calls.isEmpty)
+  }
+
+  @Test("lancer un live préparé le charge avec les relances de démarrage")
+  func resumePreparedRetries() {
+    let player = FakeMediaPlayer()
+    let scheduler = ManualScheduler()
+    let controller = PlayerController(player: player, startupRetry: StartupRetry(attempts: 1) { scheduler.schedule($0) })
+    controller.prepare(streamURL)
+
+    controller.resume()
+    player.send(.failed)
+
+    #expect(controller.state == .loading)
+    #expect(scheduler.pending.count == 1)
+    #expect(player.calls == ["load \(streamURL.absoluteString)", "play"])
+  }
+
   @Test("au repos, la fin annoncée ne change rien")
   func endWhileIdle() {
     let player = FakeMediaPlayer()

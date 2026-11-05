@@ -58,6 +58,7 @@ public final class PlayerController {
   public private(set) var state: PlayerState = .idle
 
   private var url: URL?
+  private var awaitsGesture = false
   private var retriesLeft = 0
   private var generation = 0
   private let player: any MediaPlayer
@@ -71,16 +72,16 @@ public final class PlayerController {
 
   public func load(_ url: URL) {
     self.url = url
+    awaitsGesture = false
     retriesLeft = startupRetry.attempts
     start(url)
   }
 
   public func prepare(_ url: URL) {
     self.url = url
-    retriesLeft = 0
+    awaitsGesture = true
     generation += 1
     state = .paused
-    player.load(url)
   }
 
   private func start(_ url: URL) {
@@ -97,10 +98,15 @@ public final class PlayerController {
 
   public func resume() {
     guard state == .paused else { return }
+    if awaitsGesture, let url {
+      load(url)
+      return
+    }
     player.play()
   }
 
   public func stop() {
+    awaitsGesture = false
     generation += 1
     state = .idle
     player.stop()
@@ -108,6 +114,7 @@ public final class PlayerController {
 
   public func end() {
     guard state != .idle else { return }
+    awaitsGesture = false
     generation += 1
     state = .ended
     player.stop()
