@@ -101,7 +101,7 @@ struct EditProfileSheet: View {
       EditRow(title: String(localized: title), value: String(localized: hint), accessory: .edit)
     }
     .buttonStyle(.plain)
-    .disabled(images.phase == .sending(purpose))
+    .disabled(images.phase.isSending)
     .accessibilityIdentifier(purpose == .avatar ? "editProfile.picture" : "editProfile.banner")
   }
 
@@ -125,7 +125,10 @@ struct EditProfileSheet: View {
   }
 
   private func send(_ item: PhotosPickerItem, as purpose: ImagePurpose, through images: ProfileImageStore) async {
-    guard let picked = try? await item.loadTransferable(type: Data.self) else { return }
+    guard let picked = try? await item.loadTransferable(type: Data.self) else {
+      images.pickFailed(purpose)
+      return
+    }
     let preview = UIImage(data: picked).map { Image(uiImage: $0) }
     switch purpose {
     case .avatar:

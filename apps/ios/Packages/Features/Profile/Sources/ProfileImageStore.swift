@@ -15,6 +15,11 @@ public final class ProfileImageStore {
     case idle
     case sending(ImagePurpose)
     case failed(ImagePurpose, Failure)
+
+    public var isSending: Bool {
+      guard case .sending = self else { return false }
+      return true
+    }
   }
 
   public static let maxBytes = 10_000_000
@@ -43,12 +48,16 @@ public final class ProfileImageStore {
     await send(picked, as: .banner) { try await self.images.setBanner($0) }
   }
 
+  public func pickFailed(_ purpose: ImagePurpose) {
+    phase = .failed(purpose, .notSaved)
+  }
+
   public func dismissFailure() {
     if case .failed = phase { phase = .idle }
   }
 
   private func send<Saved>(_ picked: Data, as purpose: ImagePurpose, confirm: (UploadID) async throws -> Saved) async -> Saved? {
-    if case .sending = phase { return nil }
+    guard !phase.isSending else { return nil }
     let jpeg: Data
     switch prepare(picked, purpose) {
     case let .jpeg(prepared):

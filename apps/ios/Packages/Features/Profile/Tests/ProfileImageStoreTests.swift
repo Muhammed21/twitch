@@ -150,6 +150,25 @@ struct ProfileImageStoreTests {
     #expect(await journal.steps.isEmpty)
   }
 
+  @Test("une photo que la photothèque ne rend pas s'annonce comme un échec")
+  func pickFailed() throws {
+    let store = try makeStore(Journal())
+
+    store.pickFailed(.banner)
+
+    #expect(store.phase == .failed(.banner, .notSaved))
+  }
+
+  @Test("seul un envoi en cours bloque les deux lignes", arguments: [
+    (ProfileImageStore.Phase.idle, false),
+    (.sending(.avatar), true),
+    (.sending(.banner), true),
+    (.failed(.avatar, .notSaved), false),
+  ])
+  func blocksRows(phase: ProfileImageStore.Phase, expected: Bool) {
+    #expect(phase.isSending == expected)
+  }
+
   @Test("un dépôt refusé n'est pas confirmé et laisse l'échec affiché")
   func uploadFails() async throws {
     let journal = Journal()
