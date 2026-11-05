@@ -39,6 +39,30 @@ private actor FakeFollowing: CategoryFollowing {
   }
 }
 
+private actor GatedFollowing: CategoryFollowing {
+  private var gate: CheckedContinuation<Void, Never>?
+  private(set) var follows = 0
+  private(set) var unfollows = 0
+
+  var isWaiting: Bool {
+    gate != nil
+  }
+
+  func follow(_: CategorySlug) async throws {
+    follows += 1
+    await withCheckedContinuation { gate = $0 }
+  }
+
+  func unfollow(_: CategorySlug) async throws {
+    unfollows += 1
+  }
+
+  func open() {
+    gate?.resume()
+    gate = nil
+  }
+}
+
 private func makeCategory(_ slug: String) throws -> BrowseCategory {
   try BrowseCategory(slug: CategorySlug(slug), name: slug.capitalized, imageURL: nil, liveCount: 1, viewers: nil)
 }
@@ -121,5 +145,38 @@ struct CategoryChoicesTests {
     try await choices.toggle(CategorySlug("art"))
 
     #expect(choices.selectionCount == 2)
+  }
+
+  @Test("le récap nomme les catégories suivies, dans l'ordre de la liste")
+  func followedNames() async throws {
+    let choices = try CategoryChoices(directory: FakeDirectory([.success(makePage("fortnite", "music", "art"))]), following: FakeFollowing())
+    await choices.load()
+
+    try await choices.toggle(CategorySlug("art"))
+    try await choices.toggle(CategorySlug("fortnite"))
+
+    #expect(choices.followedNames == ["Fortnite", "Art"])
+  }
+
+  @Test("un toucher pendant un appel en cours est ignoré")
+  func ignoresWhilePending() async throws {
+    let following = GatedFollowing()
+    let choices = try CategoryChoices(directory: FakeDirectory([.success(makePage("fortnite"))]), following: following)
+    await choices.load()
+    let fortnite = try CategorySlug("fortnite")
+
+    let first = Task { await choices.toggle(fortnite) }
+    while await !following.isWaiting {
+      await Task.yield()
+    }
+    #expect(choices.isPending(fortnite))
+    await choices.toggle(fortnite)
+    await following.open()
+    await first.value
+
+    #expect(choices.isFollowing(fortnite))
+    #expect(!choices.isPending(fortnite))
+    #expect(await following.follows == 1)
+    #expect(await following.unfollows == 0)
   }
 }

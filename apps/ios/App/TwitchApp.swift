@@ -25,32 +25,35 @@ struct TwitchApp: App {
 
   var body: some Scene {
     WindowGroup {
-      RootView(purchases: stores.purchases, paywallLinks: PaywallLinks(info: Bundle.main.infoDictionary ?? [:]))
-        .environment(stores.session)
-        .environment(stores.launch)
-        .environment(stores.home)
-        .environment(stores.browse)
-        .environment(stores.categoryLives)
-        .environment(stores.categoryHeaders)
-        .environment(stores.router)
-        .environment(stores.player)
-        .environment(stores.channelPlayback)
-        .environment(stores.liveStatus)
-        .environment(stores.presence)
-        .environment(stores.chat)
-        .environment(stores.myChannel)
-        .environment(stores.categorySearch)
-        .environment(stores.profileEdit)
-        .environment(stores.categoryChoices)
-        .environment(stores.interestChoices)
-        .environment(stores.profileImages)
-        .environment(stores.preferences)
-        .environment(\.feedbackPlayer, stores.feedback)
+      RootView(
+        personalization: stores.personalization,
+        purchases: stores.purchases,
+        paywallLinks: PaywallLinks(info: Bundle.main.infoDictionary ?? [:])
+      )
+      .environment(stores.session)
+      .environment(stores.launch)
+      .environment(stores.home)
+      .environment(stores.browse)
+      .environment(stores.categoryLives)
+      .environment(stores.categoryHeaders)
+      .environment(stores.router)
+      .environment(stores.player)
+      .environment(stores.channelPlayback)
+      .environment(stores.liveStatus)
+      .environment(stores.presence)
+      .environment(stores.chat)
+      .environment(stores.myChannel)
+      .environment(stores.categorySearch)
+      .environment(stores.profileEdit)
+      .environment(stores.profileImages)
+      .environment(stores.preferences)
+      .environment(\.feedbackPlayer, stores.feedback)
     }
   }
 }
 
 struct RootView: View {
+  let personalization: PersonalizationSources
   let purchases: any Purchases
   let paywallLinks: PaywallLinks
   @Environment(SessionStore.self) private var session
@@ -62,6 +65,7 @@ struct RootView: View {
 
   var body: some View {
     screen
+      .preferredColorScheme(preferences.current.appearance.colorScheme)
       .signInFailureAlert(session)
       .logOutFailureAlert(session)
       .onOpenURL { router.open($0) }
@@ -102,9 +106,8 @@ struct RootView: View {
       PersonalizationRoot(
         session: session,
         preferences: preferences,
-        purchases: purchases,
-        variant: launch.flags.paywallVariant,
-        links: paywallLinks
+        sources: personalization,
+        paywall: PersonalizationPaywall(purchases: purchases, variant: launch.flags.paywallVariant, links: paywallLinks)
       )
     case .signedIn:
       SignedInRoot()
@@ -214,6 +217,7 @@ struct ChannelScreen: View {
   @Environment(LiveStatusChannel.self) private var liveStatus
   @Environment(ChannelPresence.self) private var presence
   @Environment(ChatSession.self) private var chat
+  @Environment(PreferencesStore.self) private var preferences
   @Environment(\.scenePhase) private var scenePhase
 
   private var watching: ChannelPresence.Watching {
@@ -227,6 +231,7 @@ struct ChannelScreen: View {
       ChatList()
       ChatComposer()
     }
+    .environment(\.chatDisplay, ChatDisplay(preferences.current))
     .navigationTitle(slug.rawValue)
     .navigationBarTitleDisplayMode(.inline)
     .task(id: slug) { await channelPlayback.open(slug) }
@@ -255,8 +260,7 @@ struct Stores {
   let profileEdit: ProfileEditStore
   let profileImages: ProfileImageStore
   let preferences: PreferencesStore
-  let categoryChoices: CategoryChoices
-  let interestChoices: InterestChoices
+  let personalization: PersonalizationSources
   let purchases: StorePurchases
   let feedback: FeedbackPlayer
 }
@@ -276,17 +280,22 @@ enum Composition {
     let analytics = ProductAnalytics.live(info: info, defaults: .standard)
     let player = PlayerController(player: AVMediaPlayer(), startupRetry: .every(.seconds(2), attempts: 15))
     let channels = ChannelClient(apiBaseURL: configuration.apiBaseURL, transport: transport)
+    let preferences = PersonalizationRoot.preferences()
+    let network = NetworkCost()
     let channelPlayback = ChannelPlayback(
       channels: channels,
       playback: PlaybackClient(apiBaseURL: configuration.apiBaseURL, transport: transport),
-      controller: player
+      controller: player,
+      allowsAutoplay: { preferences.current.videoAutoplay.allowsPlayback(onExpensiveNetwork: network.isExpensive) }
     )
-    let preferences = PersonalizationRoot.preferences()
     let sessionStore = Self.sessionStore(configuration: configuration, session: session, transport: transport, analytics: analytics, now: now)
     return Stores(
       analytics: analytics,
       session: sessionStore,
-      launch: Self.launch(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, version: currentVersion),
+      launch: LaunchStore(
+        source: BootstrapClient(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
+        currentVersion: currentVersion
+      ),
       home: HomeStore(directory: LiveDirectoryClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
       browse: BrowseStore(directory: CategoryDirectoryClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
       categoryLives: CategoryLivesCatalog(source: CategoryLivesClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
@@ -296,34 +305,15 @@ enum Composition {
       channelPlayback: channelPlayback,
       liveStatus: Self.liveStatus(apiBaseURL: configuration.apiBaseURL, channels: channels, player: player, playback: channelPlayback),
       presence: Self.presence(configuration: configuration, channels: channels, session: session, transport: transport, now: now),
-      chat: ChatSession(
-        connector: ChatSocketConnector(chatBaseURL: chatBaseURL),
-        tokens: session,
-        channels: channels,
-        moderation: ModerationClient(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
-        viewer: { sessionStore.accountID }
-      ),
+      chat: Self.chat(chatBaseURL: chatBaseURL, apiBaseURL: configuration.apiBaseURL, transport: transport, session: session, channels: channels, sessionStore: sessionStore, now: now),
       myChannel: Self.myChannel(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, channels: channels),
       categorySearch: CategorySearch(catalog: CategoryCatalogClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
       profileEdit: Self.profileEdit(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
       profileImages: Self.profileImages(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
       preferences: preferences,
-      categoryChoices: Self.categoryChoices(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
-      interestChoices: InterestChoices(tags: CategoryTagClient(apiBaseURL: configuration.apiBaseURL, transport: transport), preferences: preferences),
+      personalization: Self.personalizationSources(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
       purchases: StorePurchases.live(info: info),
       feedback: FeedbackPlayer()
-    )
-  }
-
-  private static func launch(
-    apiBaseURL: URL,
-    transport: ClientVersionTransport,
-    tokens: OAuthSession,
-    version: AppVersion
-  ) -> LaunchStore {
-    LaunchStore(
-      source: BootstrapClient(apiBaseURL: apiBaseURL, transport: transport, tokens: tokens, now: { Date.now }),
-      currentVersion: version
     )
   }
 
@@ -359,6 +349,24 @@ enum Composition {
     ChannelPresence(
       channels: channels,
       reporter: PresenceClient(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now)
+    )
+  }
+
+  private static func chat(
+    chatBaseURL: URL,
+    apiBaseURL: URL,
+    transport: ClientVersionTransport,
+    session: OAuthSession,
+    channels: ChannelClient,
+    sessionStore: SessionStore,
+    now: @escaping @Sendable () -> Date
+  ) -> ChatSession {
+    ChatSession(
+      connector: ChatSocketConnector(chatBaseURL: chatBaseURL),
+      tokens: session,
+      channels: channels,
+      moderation: ModerationClient(apiBaseURL: apiBaseURL, transport: transport, tokens: session, now: now),
+      viewer: { sessionStore.accountID }
     )
   }
 

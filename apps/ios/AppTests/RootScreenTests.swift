@@ -79,9 +79,10 @@ struct RootScreenTests {
     #expect(!RootScreen.isPersonalizationDue(isPersonalizing: false, account: viewer.id, hasCompleted: completed))
   }
 
-  @Test("le parcours s'ouvre sur l'intro et se termine sur le récap")
+  @Test("le parcours compte les 10 étapes de l'ADR 0051, de l'intro au récap, notifications comprises")
   func personalizationSteps() {
-    #expect(PersonalizationRoot.steps == [.intro, .categories, .interests, .summary])
+    #expect(PersonalizationRoot.steps == PersonalizationStep.allCases)
+    #expect(PersonalizationRoot.steps.count == 10)
   }
 
   @Test("le splash passe avant « You're All Set! »")

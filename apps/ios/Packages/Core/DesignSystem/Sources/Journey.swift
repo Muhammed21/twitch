@@ -18,6 +18,8 @@ public enum JourneyStyle {
   public static let chipLabel = ColorRole.textPrimary
   public static let chipSelected = ColorRole.accent
   public static let chipSelectedLabel = ColorRole.onAccent
+  public static let toggleTint = ColorRole.accent
+  public static let check = ColorRole.accent
 }
 
 public struct JourneyProgressBar: View {

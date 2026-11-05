@@ -34,6 +34,14 @@ public extension Font {
     static let chatText = Font.caption.weight(.regular)
     /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/chat/chat-chaine--defaut) : pseudo « skibidisiege22: » large de 86 pt, soit 12 pt medium (85 pt en régulier, 87 pt en medium), text style iOS caption.
     static let chatAuthorText = Font.caption.weight(.medium)
+    /// Réglage « Small » de la taille du texte du chat (ADR 0051 §4), sans capture de référence : un cran de text style iOS sous chatText, caption2.
+    static let chatTextSmall = Font.caption2.weight(.regular)
+    /// Réglage « Small » de la taille du texte du chat (ADR 0051 §4), sans capture de référence : un cran de text style iOS sous chatText, caption2. Auteur en medium, comme chatAuthorText.
+    static let chatAuthorTextSmall = Font.caption2.weight(.medium)
+    /// Réglage « Large » de la taille du texte du chat (ADR 0051 §4), sans capture de référence : un cran de text style iOS au-dessus de chatText, footnote.
+    static let chatTextLarge = Font.footnote.weight(.regular)
+    /// Réglage « Large » de la taille du texte du chat (ADR 0051 §4), sans capture de référence : un cran de text style iOS au-dessus de chatText, footnote. Auteur en medium, comme chatAuthorText.
+    static let chatAuthorTextLarge = Font.footnote.weight(.medium)
     /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/creer/edition-infos-diffusion--defaut) : aide sous un champ, « All content must adhere to and be categorized according to our » large de 358 pt, hauteur de capitale 8,7 pt, soit 12 pt régulier, text style iOS caption.
     static let hintText = Font.caption.weight(.regular)
     /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/parcourir/liste-categories--defaut) : tag « IRL » sous une catégorie, capitales de 8,3 pt de haut et fût de 1,5 pt, soit 12 pt semibold, text style iOS caption.

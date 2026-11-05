@@ -1,5 +1,6 @@
 import Domain
 import Foundation
+import Onboarding
 import Preferences
 import Testing
 @testable import Twitch
@@ -46,6 +47,36 @@ private final class StubPurchases: Purchases {
   func setAttribute(_: String, for _: String) {}
   func logIn(_: UUID) async {}
   func logOut() async {}
+}
+
+private struct OneCategory: CategoryDirectory {
+  func categories(after _: CategoryCursor?) async throws -> CategoryPage {
+    try CategoryPage(
+      categories: [BrowseCategory(slug: CategorySlug("fortnite"), name: "Fortnite", imageURL: nil, liveCount: 1, viewers: nil)],
+      nextCursor: nil
+    )
+  }
+}
+
+private struct AcceptsFollows: CategoryFollowing {
+  func follow(_: CategorySlug) async throws {}
+  func unfollow(_: CategorySlug) async throws {}
+}
+
+private struct NoTags: CategoryTagDirectory {
+  func tags() async throws -> [InterestTag] {
+    []
+  }
+}
+
+private struct UndecidedNotifications: NotificationPermission {
+  func authorization() async -> NotificationAuthorization {
+    .notDetermined
+  }
+
+  func request() async -> Bool? {
+    false
+  }
 }
 
 @MainActor
@@ -129,5 +160,29 @@ struct PersonalizationFinishTests {
     PersonalizationRoot.complete(account: nil, preferences: makePreferences(), close: recorder.close)
 
     #expect(recorder.endings == ["home"])
+  }
+
+  @Test("chaque parcours repart de zéro : ce qu'un compte a suivi ne se coche pas pour le suivant")
+  func freshChoicesPerJourney() async throws {
+    let sources = PersonalizationSources(
+      categories: OneCategory(),
+      following: AcceptsFollows(),
+      tags: NoTags(),
+      notifications: UndecidedNotifications()
+    )
+    let preferences = makePreferences()
+    let fortnite = try CategorySlug("fortnite")
+    let first = sources.choices(preferences: preferences)
+    await first.categories.load()
+    await first.categories.toggle(fortnite)
+
+    let next = sources.choices(preferences: preferences)
+
+    #expect(first.categories.isFollowing(fortnite))
+    #expect(!next.categories.isFollowing(fortnite))
+    #expect(next.categories.selectionCount == 0)
+    #expect(next.categories !== first.categories)
+    #expect(next.interests !== first.interests)
+    #expect(next.notifications !== first.notifications)
   }
 }

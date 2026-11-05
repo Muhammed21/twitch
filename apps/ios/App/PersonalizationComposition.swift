@@ -14,19 +14,30 @@ final class PaywallPresentation {
 }
 
 struct PersonalizationRoot: View {
-  static let steps: [PersonalizationStep] = [.intro, .categories, .interests, .summary]
+  static let steps: [PersonalizationStep] = [
+    .intro, .categories, .interests, .contentPreferences, .liveLanguage, .appearance, .videoAutoplay, .notifications, .chat,
+    .summary,
+  ]
 
   @State private var journey: PersonalizationJourney
+  @State private var categories: CategoryChoices
+  @State private var interests: InterestChoices
+  @State private var notifications: NotificationChoices
   @State private var presentation: PaywallPresentation
   @State private var paywall: PaywallStore
   private let links: PaywallLinks
   private let onClose: () -> Void
 
-  init(session: SessionStore, preferences: PreferencesStore, purchases: any Purchases, variant: String?, links: PaywallLinks) {
+  init(session: SessionStore, preferences: PreferencesStore, sources: PersonalizationSources, paywall: PersonalizationPaywall) {
+    let choices = sources.choices(preferences: preferences)
+    _categories = State(initialValue: choices.categories)
+    _interests = State(initialValue: choices.interests)
+    _notifications = State(initialValue: choices.notifications)
     let presentation = PaywallPresentation()
+    let purchases = paywall.purchases
     _presentation = State(initialValue: presentation)
-    _paywall = State(initialValue: PaywallStore(purchases: purchases, offeringID: nil, variant: variant))
-    self.links = links
+    _paywall = State(initialValue: PaywallStore(purchases: purchases, offeringID: nil, variant: paywall.variant))
+    links = paywall.links
     onClose = { Self.complete(account: session.accountID, preferences: preferences, close: session.finishPersonalization) }
     _journey = State(initialValue: PersonalizationJourney(
       steps: Self.steps,
@@ -49,6 +60,9 @@ struct PersonalizationRoot: View {
   var body: some View {
     PersonalizationScreen()
       .environment(journey)
+      .environment(categories)
+      .environment(interests)
+      .environment(notifications)
       .fullScreenCover(isPresented: Binding(get: { presentation.isShown }, set: { presentation.isShown = $0 })) {
         PaywallScreen(store: paywall, links: links, onClose: onClose)
       }
@@ -86,16 +100,46 @@ struct PersonalizationRoot: View {
   }
 }
 
+struct PersonalizationPaywall {
+  let purchases: any Purchases
+  let variant: String?
+  let links: PaywallLinks
+}
+
+struct PersonalizationSources {
+  let categories: any CategoryDirectory
+  let following: any CategoryFollowing
+  let tags: any CategoryTagDirectory
+  let notifications: any NotificationPermission
+
+  @MainActor
+  func choices(preferences: PreferencesStore) -> PersonalizationChoices {
+    PersonalizationChoices(
+      categories: CategoryChoices(directory: categories, following: following),
+      interests: InterestChoices(tags: tags, preferences: preferences),
+      notifications: NotificationChoices(permission: notifications, onAnswer: { _ in })
+    )
+  }
+}
+
+struct PersonalizationChoices {
+  let categories: CategoryChoices
+  let interests: InterestChoices
+  let notifications: NotificationChoices
+}
+
 extension Composition {
-  static func categoryChoices(
+  static func personalizationSources(
     apiBaseURL: URL,
     transport: ClientVersionTransport,
     tokens: OAuthSession,
     now: @escaping @Sendable () -> Date
-  ) -> CategoryChoices {
-    CategoryChoices(
-      directory: CategoryDirectoryClient(apiBaseURL: apiBaseURL, transport: transport),
-      following: CategoryFollowClient(apiBaseURL: apiBaseURL, transport: transport, tokens: tokens, now: now)
+  ) -> PersonalizationSources {
+    PersonalizationSources(
+      categories: CategoryDirectoryClient(apiBaseURL: apiBaseURL, transport: transport),
+      following: CategoryFollowClient(apiBaseURL: apiBaseURL, transport: transport, tokens: tokens, now: now),
+      tags: CategoryTagClient(apiBaseURL: apiBaseURL, transport: transport),
+      notifications: SystemNotificationPermission()
     )
   }
 }

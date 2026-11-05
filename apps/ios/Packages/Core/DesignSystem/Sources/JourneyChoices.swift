@@ -80,6 +80,61 @@ public struct CategoryChoiceRow: View {
   }
 }
 
+public struct JourneyToggleRow: View {
+  private let title: String
+  @Binding private var isOn: Bool
+
+  public init(title: String, isOn: Binding<Bool>) {
+    self.title = title
+    _isOn = isOn
+  }
+
+  public var body: some View {
+    Toggle(isOn: $isOn) {
+      Text(title)
+        .font(TextRole.journeyRowTitle.font)
+        .foregroundStyle(JourneyStyle.choiceName.color)
+    }
+    .tint(JourneyStyle.toggleTint.color)
+    .padding(.horizontal, LayoutRole.menuRowPadding.points)
+    .padding(.vertical, LayoutRole.editRowPadding.points)
+    .frame(minHeight: LayoutRole.actionHeight.points)
+  }
+}
+
+public struct JourneyCheckRow: View {
+  public static let symbol = "checkmark"
+
+  private let title: String
+  private let isSelected: Bool
+
+  public init(title: String, isSelected: Bool) {
+    self.title = title
+    self.isSelected = isSelected
+  }
+
+  public var body: some View {
+    HStack(spacing: LayoutRole.menuRowPadding.points) {
+      Text(title)
+        .font(TextRole.journeyRowTitle.font)
+        .foregroundStyle(JourneyStyle.choiceName.color)
+        .frame(maxWidth: .infinity, alignment: .leading)
+      Image(systemName: Self.symbol)
+        .font(TextRole.journeyRowTitle.font)
+        .foregroundStyle(JourneyStyle.check.color)
+        .opacity(isSelected ? 1 : 0)
+        .scaleEffect(isSelected ? 1 : 0.5)
+        .accessibilityHidden(true)
+    }
+    .padding(.horizontal, LayoutRole.menuRowPadding.points)
+    .padding(.vertical, LayoutRole.editRowPadding.points)
+    .frame(minHeight: LayoutRole.actionHeight.points)
+    .contentShape(Rectangle())
+    .accessibilityElement(children: .combine)
+    .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+  }
+}
+
 public struct InterestChip: View {
   private let name: String
   private let isSelected: Bool
