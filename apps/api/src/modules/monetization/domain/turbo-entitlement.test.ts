@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   applyTurboEvent,
+  type SubscribedEvent,
   type TurboEntitlement,
   type TurboEvent,
   transferTurbo,
@@ -28,15 +29,14 @@ const makeEntitlement = (overrides: Partial<TurboEntitlement> = {}): TurboEntitl
   ...overrides,
 });
 
-const purchased = (overrides: Partial<Extract<TurboEvent, { kind: "purchased" }>> = {}) =>
-  ({
-    kind: "purchased",
-    userId: USER_ID,
-    occurredAt: at(1),
-    expiresAt: at(30),
-    providerReference: "2000000123456789",
-    ...overrides,
-  }) satisfies TurboEvent;
+const purchased = (overrides: Partial<SubscribedEvent> = {}): SubscribedEvent => ({
+  kind: "purchased",
+  userId: USER_ID,
+  occurredAt: at(1),
+  expiresAt: at(30),
+  providerReference: "2000000123456789",
+  ...overrides,
+});
 
 const apply = (current: TurboEntitlement | undefined, event: TurboEvent) =>
   applyTurboEvent({ current, event, newId });

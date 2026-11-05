@@ -18,17 +18,17 @@ export type ObservedSubscription = {
   readonly inGrace: boolean;
 };
 
-export type TurboEvent = EventBase &
-  (
-    | {
-        readonly kind: "purchased" | "renewed";
-        readonly expiresAt: Date;
-        readonly providerReference: string | undefined;
-      }
-    | { readonly kind: "renewal_cancelled" | "expired" | "paused" | "refunded" }
-    | { readonly kind: "billing_issue"; readonly graceEndsAt: Date | undefined }
-    | { readonly kind: "observed"; readonly state: ObservedSubscription | undefined }
-  );
+export type SubscribedEvent = EventBase & {
+  readonly kind: "purchased" | "renewed";
+  readonly expiresAt: Date;
+  readonly providerReference: string | undefined;
+};
+
+export type TurboEvent =
+  | SubscribedEvent
+  | (EventBase & { readonly kind: "renewal_cancelled" | "expired" | "paused" | "refunded" })
+  | (EventBase & { readonly kind: "billing_issue"; readonly graceEndsAt: Date | undefined })
+  | (EventBase & { readonly kind: "observed"; readonly state: ObservedSubscription | undefined });
 
 export type EntitlementChange =
   | { readonly type: "granted"; readonly userId: string; readonly expiresAt: Date }
