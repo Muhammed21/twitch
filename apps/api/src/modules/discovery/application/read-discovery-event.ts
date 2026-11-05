@@ -42,6 +42,7 @@ const {
   channelCategoryUnfollowed,
 } = events.channel;
 const { streamStarted, streamEnded } = events.stream;
+const { avatarChanged } = events.identity;
 
 export const DISCOVERY_EVENT_READERS: Readonly<
   Record<string, (event: PublishedEvent) => DiscoveryEvent | null>
@@ -121,5 +122,11 @@ export const DISCOVERY_EVENT_READERS: Readonly<
     channelId,
     sessionId,
     endedAt: new Date(endedAt),
+  })),
+  [avatarChanged.name]: reader(avatarChanged, ({ accountId, avatarKey }, { occurredAt }) => ({
+    kind: "avatar-changed",
+    accountId,
+    avatarKey,
+    changedAt: occurredAt,
   })),
 };

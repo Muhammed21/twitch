@@ -1552,6 +1552,10 @@
             "type": "string",
             "format": "uri"
           },
+          "avatarUrl": {
+            "type": "string",
+            "format": "uri"
+          },
           "category": {
             "$ref": "#/components/schemas/LiveCategory"
           }

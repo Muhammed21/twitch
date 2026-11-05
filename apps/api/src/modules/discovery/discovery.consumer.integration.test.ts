@@ -61,7 +61,7 @@ const rebuild = () =>
 const publisher = createAuthzRedis(urlOf("REDIS_URL"));
 
 const publish = (
-  stream: "events.channel" | "events.stream",
+  stream: "events.channel" | "events.stream" | "events.identity",
   {
     id = randomUUID(),
     name,
@@ -75,11 +75,21 @@ const publish = (
   },
 ) => publisher.xAdd(stream, "*", toStreamEntry({ id, name, version: 1, payload, occurredAt }));
 
-const channelCreated = (channelId: string, slug: string) =>
+const channelCreated = (channelId: string, slug: string, ownerId: string = randomUUID()) =>
   publish("events.channel", {
     name: "channel.created",
-    payload: { channelId, ownerId: randomUUID(), slug },
+    payload: { channelId, ownerId, slug },
   });
+
+const avatarChanged = (accountId: string, avatarKey: string, occurredAt: Date) =>
+  publish("events.identity", {
+    occurredAt,
+    name: "identity.avatar.changed",
+    payload: { accountId, avatarKey },
+  });
+
+const avatarOf = (accountId: string) =>
+  discovery.discoveryAccountAvatar.findUnique({ where: { accountId } });
 
 const titleChanged = (
   channelId: string,
@@ -124,7 +134,12 @@ const withDiscoveryModule = async (
   const logs: string[] = [];
   const channelConsumerRedis = createStreamConsumerRedis(urlOf("REDIS_URL"));
   const streamConsumerRedis = createStreamConsumerRedis(urlOf("REDIS_URL"));
-  await Promise.all([channelConsumerRedis.connect(), streamConsumerRedis.connect()]);
+  const identityConsumerRedis = createStreamConsumerRedis(urlOf("REDIS_URL"));
+  await Promise.all([
+    channelConsumerRedis.connect(),
+    streamConsumerRedis.connect(),
+    identityConsumerRedis.connect(),
+  ]);
   const moduleRef = await Test.createTestingModule({
     imports: [
       PlatformModule.register({
@@ -136,6 +151,7 @@ const withDiscoveryModule = async (
         prisma: createContextClient({ context: "discovery", env: process.env }),
         channelConsumerRedis,
         streamConsumerRedis,
+        identityConsumerRedis,
         viewerCounts,
         thumbnailUrls: async () => new Map(),
         logSink: (line) => logs.push(line),
@@ -146,7 +162,11 @@ const withDiscoveryModule = async (
   const app = moduleRef.createNestApplication({ logger: false });
   await app.init();
   try {
-    await run(logs, [channelConsumerRedis, streamConsumerRedis], app.get(LIVE_STATUS_HUB));
+    await run(
+      logs,
+      [channelConsumerRedis, streamConsumerRedis, identityConsumerRedis],
+      app.get(LIVE_STATUS_HUB),
+    );
   } finally {
     await app.close();
   }
@@ -203,14 +223,15 @@ afterAll(async () => {
 });
 
 describe("projection LiveChannelView de discovery (ADR 0003, §6)", () => {
-  it("met en live une chaîne créée dont une session démarre, avec son slug et son titre", async () => {
+  it("met en live une chaîne créée dont une session démarre, avec son slug, son propriétaire et son titre", async () => {
     const channelId = randomUUID();
+    const ownerId = randomUUID();
     const sessionId = randomUUID();
     const slug = slugFor();
     const startedAt = new Date("2026-11-02T20:00:00.000Z");
 
     await withDiscoveryModule(async () => {
-      await channelCreated(channelId, slug);
+      await channelCreated(channelId, slug, ownerId);
       await titleChanged(channelId, "Speedrun");
       await streamStarted(channelId, sessionId, startedAt);
 
@@ -218,6 +239,7 @@ describe("projection LiveChannelView de discovery (ADR 0003, §6)", () => {
         expect(await viewOf(channelId)).toEqual({
           channelId,
           slug,
+          ownerId,
           title: "Speedrun",
           titleChangedAt: expect.any(Date),
           categoryId: null,
@@ -310,6 +332,29 @@ describe("projection LiveChannelView de discovery (ADR 0003, §6)", () => {
     });
   });
 
+  it("garde l'avatar le plus récent d'un compte quand un plus ancien arrive après lui", async () => {
+    const accountId = randomUUID();
+    const recent = {
+      avatarKey: "images/avatar/recent.webp",
+      changedAt: new Date("2026-11-05T10:05:00.000Z"),
+    };
+
+    const afterReplay = randomUUID();
+
+    await withDiscoveryModule(async () => {
+      await avatarChanged(accountId, recent.avatarKey, recent.changedAt);
+      await avatarChanged(
+        accountId,
+        "images/avatar/ancien.webp",
+        new Date("2026-11-05T10:00:00.000Z"),
+      );
+      await avatarChanged(afterReplay, "images/avatar/suivant.webp", recent.changedAt);
+      await eventually(async () => expect(await avatarOf(afterReplay)).not.toBeNull());
+
+      expect(await avatarOf(accountId)).toEqual({ accountId, ...recent });
+    });
+  });
+
   it("acquitte et journalise un event hors contrat, sans rien projeter", async () => {
     const channelId = randomUUID();
     const eventId = randomUUID();
@@ -330,13 +375,16 @@ describe("projection LiveChannelView de discovery (ADR 0003, §6)", () => {
     });
   });
 
-  it("consomme events.channel et events.stream dans le groupe discovery", async () => {
+  it("consomme events.channel, events.stream et events.identity dans le groupe discovery", async () => {
     await withDiscoveryModule(async () => {
       await eventually(async () => {
         const groups = await Promise.all(
-          ["events.channel", "events.stream"].map((stream) => publisher.xInfoGroups(stream)),
+          ["events.channel", "events.stream", "events.identity"].map((stream) =>
+            publisher.xInfoGroups(stream),
+          ),
         );
         expect(groups.map((list) => list.map(({ name }) => name))).toEqual([
+          expect.arrayContaining(["discovery"]),
           expect.arrayContaining(["discovery"]),
           expect.arrayContaining(["discovery"]),
         ]);
@@ -439,7 +487,7 @@ describe("projection LiveChannelView de discovery (ADR 0003, §6)", () => {
     });
 
     expect(await openDiscoveryConnections()).toBe(before);
-    expect(closed.map((redis) => redis.isOpen)).toEqual([false, false]);
+    expect(closed.map((redis) => redis.isOpen)).toEqual([false, false, false]);
   });
 });
 
@@ -624,6 +672,20 @@ describe("reconstruction de la projection depuis les outbox (ADR 0003, ADR 0034)
     await rebuild();
 
     expect({ channel: await viewOf(channelId), categories: await categoryViews() }).toEqual(built);
+  });
+
+  it("garde les avatars des comptes, qu'aucune outbox reconstruite ne décrit", async () => {
+    const accountId = randomUUID();
+    const avatar = {
+      accountId,
+      avatarKey: "images/avatar/garde.webp",
+      changedAt: new Date("2026-11-05T10:00:00.000Z"),
+    };
+    await discovery.discoveryAccountAvatar.create({ data: avatar });
+
+    await rebuild();
+
+    expect(await avatarOf(accountId)).toEqual(avatar);
   });
 
   it("retire une chaîne qu'aucun event des outbox ne décrit", async () => {

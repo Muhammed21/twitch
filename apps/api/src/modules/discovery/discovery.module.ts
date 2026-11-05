@@ -43,6 +43,7 @@ import {
 } from "./infrastructure/prisma-category-follow-projection.ts";
 import {
   type DiscoveryPrisma,
+  prismaAccountAvatarProjection,
   prismaCategoryProjection,
   prismaLiveChannelProjection,
   prismaLiveChannelStore,
@@ -94,6 +95,7 @@ type DiscoveryDependencies = {
   prisma: DiscoveryPrisma;
   channelConsumerRedis: StreamConsumerRedis;
   streamConsumerRedis: StreamConsumerRedis;
+  identityConsumerRedis: StreamConsumerRedis;
   viewerCounts: ViewerCountReader;
   thumbnailUrls: ThumbnailUrlReader;
   logSink: LogSink;
@@ -201,12 +203,14 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
   }
 
   onModuleInit(): void {
-    const { prisma, channelConsumerRedis, streamConsumerRedis, logSink } = this.dependencies;
+    const { prisma, channelConsumerRedis, streamConsumerRedis, identityConsumerRedis, logSink } =
+      this.dependencies;
     const handlers = discoveryEventHandlers({
       project: projectDiscoveryEvent({
         channels: prismaLiveChannelProjection(prisma),
         categories: prismaCategoryProjection(prisma),
         follows: prismaCategoryFollowProjection(prisma),
+        avatars: prismaAccountAvatarProjection(prisma),
       }),
       logSink,
     });
@@ -236,6 +240,7 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
       ...[
         { redis: channelConsumerRedis, stream: "events.channel" },
         { redis: streamConsumerRedis, stream: "events.stream" },
+        { redis: identityConsumerRedis, stream: "events.identity" },
       ].map(({ redis, stream }) =>
         startStreamConsumer({
           redis,
@@ -259,10 +264,11 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy(): Promise<void> {
-    const { prisma, channelConsumerRedis, streamConsumerRedis } = this.dependencies;
+    const { prisma, channelConsumerRedis, streamConsumerRedis, identityConsumerRedis } =
+      this.dependencies;
     await Promise.all(this.#consumers.map((consumer) => consumer.stop()));
     await prisma.$disconnect();
-    [channelConsumerRedis, streamConsumerRedis]
+    [channelConsumerRedis, streamConsumerRedis, identityConsumerRedis]
       .filter((redis) => redis.isOpen)
       .forEach((redis) => redis.destroy());
   }

@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 
+import type { AccountAvatarView } from "../domain/account-avatar-view.ts";
 import type { CategoryFollowView } from "../domain/category-follow-view.ts";
 import type { CategoryView } from "../domain/category-view.ts";
 import type { LiveChannelView } from "../domain/live-channel-view.ts";
 import {
+  type AccountAvatarProjection,
   type CategoryFollowProjection,
   type CategoryProjection,
   type LiveChannelProjection,
@@ -63,11 +65,22 @@ const inMemoryProjections = ({
       categoryUpdates.push({ eventId, categoryId, result: change(ACTIVE_CATEGORY) });
     },
   };
+  const avatarUpdates: {
+    eventId: string;
+    accountId: string;
+    result: AccountAvatarView;
+  }[] = [];
+  const avatars: AccountAvatarProjection = {
+    update: async ({ eventId, accountId, change }) => {
+      avatarUpdates.push({ eventId, accountId, result: change(null) });
+    },
+  };
   return {
-    project: projectDiscoveryEvent({ channels, categories, follows }),
+    project: projectDiscoveryEvent({ channels, categories, follows, avatars }),
     channelUpdates,
     categoryUpdates,
     followUpdates,
+    avatarUpdates,
   };
 };
 
@@ -88,6 +101,30 @@ describe("projection d'un event de discovery", () => {
       },
     ]);
     expect(categoryUpdates).toEqual([]);
+  });
+
+  it("met à jour l'avatar du compte de l'event, sous l'identifiant de l'event", async () => {
+    const { project, channelUpdates, avatarUpdates } = inMemoryProjections();
+    const changedAt = new Date("2026-11-05T10:00:00.000Z");
+
+    await project({
+      eventId: EVENT_ID,
+      event: {
+        kind: "avatar-changed",
+        accountId: OWNER_ID,
+        avatarKey: "images/avatar/a.webp",
+        changedAt,
+      },
+    });
+
+    expect(avatarUpdates).toEqual([
+      {
+        eventId: EVENT_ID,
+        accountId: OWNER_ID,
+        result: { accountId: OWNER_ID, avatarKey: "images/avatar/a.webp", changedAt },
+      },
+    ]);
+    expect(channelUpdates).toEqual([]);
   });
 
   it("met à jour la vue de la catégorie de l'event, sous l'identifiant de l'event", async () => {

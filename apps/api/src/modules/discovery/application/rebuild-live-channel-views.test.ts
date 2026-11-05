@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { applyCategoryEvent, type CategoryView } from "../domain/category-view.ts";
-import { isCategoryEvent, isCategoryFollowEvent } from "../domain/discovery-event.ts";
+import {
+  isAccountAvatarEvent,
+  isCategoryEvent,
+  isCategoryFollowEvent,
+} from "../domain/discovery-event.ts";
 import { applyDiscoveryEvent, type LiveChannelView } from "../domain/live-channel-view.ts";
 import { DISCOVERY_EVENT_READERS } from "./read-discovery-event.ts";
 import {
@@ -96,7 +100,7 @@ const decodedFrom = (events: readonly HistoryEvent[]) =>
 const consumedOneByOne = (events: readonly HistoryEvent[]): readonly LiveChannelView[] => {
   const views = decodedFrom(events).reduce<ReadonlyMap<string, LiveChannelView>>(
     (acc, decoded) =>
-      isCategoryEvent(decoded) || isCategoryFollowEvent(decoded)
+      isCategoryEvent(decoded) || isCategoryFollowEvent(decoded) || isAccountAvatarEvent(decoded)
         ? acc
         : new Map([
             ...acc,
@@ -246,6 +250,19 @@ describe("reconstruction de la projection LiveChannelView", () => {
 
     expect(written[0]?.views).toEqual(consumedOneByOne(HISTORY));
     expect(written[0]?.eventIds).not.toContain(other.id);
+    expect(report).toEqual({ channels: 2, categories: 0, events: 5, skipped: 0 });
+  });
+
+  it("laisse l'avatar d'un compte à sa copie, qu'aucune reconstruction ne remplace", async () => {
+    const avatar = makeHistoryEvent(6, "identity.avatar.changed", {
+      accountId: OWNER_ID,
+      avatarKey: "images/avatar/a.webp",
+    });
+
+    const { written, report } = await rebuildWith([...HISTORY, avatar]);
+
+    expect(written[0]?.views).toEqual(consumedOneByOne(HISTORY));
+    expect(written[0]?.eventIds).not.toContain(avatar.id);
     expect(report).toEqual({ channels: 2, categories: 0, events: 5, skipped: 0 });
   });
 

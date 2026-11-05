@@ -49,6 +49,7 @@ const PAYLOADS: Readonly<Record<string, unknown>> = {
     channelId: CHANNEL_ID,
     endedAt: "2026-11-02T21:00:00.000Z",
   },
+  "identity.avatar.changed": { accountId: OWNER_ID, avatarKey: "images/avatar/streamer.webp" },
 };
 
 const makeEvent = (
@@ -82,8 +83,8 @@ const setup = () => {
   return { handlers, projected, lines, handle };
 };
 
-describe("handlers de discovery pour events.channel et events.stream", () => {
-  it("traite la chaîne, ses catégories et ses sessions, et rien d'autre", () => {
+describe("handlers de discovery pour events.channel, events.stream et events.identity", () => {
+  it("traite la chaîne, ses catégories, ses sessions et l'avatar des comptes, et rien d'autre", () => {
     expect(Object.keys(setup().handlers).toSorted()).toEqual([
       "channel.category.created",
       "channel.category.followed",
@@ -93,6 +94,7 @@ describe("handlers de discovery pour events.channel et events.stream", () => {
       "channel.category.updated",
       "channel.created",
       "channel.metadata.updated",
+      "identity.avatar.changed",
       "stream.ended",
       "stream.started",
     ]);
@@ -171,6 +173,15 @@ describe("handlers de discovery pour events.channel et events.stream", () => {
         channelId: CHANNEL_ID,
         sessionId: SESSION_ID,
         endedAt: new Date("2026-11-02T21:00:00.000Z"),
+      },
+    ],
+    [
+      "identity.avatar.changed",
+      {
+        kind: "avatar-changed",
+        accountId: OWNER_ID,
+        avatarKey: "images/avatar/streamer.webp",
+        changedAt: new Date("2026-11-02T19:58:00.000Z"),
       },
     ],
   ])("projette %s, sans rien journaliser", async (name, expected) => {
