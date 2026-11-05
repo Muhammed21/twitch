@@ -22,7 +22,7 @@ enum MonetizationEntitlementSource {
   @@schema("monetization")
 }
 
-/// Droit d'un utilisateur (ADR 0013, ADR 0051 §2). Un seul PLATFORM actif (ACTIVE, GRACE) par utilisateur : index unique partiel de la migration.
+/// Droit d'un utilisateur (ADR 0013, ADR 0051 §2). Contraintes de la migration : channelId posé si et seulement si la portée est CHANNEL ; un seul PLATFORM actif (ACTIVE, GRACE) par utilisateur ; un seul actif par (userId, channelId).
 model MonetizationEntitlement {
   id                String                        @id @db.Uuid
   /// @personal
@@ -42,6 +42,7 @@ model MonetizationEntitlement {
   updatedAt         DateTime                      @updatedAt
 
   @@index([userId, scope])
+  @@index([channelId, status])
   @@schema("monetization")
 }
 

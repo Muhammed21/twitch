@@ -60,13 +60,22 @@ CREATE TABLE "monetization"."MonetizationOutbox" (
 CREATE INDEX "MonetizationEntitlement_userId_scope_idx" ON "monetization"."MonetizationEntitlement"("userId", "scope");
 
 -- CreateIndex
+CREATE INDEX "MonetizationEntitlement_channelId_status_idx" ON "monetization"."MonetizationEntitlement"("channelId", "status");
+
+-- CreateIndex
 CREATE INDEX "MonetizationProcessedWebhookEvent_processedAt_nextAttemptAt_idx" ON "monetization"."MonetizationProcessedWebhookEvent"("processedAt", "nextAttemptAt");
 
 -- CreateIndex
 CREATE INDEX "MonetizationOutbox_publishedAt_nextAttemptAt_idx" ON "monetization"."MonetizationOutbox"("publishedAt", "nextAttemptAt");
 
+-- Une chaîne pour la portée CHANNEL, aucune pour la portée PLATFORM (ADR 0013, ADR 0051 §2).
+ALTER TABLE "monetization"."MonetizationEntitlement" ADD CONSTRAINT "MonetizationEntitlement_scope_channelId_check" CHECK (("scope" = 'CHANNEL') = ("channelId" IS NOT NULL));
+
 -- Un seul entitlement de portée plateforme actif (ACTIVE, GRACE) par utilisateur (ADR 0051 §2).
 CREATE UNIQUE INDEX "MonetizationEntitlement_userId_platform_active_key" ON "monetization"."MonetizationEntitlement"("userId") WHERE "scope" = 'PLATFORM' AND "status" IN ('ACTIVE', 'GRACE');
+
+-- Un seul entitlement actif (ACTIVE, GRACE) par couple (userId, channelId) (ADR 0013).
+CREATE UNIQUE INDEX "MonetizationEntitlement_userId_channelId_active_key" ON "monetization"."MonetizationEntitlement"("userId", "channelId") WHERE "status" IN ('ACTIVE', 'GRACE');
 
 -- Le relais lit et marque les events publiés ; aucun privilège par défaut ne cible les seules outbox.
 GRANT USAGE ON SCHEMA "monetization" TO app_outbox_relay;
