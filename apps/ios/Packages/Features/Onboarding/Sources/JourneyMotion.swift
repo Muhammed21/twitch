@@ -22,31 +22,37 @@ public enum JourneyMotion {
     reduceMotion
   }
 
-  public static func page(reduceMotion: Bool) -> Animation {
-    reduceMotion
-      ? .easeInOut(duration: fadeDuration)
-      : .spring(response: pageResponse, dampingFraction: pageDamping)
-  }
-
   public static func selection(reduceMotion: Bool) -> Animation {
     reduceMotion
       ? .easeInOut(duration: fadeDuration)
       : .spring(response: selectionResponse, dampingFraction: pageDamping)
   }
 
-  public static func pageEdges(direction: JourneyDirection) -> (insertion: Edge, removal: Edge) {
-    switch direction {
-    case .forward: (.trailing, .leading)
-    case .backward: (.leading, .trailing)
+  public static func pageShift(phase: TransitionPhase, direction: JourneyDirection, reduceMotion: Bool) -> CGFloat {
+    guard !reduceMotion else { return 0 }
+    let ahead: CGFloat = direction == .forward ? 1 : -1
+    switch phase {
+    case .willAppear: return ahead
+    case .didDisappear: return -ahead
+    case .identity: return 0
     }
   }
 
-  public static func pageTransition(direction: JourneyDirection, reduceMotion: Bool) -> AnyTransition {
-    guard !reduceMotion else { return .opacity }
-    let edges = pageEdges(direction: direction)
-    return .asymmetric(
-      insertion: .move(edge: edges.insertion).combined(with: .opacity),
-      removal: .move(edge: edges.removal).combined(with: .opacity)
-    )
+  public static func pageOpacity(phase: TransitionPhase, reduceMotion: Bool) -> Double {
+    reduceMotion && !phase.isIdentity ? 0 : 1
+  }
+}
+
+struct JourneyPageTransition: Transition {
+  let journey: PersonalizationJourney
+  let reduceMotion: Bool
+
+  func body(content: Content, phase: TransitionPhase) -> some View {
+    let shift = JourneyMotion.pageShift(phase: phase, direction: journey.direction, reduceMotion: reduceMotion)
+    content
+      .visualEffect { effect, proxy in
+        effect.offset(x: shift * proxy.size.width)
+      }
+      .opacity(JourneyMotion.pageOpacity(phase: phase, reduceMotion: reduceMotion))
   }
 }

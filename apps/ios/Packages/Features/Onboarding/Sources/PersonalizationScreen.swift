@@ -13,13 +13,13 @@ public struct PersonalizationScreen: View {
       ZStack {
         page
           .id(journey.step)
-          .transition(JourneyMotion.pageTransition(direction: journey.direction, reduceMotion: reduceMotion))
+          .transition(JourneyPageTransition(journey: journey, reduceMotion: reduceMotion))
       }
       .frame(maxWidth: .infinity, maxHeight: .infinity)
       .clipped()
+      .animation(MotionRole.journeyPage.animation(reduceMotion: reduceMotion), value: journey.index)
     }
     .background(ColorRole.background.color.ignoresSafeArea())
-    .animation(JourneyMotion.page(reduceMotion: reduceMotion), value: journey.index)
     .task { journey.start() }
   }
 
@@ -101,16 +101,13 @@ struct JourneyPage<Content: View>: View {
         .font(TextRole.journeyTitle.font)
         .foregroundStyle(JourneyStyle.title.color)
         .accessibilityAddTraits(.isHeader)
-        .journeyEntrance(0)
       Text(message)
         .font(TextRole.journeyMessage.font)
         .foregroundStyle(JourneyStyle.message.color)
         .padding(.top, LayoutRole.journeyMessageGap.points)
-        .journeyEntrance(1)
       content
         .padding(.top, LayoutRole.journeyContentGap.points)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .journeyEntrance(2)
       Button(primary) {
         onContinue()
         journey.complete(selectionCount: selectionCount)
@@ -118,7 +115,6 @@ struct JourneyPage<Content: View>: View {
       .buttonStyle(ActionButtonStyle(.primary))
       .accessibilityIdentifier("journey.continue")
       .padding(.top, LayoutRole.journeyMessageGap.points)
-      .journeyEntrance(3)
     }
     .padding([.horizontal, .bottom], LayoutRole.screenInset.points)
     .padding(.top, LayoutRole.journeyContentGap.points)
@@ -143,23 +139,19 @@ struct JourneyHeroPage<Hero: View>: View {
     VStack(spacing: 0) {
       Spacer(minLength: 0)
       hero
-        .journeyEntrance(0)
       Text(title)
         .font(TextRole.journeyTitle.font)
         .foregroundStyle(JourneyStyle.title.color)
         .accessibilityAddTraits(.isHeader)
         .padding(.top, LayoutRole.journeyContentGap.points)
-        .journeyEntrance(1)
       Text(message)
         .font(TextRole.journeyMessage.font)
         .foregroundStyle(JourneyStyle.message.color)
         .padding(.top, LayoutRole.journeyMessageGap.points)
-        .journeyEntrance(2)
       Spacer(minLength: 0)
       Button(primary) { journey.complete(selectionCount: 0) }
         .buttonStyle(ActionButtonStyle(.primary))
         .accessibilityIdentifier("journey.continue")
-        .journeyEntrance(3)
     }
     .multilineTextAlignment(.center)
     .padding([.horizontal, .bottom], LayoutRole.screenInset.points)
