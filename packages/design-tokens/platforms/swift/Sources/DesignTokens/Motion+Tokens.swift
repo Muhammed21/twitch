@@ -6,6 +6,8 @@ import SwiftUI
 public enum Motion {
     /// Glissement d'une page du parcours de personnalisation et de sa barre de progression, à la cadence d'un push de pile de navigation iOS (ADR 0051 §6).
     public static let journeyPage: TimeInterval = 0.35
+    /// Variante de journeyPage sous Réduire les animations (ADR 0019 §6).
+    public static let journeyPageReduced: TimeInterval = 0.2
     /// Fondu court qui remplace tout déplacement quand Réduire les animations est activé (ADR 0019 §6).
     public static let fade: TimeInterval = 0.2
 }

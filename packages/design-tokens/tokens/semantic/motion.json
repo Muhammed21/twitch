@@ -3,7 +3,8 @@
     "journeyPage": {
       "$type": "duration",
       "$value": "350ms",
-      "$description": "Glissement d'une page du parcours de personnalisation et de sa barre de progression, à la cadence d'un push de pile de navigation iOS (ADR 0051 §6)."
+      "$description": "Glissement d'une page du parcours de personnalisation et de sa barre de progression, à la cadence d'un push de pile de navigation iOS (ADR 0051 §6).",
+      "$extensions": { "com.twitch.reducedMotion": "200ms" }
     },
     "fade": {
       "$type": "duration",

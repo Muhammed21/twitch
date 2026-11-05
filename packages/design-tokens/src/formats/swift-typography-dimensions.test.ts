@@ -226,6 +226,33 @@ describe("formatDurations", () => {
     expect(output).toContain(`    public static let page: TimeInterval = ${seconds}\n`);
   });
 
+  it("generates the reduced-motion variant beside the duration, so a call site never hard-codes it", () => {
+    const output = formatDurations([durationToken({ reducedMotion: "200ms" })], {
+      namespace: "Motion",
+    });
+
+    expect(output).toContain(
+      [
+        "    public static let page: TimeInterval = 0.35",
+        "    /// Variante de page sous Réduire les animations (ADR 0019 §6).",
+        "    public static let pageReduced: TimeInterval = 0.2",
+        "}",
+      ].join("\n"),
+    );
+  });
+
+  it("generates no reduced variant for a token that has none", () => {
+    const output = formatDurations([durationToken()], { namespace: "Motion" });
+
+    expect(output).not.toContain("Reduced");
+  });
+
+  it("refuses a reduced-motion variant that is not a duration", () => {
+    expect(() =>
+      formatDurations([durationToken({ reducedMotion: "fast" })], { namespace: "Motion" }),
+    ).toThrow(/motion\.page.*not a duration: fast/);
+  });
+
   it("omits the doc comment when the token has no description", () => {
     const output = formatDurations([durationToken()], { namespace: "Motion" });
 

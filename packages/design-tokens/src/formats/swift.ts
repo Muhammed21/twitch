@@ -5,6 +5,7 @@ export type DesignToken = {
   readonly $type: string;
   readonly value: unknown;
   readonly comment?: string;
+  readonly reducedMotion?: unknown;
 };
 
 export type ThemedTokens = {
@@ -230,10 +231,22 @@ export const formatDurations = (
   tokens: readonly DesignToken[],
   { namespace }: { readonly namespace: string },
 ): string => {
-  const members = tokens.flatMap((token) => [
-    ...docComment(token.comment),
-    `    public static let ${swiftMemberName(token.path)}: TimeInterval = ${toSeconds(token.value, token.path)}`,
-  ]);
+  const members = tokens.flatMap((token) => {
+    const name = swiftMemberName(token.path);
+    const reduced =
+      token.reducedMotion === undefined
+        ? []
+        : [
+            `    /// Variante de ${name} sous Réduire les animations (ADR 0019 §6).`,
+            `    public static let ${name}Reduced: TimeInterval = ${toSeconds(token.reducedMotion, token.path)}`,
+          ];
+
+    return [
+      ...docComment(token.comment),
+      `    public static let ${name}: TimeInterval = ${toSeconds(token.value, token.path)}`,
+      ...reduced,
+    ];
+  });
 
   return [GENERATED_HEADER, `public enum ${namespace} {`, ...members, "}", ""].join("\n");
 };
