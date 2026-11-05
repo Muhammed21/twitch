@@ -183,7 +183,7 @@ Le suivi des catégories, lui, est déjà tranché : il vit dans `channel` (ADR 
 - **Réduire les animations** activé : les déplacements, ressorts et effets de parallaxe deviennent un fondu court ; le récap s'affiche dans son état final.
 - Les retours sont des **rôles** du design system, pas des appels épars : un rôle associe un retour haptique et, s'il y en a un, un son. Sélection → son `tap` ; validation → `validation` ; succès → `success` ; changement de page → `transition` ; erreur → vibration seule.
 - **Vibrations** : `sensoryFeedback` de SwiftUI, qui suit le réglage haptique du système.
-- **Sons** : courts, joués comme sons système (`AudioServicesPlaySystemSound`). Un son système se tait quand le commutateur est sur silencieux et se mélange à la musique en cours au lieu de la couper, sans changer la catégorie de la session audio de l'app, qui reste au lecteur du live.
+- **Sons** : courts, joués sur une session audio `.ambient`. Cette catégorie se tait quand le commutateur est sur silencieux, et se mélange à la musique en cours au lieu de la couper.
 - **Les quatre sons sont générés par un script** de synthèse courte (formes d'onde, enveloppes et fréquences en constantes, aucun aléa), versionné dans le dépôt. Les fichiers produits sont commités dans les ressources de `DesignSystem` et vérifiés par la tâche `generate` (ADR 0018) : un fichier qui diverge de son générateur fait échouer la CI.
 - Un son absent ne bloque rien : le rôle joue alors sa vibration seule.
 
@@ -250,7 +250,7 @@ Convention de l'ADR 0012 : `objet:action_au_passé`, propriétés en `snake_case
 - **Fuite de PII dans les propriétés de personne.** Mitigation : valeurs fermées seulement, filtre de sortie de `Core/Analytics` et test sur les schémas Zod (ADR 0012 §1).
 - **Exposition comptée sans variante.** Mitigation : `paywall:viewed` n'est émis que si `bootstrap` a rendu une variante, avec un test dédié (ADR 0016).
 - **Offering renommé chez RevenueCat.** Mitigation : correspondance en un point côté serveur, repli sur l'offering courant, jamais de paywall vide (ADR 0016).
-- **Sons gênants.** Mitigation : sons système, muets en silencieux, sons courts, aucun son sans geste de l'utilisateur.
+- **Sons gênants.** Mitigation : catégorie `.ambient`, sons courts, aucun son sans geste de l'utilisateur.
 - **SDK tiers et Swift 6.** Mitigation : enveloppes `actor` ou `@MainActor` dans `Core/*`, `@preconcurrency import` localisé (ADR 0010).
 
 ## Notes d'implémentation
@@ -280,3 +280,12 @@ Convention de l'ADR 0012 : `objet:action_au_passé`, propriétés en `snake_case
 - ADR 0040 — Illustration de « You're All Set! » (écran qui précède le parcours)
 - ADR 0049 — Suivi d'une catégorie (page 2 du parcours)
 - ADR 0050 — Tags d'une catégorie (page 3 du parcours)
+
+## Amendement du 2026-11-05 — sons système
+
+Validé par l'utilisateur. Le statut reste Accepté.
+
+Les sons du parcours se jouent comme sons système (`AudioServicesPlaySystemSound`), et non plus sur une session audio `.ambient`. Cela remplace la ligne **Sons** de la Décision et la mitigation des **Sons gênants**.
+
+- **Raison.** Une session `.ambient` avec `.mixWithOthers` change la catégorie audio de toute l'app. Un live ouvert après le parcours se mélangeait alors à la musique de l'utilisateur, au lieu de l'interrompre.
+- **Effet.** Un son système se tait en mode silencieux et se mélange à la musique en cours, sans toucher à la session audio de l'app. Le lecteur du live garde sa propre catégorie.
