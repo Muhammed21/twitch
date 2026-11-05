@@ -31,7 +31,7 @@ public struct StreamManagerScreen: View {
         }
       }
       .onDisappear { store.leave() }
-      .sheet(isPresented: $isEditingTitle) { EditStreamInfoSheet(initial: store.info) }
+      .sheet(isPresented: $isEditingTitle) { EditStreamInfoSheet(initial: store.proposedInfo) }
       .alert(Text(ProfileText.resetKeyTitle), isPresented: $isConfirmingReset) {
         Button(role: .destructive) {
           Task { await store.rotateKey() }

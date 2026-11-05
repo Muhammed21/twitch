@@ -48,7 +48,7 @@ struct CreatorRoot: View {
       .toolbar(.hidden, for: .tabBar)
       .tag(DashboardTab.home)
       .sheet(isPresented: $isEditingStreamInfo) {
-        EditStreamInfoSheet(initial: myChannel.info)
+        EditStreamInfoSheet(initial: myChannel.proposedInfo)
       }
       DashboardContentScreen()
         .toolbar(.hidden, for: .tabBar)
