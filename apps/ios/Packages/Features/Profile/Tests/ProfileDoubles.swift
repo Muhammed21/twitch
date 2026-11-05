@@ -168,12 +168,15 @@ actor HeldRotation: MyChannelRepository {
   }
 }
 
+let bannerURL = URL(string: "https://cdn.twitch.local/banners/viewer.jpg")
+
 struct FakeChannels: ChannelRepository {
   let title: String
   let category: ChannelCategory?
+  var banner: URL?
 
   func channel(withSlug slug: ChannelSlug) throws -> Channel {
-    Channel(id: channelID, slug: slug, title: title, ownerID: ownerID, category: category)
+    Channel(id: channelID, slug: slug, title: title, ownerID: ownerID, category: category, bannerURL: banner)
   }
 }
 

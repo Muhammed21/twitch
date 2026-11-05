@@ -32,6 +32,7 @@ public enum TextRole: Sendable {
   case editRowValue
   case bioText
   case bioCounter
+  case editSectionFooter
 
   public var font: Font {
     switch self {
@@ -65,6 +66,7 @@ public enum TextRole: Sendable {
     case .editRowValue: .viewerCount
     case .bioText: .supportingText
     case .bioCounter: .viewerCount
+    case .editSectionFooter: .metaText
     }
   }
 }
@@ -174,6 +176,12 @@ public enum LayoutRole: Sendable {
   case bioFieldBottom
   case bioFieldDividerHeight
   case bioCounterInset
+  case editSectionGap
+  case editImageRowPadding
+  case brandAvatarSize
+  case brandAvatarRing
+  case brandAvatarGlyphInset
+  case editRowIconSize
 
   public var points: CGFloat {
     switch self {
@@ -281,6 +289,12 @@ public enum LayoutRole: Sendable {
     case .bioFieldBottom: Spacing.x8
     case .bioFieldDividerHeight: Spacing.x1
     case .bioCounterInset: Spacing.x20
+    case .editSectionGap: Spacing.x24
+    case .editImageRowPadding: Spacing.x20
+    case .brandAvatarSize: Spacing.x88
+    case .brandAvatarRing: Spacing.x4
+    case .brandAvatarGlyphInset: Spacing.x14
+    case .editRowIconSize: Spacing.x20
     }
   }
 }

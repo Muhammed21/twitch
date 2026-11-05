@@ -235,6 +235,27 @@ public extension Color {
             ? UIColor(red: 0.922, green: 0.016, blue: 0, alpha: 1)
             : UIColor(red: 0.922, green: 0.016, blue: 0, alpha: 1)
     })
+    /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : haut du dégradé de la bannière par défaut d'Edit Profile (profil/modifier-profil--defaut). Convention : identique dans les deux thèmes, comme une image.
+    /// clair #5C2DA8 · sombre #5C2DA8
+    static let bannerStart = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.361, green: 0.176, blue: 0.659, alpha: 1)
+            : UIColor(red: 0.361, green: 0.176, blue: 0.659, alpha: 1)
+    })
+    /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : bas du dégradé de la bannière par défaut d'Edit Profile, mesuré #9047ff (profil/modifier-profil--defaut). Valeur de la charte (violet de marque) retenue, identique dans les deux thèmes.
+    /// clair #9147FF · sombre #9147FF
+    static let bannerEnd = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.569, green: 0.278, blue: 1, alpha: 1)
+            : UIColor(red: 0.569, green: 0.278, blue: 1, alpha: 1)
+    })
+    /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : anneau de 4 pt autour de l'avatar posé sur la bannière d'Edit Profile, mesuré de #ececee à #f8f4f8 (profil/modifier-profil--defaut). Valeur de la charte (background) retenue, identique dans les deux thèmes.
+    /// clair #F7F7F8 · sombre #F7F7F8
+    static let bannerAvatarRing = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.969, green: 0.969, blue: 0.973, alpha: 1)
+            : UIColor(red: 0.969, green: 0.969, blue: 0.973, alpha: 1)
+    })
 
     /// Valeurs fixes par thème, réservées aux contextes sans traits et aux tests (ADR 0019 §2.2).
     enum Static {
@@ -304,5 +325,11 @@ public extension Color {
         public static let mediaBackgroundDark = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 1)
         public static let indicatorLiveLight = Color(.sRGB, red: 0.922, green: 0.016, blue: 0, opacity: 1)
         public static let indicatorLiveDark = Color(.sRGB, red: 0.922, green: 0.016, blue: 0, opacity: 1)
+        public static let bannerStartLight = Color(.sRGB, red: 0.361, green: 0.176, blue: 0.659, opacity: 1)
+        public static let bannerStartDark = Color(.sRGB, red: 0.361, green: 0.176, blue: 0.659, opacity: 1)
+        public static let bannerEndLight = Color(.sRGB, red: 0.569, green: 0.278, blue: 1, opacity: 1)
+        public static let bannerEndDark = Color(.sRGB, red: 0.569, green: 0.278, blue: 1, opacity: 1)
+        public static let bannerAvatarRingLight = Color(.sRGB, red: 0.969, green: 0.969, blue: 0.973, opacity: 1)
+        public static let bannerAvatarRingDark = Color(.sRGB, red: 0.969, green: 0.969, blue: 0.973, opacity: 1)
     }
 }
