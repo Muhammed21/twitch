@@ -1,6 +1,6 @@
 # 0040 — L'illustration de « You're All Set! » est reprise telle quelle
 
-- Statut : Proposé
+- Statut : Proposé — §1 (une seule illustration dans l'app) amendé par [0052](0052-illustrations-d-etat-vide-du-tableau-de-bord-en-masques-extraits-des-captures.md)
 - Date : 2026-10-16
 - Décideurs : Muhammed Cavus
 - Amende : ADR 0036 (§6 marque)
