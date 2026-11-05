@@ -41,7 +41,7 @@ private struct CategoryGrid: View {
       LazyVStack(spacing: 0) {
         LazyVGrid(columns: columns, alignment: .leading, spacing: LayoutRole.categoryRowGap.points) {
           ForEach(store.categories, id: \.slug) { category in
-            NavigationLink(value: Route.category(category.slug, name: category.name)) {
+            NavigationLink(value: Route.category(CategoryHeading(category))) {
               CategoryTile(
                 name: category.name,
                 viewers: BrowseText.viewers(category.viewers, locale: locale),

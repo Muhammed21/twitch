@@ -36,6 +36,6 @@ extension Channel {
 
 extension ChannelCategory {
   init(_ summary: Components.Schemas.CategorySummary) {
-    self.init(id: CategoryID(summary.id), name: summary.name)
+    self.init(id: CategoryID(summary.id), name: summary.name, imageURL: summary.imageUrl.flatMap { URL(webAddress: $0) })
   }
 }

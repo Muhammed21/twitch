@@ -25,6 +25,7 @@ public final class HomeStore {
 
   public private(set) var lives: [LiveChannel] = []
   public private(set) var phase: HomePhase = .idle
+  public private(set) var thumbnailGeneration = 0
 
   private var nextCursor: LiveCursor?
   private var failedRequest: PageRequest?
@@ -56,6 +57,7 @@ public final class HomeStore {
       lives = Self.appending(page.lives, to: request.cursor == nil ? [] : lives)
       nextCursor = page.nextCursor
       failedRequest = nil
+      if request.cursor == nil { thumbnailGeneration += 1 }
       phase = .loaded(hasMore: page.nextCursor != nil)
     } catch {
       failedRequest = request
