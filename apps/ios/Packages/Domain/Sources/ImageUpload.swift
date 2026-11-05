@@ -53,6 +53,11 @@ public protocol ImageUploads: Sendable {
   func send(_ data: Data, with ticket: UploadTicket) async throws
 }
 
+public protocol ProfileImages: Sendable {
+  func setAvatar(_ upload: UploadID) async throws -> Account
+  func setBanner(_ upload: UploadID) async throws -> Channel
+}
+
 public extension ImageUploads {
   func upload(_ data: Data, type: ImageType, purpose: ImagePurpose) async throws -> UploadID {
     let ticket = try await prepare(ImageUploadRequest(purpose: purpose, type: type, byteSize: data.count))
