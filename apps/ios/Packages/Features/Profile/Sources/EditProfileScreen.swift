@@ -72,7 +72,7 @@ struct BioScreen: View {
         .accessibilityIdentifier("bio.field")
       Rectangle()
         .fill(EditProfileStyle.divider.color)
-        .frame(height: LayoutRole.chatUnreadLineWidth.points)
+        .frame(height: LayoutRole.bioFieldDividerHeight.points)
       if store.hasFailed {
         Text(EditProfileText.bioFailed)
           .font(TextRole.body.font)

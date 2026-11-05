@@ -10,6 +10,7 @@ private let editProfileMeasures: [(LayoutRole, CGFloat)] = [
   (.editRowLineGap, 2),
   (.bioFieldPadding, 6),
   (.bioFieldBottom, 8),
+  (.bioFieldDividerHeight, 1),
   (.bioCounterInset, 20),
 ]
 

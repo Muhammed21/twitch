@@ -155,6 +155,7 @@ public enum LayoutRole: Sendable {
   case editRowLineGap
   case bioFieldPadding
   case bioFieldBottom
+  case bioFieldDividerHeight
   case bioCounterInset
 
   public var points: CGFloat {
@@ -250,6 +251,7 @@ public enum LayoutRole: Sendable {
     case .editRowLineGap: Spacing.x2
     case .bioFieldPadding: Spacing.x6
     case .bioFieldBottom: Spacing.x8
+    case .bioFieldDividerHeight: Spacing.x1
     case .bioCounterInset: Spacing.x20
     }
   }
