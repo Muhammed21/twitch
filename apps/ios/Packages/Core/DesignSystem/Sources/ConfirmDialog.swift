@@ -56,3 +56,16 @@ public struct ConfirmDialog: View {
     }
   }
 }
+
+public extension View {
+  func confirmDialog(
+    isPresented: Bool,
+    onDismiss: @escaping @MainActor () -> Void,
+    dialog: @escaping () -> ConfirmDialog
+  ) -> some View {
+    fullScreenCover(isPresented: Binding(get: { isPresented }, set: { if !$0 { onDismiss() } })) {
+      dialog().presentationBackground(.clear)
+    }
+    .transaction { $0.disablesAnimations = true }
+  }
+}

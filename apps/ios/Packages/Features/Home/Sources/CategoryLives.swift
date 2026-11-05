@@ -66,17 +66,19 @@ public struct CategoryLivesScreen: View {
         ColorRole.background.color.ignoresSafeArea()
       }
     }
-    .overlay {
-      if let header, header.isConfirmingUnfollow {
+    .confirmDialog(
+      isPresented: header?.isConfirmingUnfollow == true,
+      onDismiss: { header?.cancelUnfollow() },
+      dialog: {
         ConfirmDialog(
           message: BrowseText.unfollowQuestion(name: heading.name),
           actions: [
-            DialogAction(title: BrowseText.unfollow, kind: .destructive) { Task { await header.confirmUnfollow() } },
-            DialogAction(title: BrowseText.cancel, kind: .cancel) { header.cancelUnfollow() },
+            DialogAction(title: BrowseText.unfollow, kind: .destructive) { Task { await header?.confirmUnfollow() } },
+            DialogAction(title: BrowseText.cancel, kind: .cancel) { header?.cancelUnfollow() },
           ]
         )
       }
-    }
+    )
     .navigationTitle(heading.name)
     .navigationBarTitleDisplayMode(.inline)
     .task(id: heading.slug) {
