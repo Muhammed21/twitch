@@ -175,7 +175,6 @@ struct SignedInRoot: View {
       .toolbar(.hidden, for: .tabBar)
       .tag(AppTab.profile)
     }
-    .creatorModePresentation { router.create() }
     .fullScreenCover(isPresented: $router.isShowingStreamManager) {
       NavigationStack {
         StreamManagerScreen { router.isShowingStreamManager = false }
@@ -194,6 +193,7 @@ struct SignedInRoot: View {
         )
       }
     }
+    .creatorModePresentation { router.create() }
   }
 
   private var account: Account? {

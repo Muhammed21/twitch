@@ -67,6 +67,7 @@ public final class CreatorMode {
     isShowingActions = false
     transition = target
     await sleep(hold)
+    guard transition == target else { return }
     mode = target
     storage.save(target)
     transition = nil

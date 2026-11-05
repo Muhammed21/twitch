@@ -121,6 +121,29 @@ struct CreatorModeTests {
     #expect(storage.saved == [.creator])
   }
 
+  @Test("une déconnexion pendant le passage l'emporte : le mode reste spectateur")
+  func resetDuringTransition() async {
+    let gate = AsyncStream<Void>.makeStream()
+    let storage = MemoryModeStorage()
+    let mode = CreatorMode(storage: storage, hold: .zero) { _ in
+      for await _ in gate.stream {
+        return
+      }
+    }
+
+    let switching = Task { await mode.switchMode() }
+    while mode.transition == nil {
+      await Task.yield()
+    }
+    mode.reset()
+    gate.continuation.yield()
+    await switching.value
+
+    #expect(mode.mode == .viewer)
+    #expect(mode.transition == nil)
+    #expect(storage.saved == [.viewer])
+  }
+
   @Test("la déconnexion ramène le mode spectateur et l'enregistre")
   func resetReturnsToViewer() {
     let (mode, storage) = makeSwitch(.creator)
