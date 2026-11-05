@@ -114,6 +114,18 @@ public struct DevicePreferences: Equatable, Sendable {
       interests: update.interests ?? interests
     )
   }
+
+  public func update(for preference: Preference) -> PreferenceUpdate {
+    switch preference {
+    case .appearance: .appearance(appearance)
+    case .videoAutoplay: .videoAutoplay(videoAutoplay)
+    case .chatTextSize: .chatTextSize(chatTextSize)
+    case .chatTimestamps: .chatTimestamps(showsChatTimestamps)
+    case .liveLanguage: .liveLanguage(liveLanguage)
+    case .contentFilters: .content(content)
+    case .interests: .interests(interests)
+    }
+  }
 }
 
 public enum Preference: String, Sendable {
@@ -159,7 +171,7 @@ public enum PreferenceUpdate: Equatable, Sendable {
     case let .chatTextSize(value): value.rawValue
     case let .chatTimestamps(value): String(value)
     case let .liveLanguage(value): value.rawValue
-    case let .content(value): Self.joined(value.hidden.map(\.rawValue) + (value.blursSexualThemes ? [ContentPreferences.blurToken] : []))
+    case let .content(value): Self.joined(value.hidden.map(\.rawValue) + (value.isBlurAvailable && value.blursSexualThemes ? [ContentPreferences.blurToken] : []))
     case let .interests(value): Self.joined(Array(value))
     }
   }

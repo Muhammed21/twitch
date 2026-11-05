@@ -67,6 +67,7 @@ struct DevicePreferencesTests {
         == "blur_sexual_themes,gambling,profanity"
     )
     #expect(PreferenceUpdate.content(ContentPreferences(hidden: [], blursSexualThemes: false)).value == "")
+    #expect(PreferenceUpdate.content(ContentPreferences(hidden: [.sexualThemes], blursSexualThemes: true)).value == "sexual_themes")
   }
 
   @Test("masquer les thèmes sexuels rend le floutage sans objet, comme le grisé de preferences-contenu--filtres-actives")
@@ -81,5 +82,21 @@ struct DevicePreferencesTests {
       "sexual_themes", "drugs_intoxication_tobacco", "gambling", "violent_graphic",
       "profanity", "mature_rated_games", "politics_sensitive",
     ])
+  }
+
+  @Test(
+    "chaque préférence relit sa valeur courante, celle que preference:changed compare",
+    arguments: [
+      PreferenceUpdate.appearance(.dark),
+      .videoAutoplay(.never),
+      .chatTextSize(.small),
+      .chatTimestamps(true),
+      .liveLanguage(.korean),
+      .content(ContentPreferences(hidden: [.gambling], blursSexualThemes: false)),
+      .interests(["RPG"]),
+    ]
+  )
+  func readsBack(update: PreferenceUpdate) {
+    #expect(DevicePreferences.defaults(language: .english).applying(update).update(for: update.preference) == update)
   }
 }
