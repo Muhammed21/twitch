@@ -35,18 +35,39 @@ public struct TabBarItem<Tab: Hashable>: Identifiable {
 public struct TabBarCreate {
   public let label: String
   public let accessibilityIdentifier: String
+  public let style: TabBarCreateStyle
   public let action: () -> Void
 
-  public init(label: String, accessibilityIdentifier: String, action: @escaping () -> Void) {
+  public init(
+    label: String,
+    accessibilityIdentifier: String,
+    style: TabBarCreateStyle = .neutral,
+    action: @escaping () -> Void
+  ) {
     self.label = label
     self.accessibilityIdentifier = accessibilityIdentifier
+    self.style = style
     self.action = action
   }
 }
 
-public enum TabBarCreateStyle {
-  public static let background = ColorRole.surfaceSecondary
-  public static let foreground = ColorRole.textPrimary
+public enum TabBarCreateStyle: Sendable {
+  case neutral
+  case accent
+
+  public var background: ColorRole {
+    switch self {
+    case .neutral: .surfaceSecondary
+    case .accent: .accent
+    }
+  }
+
+  public var foreground: ColorRole {
+    switch self {
+    case .neutral: .textPrimary
+    case .accent: .onAccent
+    }
+  }
 }
 
 public struct TabBar<Tab: Hashable>: View {
@@ -104,9 +125,9 @@ private struct CreateButton: View {
     Button(action: create.action) {
       Glyph.plus.image
         .frame(width: LayoutRole.createGlyphSize.points, height: LayoutRole.createGlyphSize.points)
-        .foregroundStyle(TabBarCreateStyle.foreground.color)
+        .foregroundStyle(create.style.foreground.color)
         .frame(width: LayoutRole.createButtonWidth.points, height: LayoutRole.createButtonHeight.points)
-        .background(TabBarCreateStyle.background.color, in: Capsule())
+        .background(create.style.background.color, in: Capsule())
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
     }

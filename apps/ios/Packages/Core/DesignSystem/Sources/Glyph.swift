@@ -12,6 +12,15 @@ public enum Glyph: String, CaseIterable, Sendable {
   case turboBattery
   case broadcast
   case leaveDashboard
+  case contentOutline
+  case contentFilled
+  case statsOutline
+  case statsFilled
+  case channelOutline
+  case calendar
+  case info
+  case watchEye
+  case searchField
 
   public var image: Image {
     Image(rawValue, bundle: .module).renderingMode(.template)

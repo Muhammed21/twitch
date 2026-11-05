@@ -37,6 +37,11 @@
           "$value": "#adadb8",
           "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : texte secondaire, thème sombre. Valeur de la charte twitch.tv, mesurée #adadb2 sur le texte lissé."
         },
+        "75": {
+          "$type": "color",
+          "$value": "#bfbfc2",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9626) : icône calendrier grisée de l'en-tête Statistiques, mesurée #bfbfc2 sur le fond #f7f7f8."
+        },
         "85": {
           "$type": "color",
           "$value": "#d9d9d9",

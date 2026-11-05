@@ -270,6 +270,13 @@ public extension Color {
             ? UIColor(red: 1, green: 0.184, blue: 0.557, alpha: 1)
             : UIColor(red: 1, green: 0.184, blue: 0.557, alpha: 1)
     })
+    /// Icône d'action indisponible : calendrier de l'en-tête Statistiques du tableau de bord des créateurs.
+    /// clair #BFBFC2 · sombre #53535F
+    static let iconDisabled = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.325, green: 0.325, blue: 0.373, alpha: 1)
+            : UIColor(red: 0.749, green: 0.749, blue: 0.761, alpha: 1)
+    })
 
     /// Valeurs fixes par thème, réservées aux contextes sans traits et aux tests (ADR 0019 §2.2).
     enum Static {
@@ -349,5 +356,7 @@ public extension Color {
         public static let turboStartDark = Color(.sRGB, red: 0.71, green: 0.216, blue: 0.953, opacity: 1)
         public static let turboEndLight = Color(.sRGB, red: 1, green: 0.184, blue: 0.557, opacity: 1)
         public static let turboEndDark = Color(.sRGB, red: 1, green: 0.184, blue: 0.557, opacity: 1)
+        public static let iconDisabledLight = Color(.sRGB, red: 0.749, green: 0.749, blue: 0.761, opacity: 1)
+        public static let iconDisabledDark = Color(.sRGB, red: 0.325, green: 0.325, blue: 0.373, opacity: 1)
     }
 }
