@@ -179,15 +179,15 @@ export const transferTurbo = ({
   occurredAt,
   newId,
 }: {
-  origins: readonly TurboEntitlement[];
+  origins: readonly (TurboEntitlement | undefined)[];
   target: TurboEntitlement | undefined;
   toUserId: string;
   occurredAt: Date;
   newId: () => string;
 }): TurboDecision => {
-  const moved = origins.filter(
-    (origin) => isActive(origin) && origin.userId !== toUserId && origin.lastEventAt <= occurredAt,
-  );
+  const moved = origins
+    .filter(isActive)
+    .filter((origin) => origin.userId !== toUserId && origin.lastEventAt <= occurredAt);
   const [first, ...others] = moved;
   if (first === undefined) {
     return IGNORED;
