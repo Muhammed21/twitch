@@ -43,7 +43,8 @@ extension Account {
       email: current.email,
       bio: current.bio,
       lastLiveAt: current.lastLiveAt,
-      avatarURL: current.avatarUrl.flatMap { URL(webAddress: $0) }
+      avatarURL: current.avatarUrl.flatMap { URL(webAddress: $0) },
+      chatColor: current.chatColor
     )
   }
 }

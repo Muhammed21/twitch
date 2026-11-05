@@ -7,14 +7,24 @@ public struct Account: Equatable, Sendable {
   public let bio: String?
   public let lastLiveAt: Date?
   public let avatarURL: URL?
+  public let chatColor: String?
 
-  public init(id: UUID, name: String, email: String, bio: String? = nil, lastLiveAt: Date? = nil, avatarURL: URL? = nil) {
+  public init(
+    id: UUID,
+    name: String,
+    email: String,
+    bio: String? = nil,
+    lastLiveAt: Date? = nil,
+    avatarURL: URL? = nil,
+    chatColor: String? = nil
+  ) {
     self.id = id
     self.name = name
     self.email = email
     self.bio = bio
     self.lastLiveAt = lastLiveAt
     self.avatarURL = avatarURL
+    self.chatColor = chatColor
   }
 }
 

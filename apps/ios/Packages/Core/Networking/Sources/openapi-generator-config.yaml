@@ -8,6 +8,7 @@ filter:
     - MeController_read
     - MeController_update
     - MeController_avatar
+    - MeController_chatColor
     - MeBannerController_banner
     - MobileBootstrapController_read
     - LivesController_list
