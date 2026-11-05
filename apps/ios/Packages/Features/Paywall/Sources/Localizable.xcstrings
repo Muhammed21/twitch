@@ -8,6 +8,12 @@
             "state" : "translated",
             "value" : "Billed monthly • Cancel anytime"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Facturé chaque mois • Résiliable à tout moment"
+          }
         }
       }
     },
@@ -17,6 +23,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Billed yearly • Cancel anytime"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Facturé chaque année • Résiliable à tout moment"
           }
         }
       }
@@ -28,6 +40,12 @@
             "state" : "translated",
             "value" : "Close"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fermer"
+          }
         }
       }
     },
@@ -37,6 +55,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stand Out in Every Chat"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Démarquez-vous dans chaque chat"
+          }
+        }
+      }
+    },
+    "paywall.later" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maybe Later"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus tard"
           }
         }
       }
@@ -48,6 +89,12 @@
             "state" : "translated",
             "value" : " and acknowledge our "
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " et reconnaissez avoir pris connaissance de notre "
+          }
         }
       }
     },
@@ -57,6 +104,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "By subscribing, you agree to the "
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En vous abonnant, vous acceptez les "
           }
         }
       }
@@ -68,6 +121,12 @@
             "state" : "translated",
             "value" : "Privacy Notice"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Politique de confidentialité"
+          }
         }
       }
     },
@@ -77,6 +136,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Terms of Use (EULA)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conditions d'utilisation (CLUF)"
           }
         }
       }
@@ -88,6 +153,12 @@
             "state" : "translated",
             "value" : "No Turbo subscription found to restore."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun abonnement Turbo à restaurer."
+          }
         }
       }
     },
@@ -97,6 +168,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't complete your purchase. Try again."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'achat n'a pas pu aboutir. Réessayez."
           }
         }
       }
@@ -108,6 +185,80 @@
             "state" : "translated",
             "value" : "Couldn't restore your purchases. Try again."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de restaurer vos achats. Réessayez."
+          }
+        }
+      }
+    },
+    "paywall.perk.badge" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Battery Chat Badge"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Badge batterie dans le chat"
+          }
+        }
+      }
+    },
+    "paywall.perk.badge.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shown next to your name in every chat."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Affiché à côté de votre pseudo dans tous les chats."
+          }
+        }
+      }
+    },
+    "paywall.perk.color" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom Username Color"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couleur de pseudo personnalisée"
+          }
+        }
+      }
+    },
+    "paywall.perk.color.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick the color of your name in chat."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez la couleur de votre pseudo dans le chat."
+          }
         }
       }
     },
@@ -117,6 +268,63 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Custom chat username colors, Battery Chat Badge"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couleurs de pseudo personnalisées, badge batterie dans le chat"
+          }
+        }
+      }
+    },
+    "paywall.plan.choose" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose your plan"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez votre formule"
+          }
+        }
+      }
+    },
+    "paywall.plan.month" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monthly"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mensuel"
+          }
+        }
+      }
+    },
+    "paywall.plan.year" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yearly"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annuel"
           }
         }
       }
@@ -128,6 +336,29 @@
             "state" : "translated",
             "value" : "Restore Purchases"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restaurer les achats"
+          }
+        }
+      }
+    },
+    "paywall.savings %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save %lld%%"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Économisez %lld %%"
+          }
         }
       }
     },
@@ -137,6 +368,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Subscribe for %@/month"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "S'abonner pour %@/mois"
           }
         }
       }
@@ -148,6 +385,12 @@
             "state" : "translated",
             "value" : "Subscribe for %@/year"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "S'abonner pour %@/an"
+          }
         }
       }
     },
@@ -157,6 +400,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your Battery Chat Badge and username colors are ready."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre badge batterie et vos couleurs de pseudo sont prêts."
           }
         }
       }
@@ -168,6 +417,12 @@
             "state" : "translated",
             "value" : "You're a Turbo subscriber"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous êtes abonné à Turbo"
+          }
         }
       }
     },
@@ -178,12 +433,24 @@
             "state" : "translated",
             "value" : "Support streamers and make your name shine in chat."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Soutenez les streamers et faites briller votre pseudo dans le chat."
+          }
         }
       }
     },
     "paywall.title" : {
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turbo"
+          }
+        },
+        "fr" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Turbo"
@@ -197,6 +464,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Turbo isn't available right now. Try again later."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turbo n'est pas disponible pour le moment. Réessayez plus tard."
           }
         }
       }
