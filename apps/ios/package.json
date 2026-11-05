@@ -3,6 +3,6 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "generate": "cp ../api/openapi.json Packages/Core/Networking/Sources/openapi.json"
+    "generate": "cp ../api/openapi.json Packages/Core/Networking/Sources/openapi.json && pnpm --filter @repo/contracts generate:swift"
   }
 }

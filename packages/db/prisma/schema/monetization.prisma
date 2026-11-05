@@ -64,6 +64,19 @@ model MonetizationProcessedWebhookEvent {
   @@schema("monetization")
 }
 
+/// Webhook refusé (en-tête Authorization faux ou payload hors contrat), archivé tel que reçu et jamais interprété (ADR 0014).
+model MonetizationRejectedWebhook {
+  id         String   @id @db.Uuid
+  provider   String
+  reason     String
+  /// @personal
+  body       String
+  receivedAt DateTime @default(now())
+
+  @@index([receivedAt])
+  @@schema("monetization")
+}
+
 model MonetizationOutbox {
   id            String    @id @db.Uuid
   name          String
