@@ -19,6 +19,10 @@ const makeChannel = (bannerKey: string | null): ChannelView => ({
   title: "",
   ownerId: OWNER_ID,
   category: null,
+  tags: [],
+  language: null,
+  contentLabels: [],
+  isBrandedContent: false,
   bannerKey,
 });
 

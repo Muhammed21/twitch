@@ -16,6 +16,10 @@ const VIEW = {
   ownerId: true,
   category: { select: { id: true, slug: true, name: true } },
   bannerKey: true,
+  tags: true,
+  language: true,
+  contentLabels: true,
+  isBrandedContent: true,
 } as const;
 
 const { channelMetadataUpdated } = events.channel;
@@ -35,14 +39,31 @@ const isActiveCategory = async (tx: Transaction, categoryId: string): Promise<bo
 export const prismaChannelDirectory = (prisma: ChannelPrisma): ChannelDirectory => ({
   findBySlug: (slug) => prisma.channel.findUnique({ where: { slug }, select: VIEW }),
   findById: (id) => prisma.channel.findUnique({ where: { id }, select: VIEW }),
-  updateMetadata: ({ channelId, title, categoryId, outboxEventId, occurredAt }) =>
+  updateMetadata: ({
+    channelId,
+    title,
+    categoryId,
+    tags,
+    language,
+    contentLabels,
+    isBrandedContent,
+    outboxEventId,
+    occurredAt,
+  }) =>
     prisma.$transaction(async (tx) => {
       if (typeof categoryId === "string" && !(await isActiveCategory(tx, categoryId))) {
         return err("category_unavailable");
       }
       const updated = await tx.channel.update({
         where: { id: channelId },
-        data: { title, categoryId },
+        data: {
+          title,
+          categoryId,
+          tags: tags === undefined ? undefined : [...tags],
+          language,
+          contentLabels: contentLabels === undefined ? undefined : [...contentLabels],
+          isBrandedContent,
+        },
         select: VIEW,
       });
       const payload = {

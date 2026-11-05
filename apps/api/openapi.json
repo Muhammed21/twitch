@@ -1410,13 +1410,71 @@
           "bannerUrl": {
             "type": "string",
             "format": "uri"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "en",
+                  "fr",
+                  "de",
+                  "es",
+                  "pt",
+                  "it",
+                  "ja",
+                  "ko",
+                  "zh",
+                  "ru",
+                  "pl",
+                  "tr"
+                ]
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "contentLabels": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "sexual_themes",
+                    "drugs_intoxication_tobacco",
+                    "gambling",
+                    "violent_graphic",
+                    "profanity",
+                    "mature_rated_games",
+                    "politics_sensitive"
+                  ]
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "isBrandedContent": {
+            "type": "boolean"
           }
         },
         "required": [
           "id",
           "slug",
           "title",
-          "ownerId"
+          "ownerId",
+          "tags",
+          "contentLabels",
+          "isBrandedContent"
         ],
         "additionalProperties": {}
       },
@@ -1437,6 +1495,47 @@
           },
           "category": {
             "$ref": "#/components/schemas/CategoryChoice"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "fr",
+              "de",
+              "es",
+              "pt",
+              "it",
+              "ja",
+              "ko",
+              "zh",
+              "ru",
+              "pl",
+              "tr"
+            ]
+          },
+          "contentLabels": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "sexual_themes",
+                "drugs_intoxication_tobacco",
+                "gambling",
+                "violent_graphic",
+                "profanity",
+                "mature_rated_games",
+                "politics_sensitive"
+              ]
+            }
+          },
+          "isBrandedContent": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
