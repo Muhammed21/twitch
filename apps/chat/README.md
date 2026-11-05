@@ -121,12 +121,12 @@ Les ports `RoomDirectory`, `ChatterProfiles`, `LocalViewWriter`, `SanctionedSock
 
 Vues locales dans Redis, lues sans appel à l'API (ADR 0004) :
 
-| Clé                               | Contenu                                                                             |
-| --------------------------------- | ----------------------------------------------------------------------------------- |
-| `chat:room:<channelId>`           | `sessionId` : session du live en cours, vide hors live                              |
-| `chat:room:<channelId>:ended`     | set des sessions terminées, expiré 7 jours après la dernière fin de live            |
-| `chat:chatter:<userId>`           | `displayName` : nom affiché de l'auteur ; `avatarKey` : clé de son avatar           |
-| `chat:chatter:<userId>:sanctions` | par `channelId`, fin du timeout en millisecondes epoch ; expire à la fin du dernier |
+| Clé                               | Contenu                                                                                                                                             |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `chat:room:<channelId>`           | `sessionId` : session du live en cours, vide hors live                                                                                              |
+| `chat:room:<channelId>:ended`     | set des sessions terminées, expiré 7 jours après la dernière fin de live                                                                            |
+| `chat:chatter:<userId>`           | `displayName` : nom affiché de l'auteur ; `avatarKey` et `avatarChangedAt` : clé de son avatar et `occurredAt` de son event, en millisecondes epoch |
+| `chat:chatter:<userId>:sanctions` | par `channelId`, fin du timeout en millisecondes epoch ; expire à la fin du dernier                                                                 |
 
 Une chaîne sans hash n'a pas de salon. Le groupe de consommateurs `chat` lit `events.channel`, `events.stream`, `events.identity` et `events.moderation`, écrits par le relais d'outbox de l'API :
 
@@ -136,7 +136,7 @@ Une chaîne sans hash n'a pas de salon. Le groupe de consommateurs `chat` lit `e
 | `stream.started`              | pose `sessionId`, sauf pour une session terminée (script Lua)                                                      |
 | `stream.ended`                | vide `sessionId` s'il porte cette session, puis ajoute la session au set des terminées (script Lua)                |
 | `identity.account.registered` | `HSET displayName`                                                                                                 |
-| `identity.avatar.changed`     | `HSET avatarKey`                                                                                                   |
+| `identity.avatar.changed`     | pose `avatarKey` et `avatarChangedAt`, sauf si l'avatar enregistré vient d'un event plus récent (script Lua)       |
 | `moderation.user.timed_out`   | garde la fin la plus tardive du timeout sur ce salon (script Lua), puis l'applique aux sockets ouvertes du chatter |
 
 Chaque écriture est idempotente et supporte le désordre : un event rejoué, un début de live repris après sa fin, ou une fin de live arrivée après le live suivant, laisse la vue juste. Un seul `XREADGROUP` bloquant lit les quatre streams, sur une connexion Redis à part ; à chaque tour, `XAUTOCLAIM` reprend les entrées en attente depuis plus de 30 s. Une entrée est acquittée après son traitement, ou si elle est illisible ou sans handler ; un handler en échec la laisse en attente.

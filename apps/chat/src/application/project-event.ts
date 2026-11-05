@@ -76,8 +76,8 @@ export const chatEventHandlers = ({
     [accountRegistered.name]: handle(accountRegistered, ({ accountId, displayName }) =>
       views.registerChatter({ userId: accountId, displayName }),
     ),
-    [avatarChanged.name]: handle(avatarChanged, ({ accountId, avatarKey }) =>
-      views.changeAvatar({ userId: accountId, avatarKey }),
+    [avatarChanged.name]: handle(avatarChanged, ({ accountId, avatarKey }, occurredAt) =>
+      views.changeAvatar({ userId: accountId, avatarKey, changedAt: occurredAt }),
     ),
     [userTimedOut.name]: handle(userTimedOut, (payload) =>
       views.sanctionChatter(sanctionOf(payload)),

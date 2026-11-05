@@ -34,6 +34,10 @@ export type LocalViewWriter = {
     readonly userId: string;
     readonly displayName: string;
   }): Promise<void>;
-  changeAvatar(avatar: { readonly userId: string; readonly avatarKey: string }): Promise<void>;
+  changeAvatar(avatar: {
+    readonly userId: string;
+    readonly avatarKey: string;
+    readonly changedAt: Date;
+  }): Promise<void>;
   sanctionChatter(sanction: ChatterSanction): Promise<void>;
 };

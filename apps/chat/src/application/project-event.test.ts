@@ -190,18 +190,26 @@ describe("projection des events dans les vues locales du chat", () => {
     expect(writes).toEqual([{ registerChatter: { userId: accountId, displayName: "Alice" } }]);
   });
 
-  it("enregistre la clé du nouvel avatar d'un compte", async () => {
+  it("enregistre la clé du nouvel avatar d'un compte, datée par l'event", async () => {
     const { handle, writes } = setup();
     const accountId = randomUUID();
+    const occurredAt = new Date("2026-11-05T10:00:00.000Z");
 
     await handle({
       name: avatarChanged.name,
       version: 1,
+      occurredAt,
       payload: { accountId, avatarKey: "images/avatar/a.webp" },
     });
 
     expect(writes).toEqual([
-      { changeAvatar: { userId: accountId, avatarKey: "images/avatar/a.webp" } },
+      {
+        changeAvatar: {
+          userId: accountId,
+          avatarKey: "images/avatar/a.webp",
+          changedAt: occurredAt,
+        },
+      },
     ]);
   });
 
