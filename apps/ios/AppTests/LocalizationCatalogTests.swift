@@ -55,13 +55,13 @@ struct LocalizationCatalogTests {
       ].contains($0.testDescription)
     }
   )
-  fileprivate func french(catalog: Catalog) {
+  private func french(catalog: Catalog) {
     let missing = Set(catalog.keys).subtracting(catalog.keys(in: "fr"))
     #expect(missing.isEmpty, "\(missing.sorted())")
   }
 
   @Test("aucune chaîne ne s'affiche sous forme de clé brute", arguments: catalogs, ["en", "fr"])
-  fileprivate func noRawKey(catalog: Catalog, language: String) {
+  private func noRawKey(catalog: Catalog, language: String) {
     let raw = catalog.keys.filter { catalog.resolve($0, in: language) == $0 }
     #expect(raw.isEmpty, "\(language) : \(raw.sorted())")
   }
