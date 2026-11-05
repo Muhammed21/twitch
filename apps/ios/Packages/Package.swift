@@ -188,7 +188,7 @@ let package = Package(
       name: "Onboarding",
       dependencies: ["Domain", "Preferences", "DesignSystem"],
       path: "Features/Onboarding/Sources",
-      resources: [.process("Localizable.xcstrings"), .process("ChatPreview.xcstrings")],
+      resources: [.process("Localizable.xcstrings")],
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
     .testTarget(
@@ -243,14 +243,14 @@ let package = Package(
     ),
     .target(
       name: "Dashboard",
-      dependencies: ["Navigation", "DesignSystem"],
+      dependencies: ["Domain", "Navigation", "DesignSystem"],
       path: "Features/Dashboard/Sources",
       resources: [.process("Localizable.xcstrings")],
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
     .testTarget(
       name: "DashboardTests",
-      dependencies: ["Dashboard", "Navigation", "DesignSystem"],
+      dependencies: ["Dashboard", "Domain", "Navigation", "DesignSystem"],
       path: "Features/Dashboard/Tests",
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),

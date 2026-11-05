@@ -1,5 +1,6 @@
 import Dashboard
 import DesignSystem
+import Foundation
 import Testing
 
 @Suite("Accueil du tableau de bord, hors ligne (IMG_9624)")
@@ -27,9 +28,9 @@ struct DashboardHomeTests {
     #expect(french(DashboardText.unavailableStat) == "--")
   }
 
-  @Test("tant que l'API ne fournit aucun chiffre de la chaîne, la carte affiche -- sous chaque libellé")
+  @Test("hors ligne, la carte affiche -- sous chaque libellé")
   func statItems() {
-    let items = DashboardHomeScreen.statItems
+    let items = DashboardHomeScreen.statItems(status: .offline, now: .now, locale: Locale(identifier: "fr"))
     #expect(items.map(\.value) == Array(repeating: String(localized: DashboardText.unavailableStat), count: 3))
     #expect(items.map(\.label) == DashboardStat.allCases.map { String(localized: DashboardText.label(of: $0)) })
     #expect(Set(items.map(\.id)).count == 3)

@@ -156,7 +156,7 @@ struct ChatViewportTests {
 struct ChatFeedTextTests {
   @Test("le message de bienvenue et le séparateur reprennent les libellés des captures")
   func texts() {
-    #expect(ChatText.welcome == "Welcome to the chat room!")
-    #expect(ChatText.unread == "New")
+    #expect(ChatText.welcome == shown(english: "Welcome to the chat room!", french: "Bienvenue sur le chat\u{00A0}!"))
+    #expect(ChatText.unread == shown(english: "New", french: "Nouveau"))
   }
 }
