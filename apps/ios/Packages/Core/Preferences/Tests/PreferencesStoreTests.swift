@@ -3,12 +3,8 @@ import Foundation
 import Preferences
 import Testing
 
-private func makeSuite() -> UserDefaults {
-  let name = "preferences.tests.\(UUID().uuidString)"
-  guard let defaults = UserDefaults(suiteName: name) else {
-    preconditionFailure("UserDefaults(suiteName:) refuse \(name)")
-  }
-  return defaults
+private func makeSuite() -> String {
+  "preferences.tests.\(UUID().uuidString)"
 }
 
 @MainActor
@@ -22,12 +18,12 @@ private final class ChangeRecorder {
 
 @MainActor
 private func makeStore(
-  suite: UserDefaults,
+  suite: String,
   language: LiveLanguage = .english,
   recorder: ChangeRecorder = ChangeRecorder()
 ) -> PreferencesStore {
   PreferencesStore(
-    repository: UserDefaultsPreferences(defaults: suite, language: language),
+    repository: UserDefaultsPreferences(suiteName: suite, language: language),
     onChange: { recorder.record($0) }
   )
 }
@@ -69,8 +65,9 @@ struct PreferencesStoreTests {
   @Test("une valeur inconnue sur le disque rend le défaut, sans planter")
   func unknownStoredValue() {
     let suite = makeSuite()
-    suite.set("sepia", forKey: "preferences.appearance")
-    suite.set("tlh", forKey: "preferences.liveLanguage")
+    let disk = UserDefaults(suiteName: suite)
+    disk?.set("sepia", forKey: "preferences.appearance")
+    disk?.set("tlh", forKey: "preferences.liveLanguage")
 
     let store = makeStore(suite: suite, language: .german)
 
