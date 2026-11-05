@@ -38,6 +38,8 @@
   --color-banner-start: #5c2da8;
   --color-banner-end: #9147ff;
   --color-banner-avatar-ring: #f7f7f8;
+  --color-turbo-start: #b537f3;
+  --color-turbo-end: #ff2f8e;
   --typography-display-text-font: -apple-system-headline;
   --typography-display-text-weight: 600;
   --typography-heading-text-font: -apple-system-subheadline;
@@ -145,5 +147,7 @@
     --color-banner-start: #5c2da8;
     --color-banner-end: #9147ff;
     --color-banner-avatar-ring: #f7f7f8;
+    --color-turbo-start: #b537f3;
+    --color-turbo-end: #ff2f8e;
   }
 }

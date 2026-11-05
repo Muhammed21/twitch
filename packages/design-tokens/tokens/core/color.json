@@ -89,6 +89,11 @@
           "$value": "#772ce8",
           "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : onglet actif de la barre d'onglets, thème clair, mesuré #782de6 (parcourir/liste-chaines-live--defaut). Valeur de la charte twitch.tv (purple-11) retenue."
         },
+        "58": {
+          "$type": "color",
+          "$value": "#b537f3",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : haut à gauche de la bande en dégradé de la page Turbo, mesuré #b537f3 (abonnement/turbo--defaut)."
+        },
         "60": {
           "$type": "color",
           "$value": "#9147ff",
@@ -207,6 +212,13 @@
           "$type": "color",
           "$value": "#bfff00",
           "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : avatar par défaut d'un compte sans photo, mesuré #bfff04 (accueil/flux-suivis--aucun-live)."
+        }
+      },
+      "pink": {
+        "59": {
+          "$type": "color",
+          "$value": "#ff2f8e",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : rose de la vague de la bande en dégradé de la page Turbo, mesuré #ff2f8e (abonnement/turbo--defaut)."
         }
       }
     }

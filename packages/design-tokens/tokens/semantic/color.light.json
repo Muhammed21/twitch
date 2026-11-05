@@ -209,6 +209,18 @@
         "$value": "{core.color.neutral.97}",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : anneau de 4 pt autour de l'avatar posé sur la bannière d'Edit Profile, mesuré de #ececee à #f8f4f8 (profil/modifier-profil--defaut). Valeur de la charte (background) retenue, identique dans les deux thèmes."
       }
+    },
+    "turbo": {
+      "start": {
+        "$type": "color",
+        "$value": "{core.color.purple.58}",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : début du dégradé de la bande de la page Turbo, mesuré #b537f3 (abonnement/turbo--defaut). Convention : identique dans les deux thèmes, comme une image."
+      },
+      "end": {
+        "$type": "color",
+        "$value": "{core.color.pink.59}",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : fin du dégradé de la bande de la page Turbo, mesuré #ff2f8e (abonnement/turbo--defaut). Convention : identique dans les deux thèmes, comme une image."
+      }
     }
   }
 }

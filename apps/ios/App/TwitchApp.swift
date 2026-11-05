@@ -12,6 +12,7 @@ import Onboarding
 import Player
 import Preferences
 import Profile
+import Purchases
 import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
@@ -244,6 +245,7 @@ struct Stores {
   let preferences: PreferencesStore
   let categoryChoices: CategoryChoices
   let interestChoices: InterestChoices
+  let purchases: StorePurchases
 }
 
 @MainActor
@@ -307,7 +309,8 @@ enum Composition {
       profileImages: Self.profileImages(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
       preferences: preferences,
       categoryChoices: Self.categoryChoices(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
-      interestChoices: InterestChoices(tags: CategoryTagClient(apiBaseURL: configuration.apiBaseURL, transport: transport), preferences: preferences)
+      interestChoices: InterestChoices(tags: CategoryTagClient(apiBaseURL: configuration.apiBaseURL, transport: transport), preferences: preferences),
+      purchases: StorePurchases.live(info: info)
     )
   }
 

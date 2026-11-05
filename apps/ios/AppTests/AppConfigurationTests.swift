@@ -1,6 +1,8 @@
 import Domain
 import Foundation
 import Networking
+import Paywall
+import Purchases
 import Testing
 @testable import Twitch
 
@@ -52,5 +54,20 @@ struct AppConfigurationTests {
   @Test("explique l'accès à l'appareil photo, sans quoi Take photo ferme l'app")
   func cameraUsage() {
     #expect(info["NSCameraUsageDescription"] as? String == "Take a photo for your profile picture or banner.")
+  }
+
+  @Test("porte la clé SDK publique RevenueCat de l'app Test Store")
+  func purchasesConfiguration() throws {
+    let configuration = try #require(PurchasesConfiguration(info: info))
+
+    #expect(configuration.apiKey == "test_wuBPtHBdoPVnvUUdOAvMbaiTWBI")
+  }
+
+  @Test("lie les conditions de vente à l'EULA standard d'Apple, sans page de confidentialité pour l'instant")
+  func paywallLinks() {
+    let links = PaywallLinks(info: info)
+
+    #expect(links.terms?.absoluteString == "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")
+    #expect(links.privacy == nil)
   }
 }
