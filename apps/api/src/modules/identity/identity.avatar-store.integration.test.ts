@@ -14,6 +14,21 @@ const SECOND_KEY = "images/avatar/second.webp";
 
 const seededUsers: string[] = [];
 
+const avatarEventsOf = async (accountId: string) =>
+  (
+    await identity.identityOutbox.findMany({
+      where: { name: "identity.avatar.changed" },
+    })
+  )
+    .map(({ version, payload }) => ({ version, payload }))
+    .filter(
+      ({ payload }) =>
+        typeof payload === "object" &&
+        payload !== null &&
+        "accountId" in payload &&
+        payload.accountId === accountId,
+    );
+
 afterAll(async () => {
   await identity.identityUser.deleteMany({ where: { id: { in: seededUsers } } });
   await identity.$disconnect();
@@ -55,6 +70,30 @@ describe("enregistrement de l'avatar en base", () => {
       value: { replacedKey: FIRST_KEY },
     });
     expect(await store.readAvatarKey(userId)).toBe(SECOND_KEY);
+  });
+
+  it("écrit identity.avatar.changed avec la nouvelle clé, dans la transaction de l'enregistrement", async () => {
+    const userId = await seedUser();
+
+    await store.saveAvatar({ userId, avatarKey: FIRST_KEY });
+    await store.saveAvatar({ userId, avatarKey: SECOND_KEY });
+
+    const written = await avatarEventsOf(userId);
+    expect(written).toHaveLength(2);
+    expect(written).toEqual(
+      expect.arrayContaining([
+        { version: 1, payload: { accountId: userId, avatarKey: FIRST_KEY } },
+        { version: 1, payload: { accountId: userId, avatarKey: SECOND_KEY } },
+      ]),
+    );
+  });
+
+  it("n'écrit aucun event pour un compte inconnu", async () => {
+    const userId = randomUUID();
+
+    await store.saveAvatar({ userId, avatarKey: FIRST_KEY });
+
+    expect(await avatarEventsOf(userId)).toEqual([]);
   });
 
   it("relit l'absence d'avatar, pour un compte sans avatar comme pour un compte inconnu", async () => {
