@@ -25,6 +25,14 @@ extension Composition {
   }
 }
 
+@MainActor
+enum DeepLinkOpening {
+  static func open(_ url: URL, router: Router, creatorMode: CreatorMode) {
+    guard router.open(url) else { return }
+    creatorMode.reset()
+  }
+}
+
 struct CreatorModePresentation: ViewModifier {
   @Environment(CreatorMode.self) private var creatorMode
   let onStream: () -> Void
