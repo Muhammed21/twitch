@@ -67,6 +67,10 @@ public enum PersonalizationText {
   public static var darkTheme: String { String(localized: "journey.appearance.dark", bundle: .module) }
   public static var autoplayTitle: String { String(localized: "journey.autoplay.title", bundle: .module) }
   public static var autoplayMessage: String { String(localized: "journey.autoplay.message", bundle: .module) }
+  public static var notificationsTitle: String { String(localized: "journey.notifications.title", bundle: .module) }
+  public static var turnOnNotifications: String { String(localized: "journey.notifications.turnOn", bundle: .module) }
+  public static var remindMeLater: String { String(localized: "journey.notifications.later", bundle: .module) }
+  public static var notificationsFooter: String { String(localized: "journey.notifications.footer", bundle: .module) }
   public static var chatTitle: String { String(localized: "journey.chat.title", bundle: .module) }
   public static var chatMessage: String { String(localized: "journey.chat.message", bundle: .module) }
   public static var chatTextSizeSection: String { String(localized: "journey.chat.section", bundle: .module) }

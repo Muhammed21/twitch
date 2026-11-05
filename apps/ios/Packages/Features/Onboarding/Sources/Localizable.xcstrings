@@ -471,6 +471,46 @@
         }
       }
     },
+    "journey.notifications.footer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can change this anytime in the iOS Settings."
+          }
+        }
+      }
+    },
+    "journey.notifications.later" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remind me later"
+          }
+        }
+      }
+    },
+    "journey.notifications.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never miss your favorite stream!"
+          }
+        }
+      }
+    },
+    "journey.notifications.turnOn" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn on Notifications"
+          }
+        }
+      }
+    },
     "journey.progress" : {
       "localizations" : {
         "en" : {

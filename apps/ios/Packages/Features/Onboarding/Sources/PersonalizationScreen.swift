@@ -32,9 +32,9 @@ public struct PersonalizationScreen: View {
     case .liveLanguage: LiveLanguagePage()
     case .appearance: AppearancePage()
     case .videoAutoplay: VideoAutoplayPage()
+    case .notifications: NotificationsPage()
     case .chat: ChatSettingsPage()
     case .summary: SummaryPage()
-    default: EmptyView()
     }
   }
 }

@@ -34,6 +34,16 @@ private struct NoTags: CategoryTagDirectory {
   }
 }
 
+private struct UndecidedNotifications: NotificationPermission {
+  func authorization() async -> NotificationAuthorization {
+    .notDetermined
+  }
+
+  func request() async -> Bool {
+    false
+  }
+}
+
 @MainActor
 private func makePreferences() -> PreferencesStore {
   PreferencesStore(repository: InMemoryPreferences(language: .english), onChange: { _ in })
@@ -67,7 +77,12 @@ struct PersonalizationFinishTests {
 
   @Test("chaque parcours repart de zéro : ce qu'un compte a suivi ne se coche pas pour le suivant")
   func freshChoicesPerJourney() async throws {
-    let sources = PersonalizationSources(categories: OneCategory(), following: AcceptsFollows(), tags: NoTags())
+    let sources = PersonalizationSources(
+      categories: OneCategory(),
+      following: AcceptsFollows(),
+      tags: NoTags(),
+      notifications: UndecidedNotifications()
+    )
     let preferences = makePreferences()
     let fortnite = try CategorySlug("fortnite")
     let first = sources.choices(preferences: preferences)
@@ -81,5 +96,6 @@ struct PersonalizationFinishTests {
     #expect(next.categories.selectionCount == 0)
     #expect(next.categories !== first.categories)
     #expect(next.interests !== first.interests)
+    #expect(next.notifications !== first.notifications)
   }
 }
