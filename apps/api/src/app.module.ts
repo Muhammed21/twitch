@@ -18,6 +18,7 @@ import {
 import { createFeatureFlags, MobileModule } from "./modules/mobile/mobile.module.ts";
 import { ModerationModule, type ModerationPrisma } from "./modules/moderation/moderation.module.ts";
 import {
+  createActiveEntitlementsReader,
   MonetizationModule,
   type MonetizationPrisma,
 } from "./modules/monetization/monetization.module.ts";
@@ -86,7 +87,11 @@ export class AppModule {
       trustedProxyCount: number;
     };
     moderation: { prisma: ModerationPrisma };
-    monetization: { prisma: MonetizationPrisma; webhookAuthorization: string | undefined };
+    monetization: {
+      prisma: MonetizationPrisma;
+      webhookAuthorization: string | undefined;
+      secretApiKey: string | undefined;
+    };
     discovery: {
       prisma: DiscoveryPrisma;
       channelConsumerRedis: StreamConsumerRedis;
@@ -125,7 +130,11 @@ export class AppModule {
           logSink: platform.logSink,
         }),
         ModerationModule.register({ ...moderation, authzRedis: channel.authzRedis }),
-        MonetizationModule.register({ ...monetization, logSink: platform.logSink }),
+        MonetizationModule.register({
+          ...monetization,
+          counter: images.counter,
+          logSink: platform.logSink,
+        }),
         DiscoveryModule.register({
           ...discovery,
           viewerCounts: createViewerCountReader(stream.presenceRedis),
@@ -142,6 +151,7 @@ export class AppModule {
             bannerUrlOf,
           }),
           ownedChannel,
+          readEntitlements: createActiveEntitlementsReader({ prisma: monetization.prisma }),
           minSupportedVersion: mobile.minSupportedVersion,
           logSink: platform.logSink,
         }),

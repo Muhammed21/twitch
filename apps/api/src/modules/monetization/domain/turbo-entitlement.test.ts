@@ -434,7 +434,7 @@ describe("transfert", () => {
   it("ne transfère rien depuis une origine sans entitlement actif", () => {
     expect(
       transferTurbo({
-        origins: [makeEntitlement({ status: "expired" })],
+        origins: [makeEntitlement({ status: "expired" }), undefined],
         target: undefined,
         toUserId: OTHER_USER_ID,
         occurredAt: at(8),

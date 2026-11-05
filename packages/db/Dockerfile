@@ -12,5 +12,6 @@ COPY --from=prune /repo/out/json/ .
 RUN pnpm install --frozen-lockfile
 COPY --from=prune /repo/out/full/ .
 WORKDIR /repo/packages/db
+ENV pnpm_config_verify_deps_before_run=false
 USER node
 CMD ["pnpm", "migrate"]
