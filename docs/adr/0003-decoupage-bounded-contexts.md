@@ -1,6 +1,6 @@
 # 0003 — Découpage en bounded contexts
 
-- Statut : Accepté — transcodage et distribution de `stream` amendés par [0031](0031-service-video-maison-a-la-maniere-d-ivs.md) — cycle de vie du salon de chat amendé par [0032](0032-salon-de-chat-permanent-par-chaine.md) — consommations d'events de `discovery` amendées par [0049](0049-suivi-d-une-categorie-dans-channel-sur-le-modele-du-follow-et-transfere-par-la-fusion.md)
+- Statut : Accepté — transcodage et distribution de `stream` amendés par [0031](0031-service-video-maison-a-la-maniere-d-ivs.md) — cycle de vie du salon de chat amendé par [0032](0032-salon-de-chat-permanent-par-chaine.md) — consommations d'events de `discovery` amendées par [0049](0049-suivi-d-une-categorie-dans-channel-sur-le-modele-du-follow-et-transfere-par-la-fusion.md) — périmètre de la tranche 1 amendé par [0051](0051-parcours-de-personnalisation-apres-inscription-et-paywall-turbo-natif-en-tranche-1.md)
 - Date : 2026-09-22
 - Décideurs : Muhammed Cavus
 

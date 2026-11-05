@@ -4,15 +4,16 @@ Un plan découpe une décision des ADR en PR livrables une par une, chacune en T
 
 ## Les plans
 
-| Plan                                             | Composant                                                 | Tranche |
-| ------------------------------------------------ | --------------------------------------------------------- | ------- |
-| [API](api.md)                                    | `apps/api`, architecture et contextes                     | T1      |
-| [Service vidéo](service-video.md)                | `apps/video`                                              | T1      |
-| [Chat](chat.md)                                  | `apps/chat`                                               | T1      |
-| [App iOS](ios.md)                                | `apps/ios`                                                | T1      |
-| [Authentification](auth.md)                      | `apps/api` (pages, identité), `apps/ios` (OAuth, session) | T1      |
-| [Back-office Payload](payload.md)                | `apps/payload`                                            | T2      |
-| [Fidélité du design iOS](ios-design-fidelite.md) | `apps/ios`, `packages/design-tokens`                      | T1      |
+| Plan                                                             | Composant                                                            | Tranche |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------- | ------- |
+| [API](api.md)                                                    | `apps/api`, architecture et contextes                                | T1      |
+| [Service vidéo](service-video.md)                                | `apps/video`                                                         | T1      |
+| [Chat](chat.md)                                                  | `apps/chat`                                                          | T1      |
+| [App iOS](ios.md)                                                | `apps/ios`                                                           | T1      |
+| [Authentification](auth.md)                                      | `apps/api` (pages, identité), `apps/ios` (OAuth, session)            | T1      |
+| [Back-office Payload](payload.md)                                | `apps/payload`                                                       | T2      |
+| [Fidélité du design iOS](ios-design-fidelite.md)                 | `apps/ios`, `packages/design-tokens`                                 | T1      |
+| [Parcours de personnalisation et paywall](onboarding-paywall.md) | `apps/ios`, `packages/contracts`, `apps/api` (`discovery`, `mobile`) | T1      |
 
 ## Ordre de la tranche 1
 
