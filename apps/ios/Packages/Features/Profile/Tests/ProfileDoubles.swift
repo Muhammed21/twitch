@@ -38,7 +38,7 @@ actor FakeMyChannel: MyChannelRepository {
   private let updated: Result<Channel, any Error>?
   private let rotated: Result<StreamKey, any Error>
   private(set) var updates: [UpdateCall] = []
-  private(set) var savedInfos: [StreamInfo] = []
+  private(set) var changes: [StreamInfoChange] = []
 
   init(
     owned: Result<OwnedChannel?, any Error>,
@@ -64,20 +64,20 @@ actor FakeMyChannel: MyChannelRepository {
     try rotated.get()
   }
 
-  func update(_ channel: ChannelID, info: StreamInfo, category: CategoryChange) throws -> Channel {
-    updates.append(UpdateCall(channel: channel, title: info.title, category: category))
-    savedInfos.append(info)
+  func update(_ channel: ChannelID, change: StreamInfoChange) throws -> Channel {
+    updates.append(UpdateCall(channel: channel, title: change.title, category: change.category))
+    changes.append(change)
     guard let updated else {
       return try Channel(
         id: channel,
         slug: ChannelSlug("viewer_de_test"),
-        title: info.title,
+        title: change.title,
         ownerID: ownerID,
-        category: Self.chosen(category),
-        tags: info.tags,
-        language: info.language,
-        contentLabels: info.contentLabels,
-        isBrandedContent: info.isBrandedContent
+        category: Self.chosen(change.category),
+        tags: change.tags ?? [],
+        language: change.language,
+        contentLabels: change.contentLabels ?? [],
+        isBrandedContent: change.isBrandedContent ?? false
       )
     }
     return try updated.get()
@@ -114,8 +114,8 @@ actor HeldKey: MyChannelRepository {
     return StreamKey(secret, ingestURL: ingestURL)
   }
 
-  func update(_ channel: ChannelID, info: StreamInfo, category _: CategoryChange) throws -> Channel {
-    try Channel(id: channel, slug: ChannelSlug("viewer_de_test"), title: info.title, ownerID: ownerID)
+  func update(_ channel: ChannelID, change: StreamInfoChange) throws -> Channel {
+    try Channel(id: channel, slug: ChannelSlug("viewer_de_test"), title: change.title, ownerID: ownerID)
   }
 
   func rotateStreamKey(of _: ChannelID) -> StreamKey {
@@ -149,8 +149,8 @@ actor HeldRotation: MyChannelRepository {
     StreamKey(secret, ingestURL: ingestURL)
   }
 
-  func update(_ channel: ChannelID, info: StreamInfo, category _: CategoryChange) throws -> Channel {
-    try Channel(id: channel, slug: ChannelSlug("viewer_de_test"), title: info.title, ownerID: ownerID)
+  func update(_ channel: ChannelID, change: StreamInfoChange) throws -> Channel {
+    try Channel(id: channel, slug: ChannelSlug("viewer_de_test"), title: change.title, ownerID: ownerID)
   }
 
   init(fails: Bool = false) {

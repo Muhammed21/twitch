@@ -55,14 +55,16 @@ public struct MyChannelClient: MyChannelRepository {
     }
   }
 
-  public func update(_ channel: ChannelID, info: StreamInfo, category: CategoryChange) async throws -> Channel {
+  public func update(_ channel: ChannelID, change: StreamInfoChange) async throws -> Channel {
     let body = Components.Schemas.UpdateChannelRequest(
-      title: info.title,
-      category: Self.choice(category),
-      tags: info.tags,
-      language: info.language.flatMap { .init(rawValue: $0.rawValue) },
-      contentLabels: ContentLabel.allCases.filter(info.contentLabels.contains).compactMap { .init(rawValue: $0.rawValue) },
-      isBrandedContent: info.isBrandedContent
+      title: change.title,
+      category: Self.choice(change.category),
+      tags: change.tags,
+      language: change.language.flatMap { .init(rawValue: $0.rawValue) },
+      contentLabels: change.contentLabels.map { labels in
+        ContentLabel.allCases.filter(labels.contains).compactMap { .init(rawValue: $0.rawValue) }
+      },
+      isBrandedContent: change.isBrandedContent
     )
     let output = try await unwrappingClientError {
       try await client.channelsControllerUpdate(path: .init(id: Self.pathID(channel)), body: .json(body))

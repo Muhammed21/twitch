@@ -24,16 +24,6 @@ private func profileJSON(channel: String? = nil) -> String {
   return #"{"id":"\#(ownerID)","name":"Viewer","email":"v@twitch.local"\#(channelField)}"#
 }
 
-private func makeInfo(title: String) -> StreamInfo {
-  StreamInfo(title: title, category: nil, tags: [], language: .english, contentLabels: [], isBrandedContent: false)
-}
-
-private func bodyWith(_ fields: [String: Any]) -> NSDictionary {
-  let body = NSMutableDictionary(dictionary: ["tags": [String](), "language": "en", "contentLabels": [String](), "isBrandedContent": false])
-  body.addEntries(from: fields)
-  return body
-}
-
 private func refusal(_ status: Int) -> String {
   #"{"type":"about:blank","title":"Refus","status":\#(status)}"#
 }
@@ -93,7 +83,7 @@ struct MyChannelClientTests {
       json: #"{"id":"9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69","slug":"viewer_de_test","title":"Speedrun du dimanche","ownerId":"\#(ownerID)","tags":[],"contentLabels":[],"isBrandedContent":false}"#
     )
 
-    let channel = try await makeClient(transport).update(channelID, info: makeInfo(title: "Speedrun du dimanche"), category: .keep)
+    let channel = try await makeClient(transport).update(channelID, change: StreamInfoChange(title: "Speedrun du dimanche", category: .keep))
 
     #expect(channel.title == "Speedrun du dimanche")
     #expect(channel.category == nil)
@@ -102,7 +92,7 @@ struct MyChannelClientTests {
     #expect(request.url == channelURL)
     #expect(request.headers["Authorization"] == "Bearer access-1")
     let body = try #require(JSONSerialization.jsonObject(with: request.body) as? NSDictionary)
-    #expect(body == bodyWith(["title": "Speedrun du dimanche"]))
+    #expect(body == ["title": "Speedrun du dimanche"])
   }
 
   @Test("pose la catégorie choisie avec le titre, et lit la catégorie rendue")
@@ -113,12 +103,12 @@ struct MyChannelClientTests {
       json: #"{"id":"9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69","slug":"viewer_de_test","title":"Rank","ownerId":"\#(ownerID)","tags":[],"contentLabels":[],"isBrandedContent":false,"category":\#(category)}"#
     )
 
-    let channel = try await makeClient(transport).update(channelID, info: makeInfo(title: "Rank"), category: .set(categoryID))
+    let channel = try await makeClient(transport).update(channelID, change: StreamInfoChange(title: "Rank", category: .set(categoryID)))
 
     #expect(channel.category == ChannelCategory(id: categoryID, name: "Honor of Kings"))
     let request = try #require(await transport.requests.first)
     let body = try #require(JSONSerialization.jsonObject(with: request.body) as? NSDictionary)
-    #expect(body == bodyWith(["title": "Rank", "category": ["id": "1C9E4A52-7D3B-4F8E-A6B1-2D5C8E9F0A13"]]))
+    #expect(body == ["title": "Rank", "category": ["id": "1C9E4A52-7D3B-4F8E-A6B1-2D5C8E9F0A13"]])
   }
 
   @Test("retire la catégorie en envoyant une catégorie sans identifiant")
@@ -127,12 +117,12 @@ struct MyChannelClientTests {
       json: #"{"id":"9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69","slug":"viewer_de_test","title":"Rank","ownerId":"\#(ownerID)","tags":[],"contentLabels":[],"isBrandedContent":false}"#
     )
 
-    let channel = try await makeClient(transport).update(channelID, info: makeInfo(title: "Rank"), category: .clear)
+    let channel = try await makeClient(transport).update(channelID, change: StreamInfoChange(title: "Rank", category: .clear))
 
     #expect(channel.category == nil)
     let request = try #require(await transport.requests.first)
     let body = try #require(JSONSerialization.jsonObject(with: request.body) as? NSDictionary)
-    #expect(body == bodyWith(["title": "Rank", "category": [String: String]()]))
+    #expect(body == ["title": "Rank", "category": [String: String]()])
   }
 
   @Test("envoie les tags, la langue, les descripteurs dans l'ordre de la liste et le contenu promotionnel")
@@ -140,16 +130,16 @@ struct MyChannelClientTests {
     let transport = FakeTransport(
       json: #"{"id":"9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69","slug":"viewer_de_test","title":"Rank","ownerId":"\#(ownerID)","tags":["francais"],"language":"fr","contentLabels":["gambling","profanity"],"isBrandedContent":true}"#
     )
-    let info = StreamInfo(
+    let change = StreamInfoChange(
       title: "Rank",
-      category: nil,
+      category: .keep,
       tags: ["francais"],
       language: .french,
       contentLabels: [.profanity, .gambling],
       isBrandedContent: true
     )
 
-    let channel = try await makeClient(transport).update(channelID, info: info, category: .keep)
+    let channel = try await makeClient(transport).update(channelID, change: change)
 
     #expect(channel.tags == ["francais"])
     #expect(channel.language == .french)
@@ -203,7 +193,7 @@ struct MyChannelClientTests {
     let transport = FakeTransport(status: status, json: refusal(status))
 
     await #expect(throws: ServiceProblem(type: "about:blank", title: "Refus", status: status, detail: nil)) {
-      try await makeClient(transport).update(channelID, info: makeInfo(title: "Titre"), category: .keep)
+      try await makeClient(transport).update(channelID, change: StreamInfoChange(title: "Titre", category: .keep))
     }
   }
 }

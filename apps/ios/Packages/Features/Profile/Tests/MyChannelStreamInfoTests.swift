@@ -59,10 +59,25 @@ struct MyChannelStreamInfoTests {
     let saved = await store.save(draft)
 
     #expect(saved)
-    #expect(await repository.savedInfos == [draft])
+    #expect(await repository.changes == [
+      StreamInfoChange(title: "Speedrun du dimanche", category: .keep, tags: ["speedrun"], contentLabels: [.profanity]),
+    ])
     #expect(store.info.tags == ["speedrun"])
     #expect(store.info.contentLabels == [.profanity])
     #expect(store.notice == .titleSaved)
+  }
+
+  @Test("un titre changé seul ne réécrit ni la langue proposée ni les descripteurs")
+  func titleOnlyKeepsOtherFields() async throws {
+    let repository = try FakeMyChannel(owned: .success(makeOwnedChannel()))
+    let store = makeStore(repository, deviceLanguage: .french)
+    await store.load()
+    var draft = store.info
+    draft.title = "Any% en 2 h"
+
+    await store.save(draft)
+
+    #expect(await repository.changes == [StreamInfoChange(title: "Any% en 2 h", category: .keep)])
   }
 
   @Test("donne le lien de la chaîne à partager, celui que l'app sait ouvrir")
