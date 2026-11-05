@@ -284,6 +284,27 @@ public extension Color {
             ? UIColor(red: 0.325, green: 0.325, blue: 0.373, alpha: 1)
             : UIColor(red: 0.749, green: 0.749, blue: 0.761, alpha: 1)
     })
+    /// Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9625, IMG_9626) : encre des illustrations d'état vide du tableau de bord (clap, graphique en barres), mesurée #000000. Aucune capture en thème sombre (ADR 0052 §4) : valeur claire gardée.
+    /// clair #000000 · sombre #000000
+    static let illustrationInk = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0, green: 0, blue: 0, alpha: 1)
+            : UIColor(red: 0, green: 0, blue: 0, alpha: 1)
+    })
+    /// Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9625, IMG_9626) : contour et ombre des illustrations d'état vide du tableau de bord, mesurés #323338. Aucune capture en thème sombre (ADR 0052 §4) : valeur claire gardée.
+    /// clair #323338 · sombre #323338
+    static let illustrationOutline = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.196, green: 0.2, blue: 0.22, alpha: 1)
+            : UIColor(red: 0.196, green: 0.2, blue: 0.22, alpha: 1)
+    })
+    /// Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9625, IMG_9626) : remplissage des illustrations d'état vide du tableau de bord, mesuré #ffffff. Aucune capture en thème sombre (ADR 0052 §4) : valeur claire gardée.
+    /// clair #FFFFFF · sombre #FFFFFF
+    static let illustrationFill = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 1, green: 1, blue: 1, alpha: 1)
+            : UIColor(red: 1, green: 1, blue: 1, alpha: 1)
+    })
 
     /// Valeurs fixes par thème, réservées aux contextes sans traits et aux tests (ADR 0019 §2.2).
     enum Static {
@@ -367,5 +388,11 @@ public extension Color {
         public static let turboEndDark = Color(.sRGB, red: 1, green: 0.184, blue: 0.557, opacity: 1)
         public static let iconDisabledLight = Color(.sRGB, red: 0.749, green: 0.749, blue: 0.761, opacity: 1)
         public static let iconDisabledDark = Color(.sRGB, red: 0.325, green: 0.325, blue: 0.373, opacity: 1)
+        public static let illustrationInkLight = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 1)
+        public static let illustrationInkDark = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 1)
+        public static let illustrationOutlineLight = Color(.sRGB, red: 0.196, green: 0.2, blue: 0.22, opacity: 1)
+        public static let illustrationOutlineDark = Color(.sRGB, red: 0.196, green: 0.2, blue: 0.22, opacity: 1)
+        public static let illustrationFillLight = Color(.sRGB, red: 1, green: 1, blue: 1, opacity: 1)
+        public static let illustrationFillDark = Color(.sRGB, red: 1, green: 1, blue: 1, opacity: 1)
     }
 }

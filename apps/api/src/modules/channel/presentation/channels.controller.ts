@@ -16,6 +16,12 @@ import type {
   ChannelView,
 } from "../application/channel-queries.ts";
 import { MAX_TITLE_LENGTH } from "../domain/channel-title.ts";
+import {
+  CHANNEL_LANGUAGES,
+  CONTENT_LABELS,
+  MAX_CHANNEL_TAG_LENGTH,
+  MAX_CHANNEL_TAGS,
+} from "../domain/stream-info.ts";
 
 export const GET_CHANNEL = Symbol("GET_CHANNEL");
 export const UPDATE_CHANNEL = Symbol("UPDATE_CHANNEL");
@@ -37,9 +43,16 @@ const CategoryChoice = z
 
 class UpdateChannelRequest extends createZodDto(
   z
-    .strictObject({ title: z.string().optional(), category: CategoryChoice.optional() })
-    .refine((body) => body.title !== undefined || body.category !== undefined, {
-      message: "Le corps change le titre, la catégorie, ou les deux.",
+    .strictObject({
+      title: z.string().optional(),
+      category: CategoryChoice.optional(),
+      tags: z.array(z.string()).optional(),
+      language: z.enum(CHANNEL_LANGUAGES).optional(),
+      contentLabels: z.array(z.enum(CONTENT_LABELS)).optional(),
+      isBrandedContent: z.boolean().optional(),
+    })
+    .refine((body) => Object.keys(body).length > 0, {
+      message: "Le corps change au moins une info du stream.",
     }),
 ) {}
 
@@ -47,9 +60,19 @@ export type ChannelResponse = z.input<typeof responses.Channel>;
 
 export const presentChannel =
   (imageUrlOf: ImageUrlOf) =>
-  ({ category, bannerKey, ...channel }: ChannelView): ChannelResponse => ({
+  ({
+    category,
+    bannerKey,
+    language,
+    tags,
+    contentLabels,
+    ...channel
+  }: ChannelView): ChannelResponse => ({
     ...channel,
+    tags: [...tags],
+    contentLabels: [...contentLabels],
     ...(category === null ? {} : { category }),
+    ...(language === null ? {} : { language }),
     ...(bannerKey === null ? {} : { bannerUrl: imageUrlOf(bannerKey) }),
   });
 
@@ -70,6 +93,12 @@ const PROBLEMS: Readonly<Record<ChannelUpdateError, () => ProblemException>> = {
       status: 422,
       title: "Catégorie invalide",
       detail: "La catégorie n'existe pas, ou elle a été fusionnée ou retirée.",
+    }),
+  invalid_tags: () =>
+    new ProblemException({
+      status: 422,
+      title: "Tags invalides",
+      detail: `Une chaîne porte au plus ${MAX_CHANNEL_TAGS} tags, différents, de 1 à ${MAX_CHANNEL_TAG_LENGTH} lettres ou chiffres chacun.`,
     }),
 };
 
@@ -108,6 +137,10 @@ export class ChannelsController {
       channelId,
       title: body.title,
       categoryId: body.category === undefined ? undefined : (body.category.id ?? null),
+      tags: body.tags,
+      language: body.language,
+      contentLabels: body.contentLabels,
+      isBrandedContent: body.isBrandedContent,
     });
     if (!updated.ok) {
       throw PROBLEMS[updated.error]();

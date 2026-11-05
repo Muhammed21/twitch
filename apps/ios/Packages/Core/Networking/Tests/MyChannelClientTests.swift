@@ -80,7 +80,7 @@ struct MyChannelClientTests {
   @Test("change le titre seul quand la catégorie ne change pas, et rend la chaîne à jour")
   func updatesTitleOnly() async throws {
     let transport = FakeTransport(
-      json: #"{"id":"9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69","slug":"viewer_de_test","title":"Speedrun du dimanche","ownerId":"\#(ownerID)"}"#
+      json: #"{"id":"9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69","slug":"viewer_de_test","title":"Speedrun du dimanche","ownerId":"\#(ownerID)","tags":[],"contentLabels":[],"isBrandedContent":false}"#
     )
 
     let channel = try await makeClient(transport).update(channelID, title: "Speedrun du dimanche", category: .keep)
@@ -100,7 +100,7 @@ struct MyChannelClientTests {
     let categoryID = try CategoryID(#require(UUID(uuidString: "1C9E4A52-7D3B-4F8E-A6B1-2D5C8E9F0A13")))
     let category = #"{"id":"1c9e4a52-7d3b-4f8e-a6b1-2d5c8e9f0a13","slug":"honor-of-kings","name":"Honor of Kings"}"#
     let transport = FakeTransport(
-      json: #"{"id":"9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69","slug":"viewer_de_test","title":"Rank","ownerId":"\#(ownerID)","category":\#(category)}"#
+      json: #"{"id":"9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69","slug":"viewer_de_test","title":"Rank","ownerId":"\#(ownerID)","tags":[],"contentLabels":[],"isBrandedContent":false,"category":\#(category)}"#
     )
 
     let channel = try await makeClient(transport).update(channelID, title: "Rank", category: .set(categoryID))
@@ -114,7 +114,7 @@ struct MyChannelClientTests {
   @Test("retire la catégorie en envoyant une catégorie sans identifiant")
   func clearsCategory() async throws {
     let transport = FakeTransport(
-      json: #"{"id":"9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69","slug":"viewer_de_test","title":"Rank","ownerId":"\#(ownerID)"}"#
+      json: #"{"id":"9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69","slug":"viewer_de_test","title":"Rank","ownerId":"\#(ownerID)","tags":[],"contentLabels":[],"isBrandedContent":false}"#
     )
 
     let channel = try await makeClient(transport).update(channelID, title: "Rank", category: .clear)

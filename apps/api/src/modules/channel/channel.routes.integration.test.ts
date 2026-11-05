@@ -82,6 +82,10 @@ describe("lecture et modification d'une chaîne en base", () => {
       ownerId: channel.ownerId,
       category: null,
       bannerKey: null,
+      tags: [],
+      language: null,
+      contentLabels: [],
+      isBrandedContent: false,
     };
 
     expect(await directory.findBySlug(channel.slug)).toEqual(view);
@@ -111,6 +115,10 @@ describe("lecture et modification d'une chaîne en base", () => {
         ownerId: channel.ownerId,
         category: null,
         bannerKey: null,
+        tags: [],
+        language: null,
+        contentLabels: [],
+        isBrandedContent: false,
       },
     });
     expect(await prisma.channel.findUnique({ where: { id: channel.id } })).toMatchObject({
@@ -124,6 +132,36 @@ describe("lecture et modification d'une chaîne en base", () => {
         publishedAt: null,
       }),
     ]);
+  });
+
+  it("enregistre les infos du stream, puis les garde quand seul le titre change", async () => {
+    const channel = await seedChannel();
+
+    await rename({
+      actorId: channel.ownerId,
+      channelId: channel.id,
+      tags: ["Français", "SpeedRun"],
+      language: "fr",
+      contentLabels: ["profanity", "gambling"],
+      isBrandedContent: true,
+    });
+    const outcome = await rename({
+      actorId: channel.ownerId,
+      channelId: channel.id,
+      title: "Titre",
+    });
+
+    expect(outcome).toMatchObject({
+      ok: true,
+      value: {
+        title: "Titre",
+        tags: ["francais", "speedrun"],
+        language: "fr",
+        contentLabels: ["gambling", "profanity"],
+        isBrandedContent: true,
+      },
+    });
+    expect(await directory.findById(channel.id)).toEqual(outcome.ok ? outcome.value : undefined);
   });
 
   it("refuse le titre à un autre compte, d'après les attributions en base", async () => {
@@ -164,6 +202,9 @@ describe("routes de channel montées dans l'API", () => {
         slug: channel.slug,
         title: "",
         ownerId: channel.ownerId,
+        tags: [],
+        contentLabels: [],
+        isBrandedContent: false,
       });
       expect(update.status).toBe(401);
     } finally {
@@ -216,6 +257,10 @@ describe("enregistrement de la bannière en base", () => {
           ownerId: channel.ownerId,
           category: null,
           bannerKey: FIRST_KEY,
+          tags: [],
+          language: null,
+          contentLabels: [],
+          isBrandedContent: false,
         },
         replacedKey: undefined,
       },

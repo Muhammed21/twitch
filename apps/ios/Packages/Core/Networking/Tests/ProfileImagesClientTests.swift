@@ -11,7 +11,7 @@ private let problemJSON = #"{"type":"about:blank","title":"Unprocessable","statu
 private let meJSON =
   #"{"id":"4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b","name":"Viewer de test","email":"viewer@twitch.local","avatarUrl":"https://cdn.twitch.local/avatars/viewer.jpg"}"#
 private let channelJSON =
-  #"{"id":"0f5e2d7a-3c41-4b8e-9a6d-1e2f3a4b5c6d","slug":"jean_dupont","title":"Speedrun","ownerId":"4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b","bannerUrl":"https://cdn.twitch.local/banners/jean.jpg"}"#
+  #"{"id":"0f5e2d7a-3c41-4b8e-9a6d-1e2f3a4b5c6d","slug":"jean_dupont","title":"Speedrun","ownerId":"4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b","tags":[],"contentLabels":[],"isBrandedContent":false,"bannerUrl":"https://cdn.twitch.local/banners/jean.jpg"}"#
 
 private func makeClient(_ transport: FakeTransport) -> ProfileImagesClient {
   ProfileImagesClient(apiBaseURL: devConfiguration.apiBaseURL, transport: transport, tokens: FakeTokenProvider(), now: { now })

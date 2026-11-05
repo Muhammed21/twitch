@@ -1,0 +1,49 @@
+{
+  "illustrations": [
+    {
+      "name": "clapperboard",
+      "source": "docs/new-reference-ui/IMG_9625.PNG",
+      "rect": {
+        "x": 378,
+        "y": 760,
+        "width": 420,
+        "height": 384
+      },
+      "background": "#f7f7f8",
+      "tints": {
+        "fill": "#ffffff",
+        "outline": "#323338",
+        "ink": "#000000"
+      },
+      "separation": {
+        "pureWithin": 2,
+        "neighbourhood": 2
+      },
+      "control": null
+    },
+    {
+      "name": "barChart",
+      "source": "docs/new-reference-ui/IMG_9626.PNG",
+      "rect": {
+        "x": 378,
+        "y": 601,
+        "width": 411,
+        "height": 414
+      },
+      "background": "#f7f7f8",
+      "tints": {
+        "fill": "#ffffff",
+        "outline": "#323338",
+        "ink": "#000000"
+      },
+      "separation": {
+        "pureWithin": 2,
+        "neighbourhood": 2
+      },
+      "control": {
+        "source": "docs/new-reference-ui/IMG_9627.PNG",
+        "scrim": 0.6
+      }
+    }
+  ]
+}

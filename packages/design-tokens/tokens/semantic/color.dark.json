@@ -233,6 +233,23 @@
         "$value": "{core.color.neutral.35}",
         "$description": "Icône d'action indisponible : calendrier de l'en-tête Statistiques du tableau de bord des créateurs."
       }
+    },
+    "illustration": {
+      "ink": {
+        "$type": "color",
+        "$value": "{core.color.neutral.0}",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9625, IMG_9626) : encre des illustrations d'état vide du tableau de bord (clap, graphique en barres), mesurée #000000. Aucune capture en thème sombre (ADR 0052 §4) : valeur claire gardée."
+      },
+      "outline": {
+        "$type": "color",
+        "$value": "{core.color.neutral.20}",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9625, IMG_9626) : contour et ombre des illustrations d'état vide du tableau de bord, mesurés #323338. Aucune capture en thème sombre (ADR 0052 §4) : valeur claire gardée."
+      },
+      "fill": {
+        "$type": "color",
+        "$value": "{core.color.neutral.100}",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9625, IMG_9626) : remplissage des illustrations d'état vide du tableau de bord, mesuré #ffffff. Aucune capture en thème sombre (ADR 0052 §4) : valeur claire gardée."
+      }
     }
   }
 }

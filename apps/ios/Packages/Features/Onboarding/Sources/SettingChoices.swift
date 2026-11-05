@@ -1,3 +1,4 @@
+import DesignSystem
 import Domain
 import Preferences
 import SwiftUI
@@ -28,6 +29,18 @@ public struct SettingChoices {
 
   public var showsTimestamps: Bool {
     preferences.current.showsChatTimestamps
+  }
+
+  public var chatPreviewStyle: ChatLineStyle {
+    ChatLineStyle(scale: chatScale, showsTimestamps: showsTimestamps)
+  }
+
+  private var chatScale: ChatTextScale {
+    switch chatTextSize {
+    case .small: .small
+    case .medium: .medium
+    case .large: .large
+    }
   }
 
   public func matchSystem(_ isMatching: Bool, isShowingDark: Bool) {

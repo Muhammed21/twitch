@@ -2,20 +2,28 @@
 
 /// Chaîne d'un compte : une par compte, slug unique (ADR 0035).
 model Channel {
-  id         String           @id @db.Uuid
+  id               String           @id @db.Uuid
   /// @personal
-  ownerId    String           @unique @db.Uuid
+  ownerId          String           @unique @db.Uuid
   /// Dérivé du nom d'affichage.
   /// @personal
-  slug       String           @unique
-  title      String           @default("")
+  slug             String           @unique
+  title            String           @default("")
   /// Catégorie active posée par le propriétaire (ADR 0045), nulle tant qu'aucune n'est choisie.
-  categoryId String?          @db.Uuid
+  categoryId       String?          @db.Uuid
   /// @personal
   /// Clé d'objet de la bannière (ADR 0044) ; l'URL publique se calcule à la lecture.
-  bannerKey  String?
-  category   ChannelCategory? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  createdAt  DateTime         @default(now())
+  bannerKey        String?
+  /// Tags libres de la chaîne, normalisés en minuscules sans accents, 10 au plus (ADR 0021).
+  tags             String[]         @default([])
+  /// Langue du stream, dans la liste fermée des langues du parcours de l'app.
+  language         String?
+  /// Descripteurs de classification du contenu, dans la liste fermée de l'app.
+  contentLabels    String[]         @default([])
+  /// Le stream comporte du contenu promotionnel.
+  isBrandedContent Boolean          @default(false)
+  category         ChannelCategory? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  createdAt        DateTime         @default(now())
 
   @@index([categoryId])
   @@schema("channel")
