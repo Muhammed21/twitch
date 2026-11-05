@@ -6,6 +6,7 @@ export { StreamKey } from "./stream-key.ts";
 export { Timeout } from "./timeout.ts";
 export { Live, LiveCategory, LivePage } from "./live-page.ts";
 export { BrowseCategory, BrowseCategoryList, CategoryHeader } from "./browse-category.ts";
+export { CategoryTag, CategoryTagList } from "./category-tag.ts";
 export { MobileBootstrap, Profile } from "./mobile-bootstrap.ts";
 export { LiveStatus } from "./live-status.ts";
 export { Playback } from "./playback.ts";
