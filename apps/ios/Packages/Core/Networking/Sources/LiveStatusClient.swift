@@ -8,6 +8,7 @@ public struct LiveStatusClient: LiveStatusSource {
   private struct Payload: Decodable {
     let live: Bool
     let viewerCount: Int?
+    let startedAt: String?
   }
 
   private let apiBaseURL: URL
@@ -50,7 +51,8 @@ public struct LiveStatusClient: LiveStatusSource {
   private static func status(in data: String) -> LiveStatus? {
     guard let payload = try? JSONDecoder().decode(Payload.self, from: Data(data.utf8)) else { return nil }
     guard payload.live else { return .offline }
-    guard let count = payload.viewerCount else { return .live(viewers: nil) }
-    return (try? ViewerCount(count)).map { .live(viewers: $0) }
+    let startedAt = payload.startedAt.flatMap { try? TolerantISO8601DateTranscoder().decode($0) }
+    guard let count = payload.viewerCount else { return .live(viewers: nil, startedAt: startedAt) }
+    return (try? ViewerCount(count)).map { .live(viewers: $0, startedAt: startedAt) }
   }
 }
