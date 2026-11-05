@@ -3,6 +3,7 @@ import Auth
 import Channel
 import Chat
 import ChatTransport
+import Dashboard
 import DesignSystem
 import Domain
 import Foundation
@@ -48,6 +49,7 @@ struct TwitchApp: App {
       .environment(stores.profileImages)
       .environment(stores.preferences)
       .environment(stores.creatorMode)
+      .environment(stores.dashboardLiveFigures)
       .environment(\.feedbackPlayer, stores.feedback)
     }
   }
@@ -264,6 +266,7 @@ struct Stores {
   let purchases: StorePurchases
   let feedback: FeedbackPlayer
   let creatorMode: CreatorMode
+  let dashboardLiveFigures: DashboardLiveFigures
 }
 
 @MainActor
@@ -316,7 +319,10 @@ enum Composition {
       personalization: Self.personalizationSources(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
       purchases: StorePurchases.live(info: info),
       feedback: FeedbackPlayer(),
-      creatorMode: Self.creatorMode(defaults: .standard)
+      creatorMode: Self.creatorMode(defaults: .standard),
+      dashboardLiveFigures: DashboardLiveFigures(
+        source: LiveStatusClient(apiBaseURL: configuration.apiBaseURL, transport: URLSessionLineTransport())
+      )
     )
   }
 
