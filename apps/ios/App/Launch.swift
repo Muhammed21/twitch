@@ -20,6 +20,7 @@ final class LaunchStore {
 
   func run(accountID: UUID? = nil) async {
     let bootstrap = try? await source.bootstrap()
+    guard !Task.isCancelled else { return }
     let frozenVariant = accountID == variantAccountID ? flags.paywallVariant : nil
     variantAccountID = accountID
     guard let bootstrap else {

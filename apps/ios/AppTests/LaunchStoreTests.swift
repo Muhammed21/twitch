@@ -51,6 +51,13 @@ private actor BootstrapThenFailure: BootstrapSource {
   }
 }
 
+private struct CancelledWhileWaiting: BootstrapSource {
+  func bootstrap() async throws -> AppBootstrap {
+    withUnsafeCurrentTask { task in task?.cancel() }
+    return try AppBootstrap(minSupportedVersion: AppVersion("9.0.0"), flags: FeatureFlags(sessionReplay: true, paywallVariant: "control"))
+  }
+}
+
 private func bootstrapThenFailure(variant: String) -> BootstrapThenFailure {
   BootstrapThenFailure(variant: variant)
 }
@@ -141,6 +148,16 @@ struct LaunchStoreTests {
     await store.run(accountID: otherViewerID)
 
     #expect(store.flags.paywallVariant == nil)
+  }
+
+  @Test("un bootstrap annulé par le changement de compte n'écrit rien : la relance du nouveau compte décide")
+  func cancelledRunWritesNothing() async throws {
+    let store = try LaunchStore(source: CancelledWhileWaiting(), currentVersion: AppVersion("1.4.0"))
+
+    await Task { await store.run(accountID: viewerID) }.value
+
+    #expect(store.flags == .safeDefaults)
+    #expect(!store.isUpdateRequired)
   }
 
   @Test("un bootstrap en échec laisse démarrer l'app avec les défauts sûrs")

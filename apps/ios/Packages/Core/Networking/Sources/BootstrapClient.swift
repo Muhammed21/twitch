@@ -46,7 +46,9 @@ struct SignedInAuthentication: ClientMiddleware {
   ) async throws -> (HTTPTypes.HTTPResponse, HTTPBody?) {
     do {
       return try await bearer.intercept(request, body: body, baseURL: baseURL, operationID: operationID, next: next)
-    } catch SessionError.signedOut {
+    } catch is CancellationError {
+      throw CancellationError()
+    } catch {
       return try await next(request, body, baseURL)
     }
   }
