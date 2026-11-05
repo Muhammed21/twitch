@@ -12,7 +12,7 @@ final class RevenueCatBackend: PurchasesBackend {
   }
 
   func offerings() async throws(PurchasesBackendError) -> StoreOfferings {
-    let offerings = try await call { try await self.sdk.offerings() }
+    let offerings = try await Self.call { try await self.sdk.offerings() }
     packages = offerings.all.mapValues { offering in
       Dictionary(offering.availablePackages.map { ($0.identifier, $0) }, uniquingKeysWith: { first, _ in first })
     }
@@ -21,16 +21,18 @@ final class RevenueCatBackend: PurchasesBackend {
 
   func purchase(_ package: SubscriptionPackage) async throws(PurchasesBackendError) -> StorePurchaseResult {
     guard let storePackage = packages[package.offeringID]?[package.id] else { throw .failed(code: "package_unknown") }
-    let result = try await call { try await self.sdk.purchase(package: storePackage) }
-    return StorePurchaseResult(cancelled: result.userCancelled, entitlements: Self.active(result.customerInfo))
+    return try await Self.settle {
+      let result = try await self.sdk.purchase(package: storePackage)
+      return StorePurchaseResult(cancelled: result.userCancelled, entitlements: Self.active(result.customerInfo))
+    }
   }
 
   func restore() async throws(PurchasesBackendError) -> Set<String> {
-    try await Self.active(call { try await self.sdk.restorePurchases() })
+    try await Self.active(Self.call { try await self.sdk.restorePurchases() })
   }
 
   func activeEntitlements() async throws(PurchasesBackendError) -> Set<String> {
-    try await Self.active(call { try await self.sdk.customerInfo() })
+    try await Self.active(Self.call { try await self.sdk.customerInfo() })
   }
 
   func setAttributes(_ attributes: [String: String]) {
@@ -38,15 +40,27 @@ final class RevenueCatBackend: PurchasesBackend {
   }
 
   func logIn(_ appUserID: String) async throws(PurchasesBackendError) {
-    _ = try await call { try await self.sdk.logIn(appUserID) }
+    _ = try await Self.call { try await self.sdk.logIn(appUserID) }
   }
 
   func logOut() async throws(PurchasesBackendError) {
     guard !sdk.isAnonymous else { return }
-    _ = try await call { try await self.sdk.logOut() }
+    _ = try await Self.call { try await self.sdk.logOut() }
   }
 
-  private func call<Value>(_ operation: () async throws -> Value) async throws(PurchasesBackendError) -> Value {
+  static func settle(
+    _ operation: () async throws -> StorePurchaseResult
+  ) async throws(PurchasesBackendError) -> StorePurchaseResult {
+    try await call {
+      do {
+        return try await operation()
+      } catch let error as ErrorCode where error == .purchaseCancelledError {
+        return StorePurchaseResult(cancelled: true, entitlements: [])
+      }
+    }
+  }
+
+  private static func call<Value>(_ operation: () async throws -> Value) async throws(PurchasesBackendError) -> Value {
     do {
       return try await operation()
     } catch let error as ErrorCode {

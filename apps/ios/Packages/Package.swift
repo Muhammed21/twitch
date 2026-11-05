@@ -198,7 +198,7 @@ let package = Package(
     ),
     .testTarget(
       name: "PurchasesTests",
-      dependencies: ["Purchases", "PurchasesTesting", "Domain"],
+      dependencies: ["Purchases", "PurchasesTesting", "Domain", .product(name: "RevenueCat", package: "purchases-ios-spm")],
       path: "Core/Purchases/Tests",
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
