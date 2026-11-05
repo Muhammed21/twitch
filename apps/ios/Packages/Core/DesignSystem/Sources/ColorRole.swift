@@ -37,6 +37,9 @@ public enum ColorRole: Equatable, Sendable {
   case avatarRing
   case iconDisabled
   case surfaceRaised
+  case illustrationInk
+  case illustrationOutline
+  case illustrationFill
 
   public var color: Color {
     switch self {
@@ -74,6 +77,9 @@ public enum ColorRole: Equatable, Sendable {
     case .avatarRing: .bannerAvatarRing
     case .iconDisabled: .iconDisabled
     case .surfaceRaised: .surfaceRaised
+    case .illustrationInk: .illustrationInk
+    case .illustrationOutline: .illustrationOutline
+    case .illustrationFill: .illustrationFill
     }
   }
 
