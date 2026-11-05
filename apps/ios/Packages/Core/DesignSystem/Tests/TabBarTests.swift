@@ -9,9 +9,15 @@ struct TabBarTests {
     #expect(TabBarGlyph.foreground(isSelected: false) == .textPrimary)
   }
 
-  @Test("le bouton « + » est une pilule grise à glyphe de texte, comme sur profil/menu-compte--defaut")
+  @Test("en mode spectateur, le bouton « + » est une pilule grise à glyphe de texte (IMG_9610)")
   func createButtonColors() {
-    #expect(TabBarCreateStyle.background == .surfaceSecondary)
-    #expect(TabBarCreateStyle.foreground == .textPrimary)
+    #expect(TabBarCreateStyle.neutral.background == .surfaceSecondary)
+    #expect(TabBarCreateStyle.neutral.foreground == .textPrimary)
+  }
+
+  @Test("en mode créateur, le bouton « + » est une pilule violette à glyphe blanc (IMG_9624)")
+  func creatorCreateButtonColors() {
+    #expect(TabBarCreateStyle.accent.background == .accent)
+    #expect(TabBarCreateStyle.accent.foreground == .onAccent)
   }
 }

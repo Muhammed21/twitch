@@ -35,6 +35,7 @@ public enum ColorRole: Equatable, Sendable {
   case turboStart
   case turboEnd
   case avatarRing
+  case iconDisabled
 
   public var color: Color {
     switch self {
@@ -70,6 +71,7 @@ public enum ColorRole: Equatable, Sendable {
     case .turboStart: .turboStart
     case .turboEnd: .turboEnd
     case .avatarRing: .bannerAvatarRing
+    case .iconDisabled: .iconDisabled
     }
   }
 

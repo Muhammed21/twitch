@@ -56,6 +56,7 @@ private final class StubPurchases: Purchases {
   func setAttribute(_ value: String, for key: String) {
     attributes[key] = value
   }
+
   func logIn(_: UUID) async {}
   func logOut() async {}
 }

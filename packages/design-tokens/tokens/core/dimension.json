@@ -71,6 +71,11 @@
         "$value": "24px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : avatar de l'onglet Profile (profil/menu-compte--defaut)."
       },
+      "30": {
+        "$type": "dimension",
+        "$value": "30px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9624) : diamètre de l'avatar de l'en-tête du tableau de bord des créateurs, 90 px à @3x."
+      },
       "32": {
         "$type": "dimension",
         "$value": "32px",
@@ -130,6 +135,11 @@
         "$type": "dimension",
         "$value": "88px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : diamètre de l'avatar de l'en-tête du profil, 264 px à @3x (profil/menu-compte--defaut)."
+      },
+      "256": {
+        "$type": "dimension",
+        "$value": "256px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9625, IMG_9626) : message d'un écran vide du tableau de bord, 768 px à @3x sous l'en-tête ou le champ de recherche."
       },
       "300": {
         "$type": "dimension",

@@ -70,6 +70,11 @@
       "$value": "{core.dimension.24}",
       "$description": "Avatar de l'onglet Profile, relevé sur l'app iOS Twitch (24 pt)."
     },
+    "x30": {
+      "$type": "dimension",
+      "$value": "{core.dimension.30}",
+      "$description": "Avatar de l'en-tête du tableau de bord des créateurs, relevé sur l'app iOS Twitch (30 pt)."
+    },
     "x32": {
       "$type": "dimension",
       "$value": "{core.dimension.32}",
@@ -129,6 +134,11 @@
       "$type": "dimension",
       "$value": "{core.dimension.88}",
       "$description": "Avatar de l'en-tête du profil, relevé sur l'app iOS Twitch (88 pt)."
+    },
+    "x256": {
+      "$type": "dimension",
+      "$value": "{core.dimension.256}",
+      "$description": "Message d'un écran vide du tableau de bord des créateurs, relevé sur l'app iOS Twitch : 256 pt sous l'en-tête, 256 pt de large au plus (IMG_9626 renvoie à la ligne après « pour »)."
     },
     "x300": {
       "$type": "dimension",
