@@ -30,6 +30,8 @@ public enum Spacing {
     public static let x16: CGFloat = 16
     /// Marges latérales et basse des boutons de l'accueil, relevées sur l'app iOS Twitch (20 pt).
     public static let x20: CGFloat = 20
+    /// Accueil du tableau de bord des créateurs : première carte sous l'en-tête, marge du texte d'aide, relevés sur l'app iOS Twitch (22 pt).
+    public static let x22: CGFloat = 22
     /// Avatar de l'onglet Profile, relevé sur l'app iOS Twitch (24 pt).
     public static let x24: CGFloat = 24
     /// Avatar de l'en-tête du tableau de bord des créateurs, relevé sur l'app iOS Twitch (30 pt).
@@ -54,10 +56,14 @@ public enum Spacing {
     public static let x72: CGFloat = 72
     /// Largeur de la pochette d'une catégorie dans la recherche, relevée sur l'app iOS Twitch (75 pt).
     public static let x75: CGFloat = 75
+    /// Carte de chiffres de l'accueil du tableau de bord des créateurs, relevée sur l'app iOS Twitch (78 pt).
+    public static let x78: CGFloat = 78
     /// Bouton gris d'une chaîne ou d'une catégorie suivie, relevé sur l'app iOS Twitch (84 pt).
     public static let x84: CGFloat = 84
     /// Avatar de l'en-tête du profil, relevé sur l'app iOS Twitch (88 pt).
     public static let x88: CGFloat = 88
+    /// Carte d'activité de l'accueil du tableau de bord des créateurs, relevée sur l'app iOS Twitch (132 pt).
+    public static let x132: CGFloat = 132
     /// Message d'un écran vide du tableau de bord des créateurs, relevé sur l'app iOS Twitch : 256 pt sous l'en-tête, 256 pt de large au plus (IMG_9626 renvoie à la ligne après « pour »).
     public static let x256: CGFloat = 256
     /// Largeur des modales de confirmation, relevée sur l'app iOS Twitch (300 pt).

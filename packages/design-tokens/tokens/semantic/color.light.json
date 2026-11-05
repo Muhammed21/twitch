@@ -22,6 +22,11 @@
         "$type": "color",
         "$value": "{core.color.neutral.94}",
         "$description": "Bouton d'annulation posé sur une modale : Cancel de la modale de déconnexion."
+      },
+      "raised": {
+        "$type": "color",
+        "$value": "{core.color.neutral.88}",
+        "$description": "Bouton secondaire posé sur une carte : Modifier les infos du stream de l'accueil du tableau de bord des créateurs."
       }
     },
     "text": {

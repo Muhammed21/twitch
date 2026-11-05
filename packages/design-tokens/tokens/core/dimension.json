@@ -66,6 +66,11 @@
         "$value": "20px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : marges latérales et basse des boutons de l'accueil."
       },
+      "22": {
+        "$type": "dimension",
+        "$value": "22px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9624) : écart entre l'en-tête de l'accueil du tableau de bord et sa première carte (67 px à @3x), marge gauche du texte d'aide (67 px)."
+      },
       "24": {
         "$type": "dimension",
         "$value": "24px",
@@ -126,6 +131,11 @@
         "$value": "75px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : largeur de la pochette d'une catégorie dans les résultats de recherche, 225 px à @3x (creer/recherche-categorie--resultats-clavier-ouvert)."
       },
+      "78": {
+        "$type": "dimension",
+        "$value": "78px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9624) : hauteur de la carte de chiffres de l'accueil du tableau de bord, 234 px à @3x."
+      },
       "84": {
         "$type": "dimension",
         "$value": "84px",
@@ -135,6 +145,11 @@
         "$type": "dimension",
         "$value": "88px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : diamètre de l'avatar de l'en-tête du profil, 264 px à @3x (profil/menu-compte--defaut)."
+      },
+      "132": {
+        "$type": "dimension",
+        "$value": "132px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9624) : hauteur de la carte d'activité de l'accueil du tableau de bord, 395 px à @3x."
       },
       "256": {
         "$type": "dimension",
