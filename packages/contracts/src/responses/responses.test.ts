@@ -127,6 +127,18 @@ describe("Channel", () => {
     expect(responses.Channel.parse(makeChannel({ category }))).toEqual(makeChannel({ category }));
   });
 
+  it("décode l'URL de la bannière, en HTTP comme en HTTPS", () => {
+    const local = makeChannel({
+      bannerUrl: "http://127.0.0.1:8333/twitch-local/images/banner/b.webp",
+    });
+    const production = makeChannel({
+      bannerUrl: "https://images.twitch.example/images/banner/b.webp",
+    });
+
+    expect(responses.Channel.parse(local)).toEqual(local);
+    expect(responses.Channel.parse(production)).toEqual(production);
+  });
+
   it.each([
     ["avec un identifiant qui n'est pas un UUID", { id: "chaine-1" }],
     ["sans slug", { slug: undefined }],
@@ -136,6 +148,8 @@ describe("Channel", () => {
       "avec une catégorie sans nom",
       { category: { id: "7c6d5e4f-3a2b-4c1d-8e9f-0a1b2c3d4e5f", slug: "irl" } },
     ],
+    ["avec une bannière qui n'est pas une URL", { bannerUrl: "banner.webp" }],
+    ["avec une bannière hors HTTP", { bannerUrl: "ftp://images.twitch.example/b.webp" }],
   ])("refuse une chaîne %s", (_name, overrides) => {
     expect(responses.Channel.safeParse(makeChannel(overrides)).success).toBe(false);
   });
@@ -412,23 +426,24 @@ describe("CategoryHeader (ADR 0050)", () => {
     liveCount: 12,
     viewerCount: 22000,
     tags: ["Shooter", "RPG"],
+    followerCount: 340,
     ...overrides,
   });
 
   it.each([
     ["avec sa pochette, son audience et ses tags", makeHeader()],
+    ["lu par un compte qui la suit (ADR 0049)", makeHeader({ isFollowing: true })],
+    ["lu par un compte qui ne la suit pas", makeHeader({ isFollowing: false })],
     [
       "sans pochette, sans live ni tag",
-      makeHeader({ imageUrl: undefined, liveCount: 0, viewerCount: 0, tags: [] }),
+      makeHeader({ imageUrl: undefined, liveCount: 0, viewerCount: 0, tags: [], followerCount: 0 }),
     ],
   ])("décode l'en-tête d'une catégorie %s", (_name, header) => {
     expect(responses.CategoryHeader.parse(header)).toEqual(header);
   });
 
   it("garde un champ ajouté plus tard par le serveur", () => {
-    expect(responses.CategoryHeader.parse(makeHeader({ followerCount: 3 }))).toMatchObject({
-      followerCount: 3,
-    });
+    expect(responses.CategoryHeader.parse(makeHeader({ rank: 3 }))).toMatchObject({ rank: 3 });
   });
 
   it.each([
@@ -438,6 +453,10 @@ describe("CategoryHeader (ADR 0050)", () => {
     ["avec un nombre de lives négatif", { liveCount: -1 }],
     ["sans nombre de viewers", { viewerCount: undefined }],
     ["sans tags", { tags: undefined }],
+    ["sans nombre de followers", { followerCount: undefined }],
+    ["avec un nombre de followers négatif", { followerCount: -1 }],
+    ["avec un nombre de followers fractionnaire", { followerCount: 1.5 }],
+    ["avec un suivi qui n'est pas un booléen", { isFollowing: "oui" }],
   ])("refuse un en-tête %s", (_name, overrides) => {
     expect(responses.CategoryHeader.safeParse(makeHeader(overrides)).success).toBe(false);
   });

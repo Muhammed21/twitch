@@ -15,6 +15,7 @@ export type ChannelView = {
   readonly title: string;
   readonly ownerId: string;
   readonly category: ChannelCategoryView | null;
+  readonly bannerKey: string | null;
 };
 
 export type MetadataChange = {

@@ -37,7 +37,10 @@ import {
   prismaCategoryAudienceStore,
   prismaLivesInCategory,
 } from "./infrastructure/prisma-category-audience.ts";
-import { prismaCategoryFollowProjection } from "./infrastructure/prisma-category-follow-projection.ts";
+import {
+  prismaCategoryFollowLookup,
+  prismaCategoryFollowProjection,
+} from "./infrastructure/prisma-category-follow-projection.ts";
 import {
   type DiscoveryPrisma,
   prismaCategoryProjection,
@@ -189,6 +192,7 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
           useValue: readCategoryHeader({
             categories: prismaCategoryViewReader(dependencies.prisma),
             audience: prismaCategoryAudienceLookup(dependencies.prisma),
+            follows: prismaCategoryFollowLookup(dependencies.prisma),
           }),
         },
         { provide: CATEGORY_IMAGE_URL, useValue: dependencies.images.imageUrlOf },

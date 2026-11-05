@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { CategoryView } from "../domain/category-view.ts";
 import {
   type CategoryAudienceLookup,
+  type CategoryFollowLookup,
   type CategoryViewReader,
   listCategoryLives,
   readCategoryHeader,
@@ -123,6 +124,19 @@ describe("lives d'une catégorie", () => {
   });
 });
 
+const VIEWER_ID = "6b4c1e3a-9d5f-4a0c-b132-4e7f8a9b0c1d";
+
+const followsOf = ({
+  followerCounts = {},
+  followedBy = {},
+}: {
+  followerCounts?: Readonly<Record<string, number>>;
+  followedBy?: Readonly<Record<string, readonly string[]>>;
+}): CategoryFollowLookup => ({
+  followerCountOf: async (categoryId) => followerCounts[categoryId] ?? 0,
+  isFollowing: async ({ userId, categoryId }) => (followedBy[categoryId] ?? []).includes(userId),
+});
+
 describe("en-tête d'une catégorie (ADR 0050)", () => {
   const audienceOf =
     (known: Readonly<Record<string, { liveCount: number; viewerCount: number }>>) =>
@@ -136,13 +150,18 @@ describe("en-tête d'une catégorie (ADR 0050)", () => {
   const headerFor = async (
     slug: string,
     known: Readonly<Record<string, { liveCount: number; viewerCount: number }>> = {},
+    {
+      viewerId,
+      follows = followsOf({}),
+    }: { viewerId?: string; follows?: CategoryFollowLookup } = {},
   ) => {
     const asked: string[] = [];
     const { reader } = recordingReader();
     const result = await readCategoryHeader({
       categories: reader,
       audience: audienceOf(known)(asked),
-    })(slug);
+      follows,
+    })({ slug, viewerId });
     return { result, asked };
   };
 
@@ -159,9 +178,61 @@ describe("en-tête d'une catégorie (ADR 0050)", () => {
         tags: ["IRL", "Discussion"],
         liveCount: 2,
         viewerCount: 70,
+        followerCount: 0,
       },
     });
     expect(asked).toEqual([IRL]);
+  });
+
+  it("rend le nombre de followers de la catégorie (ADR 0049 §6)", async () => {
+    const { result } = await headerFor(
+      "irl",
+      {},
+      {
+        follows: followsOf({ followerCounts: { [IRL]: 12 } }),
+      },
+    );
+
+    expect(result).toMatchObject({ ok: true, value: { followerCount: 12 } });
+    expect(result.ok && "isFollowing" in result.value).toBe(false);
+  });
+
+  it.each([
+    ["suit", [VIEWER_ID], true],
+    ["ne suit pas", [], false],
+  ] as const)(
+    "dit au compte connecté qu'il %s la catégorie",
+    async (_name, followers, isFollowing) => {
+      const { result } = await headerFor(
+        "irl",
+        {},
+        {
+          viewerId: VIEWER_ID,
+          follows: followsOf({ followedBy: { [IRL]: followers } }),
+        },
+      );
+
+      expect(result).toMatchObject({ ok: true, value: { isFollowing } });
+    },
+  );
+
+  it("lit le suivi et le compteur de la cible d'une catégorie fusionnée", async () => {
+    const { result } = await headerFor(
+      "talk",
+      {},
+      {
+        viewerId: VIEWER_ID,
+        follows: followsOf({
+          followerCounts: { [IRL]: 3, [TALK]: 9 },
+          followedBy: { [IRL]: [VIEWER_ID] },
+        }),
+      },
+    );
+
+    expect(result).toMatchObject({
+      ok: true,
+      value: { slug: "irl", followerCount: 3, isFollowing: true },
+    });
   });
 
   it("rend une audience nulle pour une catégorie sans live", async () => {

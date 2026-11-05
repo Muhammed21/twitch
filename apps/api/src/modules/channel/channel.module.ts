@@ -22,6 +22,7 @@ import {
 } from "./application/category-admin.ts";
 import { followCategory, unfollowCategory } from "./application/category-follow.ts";
 import { searchCategories } from "./application/category-search.ts";
+import { changeBanner } from "./application/change-banner.ts";
 import { getChannel, updateChannel } from "./application/channel-queries.ts";
 import { createChannelForAccount } from "./application/create-channel-for-account.ts";
 import {
@@ -29,7 +30,10 @@ import {
   prismaCategorySearch,
 } from "./infrastructure/prisma-category-catalog.ts";
 import { prismaCategoryFollows } from "./infrastructure/prisma-category-follows.ts";
-import { prismaChannelDirectory } from "./infrastructure/prisma-channel-directory.ts";
+import {
+  prismaBannerStore,
+  prismaChannelDirectory,
+} from "./infrastructure/prisma-channel-directory.ts";
 import {
   type ChannelPrisma,
   prismaChannelRegistry,
@@ -46,6 +50,7 @@ import {
   SEARCH_CATEGORIES,
 } from "./presentation/category-catalog.controller.ts";
 import {
+  CHANNEL_IMAGE_URL,
   ChannelsController,
   GET_CHANNEL,
   UPDATE_CHANNEL,
@@ -56,6 +61,7 @@ import {
   UNFOLLOW_CATEGORY,
 } from "./presentation/followed-categories.controller.ts";
 import { identityEventHandlers } from "./presentation/identity-event-handlers.ts";
+import { CHANGE_BANNER, MeBannerController } from "./presentation/me-banner.controller.ts";
 
 export type { ChannelPrisma } from "./infrastructure/prisma-channel-registry.ts";
 export { prismaOwnedChannel as createOwnedChannelReader } from "./infrastructure/prisma-owned-channel.ts";
@@ -121,6 +127,7 @@ export class ChannelModule implements OnModuleInit, OnModuleDestroy {
       module: ChannelModule,
       controllers: [
         ChannelsController,
+        MeBannerController,
         AdminCategoriesController,
         CategoryCatalogController,
         FollowedCategoriesController,
@@ -135,6 +142,22 @@ export class ChannelModule implements OnModuleInit, OnModuleDestroy {
             authz,
             newId: randomUUID,
             now: () => new Date(),
+          }),
+        },
+        { provide: CHANNEL_IMAGE_URL, useValue: dependencies.images.imageUrlOf },
+        {
+          provide: CHANGE_BANNER,
+          useValue: changeBanner({
+            store: prismaBannerStore(dependencies.prisma),
+            finalizeImage: dependencies.images.finalizeImage,
+            discardImage: (key) => dependencies.images.storage.delete(key),
+            onDiscardFailure: ({ imageKey, error }) =>
+              writeLog(dependencies.logSink, {
+                level: "error",
+                msg: "suppression de l'ancienne bannière en échec : objet orphelin",
+                imageKey,
+                ...errorDetails(error),
+              }),
           }),
         },
         { provide: CATEGORY_ADMIN, useValue: categoryAdmin },

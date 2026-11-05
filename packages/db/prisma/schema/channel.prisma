@@ -11,6 +11,9 @@ model Channel {
   title      String           @default("")
   /// Catégorie active posée par le propriétaire (ADR 0045), nulle tant qu'aucune n'est choisie.
   categoryId String?          @db.Uuid
+  /// @personal
+  /// Clé d'objet de la bannière (ADR 0044) ; l'URL publique se calcule à la lecture.
+  bannerKey  String?
   category   ChannelCategory? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   createdAt  DateTime         @default(now())
 

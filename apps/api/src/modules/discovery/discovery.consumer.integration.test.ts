@@ -10,6 +10,8 @@ import { createContextClient } from "@repo/db";
 
 import { createAuthzRedis } from "../../authz/authz-context.ts";
 import { createApp } from "../../create-app.ts";
+import { rejectingVerifier } from "../../platform/authentication.ts";
+import { PlatformModule } from "../../platform/platform.module.ts";
 import { createStreamConsumerRedis } from "../../platform/stream-consumer.ts";
 import { toStreamEntry } from "../../platform/stream-entry.ts";
 import type { ChannelLiveStatus, LiveStatusHub } from "./application/live-status-hub.ts";
@@ -125,6 +127,11 @@ const withDiscoveryModule = async (
   await Promise.all([channelConsumerRedis.connect(), streamConsumerRedis.connect()]);
   const moduleRef = await Test.createTestingModule({
     imports: [
+      PlatformModule.register({
+        schemaVersionCheck: async () => {},
+        logSink: () => {},
+        accessTokenVerifier: rejectingVerifier,
+      }),
       DiscoveryModule.register({
         prisma: createContextClient({ context: "discovery", env: process.env }),
         channelConsumerRedis,

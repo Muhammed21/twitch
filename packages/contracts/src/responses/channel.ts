@@ -10,5 +10,6 @@ export const Channel = z
     title: z.string(),
     ownerId: Uuid,
     category: CategorySummary.optional(),
+    bannerUrl: z.url({ protocol: /^https?$/ }).optional(),
   })
   .meta({ id: "Channel" });
