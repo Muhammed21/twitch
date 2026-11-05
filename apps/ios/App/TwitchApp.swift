@@ -55,6 +55,7 @@ struct RootView: View {
 
   var body: some View {
     screen
+      .preferredColorScheme(preferences.current.appearance.colorScheme)
       .signInFailureAlert(session)
       .logOutFailureAlert(session)
       .onOpenURL { router.open($0) }

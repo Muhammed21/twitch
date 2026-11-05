@@ -15,6 +15,8 @@ private let journeyMeasures: [(LayoutRole, CGFloat)] = [
   (.journeyChipPaddingH, 16),
   (.journeyChipPaddingV, 8),
   (.journeyChipGap, 8),
+  (.actionHeight, 44),
+  (.editRowPadding, 8),
 ]
 
 @Suite("Parcours de personnalisation : en-tête, progression et pages")
@@ -100,5 +102,13 @@ struct JourneyStyleTests {
 
     #expect(JourneyFlow.size(of: sizes, width: 100, spacing: 8) == CGSize(width: 100, height: 58))
     #expect(JourneyFlow.size(of: [], width: 100, spacing: 8) == CGSize(width: 100, height: 0))
+  }
+
+  @Test("un réglage du parcours reprend la ligne de preferences-contenu--defaut : titre gras, interrupteur violet")
+  func settingRows() {
+    #expect(TextRole.journeyRowTitle.font == .actionLabel)
+    #expect(JourneyStyle.toggleTint == .accent)
+    #expect(JourneyStyle.check == .accent)
+    #expect(JourneyCheckRow.symbol == "checkmark")
   }
 }
