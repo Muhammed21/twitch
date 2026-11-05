@@ -38,7 +38,7 @@ public enum AnalyticsEventName: String, CaseIterable, Sendable {
   case onboardingStepCompleted = "onboarding:step_completed"
 }
 
-public enum CategoryFollowedSource: String, CaseIterable, Sendable {
+public enum AnalyticsSource: String, CaseIterable, Sendable {
   case onboarding
   case categoryPage = "category_page"
 }
@@ -56,7 +56,7 @@ public struct AnalyticsEvent: Equatable, Sendable {
     self.properties = properties
   }
 
-  public static func categoryFollowed(categoryID: String, source: CategoryFollowedSource) -> AnalyticsEvent {
+  public static func categoryFollowed(categoryID: String, source: AnalyticsSource) -> AnalyticsEvent {
     AnalyticsEvent(name: .categoryFollowed, properties: ["category_id": .string(categoryID), "source": .string(source.rawValue)])
   }
 
@@ -65,6 +65,37 @@ public struct AnalyticsEvent: Equatable, Sendable {
   }
 }
 `);
+  });
+
+  it("génère une seule énumération pour une propriété partagée par plusieurs événements", () => {
+    const step = z.enum(["intro", "summary"]);
+    const swift = swiftOf({
+      "onboarding:step_completed": makeEvent(z.strictObject({ step })),
+      "onboarding:step_skipped": makeEvent(z.strictObject({ step })),
+    });
+
+    expect(swift.match(/public enum AnalyticsStep: String, CaseIterable, Sendable/g)).toHaveLength(
+      1,
+    );
+    expect(swift).toContain("public static func onboardingStepSkipped(step: AnalyticsStep)");
+  });
+
+  it("nomme l'énumération d'une propriété en plusieurs mots d'après tous ses mots", () => {
+    expect(
+      swiftOf({
+        "stream:viewed": makeEvent(z.strictObject({ entry_point: z.enum(["home", "search"]) })),
+      }),
+    ).toContain("public static func streamViewed(entryPoint: AnalyticsEntryPoint)");
+  });
+
+  it("génère une énumération par propriété énumérée distincte", () => {
+    const swift = swiftOf({
+      "onboarding:step_skipped": makeEvent(z.strictObject({ step: z.enum(["intro"]) })),
+      "preference:changed": makeEvent(z.strictObject({ source: z.enum(["settings"]) })),
+    });
+
+    expect(swift).toContain("public enum AnalyticsStep: String, CaseIterable, Sendable {");
+    expect(swift).toContain("public enum AnalyticsSource: String, CaseIterable, Sendable {");
   });
 
   it("ne génère que les événements émis par le client", () => {

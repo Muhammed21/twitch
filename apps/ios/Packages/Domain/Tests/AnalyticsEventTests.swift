@@ -1,7 +1,7 @@
 import Domain
 import Testing
 
-@Suite("Événements analytics générés depuis packages/contracts (ADR 0012)")
+@Suite("Événements analytics générés depuis packages/contracts (ADR 0012, ADR 0051 §7)")
 struct AnalyticsEventTests {
   @Test("un événement sans propriété porte le nom objet:action_au_passé de la taxonomie")
   func nameOnly() {
@@ -9,19 +9,27 @@ struct AnalyticsEventTests {
     #expect(AnalyticsEvent.accountSignedUp.properties.isEmpty)
   }
 
-  @Test("un payload typé devient des propriétés snake_case")
+  @Test("un payload typé devient des propriétés snake_case, l'étape par sa valeur brute")
   func typedPayload() {
-    let event = AnalyticsEvent.onboardingStepCompleted(step: "categories", durationMs: 1200)
+    let event = AnalyticsEvent.onboardingStepCompleted(step: .contentPreferences, stepIndex: 3, durationMs: 1200, selectionCount: 2)
 
     #expect(event.name == .onboardingStepCompleted)
-    #expect(event.properties == ["step": .string("categories"), "duration_ms": .int(1200)])
+    #expect(event.properties == [
+      "step": .string("content_preferences"),
+      "step_index": .int(3),
+      "duration_ms": .int(1200),
+      "selection_count": .int(2),
+    ])
   }
 
-  @Test("une énumération est envoyée par sa valeur brute")
-  func enumeratedPayload() {
-    let event = AnalyticsEvent.categoryFollowed(categoryID: "c-1", source: .onboarding)
+  @Test("un booléen garde son préfixe is_")
+  func booleanPayload() {
+    #expect(AnalyticsEvent.notificationPermissionAnswered(isGranted: true).properties == ["is_granted": .bool(true)])
+  }
 
-    #expect(event.properties == ["category_id": .string("c-1"), "source": .string("onboarding")])
+  @Test("le parcours compte dix pages, du intro au récap")
+  func steps() {
+    #expect(AnalyticsStep.allCases.count == 10)
   }
 
   @Test("les clés PII interdites sont celles de l'ADR 0012")

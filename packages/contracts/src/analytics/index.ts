@@ -10,5 +10,6 @@ export {
   type SupportedProperty,
   type Taxonomy,
 } from "./check-taxonomy.ts";
+export { SWIFT_RESERVED_WORDS } from "./naming.ts";
 export { formatSwiftAnalytics } from "./swift.ts";
 export { AnalyticsEvents, type AnalyticsEventName } from "./taxonomy.ts";
