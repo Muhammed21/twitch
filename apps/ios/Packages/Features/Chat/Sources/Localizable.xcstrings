@@ -8,6 +8,12 @@
             "state" : "translated",
             "value" : "Blue"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bleu"
+          }
         }
       }
     },
@@ -17,6 +23,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Default"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Par défaut"
           }
         }
       }
@@ -28,6 +40,12 @@
             "state" : "translated",
             "value" : "Couldn't change your username color. Try again."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de changer la couleur de votre pseudo. Réessayez."
+          }
         }
       }
     },
@@ -38,12 +56,24 @@
             "state" : "translated",
             "value" : "Green"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vert"
+          }
         }
       }
     },
     "chat.color.indigo" : {
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indigo"
+          }
+        },
+        "fr" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Indigo"
@@ -58,6 +88,12 @@
             "state" : "translated",
             "value" : "Maroon"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bordeaux"
+          }
         }
       }
     },
@@ -67,6 +103,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Purple"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Violet"
           }
         }
       }
@@ -78,6 +120,12 @@
             "state" : "translated",
             "value" : "Red"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rouge"
+          }
         }
       }
     },
@@ -87,6 +135,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Teal"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bleu canard"
           }
         }
       }
@@ -98,6 +152,12 @@
             "state" : "translated",
             "value" : "Username Color"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couleur du pseudo"
+          }
         }
       }
     },
@@ -107,6 +167,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Send chat"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer un message"
           }
         }
       }
@@ -118,6 +184,12 @@
             "state" : "translated",
             "value" : "Send"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer"
+          }
         }
       }
     },
@@ -127,6 +199,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "New"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouveau"
           }
         }
       }
@@ -138,6 +216,12 @@
             "state" : "translated",
             "value" : "Welcome to the chat room!"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bienvenue sur le chat !"
+          }
         }
       }
     },
@@ -147,6 +231,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "message deleted"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "message supprimé"
           }
         }
       }
@@ -158,6 +248,12 @@
             "state" : "translated",
             "value" : "Couldn't time out %@."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d'exclure %@ temporairement."
+          }
         }
       }
     },
@@ -167,6 +263,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "You can't time out users in this chat."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous ne pouvez pas exclure temporairement d'utilisateurs de ce chat."
           }
         }
       }
@@ -178,6 +280,12 @@
             "state" : "translated",
             "value" : "Timeout for 10 minutes"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclure pendant 10 minutes"
+          }
         }
       }
     },
@@ -187,6 +295,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ is timed out for 10 minutes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ est exclu pendant 10 minutes."
           }
         }
       }
@@ -198,6 +312,12 @@
             "state" : "translated",
             "value" : "You're banned from this chat."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous êtes banni de ce chat."
+          }
         }
       }
     },
@@ -207,6 +327,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "You're not in this chat room yet."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous n'avez pas encore rejoint ce chat."
           }
         }
       }
@@ -218,6 +344,12 @@
             "state" : "translated",
             "value" : "You're sending messages too quickly."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous envoyez des messages trop rapidement."
+          }
         }
       }
     },
@@ -227,6 +359,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "You're timed out in this chat."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous êtes exclu temporairement de ce chat."
           }
         }
       }
@@ -238,6 +376,12 @@
             "state" : "translated",
             "value" : "Your message wasn't sent."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre message n'a pas été envoyé."
+          }
         }
       }
     },
@@ -247,6 +391,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Close"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fermer"
           }
         }
       }
@@ -258,6 +408,12 @@
             "state" : "translated",
             "value" : "IDENTITY"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IDENTITÉ"
+          }
         }
       }
     },
@@ -267,6 +423,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Chat Settings"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paramètres du chat"
           }
         }
       }
@@ -278,6 +440,12 @@
             "state" : "translated",
             "value" : "Connecting to chat…"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connexion au chat…"
+          }
         }
       }
     },
@@ -287,6 +455,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "You can't access this chat."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous n'avez pas accès à ce chat."
           }
         }
       }
@@ -298,6 +472,12 @@
             "state" : "translated",
             "value" : "Chat stopped."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat interrompu."
+          }
         }
       }
     },
@@ -308,6 +488,12 @@
             "state" : "translated",
             "value" : "Reconnecting to chat…"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reconnexion au chat…"
+          }
         }
       }
     },
@@ -317,6 +503,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Log in to chat."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connectez-vous pour chatter."
           }
         }
       }

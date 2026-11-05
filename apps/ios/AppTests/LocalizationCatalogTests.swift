@@ -50,7 +50,7 @@ struct LocalizationCatalogTests {
     "chaque catalogue est entièrement traduit en français",
     arguments: catalogs.filter {
       [
-        "Twitch.app", "Packages_Auth.bundle", "Packages_Channel.bundle", "Packages_Dashboard.bundle",
+        "Twitch.app", "Packages_Auth.bundle", "Packages_Channel.bundle", "Packages_Chat.bundle", "Packages_Dashboard.bundle",
         "Packages_Home.bundle", "Packages_Paywall.bundle", "Packages_Player.bundle", "Packages_Profile.bundle",
       ].contains($0.testDescription)
     }
