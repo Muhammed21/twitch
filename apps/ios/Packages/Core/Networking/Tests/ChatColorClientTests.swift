@@ -32,6 +32,19 @@ struct ChatColorClientTests {
     #expect(body == ["chatColor": "#2E8B57"])
   }
 
+  @Test("revenir à la couleur par défaut envoie un corps sans couleur")
+  func sendsEmptyBodyForDefault() async throws {
+    let transport = FakeTransport(json: meJSON())
+
+    try await makeClient(transport).setChatColor(nil)
+
+    let request = try #require(await transport.requests.first)
+    #expect(request.method == "PUT")
+    #expect(request.url == chatColorURL)
+    let body = try #require(JSONSerialization.jsonObject(with: request.body) as? [String: String])
+    #expect(body.isEmpty)
+  }
+
   @Test("traduit un refus RFC 9457 (couleur invalide) en ServiceProblem")
   func translatesProblem() async throws {
     let transport = FakeTransport(
