@@ -42,7 +42,10 @@ import {
   prismaCategoryFollowLookup,
   prismaCategoryFollowProjection,
 } from "./infrastructure/prisma-category-follow-projection.ts";
-import { prismaActiveCategoryTags } from "./infrastructure/prisma-category-tags.ts";
+import {
+  MAX_TAGGED_CATEGORIES,
+  prismaActiveCategoryTags,
+} from "./infrastructure/prisma-category-tags.ts";
 import {
   type DiscoveryPrisma,
   prismaCategoryProjection,
@@ -200,7 +203,12 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
         },
         {
           provide: LIST_CATEGORY_TAGS,
-          useValue: listCategoryTags(prismaActiveCategoryTags(dependencies.prisma)),
+          useValue: listCategoryTags(
+            prismaActiveCategoryTags({
+              prisma: dependencies.prisma,
+              limit: MAX_TAGGED_CATEGORIES,
+            }),
+          ),
         },
         { provide: CATEGORY_IMAGE_URL, useValue: dependencies.images.imageUrlOf },
       ],

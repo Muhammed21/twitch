@@ -6,10 +6,13 @@ import { responses } from "@repo/contracts";
 import { createContextClient } from "@repo/db";
 
 import { createApp } from "../../create-app.ts";
-import { prismaActiveCategoryTags } from "./infrastructure/prisma-category-tags.ts";
+import {
+  MAX_TAGGED_CATEGORIES,
+  prismaActiveCategoryTags,
+} from "./infrastructure/prisma-category-tags.ts";
 
 const discovery = createContextClient({ context: "discovery", env: process.env });
-const reader = prismaActiveCategoryTags(discovery);
+const reader = prismaActiveCategoryTags({ prisma: discovery, limit: 100_000 });
 
 afterAll(async () => {
   await discovery.$disconnect();
@@ -21,13 +24,15 @@ const seedCategory = ({
   tags,
   status = "active",
   slug = `tags-${randomUUID().slice(0, 8)}`,
+  categoryId = randomUUID(),
 }: {
   tags: readonly string[];
   status?: "active" | "merged" | "retired";
   slug?: string | null;
+  categoryId?: string;
 }) =>
   discovery.discoveryCategoryView.create({
-    data: { categoryId: randomUUID(), slug, name: "Tags", status, tags: [...tags] },
+    data: { categoryId, slug, name: "Tags", status, tags: [...tags] },
   });
 
 const tagListsWith = async (tag: string) =>
@@ -54,6 +59,42 @@ describe("tags des catégories actives lus dans discovery (ADR 0050, ADR 0051)",
     await seedCategory({ tags: [tag], ...variant });
 
     expect(await tagListsWith(tag)).toEqual([]);
+  });
+
+  it("plafonne la lecture aux catégories taguées, dans l'ordre de leur identifiant (ADR 0008)", async () => {
+    const [untagged, first, second, third] = [
+      "00000000-0000-4000-8000-000000000001",
+      "00000000-0000-4000-8000-000000000002",
+      "00000000-0000-4000-8000-000000000003",
+      "00000000-0000-4000-8000-000000000004",
+    ];
+    const firstIds = [untagged, first, second, third];
+    await discovery.discoveryCategoryView.deleteMany({ where: { categoryId: { in: firstIds } } });
+    const [firstTag, secondTag, thirdTag] = [
+      uniqueTag("Premier"),
+      uniqueTag("Deuxième"),
+      uniqueTag("Troisième"),
+    ];
+    await seedCategory({ tags: [uniqueTag("Plus loin")] });
+    await seedCategory({ tags: [thirdTag], categoryId: third });
+    await seedCategory({ tags: [], categoryId: untagged });
+    await seedCategory({ tags: [firstTag], categoryId: first });
+    await seedCategory({ tags: [secondTag], categoryId: second });
+
+    try {
+      const lists = await prismaActiveCategoryTags({
+        prisma: discovery,
+        limit: 2,
+      }).tagsOfActiveCategories();
+
+      expect(lists).toEqual([[firstTag], [secondTag]]);
+    } finally {
+      await discovery.discoveryCategoryView.deleteMany({ where: { categoryId: { in: firstIds } } });
+    }
+  });
+
+  it("lit au plus mille catégories taguées pour GET /v1/tags", () => {
+    expect(MAX_TAGGED_CATEGORIES).toBe(1000);
   });
 
   it("sert GET /v1/tags avec le tag partagé une fois, et sans le tag d'une catégorie retirée", async () => {
