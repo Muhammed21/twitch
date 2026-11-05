@@ -30,6 +30,9 @@ public struct PersonalizationScreen: View {
     case .interests: InterestsPage()
     case .contentPreferences: ContentPreferencesPage()
     case .liveLanguage: LiveLanguagePage()
+    case .appearance: AppearancePage()
+    case .videoAutoplay: VideoAutoplayPage()
+    case .chat: ChatSettingsPage()
     case .summary: SummaryPage()
     default: EmptyView()
     }

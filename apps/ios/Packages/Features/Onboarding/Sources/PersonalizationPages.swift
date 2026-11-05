@@ -60,6 +60,34 @@ public enum PersonalizationText {
   public static var languageTitle: String { String(localized: "journey.language.title", bundle: .module) }
   public static var languageMessage: String { String(localized: "journey.language.message", bundle: .module) }
 
+  public static var appearanceTitle: String { String(localized: "journey.appearance.title", bundle: .module) }
+  public static var appearanceMessage: String { String(localized: "journey.appearance.message", bundle: .module) }
+  public static var themeSection: String { String(localized: "journey.appearance.section", bundle: .module) }
+  public static var matchSystemTheme: String { String(localized: "journey.appearance.system", bundle: .module) }
+  public static var darkTheme: String { String(localized: "journey.appearance.dark", bundle: .module) }
+  public static var autoplayTitle: String { String(localized: "journey.autoplay.title", bundle: .module) }
+  public static var autoplayMessage: String { String(localized: "journey.autoplay.message", bundle: .module) }
+  public static var chatTitle: String { String(localized: "journey.chat.title", bundle: .module) }
+  public static var chatMessage: String { String(localized: "journey.chat.message", bundle: .module) }
+  public static var chatTextSizeSection: String { String(localized: "journey.chat.section", bundle: .module) }
+  public static var chatTimestamps: String { String(localized: "journey.chat.timestamps", bundle: .module) }
+
+  public static func autoplay(_ autoplay: VideoAutoplay) -> String {
+    switch autoplay {
+    case .wifiAndMobileData: String(localized: "journey.autoplay.wifiAndMobileData", bundle: .module)
+    case .wifiOnly: String(localized: "journey.autoplay.wifiOnly", bundle: .module)
+    case .never: String(localized: "journey.autoplay.never", bundle: .module)
+    }
+  }
+
+  public static func chatTextSize(_ size: ChatTextSize) -> String {
+    switch size {
+    case .small: String(localized: "journey.chat.small", bundle: .module)
+    case .medium: String(localized: "journey.chat.medium", bundle: .module)
+    case .large: String(localized: "journey.chat.large", bundle: .module)
+    }
+  }
+
   public static func hide(_ label: ContentLabel) -> String {
     switch label {
     case .sexualThemes: String(localized: "journey.content.hide.sexualThemes", bundle: .module)

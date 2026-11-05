@@ -7,7 +7,9 @@ import Preferences
 import SwiftUI
 
 struct PersonalizationRoot: View {
-  static let steps: [PersonalizationStep] = [.intro, .categories, .interests, .contentPreferences, .liveLanguage, .summary]
+  static let steps: [PersonalizationStep] = [
+    .intro, .categories, .interests, .contentPreferences, .liveLanguage, .appearance, .videoAutoplay, .chat, .summary,
+  ]
 
   @State private var journey: PersonalizationJourney
   @State private var categories: CategoryChoices

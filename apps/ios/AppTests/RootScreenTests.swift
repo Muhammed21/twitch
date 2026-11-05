@@ -79,9 +79,11 @@ struct RootScreenTests {
     #expect(!RootScreen.isPersonalizationDue(isPersonalizing: false, account: viewer.id, hasCompleted: completed))
   }
 
-  @Test("le parcours s'ouvre sur l'intro et se termine sur le récap")
+  @Test("le parcours s'ouvre sur l'intro, règle l'apparence, la lecture auto et le chat, et se termine sur le récap")
   func personalizationSteps() {
-    #expect(PersonalizationRoot.steps == [.intro, .categories, .interests, .contentPreferences, .liveLanguage, .summary])
+    #expect(PersonalizationRoot.steps == [
+      .intro, .categories, .interests, .contentPreferences, .liveLanguage, .appearance, .videoAutoplay, .chat, .summary,
+    ])
   }
 
   @Test("le splash passe avant « You're All Set! »")
