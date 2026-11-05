@@ -1,6 +1,6 @@
 # 0051 — Un parcours de personnalisation suit l'inscription et se termine sur un paywall Turbo natif, Turbo est un droit global tenu par le serveur, et le tout se mesure dans PostHog dès la tranche 1
 
-- Statut : Proposé
+- Statut : Accepté
 - Date : 2026-11-05
 - Décideurs : Muhammed Cavus
 - Amende : ADR 0003 (périmètre de la tranche 1 : parcours, et `monetization` réduit à Turbo), ADR 0013 (entitlement de portée plateforme), ADR 0016 (rendu du paywall, et attribution de la variante pour Turbo), ADR 0021 (cartographie : Turbo, badge Turbo, couleur de pseudo, préférences de visionnage)
