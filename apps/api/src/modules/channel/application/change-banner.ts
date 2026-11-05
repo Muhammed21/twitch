@@ -10,6 +10,7 @@ export interface BannerStore {
   }): Promise<
     Result<{ channel: ChannelView; replacedKey: string | undefined }, "channel_not_found">
   >;
+  readBannerKey(ownerId: string): Promise<string | null>;
 }
 
 export type BannerChangeError = "channel_not_found" | ImageRejection;
@@ -44,7 +45,10 @@ export const changeBanner =
     const saved = await store
       .saveBanner({ ownerId: userId, bannerKey: image.value.key })
       .catch(async (error: unknown) => {
-        await discard(image.value.key);
+        const referenced = await store.readBannerKey(userId).catch(() => image.value.key);
+        if (referenced !== image.value.key) {
+          await discard(image.value.key);
+        }
         throw error;
       });
     if (!saved.ok) {

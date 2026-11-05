@@ -234,6 +234,20 @@ describe("enregistrement de la bannière en base", () => {
     });
     expect(await directory.findById(channel.id)).toMatchObject({ bannerKey: SECOND_KEY });
   });
+
+  it("relit la clé de la bannière de la chaîne du compte", async () => {
+    const channel = await seedChannel();
+    await store.saveBanner({ ownerId: channel.ownerId, bannerKey: FIRST_KEY });
+
+    expect(await store.readBannerKey(channel.ownerId)).toBe(FIRST_KEY);
+  });
+
+  it("relit l'absence de bannière, pour une chaîne sans bannière comme pour un compte sans chaîne", async () => {
+    const channel = await seedChannel();
+
+    expect(await store.readBannerKey(channel.ownerId)).toBeNull();
+    expect(await store.readBannerKey(randomUUID())).toBeNull();
+  });
 });
 
 describe("URL de la bannière de la chaîne d'un compte", () => {

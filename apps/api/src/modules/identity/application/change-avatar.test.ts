@@ -31,6 +31,7 @@ const makeStore = (avatars: ReadonlyMap<string, string | undefined>) => {
       }
       return ok({ replacedKey: avatars.get(change.userId) });
     },
+    readAvatarKey: async (userId) => avatars.get(userId) ?? null,
   };
   return { store, saved };
 };
@@ -122,6 +123,7 @@ describe("changement d'avatar", () => {
       saveAvatar: async () => {
         throw failure;
       },
+      readAvatarKey: async () => OLD_KEY,
     };
     const discard = makeDiscard();
 
@@ -129,6 +131,42 @@ describe("changement d'avatar", () => {
       changeAvatar({ store, finalizeImage, ...discard })({ userId: USER_ID, uploadId: UPLOAD_ID }),
     ).rejects.toBe(failure);
     expect(discard.discarded).toEqual([NEW_KEY]);
+  });
+
+  it("garde la nouvelle image quand l'enregistrement lève alors que le compte la référence déjà", async () => {
+    const failure = new Error("connexion perdue après le COMMIT");
+    const { finalizeImage } = makeFinalizer(ok(finalized(NEW_KEY)));
+    const store: AvatarStore = {
+      saveAvatar: async () => {
+        throw failure;
+      },
+      readAvatarKey: async () => NEW_KEY,
+    };
+    const discard = makeDiscard();
+
+    await expect(
+      changeAvatar({ store, finalizeImage, ...discard })({ userId: USER_ID, uploadId: UPLOAD_ID }),
+    ).rejects.toBe(failure);
+    expect(discard.discarded).toEqual([]);
+  });
+
+  it("garde la nouvelle image quand le compte ne peut pas être relu après l'erreur", async () => {
+    const failure = new Error("postgres injoignable");
+    const { finalizeImage } = makeFinalizer(ok(finalized(NEW_KEY)));
+    const store: AvatarStore = {
+      saveAvatar: async () => {
+        throw failure;
+      },
+      readAvatarKey: async () => {
+        throw failure;
+      },
+    };
+    const discard = makeDiscard();
+
+    await expect(
+      changeAvatar({ store, finalizeImage, ...discard })({ userId: USER_ID, uploadId: UPLOAD_ID }),
+    ).rejects.toBe(failure);
+    expect(discard.discarded).toEqual([]);
   });
 
   it("supprime la nouvelle image quand le compte n'existe plus", async () => {

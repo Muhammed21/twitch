@@ -49,4 +49,11 @@ export const prismaAvatarStore = (prisma: IdentityPrisma): AvatarStore => ({
       await tx.identityUser.update({ where: { id: userId }, data: { avatarKey } });
       return ok({ replacedKey: locked.avatarKey ?? undefined });
     }),
+  readAvatarKey: async (userId) => {
+    const user = await prisma.identityUser.findUnique({
+      where: { id: userId },
+      select: { avatarKey: true },
+    });
+    return user?.avatarKey ?? null;
+  },
 });
