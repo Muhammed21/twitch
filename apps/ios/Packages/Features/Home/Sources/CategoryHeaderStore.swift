@@ -38,8 +38,12 @@ public final class CategoryHeaderStore {
     self.follow = follow
   }
 
-  public var tags: [String] {
-    detail?.tags ?? []
+  public var tags: [String]? {
+    detail?.tags
+  }
+
+  public func shownTags(over browsed: [String]) -> [String] {
+    tags ?? browsed
   }
 
   public var followers: Int? {

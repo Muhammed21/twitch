@@ -58,14 +58,26 @@ struct CategoryHeaderStoreTests {
     #expect(store.followers == 42)
   }
 
-  @Test("un en-tête illisible laisse la catégorie sans tags, compteur ni bouton")
+  @Test("un en-tête illisible garde les tags reçus de Browse, sans compteur ni bouton")
   func unreadable() async throws {
     let store = try makeStore(.failure(HeaderDown()))
 
     await store.load()
 
-    #expect(store.tags.isEmpty)
+    #expect(store.tags == nil)
+    #expect(store.shownTags(over: ["Browse"]) == ["Browse"])
     #expect(store.followers == nil)
     #expect(store.follow.state == nil)
+  }
+
+  @Test("pendant la lecture, l'écran garde les tags reçus de Browse ; une fois lue, il montre ceux de l'en-tête")
+  func tagsWhileLoading() async throws {
+    let store = try makeStore(.success(CategoryDetail(tags: ["IRL"], followers: 41, isFollowing: nil)))
+    let before = store.shownTags(over: ["Browse"])
+
+    await store.load()
+
+    #expect(before == ["Browse"])
+    #expect(store.shownTags(over: ["Browse"]) == ["IRL"])
   }
 }

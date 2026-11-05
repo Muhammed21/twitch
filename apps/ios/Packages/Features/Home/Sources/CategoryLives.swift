@@ -56,7 +56,7 @@ public struct CategoryLivesScreen: View {
             name: heading.name,
             viewers: BrowseText.viewers(heading.viewers, locale: locale),
             coverURL: heading.imageURL,
-            tags: header?.tags ?? heading.tags,
+            tags: header?.shownTags(over: heading.tags) ?? heading.tags,
             followers: header?.followers.map { BrowseText.followers($0, locale: locale) },
             follow: header.flatMap(followAction)
           )
