@@ -6,17 +6,21 @@ public struct ProfileScreen<Settings: View>: View {
   @Environment(MyChannelStore.self) private var store
 
   @Environment(\.locale) private var locale
+  @State private var isEditing = false
   private let account: Account?
   private let onOpenChannel: (ChannelSlug) -> Void
+  private let onAccountSaved: (Account) -> Void
   private let settings: () -> Settings
 
   public init(
     account: Account?,
     onOpenChannel: @escaping (ChannelSlug) -> Void,
+    onAccountSaved: @escaping (Account) -> Void,
     @ViewBuilder settings: @escaping () -> Settings
   ) {
     self.account = account
     self.onOpenChannel = onOpenChannel
+    self.onAccountSaved = onAccountSaved
     self.settings = settings
   }
 
@@ -27,8 +31,12 @@ public struct ProfileScreen<Settings: View>: View {
           ProfileHeader(
             name: account.name,
             lastLive: account.lastLiveAt.map { ProfileText.lastLive(at: $0, now: context.date, locale: locale) },
-            bio: account.bio
+            bio: account.bio,
+            edit: ProfileHeaderAction(label: String(localized: EditProfileText.edit)) { isEditing = true }
           )
+        }
+        .sheet(isPresented: $isEditing) {
+          EditProfileSheet(account: account, onSaved: onAccountSaved)
         }
       }
       VStack(alignment: .leading, spacing: LayoutRole.menuCardGap.points) {
