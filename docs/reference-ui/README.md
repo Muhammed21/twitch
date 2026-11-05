@@ -2,7 +2,7 @@
 
 **Type:** reference
 
-Captures de l'app iOS Twitch (mars 2025, iPhone, 1179×2676), référence du design de l'app iOS du produit : structure, comportement et valeurs visuelles (ADR 0036). Les valeurs passent par les design tokens (ADR 0019) ; le périmètre est celui de l'ADR 0021. Usage : voir `.claude/rules/reference-ui.md`.
+Captures de l'app iOS Twitch (mars 2025, iPhone, 1179×2676), référence des écrans absents de [`docs/new-reference-ui/`](../new-reference-ui/README.md), qui fait foi : structure, comportement et valeurs visuelles (ADR 0036). Les valeurs passent par les design tokens (ADR 0019) ; le périmètre est celui de l'ADR 0021. Usage : voir `.claude/rules/reference-ui.md`.
 
 Les captures appartiennent à Twitch Interactive, Inc. et ne servent que de référence interne : elles ne sont pas redistribuées. Le wordmark Twitch n'est pas repris ; le Glitch l'est, depuis le SVG officiel de `docs/brand/` (ADR 0037). La barre « curated by Mobbin » en bas de chaque capture ne fait pas partie de l'app.
 

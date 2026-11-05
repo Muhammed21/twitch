@@ -77,6 +77,10 @@ Chaque page de `docs/`, une ligne chacune : titre, [mode](README.md#carte), stat
 
 - [Marque : le Glitch Twitch](brand/README.md) — _reference_ — SVG officiels du Glitch, tirés du brand kit Twitch (brand.twitch.com) et téléchargés le 2026-10-16.
 
+## new-reference-ui
+
+- [Référence UI : captures iPhone de l'app Twitch](new-reference-ui/README.md) — _reference_ — Captures de l'app iOS Twitch prises sur iPhone par Muhammed Cavus (1179×2556 à @3x, interface en français, thème clair), référence du design de l'app iOS du produit : structure,…
+
 ## reference-ui
 
-- [Référence UI : l'app iOS Twitch](reference-ui/README.md) — _reference_ — Captures de l'app iOS Twitch (mars 2025, iPhone, 1179×2676), référence du design de l'app iOS du produit : structure, comportement et valeurs visuelles (ADR 0036).
+- [Référence UI : l'app iOS Twitch](reference-ui/README.md) — _reference_ — Captures de l'app iOS Twitch (mars 2025, iPhone, 1179×2676), référence des écrans absents de `docs/new-reference-ui/`, qui fait foi : structure, comportement et valeurs visuelles…
