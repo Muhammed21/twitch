@@ -1,3 +1,4 @@
+import AnalyticsTesting
 import Auth
 import CryptoKit
 import Domain
@@ -155,6 +156,7 @@ struct Harness {
   let tokens: InMemoryTokenStore
   let session: OAuthSession
   let authenticator: FakeWebAuthenticator
+  let analytics: RecordingAnalytics
   let store: SessionStore
 
   init(
@@ -168,13 +170,15 @@ struct Harness {
     tokens = InMemoryTokenStore(stored, clearFails: clearFails)
     session = OAuthSession(endpoint: TokenEndpoint(configuration: configuration, transport: transport), store: tokens)
     authenticator = FakeWebAuthenticator(reply: reply)
+    analytics = RecordingAnalytics()
     store = SessionStore(
       configuration: configuration,
       session: session,
       accounts: FakeAccounts(result: account, gate: accountGate),
       authenticator: authenticator,
       randomBytes: sequentialRandomBytes,
-      now: { now }
+      now: { now },
+      analytics: analytics
     )
   }
 

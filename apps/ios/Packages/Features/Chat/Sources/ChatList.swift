@@ -98,9 +98,16 @@ struct ChatRow: View {
   let line: ChatLine
 
   var body: some View {
-    Text(line.styled(display))
+    Text("\(Text(line.timeStyled(display)))\(badges)\(Text(line.messageStyled(display)))")
       .font(display.messageRole.font)
       .frame(maxWidth: .infinity, alignment: .leading)
+  }
+
+  private var badges: Text {
+    line.badges
+      .compactMap { $0.glyph?.inline(side: LayoutRole.chatBadgeSize.points) }
+      .map { Text("\(Image(uiImage: $0)) ").foregroundStyle(ColorRole.accent.color).baselineOffset(-LayoutRole.chatBadgeDrop.points) }
+      .reduce(Text(verbatim: "")) { Text("\($0)\($1)") }
   }
 }
 

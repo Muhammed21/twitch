@@ -1,6 +1,8 @@
 import { z } from "zod";
 
-import type { ChatterProfiles, RoomDirectory } from "../application/ports.ts";
+import { ChatColor } from "@repo/contracts";
+
+import type { ChatterProfiles, RoomDirectory, TurboProfiles } from "../application/ports.ts";
 import type { RoomState } from "../domain/decide.ts";
 
 export type HashReader = {
@@ -17,6 +19,17 @@ export const chatterKey = (userId: string): string => `chat:chatter:${userId}`;
 export const sanctionsKey = (userId: string): string => `${chatterKey(userId)}:sanctions`;
 
 const SanctionEnd = z.string().regex(/^\d+$/).transform(Number);
+
+export const TURBO_EXPIRES_AT = "turboExpiresAt";
+
+export const CHAT_COLOR = "chatColor";
+
+const TurboExpiry = SanctionEnd.transform((end) => new Date(end));
+
+const valueOf = <T>(schema: z.ZodType<T>, raw: string | undefined): T | null => {
+  const parsed = schema.safeParse(raw);
+  return parsed.success ? parsed.data : null;
+};
 
 export const toRoomState = (channelId: string, sessionId: string): RoomState => ({
   channelId,
@@ -41,4 +54,14 @@ export const redisChatterProfiles = (redis: HashReader): ChatterProfiles => ({
       const parsed = SanctionEnd.safeParse(end);
       return parsed.success ? [{ channelId, expiresAt: new Date(parsed.data) }] : [];
     }),
+});
+
+export const redisTurboProfiles = (redis: HashReader): TurboProfiles => ({
+  turboOf: async (userId) => {
+    const view = await redis.hGetAll(chatterKey(userId));
+    return {
+      expiresAt: valueOf(TurboExpiry, view[TURBO_EXPIRES_AT]),
+      chatColor: valueOf(ChatColor, view[CHAT_COLOR]),
+    };
+  },
 });

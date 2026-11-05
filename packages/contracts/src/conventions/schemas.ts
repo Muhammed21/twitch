@@ -3,6 +3,11 @@ import { z } from "zod";
 export const openEnum = <const Values extends readonly [string, ...string[]]>(values: Values) =>
   z.union([z.enum(values), z.string()]);
 
+export const ChatColor = z
+  .string()
+  .regex(/^#[0-9A-F]{6}$/)
+  .meta({ id: "ChatColor" });
+
 export const Uuid = z.uuid().meta({ id: "Uuid" });
 
 export const extensibleUnion = <const Variants extends readonly [z.ZodObject, ...z.ZodObject[]]>(

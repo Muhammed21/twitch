@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { Uuid } from "../conventions/schemas.ts";
+import { ChatColor, Uuid } from "../conventions/schemas.ts";
 
 export const Me = z
   .looseObject({
@@ -11,5 +11,6 @@ export const Me = z
     lastLiveAt: z.iso.datetime().optional(),
     avatarUrl: z.url({ protocol: /^https?$/ }).optional(),
     bannerUrl: z.url({ protocol: /^https?$/ }).optional(),
+    chatColor: ChatColor.optional(),
   })
   .meta({ id: "Me" });

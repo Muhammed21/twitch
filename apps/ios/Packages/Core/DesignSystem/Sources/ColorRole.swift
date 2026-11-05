@@ -16,6 +16,7 @@ public enum ColorRole: Equatable, Sendable {
   case textSecondary
   case link
   case chatName(UUID)
+  case chosenChatName(ChatNameColor)
   case chatUnread
   case danger
   case onDanger
@@ -31,6 +32,8 @@ public enum ColorRole: Equatable, Sendable {
   case onMedia
   case bannerStart
   case bannerEnd
+  case turboStart
+  case turboEnd
   case avatarRing
 
   public var color: Color {
@@ -48,6 +51,7 @@ public enum ColorRole: Equatable, Sendable {
     case .textSecondary: .textSecondary
     case .link: .textLink
     case let .chatName(author): Self.chatNames[Self.stableIndex(of: author, count: Self.chatNames.count)]
+    case let .chosenChatName(choice): choice.color
     case .chatUnread: .chatUnread
     case .danger: .dangerDefault
     case .onDanger: .dangerOnDanger
@@ -63,13 +67,13 @@ public enum ColorRole: Equatable, Sendable {
     case .onMedia: .mediaOnOverlay
     case .bannerStart: .bannerStart
     case .bannerEnd: .bannerEnd
+    case .turboStart: .turboStart
+    case .turboEnd: .turboEnd
     case .avatarRing: .bannerAvatarRing
     }
   }
 
-  private static let chatNames: [Color] = [
-    .chatNameBlue, .chatNameGreen, .chatNamePurple, .chatNameRed, .chatNameMaroon, .chatNameTeal, .chatNameIndigo,
-  ]
+  private static let chatNames = ChatNameColor.allCases.map(\.color)
 
   private static func stableIndex(of id: UUID, count: Int) -> Int {
     let bytes = withUnsafeBytes(of: id.uuid) { Array($0) }

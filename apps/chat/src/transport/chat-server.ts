@@ -12,7 +12,7 @@ import { type ChatSanction, chatterContextFor } from "@repo/authorization";
 import type { Result } from "@repo/result";
 
 import type { MessageSender } from "../application/message-sender.ts";
-import type { ChatterProfiles, ChatterSanction } from "../application/ports.ts";
+import type { ChatterProfiles, ChatterSanction, TurboProfiles } from "../application/ports.ts";
 import type { RoomRegistry } from "../application/room-registry.ts";
 import {
   bindChatEvents,
@@ -126,6 +126,7 @@ export const startChatServer = async ({
   verifier,
   log,
   chatters,
+  turbos,
   rooms,
   messages,
   saturation,
@@ -136,6 +137,7 @@ export const startChatServer = async ({
   verifier: TokenVerifier;
   log: ChatLog;
   chatters: ChatterProfiles;
+  turbos: TurboProfiles;
   rooms: RoomRegistry;
   messages: MessageSender;
   saturation: SaturationLimits;
@@ -155,10 +157,11 @@ export const startChatServer = async ({
 
   const sessions = new WeakMap<IncomingMessage, Promise<ChatSession | undefined>>();
   const openSession = async ({ userId, sid }: AccessTokenIdentity, token: string) => {
-    const [displayName, sanctions, avatarKey] = await Promise.all([
+    const [displayName, sanctions, avatarKey, turbo] = await Promise.all([
       chatters.displayNameOf(userId),
       chatters.sanctionsOf(userId),
       chatters.avatarKeyOf(userId),
+      turbos.turboOf(userId),
     ]);
     if (displayName === null) {
       return undefined;
@@ -172,6 +175,7 @@ export const startChatServer = async ({
           ? {}
           : { avatarUrl: imageUrlOf(avatarKey) }),
       },
+      turbo,
       credentials: { sid, token },
     };
   };
@@ -343,7 +347,10 @@ export const startChatServer = async ({
     if (!verified.ok) {
       socket.emit("session:revoked", { action: REVALIDATION_ACTIONS[verified.error] });
       socket.disconnect(true);
+      return;
     }
+    const turbo = await turbos.turboOf(socket.data.author.id);
+    socket.data = { ...socket.data, turbo };
   };
 
   return {

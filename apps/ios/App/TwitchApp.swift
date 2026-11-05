@@ -1,3 +1,4 @@
+import Analytics
 import Auth
 import Channel
 import Chat
@@ -12,6 +13,7 @@ import Onboarding
 import Player
 import Preferences
 import Profile
+import Purchases
 import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
@@ -228,6 +230,7 @@ struct ChannelScreen: View {
 }
 
 struct Stores {
+  let analytics: ProductAnalytics
   let session: SessionStore
   let launch: LaunchStore
   let home: HomeStore
@@ -246,6 +249,7 @@ struct Stores {
   let profileImages: ProfileImageStore
   let preferences: PreferencesStore
   let personalization: PersonalizationSources
+  let purchases: StorePurchases
   let feedback: FeedbackPlayer
 }
 
@@ -261,6 +265,7 @@ enum Composition {
       store: KeychainTokenStore(service: Bundle.main.bundleIdentifier ?? "com.muhammedcavus.twitch")
     )
     let now: @Sendable () -> Date = { Date.now }
+    let analytics = ProductAnalytics.live(info: info, defaults: .standard)
     let player = PlayerController(player: AVMediaPlayer(), startupRetry: .every(.seconds(2), attempts: 15))
     let channels = ChannelClient(apiBaseURL: configuration.apiBaseURL, transport: transport)
     let preferences = PersonalizationRoot.preferences()
@@ -271,8 +276,9 @@ enum Composition {
       controller: player,
       allowsAutoplay: { preferences.current.videoAutoplay.allowsPlayback(onExpensiveNetwork: network.isExpensive) }
     )
-    let sessionStore = Self.sessionStore(configuration: configuration, session: session, transport: transport, now: now)
+    let sessionStore = Self.sessionStore(configuration: configuration, session: session, transport: transport, analytics: analytics, now: now)
     return Stores(
+      analytics: analytics,
       session: sessionStore,
       launch: LaunchStore(
         source: BootstrapClient(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
@@ -287,19 +293,14 @@ enum Composition {
       channelPlayback: channelPlayback,
       liveStatus: Self.liveStatus(apiBaseURL: configuration.apiBaseURL, channels: channels, player: player, playback: channelPlayback),
       presence: Self.presence(configuration: configuration, channels: channels, session: session, transport: transport, now: now),
-      chat: ChatSession(
-        connector: ChatSocketConnector(chatBaseURL: chatBaseURL),
-        tokens: session,
-        channels: channels,
-        moderation: ModerationClient(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
-        viewer: { sessionStore.accountID }
-      ),
+      chat: Self.chat(chatBaseURL: chatBaseURL, apiBaseURL: configuration.apiBaseURL, transport: transport, session: session, channels: channels, sessionStore: sessionStore, now: now),
       myChannel: Self.myChannel(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, channels: channels),
       categorySearch: CategorySearch(catalog: CategoryCatalogClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
       profileEdit: Self.profileEdit(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
       profileImages: Self.profileImages(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
       preferences: preferences,
       personalization: Self.personalizationSources(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
+      purchases: StorePurchases.live(info: info),
       feedback: FeedbackPlayer()
     )
   }
@@ -339,10 +340,29 @@ enum Composition {
     )
   }
 
+  private static func chat(
+    chatBaseURL: URL,
+    apiBaseURL: URL,
+    transport: ClientVersionTransport,
+    session: OAuthSession,
+    channels: ChannelClient,
+    sessionStore: SessionStore,
+    now: @escaping @Sendable () -> Date
+  ) -> ChatSession {
+    ChatSession(
+      connector: ChatSocketConnector(chatBaseURL: chatBaseURL),
+      tokens: session,
+      channels: channels,
+      moderation: ModerationClient(apiBaseURL: apiBaseURL, transport: transport, tokens: session, now: now),
+      viewer: { sessionStore.accountID }
+    )
+  }
+
   private static func sessionStore(
     configuration: OAuthConfiguration,
     session: OAuthSession,
     transport: ClientVersionTransport,
+    analytics: ProductAnalytics,
     now: @escaping @Sendable () -> Date
   ) -> SessionStore {
     SessionStore(
@@ -351,7 +371,8 @@ enum Composition {
       accounts: AccountClient(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
       authenticator: SystemWebAuthenticator(),
       randomBytes: PKCE.systemRandomBytes,
-      now: now
+      now: now,
+      analytics: analytics
     )
   }
 }

@@ -24,8 +24,11 @@ type EventContract<T> = {
 
 const { channelCreated } = events.channel;
 const { streamStarted, streamEnded } = events.stream;
-const { accountRegistered, avatarChanged } = events.identity;
+const { accountRegistered, avatarChanged, chatColorChanged } = events.identity;
 const { userTimedOut } = events.moderation;
+const { entitlementGranted, entitlementRevoked } = events.monetization;
+
+const PLATFORM = "platform";
 
 const handlerFor =
   (log: ChatLog) =>
@@ -79,9 +82,29 @@ export const chatEventHandlers = ({
     [avatarChanged.name]: handle(avatarChanged, ({ accountId, avatarKey }, occurredAt) =>
       views.changeAvatar({ userId: accountId, avatarKey, changedAt: occurredAt }),
     ),
+    [chatColorChanged.name]: handle(chatColorChanged, ({ accountId, chatColor }, occurredAt) =>
+      views.changeChatColor({ userId: accountId, chatColor, changedAt: occurredAt }),
+    ),
     [userTimedOut.name]: handle(userTimedOut, (payload) =>
       views.sanctionChatter(sanctionOf(payload)),
     ),
+    [entitlementGranted.name]: handle(
+      entitlementGranted,
+      async ({ userId, scope, expiresAt }, occurredAt) => {
+        if (scope === PLATFORM) {
+          await views.changeTurbo({
+            userId,
+            expiresAt: new Date(expiresAt),
+            changedAt: occurredAt,
+          });
+        }
+      },
+    ),
+    [entitlementRevoked.name]: handle(entitlementRevoked, async ({ userId, scope }, occurredAt) => {
+      if (scope === PLATFORM) {
+        await views.changeTurbo({ userId, expiresAt: null, changedAt: occurredAt });
+      }
+    }),
   };
 };
 

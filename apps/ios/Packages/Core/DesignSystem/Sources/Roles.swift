@@ -43,6 +43,9 @@ public enum TextRole: Sendable {
   case journeyChoiceName
   case journeyChoiceDetail
   case journeyRowTitle
+  case paywallHeadline
+  case paywallBody
+  case paywallLegal
 
   public var font: Font {
     switch self {
@@ -87,6 +90,9 @@ public enum TextRole: Sendable {
     case .journeyChoiceName: .actionLabel
     case .journeyChoiceDetail: .supportingText
     case .journeyRowTitle: .actionLabel
+    case .paywallHeadline: .displayText
+    case .paywallBody: .supportingText
+    case .paywallLegal: .viewerCount
     }
   }
 }
@@ -112,6 +118,8 @@ public enum LayoutRole: Sendable {
   case chatUnreadGap
   case chatUnreadLabelGap
   case chatUnreadLineWidth
+  case chatBadgeSize
+  case chatBadgeDrop
   case composerHeight
   case composerPadding
   case composerRadius
@@ -214,6 +222,16 @@ public enum LayoutRole: Sendable {
   case journeyChipPaddingH
   case journeyChipPaddingV
   case journeyChipGap
+  case paywallBandHeight
+  case paywallHeadlineTop
+  case paywallTaglineGap
+  case paywallActionTop
+  case paywallButtonInset
+  case paywallBillingGap
+  case paywallPackageGap
+  case paywallLegalGap
+  case paywallCardTop
+  case paywallCardPadding
 
   public var points: CGFloat {
     switch self {
@@ -237,6 +255,8 @@ public enum LayoutRole: Sendable {
     case .chatUnreadGap: Spacing.x2
     case .chatUnreadLabelGap: Spacing.x4
     case .chatUnreadLineWidth: Spacing.x1
+    case .chatBadgeSize: Spacing.x16
+    case .chatBadgeDrop: Spacing.x3
     case .composerHeight: Spacing.x40
     case .composerPadding: Spacing.x12
     case .composerRadius: Radius.lg
@@ -339,6 +359,16 @@ public enum LayoutRole: Sendable {
     case .journeyChipPaddingH: Spacing.x16
     case .journeyChipPaddingV: Spacing.x8
     case .journeyChipGap: Spacing.x8
+    case .paywallBandHeight: Spacing.x72
+    case .paywallHeadlineTop: Spacing.x12
+    case .paywallTaglineGap: Spacing.x12
+    case .paywallActionTop: Spacing.x24
+    case .paywallButtonInset: Spacing.x44
+    case .paywallBillingGap: Spacing.x8
+    case .paywallPackageGap: Spacing.x16
+    case .paywallLegalGap: Spacing.x12
+    case .paywallCardTop: Spacing.x20
+    case .paywallCardPadding: Spacing.x20
     }
   }
 }

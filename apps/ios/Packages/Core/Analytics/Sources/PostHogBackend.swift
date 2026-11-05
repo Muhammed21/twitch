@@ -7,11 +7,11 @@ struct PostHogBackend: AnalyticsBackend {
   private let sdk: PostHogSDK
 
   static func start(_ configuration: AnalyticsConfiguration) -> PostHogBackend {
-    PostHogSDK.shared.setup(config(configuration))
+    PostHogSDK.shared.setup(config(configuration, environment: .current))
     return PostHogBackend(sdk: PostHogSDK.shared)
   }
 
-  static func config(_ configuration: AnalyticsConfiguration) -> PostHogConfig {
+  static func config(_ configuration: AnalyticsConfiguration, environment: AnalyticsEnvironment) -> PostHogConfig {
     let config = PostHogConfig(projectToken: configuration.projectKey, host: configuration.host.absoluteString)
     config.captureApplicationLifecycleEvents = false
     config.captureScreenViews = false
@@ -20,7 +20,7 @@ struct PostHogBackend: AnalyticsBackend {
     config.sendFeatureFlagEvent = false
     config.sessionReplay = false
     config.setBeforeSend { event in
-      event.properties = AnalyticsPrivacy.redacted(event.properties)
+      event.properties = AnalyticsPrivacy.redacted(event.properties).merging(["environment": environment.rawValue]) { _, tag in tag }
       return event
     }
     return config

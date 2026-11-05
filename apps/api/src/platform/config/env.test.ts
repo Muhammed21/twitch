@@ -70,7 +70,7 @@ describe("loadEnv", () => {
       mobileMinSupportedVersion: "1.4.0",
       trustedProxyCount: 0,
       images: S3_STORAGE,
-      revenueCat: { webhookAuthorization: undefined },
+      revenueCat: { webhookAuthorization: undefined, secretApiKey: undefined },
     });
   });
 
@@ -79,13 +79,20 @@ describe("loadEnv", () => {
       loadEnv(
         makeEnv({ REVENUECAT_WEBHOOK_AUTHORIZATION: "Bearer valeur-choisie-dans-revenuecat" }),
       ).revenueCat,
-    ).toEqual({ webhookAuthorization: "Bearer valeur-choisie-dans-revenuecat" });
+    ).toMatchObject({ webhookAuthorization: "Bearer valeur-choisie-dans-revenuecat" });
   });
 
-  it("traite une valeur vide de l'en-tête du webhook RevenueCat comme absente", () => {
-    expect(loadEnv(makeEnv({ REVENUECAT_WEBHOOK_AUTHORIZATION: "" })).revenueCat).toEqual({
-      webhookAuthorization: undefined,
-    });
+  it("lit la clé secrète de l'API REST RevenueCat", () => {
+    expect(
+      loadEnv(makeEnv({ REVENUECAT_SECRET_API_KEY: "sk_cle_de_test" })).revenueCat.secretApiKey,
+    ).toBe("sk_cle_de_test");
+  });
+
+  it("traite des valeurs RevenueCat vides comme absentes", () => {
+    expect(
+      loadEnv(makeEnv({ REVENUECAT_WEBHOOK_AUTHORIZATION: "", REVENUECAT_SECRET_API_KEY: "" }))
+        .revenueCat,
+    ).toEqual({ webhookAuthorization: undefined, secretApiKey: undefined });
   });
 
   it("présigne les dépôts sur l'adresse publique du stockage quand elle diffère", () => {

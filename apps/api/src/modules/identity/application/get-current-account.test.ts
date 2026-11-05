@@ -92,6 +92,20 @@ describe("compte de l'utilisateur authentifié", () => {
     });
   });
 
+  it("rend la couleur de pseudo choisie par l'utilisateur", async () => {
+    const read = getCurrentAccount({
+      directory: directoryOf([{ ...ACCOUNT, chatColor: "#9146FF" }]),
+      lastLiveOf: NEVER_STREAMED,
+      imageUrlOf,
+      bannerUrlOf: NO_BANNER,
+    });
+
+    expect(await read(ACCOUNT.id)).toEqual({
+      ok: true,
+      value: { ...ACCOUNT, chatColor: "#9146FF" },
+    });
+  });
+
   it("rend le début du dernier live de l'utilisateur", async () => {
     const read = getCurrentAccount({
       directory: directoryOf([ACCOUNT]),

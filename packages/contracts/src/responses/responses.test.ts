@@ -61,6 +61,14 @@ describe("Me", () => {
     ...overrides,
   });
 
+  it("décode la couleur de pseudo choisie", () => {
+    expect(responses.Me.parse(makeMe({ chatColor: "#9146FF" })).chatColor).toBe("#9146FF");
+  });
+
+  it("refuse une couleur de pseudo hors du format #RRGGBB", () => {
+    expect(responses.Me.safeParse(makeMe({ chatColor: "violet" })).success).toBe(false);
+  });
+
   it("décode le compte de l'utilisateur authentifié", () => {
     expect(responses.Me.parse(makeMe())).toEqual(makeMe());
   });
@@ -525,6 +533,18 @@ const makeProfile = (overrides: Record<string, unknown> = {}) => ({
   name: "Viewer",
   email: "viewer@twitch.local",
   ...overrides,
+});
+
+describe("EntitlementList", () => {
+  it("décode la liste des entitlements actifs du compte", () => {
+    const list = { entitlements: [{ scope: "platform", expiresAt: "2026-12-08T09:00:00.000Z" }] };
+
+    expect(responses.EntitlementList.parse(list)).toEqual(list);
+  });
+
+  it("refuse une réponse sans liste", () => {
+    expect(responses.EntitlementList.safeParse({}).success).toBe(false);
+  });
 });
 
 describe("MobileBootstrap", () => {

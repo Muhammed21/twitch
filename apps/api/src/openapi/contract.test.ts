@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Post } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
-import { createZodDto, ZodResponse } from "nestjs-zod";
+import { ZodResponse } from "nestjs-zod";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
@@ -10,6 +10,7 @@ import { rejectingVerifier } from "../platform/authentication.ts";
 import { configureApp } from "../platform/configure-app.ts";
 import { PlatformModule } from "../platform/platform.module.ts";
 import { buildOpenApiDocument } from "./build-document.ts";
+import { requestDto } from "./request-dto.ts";
 import { responseDto } from "./response-dto.ts";
 
 const LIVE_ID = "4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b";
@@ -28,7 +29,12 @@ const ViewerSchema = z.looseObject({ id: Uuid, name: z.string() }).meta({ id: "V
 
 class Viewer extends responseDto(ViewerSchema) {}
 
-class StartLiveDto extends createZodDto(z.object({ title: z.string().min(3) })) {}
+class StartLiveDto extends requestDto(
+  z.object({
+    title: z.string().min(3),
+    subtitle: z.string().nullable().meta({ description: "Sous-titre ; null l'efface." }),
+  }),
+) {}
 
 @Controller("lives")
 class LivesController {
@@ -119,7 +125,7 @@ describe("document OpenAPI", () => {
       Object.keys(schemas)
         .filter((name) => !name.startsWith("Realtime"))
         .toSorted(),
-    ).toEqual(["LiveChannel", "LiveDto", "Problem", "StartLiveDto", "Uuid", "Viewer"]);
+    ).toEqual(["ChatColor", "LiveChannel", "LiveDto", "Problem", "StartLiveDto", "Uuid", "Viewer"]);
     expect(at(schemas, "LiveDto", "additionalProperties")).toEqual({});
     expect(at(schemas, "Viewer", "additionalProperties")).toEqual({});
     expect(at(schemas, "LiveChannel", "additionalProperties")).toEqual({});
@@ -133,6 +139,14 @@ describe("document OpenAPI", () => {
       type: ["string", "null"],
     });
     expect(JSON.stringify(document)).not.toMatch(/"anyOf":\[[^\]]*"type":"null"/);
+  });
+
+  it("écrit un champ nullable d'un corps de requête en chaîne nullable, pas en tableau", async () => {
+    const document = await documentOf();
+
+    expect(at(document, "components", "schemas", "StartLiveDto", "properties", "subtitle")).toEqual(
+      { description: "Sous-titre ; null l'efface.", type: ["string", "null"] },
+    );
   });
 
   it("publie Problem sous son nom, en réponse par défaut de chaque opération", async () => {
@@ -216,7 +230,7 @@ describe("validation des entrées et des sorties", () => {
       const response = await fetch(`${url}/v1/lives`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ title: "Speedrun" }),
+        body: JSON.stringify({ title: "Speedrun", subtitle: null }),
       });
 
       expect(response.status).toBe(201);

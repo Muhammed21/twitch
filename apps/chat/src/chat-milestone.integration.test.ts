@@ -16,6 +16,7 @@ import {
   chatterKey,
   redisChatterProfiles,
   redisRoomDirectory,
+  redisTurboProfiles,
   roomKey,
   sanctionsKey,
 } from "./infrastructure/redis-local-views.ts";
@@ -46,6 +47,7 @@ const startChat = async () => {
     stream: `${prefix}:events.stream`,
     identity: `${prefix}:events.identity`,
     moderation: `${prefix}:events.moderation`,
+    monetization: `${prefix}:events.monetization`,
   };
   const keys: string[] = Object.values(streams);
   onTestFinished(async () => {
@@ -54,6 +56,7 @@ const startChat = async () => {
   const authority = await makeTokenAuthority();
   const rooms = createRoomRegistry(redisRoomDirectory(redis));
   const server = await startChatServer({
+    turbos: redisTurboProfiles(redis),
     port: 0,
     verifier: authority.verifier(),
     log: () => {},
@@ -145,6 +148,29 @@ const startChat = async () => {
     });
   };
 
+  const subscribeToTurbo = async ({
+    userId,
+    expiresAt,
+    chatColor,
+  }: {
+    userId: string;
+    expiresAt: Date;
+    chatColor: string;
+  }) => {
+    await publish(streams.monetization, events.monetization.entitlementGranted, {
+      userId,
+      scope: "platform",
+      expiresAt: expiresAt.toISOString(),
+    });
+    await publish(streams.identity, events.identity.chatColorChanged, {
+      accountId: userId,
+      chatColor,
+    });
+    await vi.waitFor(async () => {
+      expect(await redisTurboProfiles(redis).turboOf(userId)).toEqual({ expiresAt, chatColor });
+    });
+  };
+
   const connectAs = async (userId: string): Promise<Socket> => {
     const token = await authority.sign({ userId });
     return vi.waitFor(
@@ -174,6 +200,7 @@ const startChat = async () => {
     createChannel,
     startLive,
     timeOut,
+    subscribeToTurbo,
     connectAs,
   };
 };
@@ -211,7 +238,7 @@ describe("jalon C1, contre le Redis de Compose", () => {
     expect(realtime.RealtimeChatMessage.parse(await offline)).toEqual({
       id: expect.any(String),
       channelId,
-      author: { id: alice, displayName: "Alice" },
+      author: { id: alice, displayName: "Alice", badges: [] },
       body: "Bonjour Bob",
       sentAt: expect.any(String),
     });
@@ -224,6 +251,41 @@ describe("jalon C1, contre le Redis de Compose", () => {
       author: { id: bob, displayName: "Bob" },
       body: "Bon live",
       sessionId,
+    });
+  });
+});
+
+describe("badge Turbo dans le chat, contre le Redis de Compose (ADR 0051)", () => {
+  it("un abonnement Turbo et une couleur publiés sur les streams se voient dans les messages de l'abonné", async () => {
+    const chat = await startChat();
+    const alice = await chat.registerAccount("Alice");
+    const bob = await chat.registerAccount("Bob");
+    const channelId = await chat.createChannel(alice);
+    await chat.subscribeToTurbo({
+      userId: alice,
+      expiresAt: new Date(Date.now() + 3_600_000),
+      chatColor: "#9147FF",
+    });
+    const aliceSocket = await chat.connectAs(alice);
+    const bobSocket = await chat.connectAs(bob);
+    await joinWhenOpen(aliceSocket, channelId);
+    await joinWhenOpen(bobSocket, channelId);
+
+    const fromAlice = nextMessage(bobSocket);
+    expect(await send(aliceSocket, channelId, "Bonjour Bob")).toBeUndefined();
+    const fromBob = nextMessage(aliceSocket);
+    expect(await send(bobSocket, channelId, "Bonjour Alice")).toBeUndefined();
+
+    expect(realtime.RealtimeChatMessage.parse(await fromAlice).author).toEqual({
+      id: alice,
+      displayName: "Alice",
+      badges: ["turbo"],
+      color: "#9147FF",
+    });
+    expect(realtime.RealtimeChatMessage.parse(await fromBob).author).toEqual({
+      id: bob,
+      displayName: "Bob",
+      badges: [],
     });
   });
 });

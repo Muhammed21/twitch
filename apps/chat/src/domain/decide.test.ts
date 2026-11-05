@@ -11,6 +11,7 @@ import {
   sanctionRejection,
   takeToken,
   type TokenBucket,
+  turboPerks,
 } from "./decide.ts";
 
 const NOW = new Date("2026-11-03T20:00:00.000Z");
@@ -192,5 +193,40 @@ describe("isBucketFull — un seau plein vaut l'absence de seau", () => {
     const bucket: TokenBucket = { tokens: 3, refilledAt: NOW };
 
     expect(isBucketFull({ bucket, now: secondsFromNow(1.999) })).toBe(false);
+  });
+});
+
+describe("badge Turbo et couleur de l'auteur, à l'horloge du serveur (ADR 0051)", () => {
+  const CHOSEN_COLOR = "#9147FF";
+  const AFTER_NOW = new Date(NOW.getTime() + 1);
+
+  it("donne le badge et la couleur choisie à un abonné dont l'échéance est après maintenant", () => {
+    expect(
+      turboPerks({ turbo: { expiresAt: AFTER_NOW, chatColor: CHOSEN_COLOR }, now: NOW }),
+    ).toEqual({ badges: ["turbo"], color: CHOSEN_COLOR });
+  });
+
+  it("donne le badge seul à un abonné sans couleur choisie", () => {
+    expect(turboPerks({ turbo: { expiresAt: AFTER_NOW, chatColor: null }, now: NOW })).toEqual({
+      badges: ["turbo"],
+    });
+  });
+
+  it.each([
+    ["à l'instant même", NOW],
+    ["avant maintenant", new Date(NOW.getTime() - 1)],
+  ])(
+    "retire badge et couleur à un abonné dont l'échéance tombe %s, sans attendre la révocation",
+    (_name, expiresAt) => {
+      expect(turboPerks({ turbo: { expiresAt, chatColor: CHOSEN_COLOR }, now: NOW })).toEqual({
+        badges: [],
+      });
+    },
+  );
+
+  it("ignore la couleur enregistrée par un chatter qui n'est pas abonné", () => {
+    expect(turboPerks({ turbo: { expiresAt: null, chatColor: CHOSEN_COLOR }, now: NOW })).toEqual({
+      badges: [],
+    });
   });
 });

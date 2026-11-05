@@ -10,6 +10,7 @@ import { startChatServer, type TokenVerifier } from "./chat-server.ts";
 import { LocalAdapter } from "./testing/local-adapter.ts";
 import { SATURATION_LIMITS } from "./testing/saturation.ts";
 import { makeTokenAuthority } from "./testing/tokens.ts";
+import { NO_TURBO } from "./testing/turbo.ts";
 
 const SPREAD_MS = 600;
 
@@ -18,6 +19,7 @@ const startServer = async (
 ) => {
   const authority = await makeTokenAuthority();
   const server = await startChatServer({
+    turbos: NO_TURBO,
     port: 0,
     verifier: verifierOf(authority.verifier()),
     log: () => undefined,

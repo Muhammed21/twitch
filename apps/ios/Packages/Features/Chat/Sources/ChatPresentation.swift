@@ -9,6 +9,17 @@ struct ChatLine: Equatable {
   let author: String
   let body: String
   let isDeleted: Bool
+  var badges: [ChatBadge] = []
+  var nameColor: ChatNameColor?
+}
+
+extension ChatBadge {
+  var glyph: Glyph? {
+    switch self {
+    case .turbo: .turboBattery
+    case .unknown: nil
+    }
+  }
 }
 
 extension ChatLine {
@@ -21,18 +32,25 @@ extension ChatLine {
       authorID: message.author.id,
       author: "\(message.author.displayName):",
       body: message.isDeleted ? ChatText.messageDeleted : message.body,
-      isDeleted: message.isDeleted
+      isDeleted: message.isDeleted,
+      badges: message.author.badges.filter { $0.glyph != nil },
+      nameColor: message.author.color.flatMap(ChatNameColor.init(hex:))
     )
   }
 
   func styled(_ display: ChatDisplay) -> AttributedString {
-    let separator = AttributedString(" ")
-    let message = display.messageRole.font
-    let stamp = display.showsTimestamps ? Self.styled(time, color: .textSecondary, font: message) + separator : AttributedString()
-    return stamp
-      + Self.styled(author, color: .chatName(authorID), font: display.authorRole.font)
-      + separator
-      + Self.styled(body, color: isDeleted ? .textSecondary : .textPrimary, font: message)
+    timeStyled(display) + messageStyled(display)
+  }
+
+  func timeStyled(_ display: ChatDisplay) -> AttributedString {
+    guard display.showsTimestamps else { return AttributedString() }
+    return Self.styled(time, color: .textSecondary, font: display.messageRole.font) + AttributedString(" ")
+  }
+
+  func messageStyled(_ display: ChatDisplay) -> AttributedString {
+    Self.styled(author, color: nameColor.map(ColorRole.chosenChatName) ?? .chatName(authorID), font: display.authorRole.font)
+      + AttributedString(" ")
+      + Self.styled(body, color: isDeleted ? .textSecondary : .textPrimary, font: display.messageRole.font)
   }
 
   private static func styled(_ text: String, color: ColorRole, font: Font) -> AttributedString {

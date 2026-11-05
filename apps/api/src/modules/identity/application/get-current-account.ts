@@ -6,6 +6,7 @@ export type StoredAccount = {
   readonly email: string;
   readonly bio?: string;
   readonly avatarKey?: string;
+  readonly chatColor?: string;
 };
 
 export type Account = Omit<StoredAccount, "avatarKey"> & {
