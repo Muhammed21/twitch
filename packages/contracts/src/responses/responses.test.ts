@@ -127,6 +127,18 @@ describe("Channel", () => {
     expect(responses.Channel.parse(makeChannel({ category }))).toEqual(makeChannel({ category }));
   });
 
+  it("décode l'URL de la bannière, en HTTP comme en HTTPS", () => {
+    const local = makeChannel({
+      bannerUrl: "http://127.0.0.1:8333/twitch-local/images/banner/b.webp",
+    });
+    const production = makeChannel({
+      bannerUrl: "https://images.twitch.example/images/banner/b.webp",
+    });
+
+    expect(responses.Channel.parse(local)).toEqual(local);
+    expect(responses.Channel.parse(production)).toEqual(production);
+  });
+
   it.each([
     ["avec un identifiant qui n'est pas un UUID", { id: "chaine-1" }],
     ["sans slug", { slug: undefined }],
@@ -136,6 +148,8 @@ describe("Channel", () => {
       "avec une catégorie sans nom",
       { category: { id: "7c6d5e4f-3a2b-4c1d-8e9f-0a1b2c3d4e5f", slug: "irl" } },
     ],
+    ["avec une bannière qui n'est pas une URL", { bannerUrl: "banner.webp" }],
+    ["avec une bannière hors HTTP", { bannerUrl: "ftp://images.twitch.example/b.webp" }],
   ])("refuse une chaîne %s", (_name, overrides) => {
     expect(responses.Channel.safeParse(makeChannel(overrides)).success).toBe(false);
   });

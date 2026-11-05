@@ -23,6 +23,7 @@ const CHANNEL: ChannelView = {
   title: "",
   ownerId: OWNER,
   category: null,
+  bannerKey: null,
 };
 
 const JUST_CHATTING: ChannelCategoryView = {

@@ -1,9 +1,10 @@
-import type { z } from "zod";
+import { z } from "zod";
 
 import { events } from "@repo/contracts";
 import { appendToOutbox } from "@repo/db";
 import { err, ok } from "@repo/result";
 
+import type { BannerStore } from "../application/change-banner.ts";
 import type { ChannelDirectory } from "../application/channel-queries.ts";
 import type { ChannelPrisma } from "./prisma-channel-registry.ts";
 
@@ -14,6 +15,7 @@ const VIEW = {
   title: true,
   ownerId: true,
   category: { select: { id: true, slug: true, name: true } },
+  bannerKey: true,
 } as const;
 
 const { channelMetadataUpdated } = events.channel;
@@ -59,5 +61,25 @@ export const prismaChannelDirectory = (prisma: ChannelPrisma): ChannelDirectory 
         },
       });
       return ok(updated);
+    }),
+});
+
+const LockedBanner = z.array(z.object({ id: z.string(), bannerKey: z.string().nullable() })).max(1);
+
+export const prismaBannerStore = (prisma: ChannelPrisma): BannerStore => ({
+  saveBanner: ({ ownerId, bannerKey }) =>
+    prisma.$transaction(async (tx) => {
+      const [locked] = LockedBanner.parse(
+        await tx.$queryRaw`SELECT "id", "bannerKey" FROM "channel"."Channel" WHERE "ownerId" = ${ownerId}::uuid FOR UPDATE`,
+      );
+      if (locked === undefined) {
+        return err("channel_not_found");
+      }
+      const channel = await tx.channel.update({
+        where: { id: locked.id },
+        data: { bannerKey },
+        select: VIEW,
+      });
+      return ok({ channel, replacedKey: locked.bannerKey ?? undefined });
     }),
 });

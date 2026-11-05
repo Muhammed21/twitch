@@ -8,7 +8,10 @@ import { createAuthzContext, createAuthzRedis } from "../../authz/authz-context.
 import { createApp } from "../../create-app.ts";
 import { updateChannel } from "./application/channel-queries.ts";
 import { createChannelForAccount } from "./application/create-channel-for-account.ts";
-import { prismaChannelDirectory } from "./infrastructure/prisma-channel-directory.ts";
+import {
+  prismaBannerStore,
+  prismaChannelDirectory,
+} from "./infrastructure/prisma-channel-directory.ts";
 import { prismaChannelRegistry } from "./infrastructure/prisma-channel-registry.ts";
 import { redisOwnerAssignmentsCache } from "./infrastructure/redis-owner-assignments-cache.ts";
 
@@ -77,6 +80,7 @@ describe("lecture et modification d'une chaîne en base", () => {
       title: "",
       ownerId: channel.ownerId,
       category: null,
+      bannerKey: null,
     };
 
     expect(await directory.findBySlug(channel.slug)).toEqual(view);
@@ -105,6 +109,7 @@ describe("lecture et modification d'une chaîne en base", () => {
         title: "Speedrun du dimanche",
         ownerId: channel.ownerId,
         category: null,
+        bannerKey: null,
       },
     });
     expect(await prisma.channel.findUnique({ where: { id: channel.id } })).toMatchObject({
@@ -181,4 +186,51 @@ describe("routes de channel montées dans l'API", () => {
       }
     },
   );
+});
+
+describe("enregistrement de la bannière en base", () => {
+  const store = prismaBannerStore(prisma);
+  const FIRST_KEY = "images/banner/premiere.webp";
+  const SECOND_KEY = "images/banner/seconde.webp";
+
+  it("ne trouve pas de chaîne pour un compte qui n'en a pas", async () => {
+    expect(await store.saveBanner({ ownerId: randomUUID(), bannerKey: FIRST_KEY })).toEqual({
+      ok: false,
+      error: "channel_not_found",
+    });
+  });
+
+  it("enregistre la première bannière de la chaîne, sans clé remplacée", async () => {
+    const channel = await seedChannel();
+
+    const outcome = await store.saveBanner({ ownerId: channel.ownerId, bannerKey: FIRST_KEY });
+
+    expect(outcome).toEqual({
+      ok: true,
+      value: {
+        channel: {
+          id: channel.id,
+          slug: channel.slug,
+          title: "",
+          ownerId: channel.ownerId,
+          category: null,
+          bannerKey: FIRST_KEY,
+        },
+        replacedKey: undefined,
+      },
+    });
+  });
+
+  it("rend l'ancienne clé quand une bannière en remplace une autre", async () => {
+    const channel = await seedChannel();
+    await store.saveBanner({ ownerId: channel.ownerId, bannerKey: FIRST_KEY });
+
+    const outcome = await store.saveBanner({ ownerId: channel.ownerId, bannerKey: SECOND_KEY });
+
+    expect(outcome).toMatchObject({
+      ok: true,
+      value: { channel: { bannerKey: SECOND_KEY }, replacedKey: FIRST_KEY },
+    });
+    expect(await directory.findById(channel.id)).toMatchObject({ bannerKey: SECOND_KEY });
+  });
 });
