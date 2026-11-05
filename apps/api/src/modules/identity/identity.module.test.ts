@@ -4,6 +4,8 @@ import { describe, expect, it } from "vitest";
 import { createContextClient } from "@repo/db";
 
 import { rejectingVerifier } from "../../platform/authentication.ts";
+import { createImageBrick } from "../../platform/images/images.module.ts";
+import { memoryImageStorage } from "../../platform/images/testing/memory-image-storage.ts";
 import { PlatformModule } from "../../platform/platform.module.ts";
 import { createIdentityRedis, IdentityModule } from "./identity.module.ts";
 
@@ -24,6 +26,11 @@ describe("IdentityModule", () => {
           prisma,
           redis: createIdentityRedis(),
           lastLiveOf: async () => undefined,
+          images: createImageBrick({
+            storage: memoryImageStorage().storage,
+            publicBaseUrl: "http://images.invalid",
+          }),
+          logSink: () => {},
         }),
       ],
     }).compile();

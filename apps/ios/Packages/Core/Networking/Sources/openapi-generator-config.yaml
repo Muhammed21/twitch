@@ -6,6 +6,7 @@ namingStrategy: idiomatic
 filter:
   operations:
     - MeController_read
+    - MeController_update
     - MobileBootstrapController_read
     - LivesController_list
     - ChannelsController_read
@@ -20,6 +21,7 @@ filter:
     - CategoriesController_lives
     - FollowedCategoriesController_follow
     - FollowedCategoriesController_unfollow
+    - ImagesController_prepareUpload
 additionalImports:
   - Foundation
 typeOverrides:

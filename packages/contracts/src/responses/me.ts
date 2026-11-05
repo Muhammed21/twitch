@@ -9,5 +9,6 @@ export const Me = z
     email: z.string(),
     bio: z.string().optional(),
     lastLiveAt: z.iso.datetime().optional(),
+    avatarUrl: z.url({ protocol: /^https?$/ }).optional(),
   })
   .meta({ id: "Me" });
