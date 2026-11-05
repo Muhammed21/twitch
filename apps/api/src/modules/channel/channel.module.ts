@@ -64,7 +64,10 @@ import { identityEventHandlers } from "./presentation/identity-event-handlers.ts
 import { CHANGE_BANNER, MeBannerController } from "./presentation/me-banner.controller.ts";
 
 export type { ChannelPrisma } from "./infrastructure/prisma-channel-registry.ts";
-export { prismaOwnedChannel as createOwnedChannelReader } from "./infrastructure/prisma-owned-channel.ts";
+export {
+  prismaOwnedBannerUrl as createBannerUrlReader,
+  prismaOwnedChannel as createOwnedChannelReader,
+} from "./infrastructure/prisma-owned-channel.ts";
 
 const CHANNEL_DEPENDENCIES = Symbol("CHANNEL_DEPENDENCIES");
 

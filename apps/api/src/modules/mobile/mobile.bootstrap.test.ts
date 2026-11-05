@@ -172,6 +172,15 @@ describe("GET /v1/mobile/bootstrap (ADR 0009, ADR 0012)", () => {
     });
   });
 
+  it("rend l'URL de la bannière dans le profil", async () => {
+    const bannerUrl = "https://images.twitch.example/images/banner/b.webp";
+    const readProfile: ReadProfile = async () => ok({ ...PROFILE, bannerUrl });
+
+    await withBootstrap({ readProfile }, async (get) => {
+      expect((await (await get(authenticated)).json()).profile).toEqual({ ...PROFILE, bannerUrl });
+    });
+  });
+
   it.each([
     ["un jeton invalide", { authorization: `Bearer ${INVALID_TOKEN}` }],
     ["un en-tête Authorization qui n'est pas Bearer", { authorization: "Basic dXNlcjpwYXNz" }],

@@ -4,7 +4,11 @@ import type { ImageBrick } from "../../platform/images/images.module.ts";
 import { errorDetails, type LogSink, writeLog } from "../../platform/logging.ts";
 import { changeAvatar } from "./application/change-avatar.ts";
 import { changeBio } from "./application/change-bio.ts";
-import { getCurrentAccount, type LastLiveOf } from "./application/get-current-account.ts";
+import {
+  type BannerUrlOf,
+  getCurrentAccount,
+  type LastLiveOf,
+} from "./application/get-current-account.ts";
 import type { IdentityPrisma } from "./infrastructure/better-auth.ts";
 import {
   prismaAccountDirectory,
@@ -32,17 +36,25 @@ export {
   type IdentityPrisma,
 } from "./infrastructure/better-auth.ts";
 
-export type { LastLiveOf } from "./application/get-current-account.ts";
+export type { BannerUrlOf, LastLiveOf } from "./application/get-current-account.ts";
 
 export const createCurrentAccountReader = ({
   prisma,
   lastLiveOf,
   imageUrlOf,
+  bannerUrlOf,
 }: {
   prisma: IdentityPrisma;
   lastLiveOf: LastLiveOf;
   imageUrlOf: (key: string) => string;
-}) => getCurrentAccount({ directory: prismaAccountDirectory(prisma), lastLiveOf, imageUrlOf });
+  bannerUrlOf: BannerUrlOf;
+}) =>
+  getCurrentAccount({
+    directory: prismaAccountDirectory(prisma),
+    lastLiveOf,
+    imageUrlOf,
+    bannerUrlOf,
+  });
 
 const IDENTITY_PRISMA = Symbol("IDENTITY_PRISMA");
 const IDENTITY_REDIS = Symbol("IDENTITY_REDIS");
@@ -58,12 +70,14 @@ export class IdentityModule implements OnModuleDestroy {
     prisma,
     redis,
     lastLiveOf,
+    bannerUrlOf,
     images,
     logSink,
   }: {
     prisma: IdentityPrisma;
     redis: IdentityRedis;
     lastLiveOf: LastLiveOf;
+    bannerUrlOf: BannerUrlOf;
     images: Pick<ImageBrick, "finalizeImage" | "imageUrlOf" | "storage">;
     logSink: LogSink;
   }): DynamicModule {
@@ -77,6 +91,7 @@ export class IdentityModule implements OnModuleDestroy {
             prisma,
             lastLiveOf,
             imageUrlOf: images.imageUrlOf,
+            bannerUrlOf,
           }),
         },
         { provide: CHANGE_BIO, useValue: changeBio(prismaBioStore(prisma)) },

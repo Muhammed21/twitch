@@ -17,6 +17,7 @@ export const Profile = z
     bio: z.string().optional(),
     lastLiveAt: z.iso.datetime().optional(),
     avatarUrl: z.url({ protocol: /^https?$/ }).optional(),
+    bannerUrl: z.url({ protocol: /^https?$/ }).optional(),
     channel: OwnedChannel.optional(),
   })
   .meta({ id: "Profile" });

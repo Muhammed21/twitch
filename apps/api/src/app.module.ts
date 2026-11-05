@@ -4,6 +4,7 @@ import type { AuthzRedis } from "./authz/authz-context.ts";
 import {
   type ChannelPrisma,
   ChannelModule,
+  createBannerUrlReader,
   createOwnedChannelReader,
 } from "./modules/channel/channel.module.ts";
 import { DiscoveryModule, type DiscoveryPrisma } from "./modules/discovery/discovery.module.ts";
@@ -94,6 +95,10 @@ export class AppModule {
       ownedChannel,
       lastLiveOfChannel: createLastLiveReader(stream.prisma),
     });
+    const bannerUrlOf = createBannerUrlReader({
+      prisma: channel.prisma,
+      imageUrlOf: imageBrick.imageUrlOf,
+    });
     return {
       module: AppModule,
       imports: [
@@ -102,6 +107,7 @@ export class AppModule {
         IdentityModule.register({
           ...identity,
           lastLiveOf,
+          bannerUrlOf,
           images: imageBrick,
           logSink: platform.logSink,
         }),
@@ -125,6 +131,7 @@ export class AppModule {
             prisma: identity.prisma,
             lastLiveOf,
             imageUrlOf: imageBrick.imageUrlOf,
+            bannerUrlOf,
           }),
           ownedChannel,
           minSupportedVersion: mobile.minSupportedVersion,

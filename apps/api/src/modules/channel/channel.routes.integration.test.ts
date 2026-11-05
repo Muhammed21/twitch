@@ -8,6 +8,7 @@ import { createAuthzContext, createAuthzRedis } from "../../authz/authz-context.
 import { createApp } from "../../create-app.ts";
 import { updateChannel } from "./application/channel-queries.ts";
 import { createChannelForAccount } from "./application/create-channel-for-account.ts";
+import { createBannerUrlReader } from "./channel.module.ts";
 import {
   prismaBannerStore,
   prismaChannelDirectory,
@@ -232,5 +233,30 @@ describe("enregistrement de la bannière en base", () => {
       value: { channel: { bannerKey: SECOND_KEY }, replacedKey: FIRST_KEY },
     });
     expect(await directory.findById(channel.id)).toMatchObject({ bannerKey: SECOND_KEY });
+  });
+});
+
+describe("URL de la bannière de la chaîne d'un compte", () => {
+  const BANNER_KEY = "images/banner/lue.webp";
+  const bannerUrlOf = createBannerUrlReader({
+    prisma,
+    imageUrlOf: (key) => `https://images.invalid/${key}`,
+  });
+
+  it("rend l'URL publique de la bannière de la chaîne du compte", async () => {
+    const channel = await seedChannel();
+    await prismaBannerStore(prisma).saveBanner({ ownerId: channel.ownerId, bannerKey: BANNER_KEY });
+
+    expect(await bannerUrlOf(channel.ownerId)).toBe(`https://images.invalid/${BANNER_KEY}`);
+  });
+
+  it("ne rend rien pour une chaîne sans bannière", async () => {
+    const channel = await seedChannel();
+
+    expect(await bannerUrlOf(channel.ownerId)).toBeUndefined();
+  });
+
+  it("ne rend rien pour un compte sans chaîne", async () => {
+    expect(await bannerUrlOf(randomUUID())).toBeUndefined();
   });
 });

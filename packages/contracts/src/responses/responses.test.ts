@@ -75,6 +75,12 @@ describe("Me", () => {
     expect(responses.Me.parse(makeMe({ pronouns: "iel" }))).toMatchObject({ pronouns: "iel" });
   });
 
+  it("décode l'URL de la bannière de la chaîne du compte", () => {
+    const me = makeMe({ bannerUrl: "https://images.twitch.example/images/banner/b.webp" });
+
+    expect(responses.Me.parse(me)).toEqual(me);
+  });
+
   it("décode l'URL de l'avatar, en HTTP comme en HTTPS", () => {
     const local = makeMe({ avatarUrl: "http://127.0.0.1:8333/twitch-local/images/avatar/a.webp" });
     const production = makeMe({ avatarUrl: "https://images.twitch.example/images/avatar/a.webp" });
@@ -93,6 +99,8 @@ describe("Me", () => {
     ["un avatar hors HTTP", { avatarUrl: "ftp://images.twitch.example/a.webp" }],
     ["un avatar d'un schéma qui finit par http", { avatarUrl: "xhttp://i.example/a.webp" }],
     ["un avatar d'un schéma qui commence par https", { avatarUrl: "httpsx://i.example/a.webp" }],
+    ["une bannière qui n'est pas une URL", { bannerUrl: "banner.webp" }],
+    ["une bannière hors HTTP", { bannerUrl: "ftp://images.twitch.example/b.webp" }],
   ])("refuse %s", (_name, overrides) => {
     expect(responses.Me.safeParse(makeMe(overrides)).success).toBe(false);
   });
@@ -506,6 +514,20 @@ describe("MobileBootstrap", () => {
     });
 
     expect(responses.MobileBootstrap.parse(makeBootstrap({ profile })).profile).toEqual(profile);
+  });
+
+  it("décode l'URL de la bannière du profil", () => {
+    const profile = makeProfile({
+      bannerUrl: "https://images.twitch.example/images/banner/b.webp",
+    });
+
+    expect(responses.MobileBootstrap.parse(makeBootstrap({ profile })).profile).toEqual(profile);
+  });
+
+  it("refuse un profil dont la bannière n'est pas une URL HTTP", () => {
+    const profile = makeProfile({ bannerUrl: "ftp://images.twitch.example/b.webp" });
+
+    expect(responses.MobileBootstrap.safeParse(makeBootstrap({ profile })).success).toBe(false);
   });
 
   it("refuse un profil dont l'avatar n'est pas une URL HTTP", () => {
