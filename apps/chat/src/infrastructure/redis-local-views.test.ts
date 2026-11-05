@@ -6,6 +6,7 @@ import {
   chatterKey,
   redisChatterProfiles,
   redisRoomDirectory,
+  redisTurboProfiles,
   roomKey,
   sanctionsKey,
 } from "./redis-local-views.ts";
@@ -101,5 +102,32 @@ describe("vue locale des sanctions", () => {
 
   it("range les sanctions sous chat:chatter:<userId>:sanctions", () => {
     expect(sanctionsKey("u1")).toBe("chat:chatter:u1:sanctions");
+  });
+});
+
+describe("vue locale Turbo des chatters", () => {
+  it("lit l'échéance Turbo et la couleur rangées dans le profil du chatter", async () => {
+    const userId = randomUUID();
+    const profiles = redisTurboProfiles(
+      makeHashes({
+        [chatterKey(userId)]: { turboExpiresAt: "1796720400000", chatColor: "#9147FF" },
+      }),
+    );
+
+    expect(await profiles.turboOf(userId)).toEqual({
+      expiresAt: new Date(1_796_720_400_000),
+      chatColor: "#9147FF",
+    });
+  });
+
+  it.each([
+    ["vides", { turboExpiresAt: "", chatColor: "" }],
+    ["illisibles", { turboExpiresAt: "demain", chatColor: "violet" }],
+    ["absentes", {}],
+  ])("ne lit ni Turbo ni couleur quand les valeurs sont %s", async (_name, hash) => {
+    const userId = randomUUID();
+    const profiles = redisTurboProfiles(makeHashes({ [chatterKey(userId)]: hash }));
+
+    expect(await profiles.turboOf(userId)).toEqual({ expiresAt: null, chatColor: null });
   });
 });

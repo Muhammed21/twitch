@@ -251,6 +251,17 @@ describe("GET /v1/mobile/bootstrap (ADR 0009, ADR 0012)", () => {
     });
   });
 
+  it("rend la couleur de pseudo dans le profil", async () => {
+    const readProfile: ReadProfile = async () => ok({ ...PROFILE, chatColor: "#9146FF" });
+
+    await withBootstrap({ readProfile }, async (get) => {
+      expect((await (await get(authenticated)).json()).profile).toEqual({
+        ...PROFILE,
+        chatColor: "#9146FF",
+      });
+    });
+  });
+
   it.each([
     ["un jeton invalide", { authorization: `Bearer ${INVALID_TOKEN}` }],
     ["un en-tête Authorization qui n'est pas Bearer", { authorization: "Basic dXNlcjpwYXNz" }],
@@ -405,6 +416,13 @@ describe("GET /v1/mobile/bootstrap (ADR 0009, ADR 0012)", () => {
                 },
               },
             },
+          },
+        },
+      });
+      expect(buildOpenApiDocument(app)).toMatchObject({
+        components: {
+          schemas: {
+            Profile: { properties: { chatColor: { $ref: "#/components/schemas/ChatColor" } } },
           },
         },
       });

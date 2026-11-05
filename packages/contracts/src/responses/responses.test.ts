@@ -61,6 +61,14 @@ describe("Me", () => {
     ...overrides,
   });
 
+  it("décode la couleur de pseudo choisie", () => {
+    expect(responses.Me.parse(makeMe({ chatColor: "#9146FF" })).chatColor).toBe("#9146FF");
+  });
+
+  it("refuse une couleur de pseudo hors du format #RRGGBB", () => {
+    expect(responses.Me.safeParse(makeMe({ chatColor: "violet" })).success).toBe(false);
+  });
+
   it("décode le compte de l'utilisateur authentifié", () => {
     expect(responses.Me.parse(makeMe())).toEqual(makeMe());
   });

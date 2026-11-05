@@ -8,6 +8,7 @@ export type Account = {
   readonly lastLiveAt?: Date;
   readonly avatarUrl?: string;
   readonly bannerUrl?: string;
+  readonly chatColor?: string;
 };
 
 export type ReadProfile = (userId: string) => Promise<Result<Account, "account_not_found">>;
