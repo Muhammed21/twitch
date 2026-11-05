@@ -42,6 +42,13 @@ describe("tags d'une chaîne", () => {
     expect(parseChannelTags(["कि".repeat(25)])).toEqual({ ok: true, value: ["कि".repeat(25)] });
   });
 
+  it("accepte une lettre portant trois marques", () => {
+    expect(parseChannelTags(["ア" + "\u3099".repeat(3)])).toEqual({
+      ok: true,
+      value: [("ア" + "\u3099".repeat(3)).normalize("NFC")],
+    });
+  });
+
   it("accepte 10 tags", () => {
     expect(parseChannelTags(tagsOf(10))).toEqual({ ok: true, value: tagsOf(10) });
   });
@@ -68,6 +75,9 @@ describe("tags d'une chaîne", () => {
     ["avec un tiret", "speed-run"],
     ["avec un caractère spécial", "fps!"],
     ["avec un emoji", "jeu🎮"],
+    ["fait d'une marque seule", "\u0301"],
+    ["avec une lettre portant quatre marques", "ア" + "\u3099".repeat(4)],
+    ["avec une lettre portant des milliers de marques", "ア" + "\u3099".repeat(30000)],
   ])("refuse un tag %s", (_name, tag) => {
     expect(parseChannelTags(["irl", tag])).toEqual({ ok: false, error: "invalid_tags" });
   });

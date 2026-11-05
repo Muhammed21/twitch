@@ -34,7 +34,9 @@ export type ContentLabel = (typeof CONTENT_LABELS)[number];
 
 export type ChannelTag = string & { readonly __brand: "ChannelTag" };
 
-const TAG_FORMAT = /^[\p{L}\p{M}\p{N}]+$/u;
+const MAX_MARKS_PER_CHARACTER = 3;
+
+const CHARACTER_FORMAT = new RegExp(`^[\\p{L}\\p{N}]\\p{M}{0,${MAX_MARKS_PER_CHARACTER}}$`, "u");
 
 const graphemes = new Intl.Segmenter();
 
@@ -47,8 +49,12 @@ const normalizedTag = (raw: string): string =>
     .toLowerCase();
 
 const isTag = (value: string): value is ChannelTag => {
-  const length = Array.from(graphemes.segment(value)).length;
-  return length <= MAX_CHANNEL_TAG_LENGTH && TAG_FORMAT.test(value);
+  const characters = Array.from(graphemes.segment(value), ({ segment }) => segment);
+  return (
+    characters.length >= 1 &&
+    characters.length <= MAX_CHANNEL_TAG_LENGTH &&
+    characters.every((character) => CHARACTER_FORMAT.test(character))
+  );
 };
 
 const isUnique = (tags: readonly string[]): boolean => new Set(tags).size === tags.length;
