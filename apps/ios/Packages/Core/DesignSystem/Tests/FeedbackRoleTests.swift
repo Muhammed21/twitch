@@ -3,29 +3,6 @@ import AVFoundation
 import SwiftUI
 import Testing
 
-private struct SessionDown: Error {}
-
-@MainActor
-private final class FakeSession: AudioSessionSetting {
-  private(set) var categories: [(AVAudioSession.Category, AVAudioSession.CategoryOptions)] = []
-  private(set) var activations = 0
-  let fails: Bool
-
-  init(fails: Bool = false) {
-    self.fails = fails
-  }
-
-  func setCategory(_ category: AVAudioSession.Category, options: AVAudioSession.CategoryOptions) throws {
-    if fails { throw SessionDown() }
-    categories.append((category, options))
-  }
-
-  func setActive(_ active: Bool) throws {
-    if fails { throw SessionDown() }
-    if active { activations += 1 }
-  }
-}
-
 @MainActor
 private final class FakeSounds: SoundPlaying {
   private(set) var played: [URL] = []
@@ -74,36 +51,22 @@ struct FeedbackRoleTests {
 }
 
 @MainActor
-@Suite("Lecteur des sons du parcours sur une session audio ambiante")
+@Suite("Lecteur des sons du parcours, joués comme sons système")
 struct FeedbackPlayerTests {
-  @Test("rien ne touche la session audio tant qu'aucun geste n'a demandé de son")
-  func idleUntilGesture() {
-    let session = FakeSession()
-    _ = FeedbackPlayer(session: session, sounds: FakeSounds(), library: library(FeedbackSound.allCases))
+  @Test("un son du parcours laisse la catégorie audio de l'app au lecteur du live")
+  func leavesAppSession() {
+    let session = AVAudioSession.sharedInstance()
+    let before = session.category
 
-    #expect(session.categories.isEmpty)
-    #expect(session.activations == 0)
-  }
+    FeedbackPlayer().play(.selection)
 
-  @Test("le premier son passe la session en ambiant, mélangée aux autres apps et muette en mode silencieux")
-  func ambientSession() throws {
-    let session = FakeSession()
-    let player = FeedbackPlayer(session: session, sounds: FakeSounds(), library: library(FeedbackSound.allCases))
-
-    player.play(.selection)
-    player.play(.success)
-
-    let configured = try #require(session.categories.first)
-    #expect(session.categories.count == 1)
-    #expect(configured.0 == .ambient)
-    #expect(configured.1 == .mixWithOthers)
-    #expect(session.activations == 1)
+    #expect(session.category == before)
   }
 
   @Test("chaque rôle joue son fichier")
   func playsRoleSound() {
     let sounds = FakeSounds()
-    let player = FeedbackPlayer(session: FakeSession(), sounds: sounds, library: library(FeedbackSound.allCases))
+    let player = FeedbackPlayer(sounds: sounds, library: library(FeedbackSound.allCases))
 
     player.play(.validation)
     player.play(.pageChange)
@@ -111,36 +74,24 @@ struct FeedbackPlayerTests {
     #expect(sounds.played == [URL(fileURLWithPath: "/validation.wav"), URL(fileURLWithPath: "/transition.wav")])
   }
 
-  @Test("une erreur ne joue aucun son et ne réveille pas la session")
+  @Test("une erreur ne joue aucun son")
   func errorIsSilent() {
-    let session = FakeSession()
     let sounds = FakeSounds()
-    let player = FeedbackPlayer(session: session, sounds: sounds, library: library(FeedbackSound.allCases))
+    let player = FeedbackPlayer(sounds: sounds, library: library(FeedbackSound.allCases))
 
     player.play(.error)
 
     #expect(sounds.played.isEmpty)
-    #expect(session.categories.isEmpty)
   }
 
   @Test("un son absent du bundle ne joue rien, sans erreur")
   func missingSound() {
     let sounds = FakeSounds()
-    let player = FeedbackPlayer(session: FakeSession(), sounds: sounds, library: library([.tap]))
+    let player = FeedbackPlayer(sounds: sounds, library: library([.tap]))
 
     player.play(.success)
     player.play(.selection)
 
     #expect(sounds.played == [URL(fileURLWithPath: "/tap.wav")])
-  }
-
-  @Test("une session audio indisponible ne joue rien, sans erreur")
-  func sessionDown() {
-    let sounds = FakeSounds()
-    let player = FeedbackPlayer(session: FakeSession(fails: true), sounds: sounds, library: library(FeedbackSound.allCases))
-
-    player.play(.success)
-
-    #expect(sounds.played.isEmpty)
   }
 }

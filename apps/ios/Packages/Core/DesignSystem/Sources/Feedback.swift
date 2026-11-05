@@ -1,4 +1,4 @@
-import AVFoundation
+import AudioToolbox
 import SwiftUI
 
 public enum FeedbackSound: String, CaseIterable, Sendable {
@@ -50,68 +50,44 @@ public enum FeedbackRole: CaseIterable, Sendable {
 }
 
 @MainActor
-public protocol AudioSessionSetting: AnyObject {
-  func setCategory(_ category: AVAudioSession.Category, options: AVAudioSession.CategoryOptions) throws
-  func setActive(_ active: Bool) throws
-}
-
-extension AVAudioSession: AudioSessionSetting {
-  public func setActive(_ active: Bool) throws {
-    try setActive(active, options: [])
-  }
-}
-
-@MainActor
 public protocol SoundPlaying: AnyObject {
   func play(_ url: URL)
 }
 
 @MainActor
 public final class SystemSoundPlayer: SoundPlaying {
-  private var players: [URL: AVAudioPlayer] = [:]
+  private var sounds: [URL: SystemSoundID] = [:]
 
   public init() {}
 
   public func play(_ url: URL) {
-    guard let player = players[url] ?? (try? AVAudioPlayer(contentsOf: url)) else { return }
-    players[url] = player
-    player.currentTime = 0
-    player.play()
+    guard let sound = sounds[url] ?? Self.register(url) else { return }
+    sounds[url] = sound
+    AudioServicesPlaySystemSound(sound)
+  }
+
+  private static func register(_ url: URL) -> SystemSoundID? {
+    var sound: SystemSoundID = 0
+    return AudioServicesCreateSystemSoundID(url as CFURL, &sound) == kAudioServicesNoError ? sound : nil
   }
 }
 
 @MainActor
 public final class FeedbackPlayer {
-  private let session: any AudioSessionSetting
   private let sounds: any SoundPlaying
   private let library: (FeedbackSound) -> URL?
-  private var isReady = false
 
   public init(
-    session: any AudioSessionSetting = AVAudioSession.sharedInstance(),
     sounds: any SoundPlaying = SystemSoundPlayer(),
     library: @escaping (FeedbackSound) -> URL? = FeedbackSound.bundled
   ) {
-    self.session = session
     self.sounds = sounds
     self.library = library
   }
 
   public func play(_ role: FeedbackRole) {
-    guard let sound = role.output(reduceMotion: false).sound, let url = library(sound), prepare() else { return }
+    guard let sound = role.output(reduceMotion: false).sound, let url = library(sound) else { return }
     sounds.play(url)
-  }
-
-  private func prepare() -> Bool {
-    guard !isReady else { return true }
-    do {
-      try session.setCategory(.ambient, options: .mixWithOthers)
-      try session.setActive(true)
-      isReady = true
-    } catch {
-      isReady = false
-    }
-    return isReady
   }
 }
 
