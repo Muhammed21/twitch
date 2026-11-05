@@ -23,13 +23,13 @@ public struct ChatList: View {
         }
         if let notice = session.moderationNotice {
           Text(ChatText.moderation(notice))
-            .font(display.messageRole.font)
+            .font(display.line.messageRole.font)
             .foregroundStyle(ColorRole.textSecondary.color)
             .accessibilityIdentifier("chat.moderation.notice")
         }
         if let notice = ChatNotice.text(for: session.status) {
           Text(notice)
-            .font(display.messageRole.font)
+            .font(display.line.messageRole.font)
             .foregroundStyle(ColorRole.textSecondary.color)
             .accessibilityIdentifier("chat.notice")
         }
@@ -74,13 +74,13 @@ struct ChatEntryRow: View {
     switch entry {
     case .welcome:
       Text(ChatText.welcome)
-        .font(display.messageRole.font)
+        .font(display.line.messageRole.font)
         .foregroundStyle(ColorRole.textSecondary.color)
         .accessibilityIdentifier("chat.welcome")
     case .unread:
       UnreadSeparator()
     case let .message(message):
-      ChatRow(line: ChatLine(message, locale: locale, timeZone: timeZone))
+      ChatLineRow(line: ChatLine(message, locale: locale, timeZone: timeZone), style: display.line)
         .contextMenu {
           if session.canTimeOut(message.author) {
             Button(ChatText.timeOutAction, systemImage: "clock") {
@@ -93,24 +93,6 @@ struct ChatEntryRow: View {
   }
 }
 
-struct ChatRow: View {
-  @Environment(\.chatDisplay) private var display
-  let line: ChatLine
-
-  var body: some View {
-    Text("\(Text(line.timeStyled(display)))\(badges)\(Text(line.messageStyled(display)))")
-      .font(display.messageRole.font)
-      .frame(maxWidth: .infinity, alignment: .leading)
-  }
-
-  private var badges: Text {
-    line.badges
-      .compactMap { $0.glyph?.inline(side: LayoutRole.chatBadgeSize.points) }
-      .map { Text("\(Image(uiImage: $0)) ").foregroundStyle(ColorRole.accent.color).baselineOffset(-LayoutRole.chatBadgeDrop.points) }
-      .reduce(Text(verbatim: "")) { Text("\($0)\($1)") }
-  }
-}
-
 struct UnreadSeparator: View {
   @Environment(\.chatDisplay) private var display
 
@@ -120,7 +102,7 @@ struct UnreadSeparator: View {
         .fill(ColorRole.chatUnread.color)
         .frame(height: LayoutRole.chatUnreadLineWidth.points)
       Text(ChatText.unread)
-        .font(display.messageRole.font)
+        .font(display.line.messageRole.font)
         .foregroundStyle(ColorRole.chatUnread.color)
         .fixedSize()
     }
