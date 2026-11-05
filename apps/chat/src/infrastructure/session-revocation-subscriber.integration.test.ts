@@ -13,6 +13,7 @@ import { startChatServer } from "../transport/chat-server.ts";
 import { LocalAdapter } from "../transport/testing/local-adapter.ts";
 import { SATURATION_LIMITS } from "../transport/testing/saturation.ts";
 import { makeTokenAuthority } from "../transport/testing/tokens.ts";
+import { NO_TURBO } from "../transport/testing/turbo.ts";
 import { subscribeToSessionRevocations } from "./session-revocation-subscriber.ts";
 
 const REDIS_URL = process.env["REDIS_URL"] ?? "redis://127.0.0.1:6379";
@@ -28,6 +29,7 @@ describe("révocation de session par le Pub/Sub de Compose", () => {
   it("ferme la socket d'une session dont l'API publie la révocation", async () => {
     const authority = await makeTokenAuthority();
     const server = await startChatServer({
+      turbos: NO_TURBO,
       port: 0,
       verifier: authority.verifier(),
       log: () => {},
