@@ -1799,6 +1799,10 @@
             "properties": {
               "session_replay": {
                 "type": "boolean"
+              },
+              "exp_paywall_variant": {
+                "type": "string",
+                "minLength": 1
               }
             },
             "required": [
