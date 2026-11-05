@@ -188,7 +188,7 @@ let package = Package(
       name: "Onboarding",
       dependencies: ["Domain", "Preferences", "DesignSystem"],
       path: "Features/Onboarding/Sources",
-      resources: [.process("Localizable.xcstrings")],
+      resources: [.process("Localizable.xcstrings"), .process("ChatPreview.xcstrings")],
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
     .testTarget(
