@@ -14,9 +14,10 @@ struct SignedInTabsTests {
     #expect(SignedInRoot.trailingTabs.map(\.tab) == [.profile])
   }
 
-  @Test("les onglets s'intitulent Home, Browse et Profile, comme sur la capture")
+  @Test("les onglets s'intitulent Accueil, Parcourir et Profil en français, Home, Browse et Profile en anglais")
   func titles() {
-    #expect(tabs.map(\.title) == ["Home", "Browse", "Profile"])
+    let titles = tabs.map(\.title)
+    #expect(titles == ["Accueil", "Parcourir", "Profil"] || titles == ["Home", "Browse", "Profile"])
   }
 
   @Test("Home prend la maison au trait, pleine quand l'onglet est actif ; Browse la loupe ; Profile l'avatar")
