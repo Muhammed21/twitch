@@ -33,7 +33,7 @@ struct PaywallTextTests {
     ]
   )
   func subscribe(period: SubscriptionPeriod, price: String, expected: String) {
-    let package = SubscriptionPackage(id: "p", offeringID: "default", period: period, localizedPrice: price)
+    let package = SubscriptionPackage(id: "p", offeringID: "default", period: period, localizedPrice: price, price: 1)
 
     #expect(String(localized: PaywallText.subscribe(package)) == expected)
   }
@@ -79,5 +79,25 @@ struct PaywallTextTests {
     #expect(String(localized: PaywallText.subscribedTitle) == "You're a Turbo subscriber")
     #expect(String(localized: PaywallText.subscribedMessage) == "Your Battery Chat Badge and username colors are ready.")
     #expect(String(localized: PaywallText.unavailable) == "Turbo isn't available right now. Try again later.")
+  }
+
+  @Test("l'étape Turbo du parcours : plus tard, avantages et formules")
+  func journeyStep() {
+    #expect(String(localized: PaywallText.later) == "Maybe Later")
+    #expect(String(localized: PaywallText.badgePerk) == "Battery Chat Badge")
+    #expect(String(localized: PaywallText.badgePerkDetail) == "Shown next to your name in every chat.")
+    #expect(String(localized: PaywallText.colorPerk) == "Custom Username Color")
+    #expect(String(localized: PaywallText.colorPerkDetail) == "Pick the color of your name in chat.")
+    #expect(String(localized: PaywallText.choosePlan) == "Choose your plan")
+  }
+
+  @Test("chaque formule porte son nom", arguments: [(SubscriptionPeriod.month, "Monthly"), (.year, "Yearly")])
+  func plan(period: SubscriptionPeriod, expected: String) {
+    #expect(String(localized: PaywallText.plan(period)) == expected)
+  }
+
+  @Test("l'économie annuelle se lit en pourcentage")
+  func savings() {
+    #expect(String(localized: PaywallText.savings(33)) == "Save 33%")
   }
 }

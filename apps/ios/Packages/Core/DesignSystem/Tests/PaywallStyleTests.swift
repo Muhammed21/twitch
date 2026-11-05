@@ -6,14 +6,10 @@ import Testing
 private let paywallMeasures: [(PaywallLayout, CGFloat)] = [
   (.bandHeight, 72),
   (.headlineTop, 12),
-  (.taglineGap, 12),
-  (.actionTop, 24),
-  (.buttonInset, 44),
-  (.billingGap, 8),
-  (.packageGap, 16),
   (.legalGap, 12),
-  (.cardTop, 20),
-  (.cardPadding, 20),
+  (.markSize, 36),
+  (.savingsPaddingH, 6),
+  (.savingsPaddingV, 2),
 ]
 
 private func hex(of color: Color, in scheme: ColorScheme) -> String? {
@@ -29,7 +25,7 @@ private func hex(of color: Color, in scheme: ColorScheme) -> String? {
 
 @Suite("Paywall Turbo : relevés sur abonnement/turbo--defaut")
 struct PaywallStyleTests {
-  @Test("les mesures de la bande, des boutons, des mentions et de la carte", arguments: paywallMeasures)
+  @Test("les mesures de la bande, de la batterie, des mentions et du badge d'économie", arguments: paywallMeasures)
   func layout(role: PaywallLayout, points: CGFloat) {
     #expect(role.points == points)
   }

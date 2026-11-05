@@ -1,4 +1,5 @@
 import Auth
+import DesignSystem
 import Domain
 import Foundation
 import Navigation
@@ -26,6 +27,7 @@ struct PersonalizationRoot: View {
   @State private var notifications: NotificationChoices
   @State private var presentation: PaywallPresentation
   @State private var paywall: PaywallStore
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
   private let links: PaywallLinks
   private let onClose: () -> Void
 
@@ -66,14 +68,21 @@ struct PersonalizationRoot: View {
   }
 
   var body: some View {
-    PersonalizationScreen()
-      .environment(journey)
-      .environment(categories)
-      .environment(interests)
-      .environment(notifications)
-      .fullScreenCover(isPresented: Binding(get: { presentation.isShown }, set: { presentation.isShown = $0 })) {
+    ZStack {
+      if presentation.isShown {
         PaywallScreen(store: paywall, links: links, onClose: onClose)
+          .transition(JourneyMotion.pageTransition(direction: .forward, reduceMotion: reduceMotion))
+      } else {
+        PersonalizationScreen()
+          .environment(journey)
+          .environment(categories)
+          .environment(interests)
+          .environment(notifications)
+          .transition(JourneyMotion.pageTransition(direction: .forward, reduceMotion: reduceMotion))
       }
+    }
+    .background(ColorRole.background.color.ignoresSafeArea())
+    .animation(JourneyMotion.page(reduceMotion: reduceMotion), value: presentation.isShown)
   }
 
   @MainActor

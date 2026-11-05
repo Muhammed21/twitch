@@ -11,6 +11,12 @@ public enum PaywallText {
   public static let subscribedTitle = LocalizedStringResource("paywall.subscribed.title", bundle: .module)
   public static let subscribedMessage = LocalizedStringResource("paywall.subscribed.message", bundle: .module)
   public static let unavailable = LocalizedStringResource("paywall.unavailable", bundle: .module)
+  public static let later = LocalizedStringResource("paywall.later", bundle: .module)
+  public static let badgePerk = LocalizedStringResource("paywall.perk.badge", bundle: .module)
+  public static let badgePerkDetail = LocalizedStringResource("paywall.perk.badge.detail", bundle: .module)
+  public static let colorPerk = LocalizedStringResource("paywall.perk.color", bundle: .module)
+  public static let colorPerkDetail = LocalizedStringResource("paywall.perk.color.detail", bundle: .module)
+  public static let choosePlan = LocalizedStringResource("paywall.plan.choose", bundle: .module)
   static let legalLead = LocalizedStringResource("paywall.legal.lead", bundle: .module)
   static let legalJoin = LocalizedStringResource("paywall.legal.join", bundle: .module)
   static let terms = LocalizedStringResource("paywall.legal.terms", bundle: .module)
@@ -28,6 +34,17 @@ public enum PaywallText {
     case .month: LocalizedStringResource("paywall.billing.month", bundle: .module)
     case .year: LocalizedStringResource("paywall.billing.year", bundle: .module)
     }
+  }
+
+  public static func plan(_ period: SubscriptionPeriod) -> LocalizedStringResource {
+    switch period {
+    case .month: LocalizedStringResource("paywall.plan.month", bundle: .module)
+    case .year: LocalizedStringResource("paywall.plan.year", bundle: .module)
+    }
+  }
+
+  public static func savings(_ percent: Int) -> LocalizedStringResource {
+    LocalizedStringResource("paywall.savings \(percent)", bundle: .module)
   }
 
   public static func notice(_ notice: PaywallStore.Notice) -> LocalizedStringResource {
