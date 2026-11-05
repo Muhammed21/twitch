@@ -15,6 +15,7 @@ export const OUTBOXES: readonly TableRef[] = [
   { schema: "channel", table: "ChannelOutbox" },
   { schema: "stream", table: "StreamOutbox" },
   { schema: "moderation", table: "ModerationOutbox" },
+  { schema: "monetization", table: "MonetizationOutbox" },
 ];
 
 export const createRelayRedis = (url?: string) =>

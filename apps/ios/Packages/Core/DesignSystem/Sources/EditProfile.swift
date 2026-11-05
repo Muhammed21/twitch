@@ -70,10 +70,12 @@ public enum EditRowAccessory {
   case disclosure
   case edit
 
-  var systemImage: String {
+  static let disclosureSymbol = "chevron.right"
+
+  var glyph: Glyph? {
     switch self {
-    case .disclosure: "chevron.right"
-    case .edit: "pencil"
+    case .disclosure: nil
+    case .edit: .editPencil
     }
   }
 
@@ -118,15 +120,12 @@ public struct EditRow: View {
   }
 
   @ViewBuilder private var accessoryImage: some View {
-    switch accessory {
-    case .disclosure:
-      Image(systemName: accessory.systemImage)
-        .font(TextRole.editRowValue.font)
-    case .edit:
-      Image(systemName: accessory.systemImage)
-        .resizable()
-        .scaledToFit()
+    if let glyph = accessory.glyph {
+      glyph.image
         .frame(width: LayoutRole.editRowIconSize.points, height: LayoutRole.editRowIconSize.points)
+    } else {
+      Image(systemName: EditRowAccessory.disclosureSymbol)
+        .font(TextRole.editRowValue.font)
     }
   }
 }

@@ -3,7 +3,8 @@
   "extends": ["//"],
   "tasks": {
     "generate": {
-      "cache": false
+      "cache": false,
+      "outputs": []
     }
   }
 }

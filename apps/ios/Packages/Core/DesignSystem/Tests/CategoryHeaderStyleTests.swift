@@ -14,6 +14,9 @@ private let headerMeasures: [(LayoutRole, CGFloat)] = [
   (.categoryHeaderLineGap, 4),
   (.followButtonHeight, 40),
   (.followButtonColumnGap, 16),
+  (.followingButtonWidth, 84),
+  (.followGlyphGap, 14),
+  (.followingGlyphGap, 6),
 ]
 
 @Suite("En-tête d'une catégorie")
@@ -48,6 +51,16 @@ struct CategoryHeaderStyleTests {
     #expect(CategoryFollowStyle.kind(isFollowing: true) == .secondary)
     #expect(CategoryFollowStyle.glyph(isFollowing: false) == "heart")
     #expect(CategoryFollowStyle.glyph(isFollowing: true) == "heart.fill")
+  }
+
+  @Test("Follow est en headline semibold : « Follow » large de 48 pt, fût de 2 pt (chaine/page-chaine--toast-plus-suivi)")
+  func followLabel() {
+    #expect(TextRole.followLabel.font == Font.headline.weight(.semibold))
+  }
+
+  @Test("une fois suivi, le bouton gris porte un cœur plein et un chevron qui ouvre le menu")
+  func followingButton() {
+    #expect(CategoryFollowStyle.menuGlyph == "chevron.down")
   }
 
   @Test("le compteur de followers est en subheadline, comme sur la page de chaîne")

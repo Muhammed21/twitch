@@ -37,5 +37,7 @@
   "identity.IdentityUser.image",
   "identity.IdentityUser.name",
   "identity.IdentityUser.username",
-  "identity.IdentityVerification.identifier"
+  "identity.IdentityVerification.identifier",
+  "monetization.MonetizationEntitlement.userId",
+  "monetization.MonetizationProcessedWebhookEvent.payload"
 ]

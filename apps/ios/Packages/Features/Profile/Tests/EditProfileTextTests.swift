@@ -32,6 +32,7 @@ struct EditProfileTextTests {
   @Test("la feuille d'actions de la photo")
   func photoMenu() {
     #expect(String(localized: EditProfileText.chooseExisting) == "Choose existing photo")
+    #expect(String(localized: EditProfileText.takePhoto) == "Take photo")
     #expect(String(localized: EditProfileText.close) == "Close")
   }
 
@@ -44,6 +45,10 @@ struct EditProfileTextTests {
       (ProfileImageStore.Phase.failed(.banner, .tooSmall), "Your banner must be at least 1200×480."),
       (ProfileImageStore.Phase.failed(.avatar, .notSaved), "Couldn't save your profile picture. Try again."),
       (ProfileImageStore.Phase.failed(.banner, .notSaved), "Couldn't save your banner. Try again."),
+      (ProfileImageStore.Phase.failed(.avatar, .cameraMissing), "No camera is available on this device."),
+      (ProfileImageStore.Phase.failed(.banner, .cameraMissing), "No camera is available on this device."),
+      (ProfileImageStore.Phase.failed(.avatar, .cameraRefused), "Allow camera access in Settings to take a photo."),
+      (ProfileImageStore.Phase.failed(.banner, .cameraRefused), "Allow camera access in Settings to take a photo."),
     ]
   )
   @MainActor

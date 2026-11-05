@@ -180,6 +180,16 @@ describe("chat:message", () => {
     ).toMatchObject({ sessionId: SESSION_ID });
   });
 
+  it("décode l'URL de l'avatar de l'auteur", () => {
+    const author = {
+      id: AUTHOR_ID,
+      displayName: "Viewer de test",
+      avatarUrl: "https://images.twitch.example/images/avatar/a.webp",
+    };
+
+    expect(realtime.RealtimeChatMessage.parse(makeChatMessage({ author })).author).toEqual(author);
+  });
+
   it("garde un champ ajouté plus tard par le serveur", () => {
     expect(
       realtime.RealtimeChatMessage.parse(makeChatMessage({ firstMessage: true })),
@@ -195,6 +205,16 @@ describe("chat:message", () => {
     [
       "à un auteur sans identifiant",
       makeChatMessage({ author: { displayName: "Viewer de test" } }),
+    ],
+    [
+      "à un auteur dont l'avatar n'est pas une URL HTTP",
+      makeChatMessage({
+        author: {
+          id: AUTHOR_ID,
+          displayName: "Viewer de test",
+          avatarUrl: "ftp://images.twitch.example/a.webp",
+        },
+      }),
     ],
     ["sans corps", makeChatMessage({ body: undefined })],
     ["à une date qui n'est pas ISO 8601", makeChatMessage({ sentAt: "hier soir" })],

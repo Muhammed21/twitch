@@ -29,6 +29,7 @@ public final class CategoryHeaderCatalog {
 public final class CategoryHeaderStore {
   public let category: CategorySlug
   public let follow: CategoryFollowStore
+  public private(set) var isConfirmingUnfollow = false
   private var detail: CategoryDetail?
   private let details: any CategoryDetails
 
@@ -48,6 +49,26 @@ public final class CategoryHeaderStore {
 
   public var followers: Int? {
     follow.state?.followers ?? detail?.followers
+  }
+
+  public func followNow() async {
+    guard follow.state?.isFollowing == false else { return }
+    await follow.toggle()
+  }
+
+  public func requestUnfollow() {
+    isConfirmingUnfollow = follow.state?.isFollowing == true
+  }
+
+  public func cancelUnfollow() {
+    isConfirmingUnfollow = false
+  }
+
+  public func confirmUnfollow() async {
+    guard isConfirmingUnfollow else { return }
+    isConfirmingUnfollow = false
+    guard follow.state?.isFollowing == true else { return }
+    await follow.toggle()
   }
 
   public func load() async {

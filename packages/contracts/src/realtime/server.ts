@@ -3,7 +3,11 @@ import { z } from "zod";
 import { extensibleUnion, openEnum, Uuid } from "../conventions/schemas.ts";
 
 const RealtimeChatAuthor = z
-  .looseObject({ id: Uuid, displayName: z.string() })
+  .looseObject({
+    id: Uuid,
+    displayName: z.string(),
+    avatarUrl: z.url({ protocol: /^https?$/ }).optional(),
+  })
   .meta({ id: "RealtimeChatAuthor" });
 
 export const RealtimeChatMessage = z

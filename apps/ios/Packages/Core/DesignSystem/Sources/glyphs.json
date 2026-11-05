@@ -89,6 +89,21 @@
         "transparentAtOrBelow": 25,
         "opaqueAtOrAbove": 451
       }
+    },
+    {
+      "name": "editPencil",
+      "source": "docs/reference-ui/profil/modifier-profil--defaut.png",
+      "rect": {
+        "x": 1015,
+        "y": 957,
+        "width": 63,
+        "height": 63
+      },
+      "background": "#ffffff",
+      "opacity": {
+        "transparentAtOrBelow": 6,
+        "opaqueAtOrAbove": 505
+      }
     }
   ]
 }

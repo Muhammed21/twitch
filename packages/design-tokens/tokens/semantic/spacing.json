@@ -115,6 +115,11 @@
       "$value": "{core.dimension.75}",
       "$description": "Largeur de la pochette d'une catégorie dans la recherche, relevée sur l'app iOS Twitch (75 pt)."
     },
+    "x84": {
+      "$type": "dimension",
+      "$value": "{core.dimension.84}",
+      "$description": "Bouton gris d'une chaîne ou d'une catégorie suivie, relevé sur l'app iOS Twitch (84 pt)."
+    },
     "x88": {
       "$type": "dimension",
       "$value": "{core.dimension.88}",
