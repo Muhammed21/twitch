@@ -1,6 +1,6 @@
 import Dashboard
-import Foundation
 import DesignSystem
+import Foundation
 import Testing
 
 @Suite("Accueil du tableau de bord, hors ligne (IMG_9624)")

@@ -120,6 +120,19 @@ struct DashboardLiveFiguresTests {
     #expect(await source.opened == [channelID])
   }
 
+  @Test("arrêter le suivi efface le statut, pour qu'un suivi suivant ne montre pas les chiffres d'avant")
+  func stopClears() async throws {
+    let source = try FakeLiveStatusSource([.open([live(viewers: 4, startedSecondsAgo: 10)])])
+    let figures = DashboardLiveFigures(source: source, wait: { _ in })
+
+    let running = Task { await figures.follow(channelID) }
+    try await waitUntil { figures.status != nil }
+    running.cancel()
+    await running.value
+
+    #expect(figures.status == nil)
+  }
+
   @Test("une coupure efface le statut, puis reconnecte avec une attente qui double, remise à zéro par un statut reçu")
   func reconnects() async throws {
     let delays = Delays()

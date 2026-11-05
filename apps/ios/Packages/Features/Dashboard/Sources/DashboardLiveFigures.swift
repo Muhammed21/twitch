@@ -20,6 +20,7 @@ public final class DashboardLiveFigures {
   }
 
   public func follow(_ channel: ChannelID) async {
+    defer { status = nil }
     var failures = 0
     while !Task.isCancelled {
       do {
