@@ -1,11 +1,20 @@
 import DesignSystem
 import Domain
+import PhotosUI
 import SwiftUI
+import UIKit
 
 struct EditProfileSheet: View {
   @Environment(\.dismiss) private var dismiss
+  @Environment(ProfileImageStore.self) private var images: ProfileImageStore?
   @State private var account: Account
   @State private var hasChanges = false
+  @State private var menu: ImagePurpose?
+  @State private var target: ImagePurpose?
+  @State private var isPicking = false
+  @State private var selection: PhotosPickerItem?
+  @State private var avatar: Image?
+  @State private var banner: Image?
   private let onSaved: (Account) -> Void
 
   init(account: Account, onSaved: @escaping (Account) -> Void) {
@@ -16,21 +25,9 @@ struct EditProfileSheet: View {
   var body: some View {
     NavigationStack {
       ScrollView {
-        EditSection(label: String(localized: EditProfileText.about)) {
-          NavigationLink {
-            BioScreen(initialBio: account.bio ?? "") { saved in
-              account = saved
-              hasChanges = true
-              onSaved(saved)
-            }
-          } label: {
-            EditRow(
-              title: String(localized: EditProfileText.bio),
-              value: account.bio ?? String(localized: EditProfileText.bioPlaceholder)
-            )
-          }
-          .buttonStyle(.plain)
-          .accessibilityIdentifier("editProfile.bio")
+        VStack(alignment: .leading, spacing: LayoutRole.editSectionGap.points) {
+          if let images { brand(images) }
+          about
         }
         .padding(LayoutRole.screenInset.points)
       }
@@ -47,6 +44,102 @@ struct EditProfileSheet: View {
             .accessibilityIdentifier("editProfile.done")
         }
       }
+      .confirmationDialog(
+        Text(EditProfileText.picture),
+        isPresented: Binding(get: { menu != nil }, set: { if !$0 { menu = nil } }),
+        titleVisibility: .hidden,
+        presenting: menu
+      ) { purpose in
+        Button(String(localized: EditProfileText.chooseExisting)) {
+          target = purpose
+          isPicking = true
+        }
+        .accessibilityIdentifier("editProfile.photo.choose")
+        Button(String(localized: EditProfileText.close), role: .cancel) {}
+      }
+      .photosPicker(isPresented: $isPicking, selection: $selection, matching: .images)
+      .onChange(of: selection) { _, item in
+        guard let item, let purpose = target, let images else { return }
+        selection = nil
+        Task { await send(item, as: purpose, through: images) }
+      }
+    }
+  }
+
+  private func brand(_ images: ProfileImageStore) -> some View {
+    VStack(alignment: .leading, spacing: LayoutRole.editSectionLabelGap.points) {
+      EditSection(label: String(localized: EditProfileText.brand), footer: String(localized: EditProfileText.brandFooter)) {
+        BrandPreview(
+          avatar: avatar,
+          banner: banner,
+          isSendingAvatar: images.phase == .sending(.avatar),
+          isSendingBanner: images.phase == .sending(.banner)
+        )
+        imageRow(.avatar, title: EditProfileText.picture, hint: EditProfileText.pictureHint, images: images)
+        imageRow(.banner, title: EditProfileText.banner, hint: EditProfileText.bannerHint, images: images)
+      }
+      if let notice = EditProfileText.notice(for: images.phase) {
+        Text(notice)
+          .font(TextRole.body.font)
+          .foregroundStyle(ColorRole.textSecondary.color)
+          .accessibilityIdentifier("editProfile.image.notice")
+      }
+    }
+  }
+
+  private func imageRow(
+    _ purpose: ImagePurpose,
+    title: LocalizedStringResource,
+    hint: LocalizedStringResource,
+    images: ProfileImageStore
+  ) -> some View {
+    Button {
+      images.dismissFailure()
+      menu = purpose
+    } label: {
+      EditRow(title: String(localized: title), value: String(localized: hint), accessory: .edit)
+    }
+    .buttonStyle(.plain)
+    .disabled(images.phase == .sending(purpose))
+    .accessibilityIdentifier(purpose == .avatar ? "editProfile.picture" : "editProfile.banner")
+  }
+
+  private var about: some View {
+    EditSection(label: String(localized: EditProfileText.about)) {
+      NavigationLink {
+        BioScreen(initialBio: account.bio ?? "") { saved in
+          account = saved
+          hasChanges = true
+          onSaved(saved)
+        }
+      } label: {
+        EditRow(
+          title: String(localized: EditProfileText.bio),
+          value: account.bio ?? String(localized: EditProfileText.bioPlaceholder)
+        )
+      }
+      .buttonStyle(.plain)
+      .accessibilityIdentifier("editProfile.bio")
+    }
+  }
+
+  private func send(_ item: PhotosPickerItem, as purpose: ImagePurpose, through images: ProfileImageStore) async {
+    guard
+      let data = try? await item.loadTransferable(type: Data.self),
+      let jpeg = ProfileImageEncoding.jpeg(from: data)
+    else { return }
+    let preview = UIImage(data: jpeg).map { Image(uiImage: $0) }
+    switch purpose {
+    case .avatar:
+      guard let saved = await images.setAvatar(jpeg) else { return }
+      account = saved
+      avatar = preview
+      hasChanges = true
+      onSaved(saved)
+    case .banner:
+      guard await images.setBanner(jpeg) != nil else { return }
+      banner = preview
+      hasChanges = true
     }
   }
 }

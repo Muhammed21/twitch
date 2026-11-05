@@ -171,6 +171,8 @@ public enum LayoutRole: Sendable {
   case editImageRowPadding
   case brandAvatarSize
   case brandAvatarRing
+  case brandAvatarGlyphInset
+  case editRowIconSize
 
   public var points: CGFloat {
     switch self {
@@ -277,6 +279,8 @@ public enum LayoutRole: Sendable {
     case .editImageRowPadding: Spacing.x20
     case .brandAvatarSize: Spacing.x88
     case .brandAvatarRing: Spacing.x4
+    case .brandAvatarGlyphInset: Spacing.x14
+    case .editRowIconSize: Spacing.x20
     }
   }
 }

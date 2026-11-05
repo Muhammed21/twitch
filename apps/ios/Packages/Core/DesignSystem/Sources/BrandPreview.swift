@@ -7,11 +7,11 @@ public enum BrandStyle {
 }
 
 public enum BrandBackdrop: Equatable {
-  case gradient(from: ColorRole, to: ColorRole)
+  case gradient(top: ColorRole, bottom: ColorRole)
   case plain(ColorRole)
 
   public init(hasAvatar: Bool) {
-    self = hasAvatar ? .plain(.mediaBackground) : .gradient(from: .bannerStart, to: .bannerEnd)
+    self = hasAvatar ? .plain(.mediaBackground) : .gradient(top: .bannerStart, bottom: .bannerEnd)
   }
 }
 
@@ -48,8 +48,8 @@ public struct BrandPreview: View {
 
   @ViewBuilder private var backdrop: some View {
     switch BrandBackdrop(hasAvatar: avatar != nil) {
-    case let .gradient(from, to):
-      LinearGradient(colors: [from.color, to.color], startPoint: .top, endPoint: .bottom)
+    case let .gradient(top, bottom):
+      LinearGradient(colors: [top.color, bottom.color], startPoint: .top, endPoint: .bottom)
     case let .plain(role):
       role.color
     }
@@ -71,7 +71,7 @@ public struct BrandPreview: View {
     } else {
       DefaultAvatar(
         diameter: LayoutRole.brandAvatarSize.points,
-        glyphInset: LayoutRole.profileAvatarGlyphInset.points
+        glyphInset: LayoutRole.brandAvatarGlyphInset.points
       )
     }
   }

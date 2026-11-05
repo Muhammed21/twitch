@@ -77,13 +77,6 @@ public enum EditRowAccessory {
     }
   }
 
-  var font: Font {
-    switch self {
-    case .disclosure: TextRole.editRowValue.font
-    case .edit: TextRole.bioText.font
-    }
-  }
-
   var inset: LayoutRole {
     switch self {
     case .disclosure: .menuRowPadding
@@ -115,13 +108,25 @@ public struct EditRow: View {
           .lineLimit(2)
       }
       .frame(maxWidth: .infinity, alignment: .leading)
-      Image(systemName: accessory.systemImage)
-        .font(accessory.font)
+      accessoryImage
         .foregroundStyle(EditProfileStyle.rowValue.color)
         .accessibilityHidden(true)
     }
     .padding(.horizontal, accessory.inset.points)
     .padding(.vertical, LayoutRole.editRowPadding.points)
     .contentShape(Rectangle())
+  }
+
+  @ViewBuilder private var accessoryImage: some View {
+    switch accessory {
+    case .disclosure:
+      Image(systemName: accessory.systemImage)
+        .font(TextRole.editRowValue.font)
+    case .edit:
+      Image(systemName: accessory.systemImage)
+        .resizable()
+        .scaledToFit()
+        .frame(width: LayoutRole.editRowIconSize.points, height: LayoutRole.editRowIconSize.points)
+    }
   }
 }

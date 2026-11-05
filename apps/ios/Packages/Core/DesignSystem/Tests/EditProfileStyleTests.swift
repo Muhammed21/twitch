@@ -16,6 +16,8 @@ private let editProfileMeasures: [(LayoutRole, CGFloat)] = [
   (.editImageRowPadding, 20),
   (.brandAvatarSize, 88),
   (.brandAvatarRing, 4),
+  (.brandAvatarGlyphInset, 14),
+  (.editRowIconSize, 20),
 ]
 
 @Suite("Edit Profile : relevés sur profil/menu-compte--defaut, modifier-profil--defaut et modifier-bio--saisie-clavier-ouvert")
@@ -27,7 +29,7 @@ struct EditProfileStyleTests {
 
   @Test("sans photo, la bannière est le dégradé violet ; avec une photo de profil, elle passe au noir du média")
   func backdrop() {
-    #expect(BrandBackdrop(hasAvatar: false) == .gradient(from: .bannerStart, to: .bannerEnd))
+    #expect(BrandBackdrop(hasAvatar: false) == .gradient(top: .bannerStart, bottom: .bannerEnd))
     #expect(BrandBackdrop(hasAvatar: true) == .plain(.mediaBackground))
   }
 
