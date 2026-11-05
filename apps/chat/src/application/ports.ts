@@ -1,6 +1,6 @@
 import type { ChatSanction } from "@repo/authorization";
 
-import type { RoomState } from "../domain/decide.ts";
+import type { RoomState, TurboStanding } from "../domain/decide.ts";
 
 export type RoomDirectory = { find(channelId: string): Promise<RoomState | undefined> };
 
@@ -52,9 +52,4 @@ export type LocalViewWriter = {
   }): Promise<void>;
 };
 
-export type ChatterTurbo = {
-  readonly expiresAt: Date | null;
-  readonly chatColor: string | null;
-};
-
-export type TurboProfiles = { turboOf(userId: string): Promise<ChatterTurbo> };
+export type TurboProfiles = { turboOf(userId: string): Promise<TurboStanding> };

@@ -14,7 +14,11 @@ import { loadEnv } from "./config/env.ts";
 import { createConsumerRedis, startEventConsumer } from "./infrastructure/event-consumer.ts";
 import { redisConnectionLog } from "./infrastructure/redis-connection-log.ts";
 import { redisLocalViewWriter } from "./infrastructure/redis-local-view-writer.ts";
-import { redisChatterProfiles, redisRoomDirectory } from "./infrastructure/redis-local-views.ts";
+import {
+  redisChatterProfiles,
+  redisRoomDirectory,
+  redisTurboProfiles,
+} from "./infrastructure/redis-local-views.ts";
 import { redisRevokedSessions } from "./infrastructure/redis-revoked-sessions.ts";
 import { redisTokenBuckets } from "./infrastructure/redis-token-buckets.ts";
 import { subscribeToSessionRevocations } from "./infrastructure/session-revocation-subscriber.ts";
@@ -108,6 +112,7 @@ try {
   );
   const rooms = createRoomRegistry(redisRoomDirectory(redis));
   const server = await startChatServer({
+    turbos: redisTurboProfiles(redis),
     port: config.httpPort,
     verifier: createAccessTokenVerifier({
       ...config.accessTokens,

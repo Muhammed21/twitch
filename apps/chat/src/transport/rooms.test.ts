@@ -7,13 +7,14 @@ import { realtime } from "@repo/contracts";
 
 import { createLocalTokenBuckets } from "../application/local-token-buckets.ts";
 import { createMessageSender } from "../application/message-sender.ts";
-import type { ChatterProfiles, RoomDirectory } from "../application/ports.ts";
+import type { ChatterProfiles, RoomDirectory, TurboProfiles } from "../application/ports.ts";
 import { createRoomRegistry } from "../application/room-registry.ts";
 import type { RoomState } from "../domain/decide.ts";
 import { startChatServer } from "./chat-server.ts";
 import { LocalAdapter } from "./testing/local-adapter.ts";
 import { SATURATION_LIMITS } from "./testing/saturation.ts";
 import { makeTokenAuthority } from "./testing/tokens.ts";
+import { NO_TURBO } from "./testing/turbo.ts";
 
 const ALICE = randomUUID();
 const BOB = randomUUID();
@@ -51,10 +52,12 @@ const CHATTERS_WITH_AVATAR: ChatterProfiles = {
 const startServer = async ({
   directory,
   chatters = KNOWN_CHATTERS,
+  turbos = NO_TURBO,
   images,
 }: {
   directory: RoomDirectory;
   chatters?: ChatterProfiles;
+  turbos?: TurboProfiles;
   images?: (key: string) => string;
 }) => {
   const authority = await makeTokenAuthority();
@@ -67,6 +70,7 @@ const startServer = async ({
       logs.push(entry);
     },
     chatters,
+    turbos,
     rooms,
     messages: createMessageSender(createLocalTokenBuckets()),
     saturation: SATURATION_LIMITS,
@@ -503,5 +507,101 @@ describe("profil du chatter", () => {
 
     expect(error.message).toBe("chatter_unavailable");
     expect(logs).toContainEqual({ msg: "profil illisible", error: "Error: Redis injoignable" });
+  });
+});
+
+describe("badge Turbo et couleur de pseudo dans les messages diffusés (ADR 0051)", () => {
+  const CHOSEN_COLOR = "#9147FF";
+
+  const turboFor = (standings: ReadonlyMap<string, { expiresAt: Date | null }>): TurboProfiles => ({
+    turboOf: async (userId) => ({
+      expiresAt: standings.get(userId)?.expiresAt ?? null,
+      chatColor: CHOSEN_COLOR,
+    }),
+  });
+
+  const authorOfNextMessage = async (
+    { connectAs }: Awaited<ReturnType<typeof startServer>>,
+    channelId: string,
+  ) => {
+    const alice = await connectAs(ALICE);
+    alice.emit("room:join", { channelId });
+    const received = nextMessage(alice);
+    expect(await send(alice, channelId)).toBeUndefined();
+    return realtime.RealtimeChatMessage.parse(await received).author;
+  };
+
+  it("diffuse le badge et la couleur choisie d'un abonné Turbo actif", async () => {
+    const room = makeOfflineRoom();
+    const started = await startServer({
+      directory: listDirectory([room]),
+      turbos: turboFor(new Map([[ALICE, { expiresAt: new Date(Date.now() + 3_600_000) }]])),
+    });
+
+    expect(await authorOfNextMessage(started, room.channelId)).toStrictEqual({
+      id: ALICE,
+      displayName: "Alice",
+      badges: ["turbo"],
+      color: CHOSEN_COLOR,
+    });
+  });
+
+  it("ignore la couleur enregistrée par un chatter qui n'est pas abonné", async () => {
+    const room = makeOfflineRoom();
+    const started = await startServer({
+      directory: listDirectory([room]),
+      turbos: turboFor(new Map()),
+    });
+
+    expect(await authorOfNextMessage(started, room.channelId)).toStrictEqual({
+      id: ALICE,
+      displayName: "Alice",
+      badges: [],
+    });
+  });
+
+  it("retire badge et couleur quand l'échéance passe pendant la connexion, sans révocation", async () => {
+    const room = makeOfflineRoom();
+    const expiresAt = new Date(Date.now() + 300);
+    const started = await startServer({
+      directory: listDirectory([room]),
+      turbos: turboFor(new Map([[ALICE, { expiresAt }]])),
+    });
+    const alice = await started.connectAs(ALICE);
+    alice.emit("room:join", { channelId: room.channelId });
+    await vi.waitFor(() => expect(Date.now()).toBeGreaterThan(expiresAt.getTime()), {
+      timeout: 2000,
+      interval: 50,
+    });
+    const received = nextMessage(alice);
+
+    expect(await send(alice, room.channelId)).toBeUndefined();
+
+    expect(realtime.RealtimeChatMessage.parse(await received).author).toStrictEqual({
+      id: ALICE,
+      displayName: "Alice",
+      badges: [],
+    });
+  });
+
+  it("donne le badge à un abonné de la connexion en cours dès la revalidation périodique", async () => {
+    const room = makeOfflineRoom();
+    const standings = new Map<string, { expiresAt: Date | null }>();
+    const started = await startServer({
+      directory: listDirectory([room]),
+      turbos: turboFor(standings),
+    });
+    const alice = await started.connectAs(ALICE);
+    alice.emit("room:join", { channelId: room.channelId });
+    standings.set(ALICE, { expiresAt: new Date(Date.now() + 3_600_000) });
+    await started.server.revalidateSessions();
+    const received = nextMessage(alice);
+
+    expect(await send(alice, room.channelId)).toBeUndefined();
+
+    expect(realtime.RealtimeChatMessage.parse(await received).author).toMatchObject({
+      badges: ["turbo"],
+      color: CHOSEN_COLOR,
+    });
   });
 });

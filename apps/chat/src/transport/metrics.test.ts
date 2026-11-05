@@ -13,12 +13,14 @@ import { LocalAdapter } from "./testing/local-adapter.ts";
 import { readMetrics } from "./testing/metrics.ts";
 import { SATURATION_LIMITS } from "./testing/saturation.ts";
 import { makeTokenAuthority } from "./testing/tokens.ts";
+import { NO_TURBO } from "./testing/turbo.ts";
 
 const SANCTION_DELAY = "chat_sanction_exclusion_delay_seconds";
 
 const startServer = async (room: RoomState) => {
   const authority = await makeTokenAuthority();
   const server = await startChatServer({
+    turbos: NO_TURBO,
     port: 0,
     verifier: authority.verifier(),
     log: () => undefined,

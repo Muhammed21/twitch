@@ -7,7 +7,7 @@ import { realtime } from "@repo/contracts";
 
 import type { MessageSender } from "../application/message-sender.ts";
 import type { RoomRegistry } from "../application/room-registry.ts";
-import type { AcceptedMessage } from "../domain/decide.ts";
+import { type AcceptedMessage, type TurboStanding, turboPerks } from "../domain/decide.ts";
 
 export type ChatSession = {
   readonly chatter: ChatterContext;
@@ -15,8 +15,8 @@ export type ChatSession = {
     readonly id: string;
     readonly displayName: string;
     readonly avatarUrl?: string;
-    readonly badges: readonly string[];
   };
+  readonly turbo: TurboStanding;
   readonly credentials: { readonly sid: string; readonly token: string };
 };
 
@@ -36,8 +36,13 @@ const isAck = (value: unknown): value is Ack => typeof value === "function";
 
 const toRealtimeMessage = (
   { authorId: _authorId, sentAt, ...message }: AcceptedMessage,
-  author: ChatSession["author"],
-) => ({ id: randomUUID(), ...message, author, sentAt: sentAt.toISOString() });
+  { author, turbo }: Pick<ChatSession, "author" | "turbo">,
+) => ({
+  id: randomUUID(),
+  ...message,
+  author: { ...author, ...turboPerks({ turbo, now: sentAt }) },
+  sentAt: sentAt.toISOString(),
+});
 
 export const bindChatEvents = ({
   io,
@@ -116,7 +121,7 @@ export const bindChatEvents = ({
       }
       io.to(roomOf(channelId))
         .except(SATURATED_ROOM)
-        .emit("chat:message", toRealtimeMessage(sent.value, socket.data.author));
+        .emit("chat:message", toRealtimeMessage(sent.value, socket.data));
       onBroadcast();
       ack();
     };

@@ -7,6 +7,7 @@ import { startChatServer } from "../chat-server.ts";
 import { LocalAdapter } from "./local-adapter.ts";
 import { SATURATION_LIMITS } from "./saturation.ts";
 import { makeTokenAuthority } from "./tokens.ts";
+import { NO_TURBO } from "./turbo.ts";
 
 const REVOKED_SESSION = "sid-revoked";
 const SESSION_REVOKED_LATER = "sid-revoked-later";
@@ -16,6 +17,7 @@ const channelId = randomUUID();
 const authority = await makeTokenAuthority();
 
 const server = await startChatServer({
+  turbos: NO_TURBO,
   port: 0,
   verifier: authority.verifier({ isRevoked: async (sid) => sid === REVOKED_SESSION }),
   log: () => {},
