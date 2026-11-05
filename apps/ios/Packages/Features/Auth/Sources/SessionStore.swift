@@ -36,6 +36,8 @@ public final class SessionStore {
   private let authenticator: any WebAuthenticator
   private let randomBytes: PKCE.RandomBytes
   private let now: @Sendable () -> Date
+  private let analytics: any Analytics & AnalyticsIdentity
+  private var isLoggingOut = false
 
   public init(
     configuration: OAuthConfiguration,
@@ -43,7 +45,8 @@ public final class SessionStore {
     accounts: any AccountRepository,
     authenticator: any WebAuthenticator,
     randomBytes: @escaping PKCE.RandomBytes,
-    now: @escaping @Sendable () -> Date
+    now: @escaping @Sendable () -> Date,
+    analytics: any Analytics & AnalyticsIdentity
   ) {
     self.configuration = configuration
     self.session = session
@@ -51,6 +54,7 @@ public final class SessionStore {
     self.authenticator = authenticator
     self.randomBytes = randomBytes
     self.now = now
+    self.analytics = analytics
   }
 
   public func run() async {
@@ -80,13 +84,17 @@ public final class SessionStore {
     phase = .signedIn(nil)
     isGreetingNewAccount = intent == .signUp
     await loadAccount()
+    guard case .signedIn = phase else { return }
+    analytics.capture(intent == .signUp ? .accountSignedUp : .accountSignedIn)
   }
 
   public func resolveLogOut(_ choice: LogOutChoice) async {
     guard choice == .logOut else { return }
+    isLoggingOut = true
     do {
       try await session.signOut()
     } catch {
+      isLoggingOut = false
       hasLogOutFailure = true
     }
   }
@@ -110,6 +118,11 @@ public final class SessionStore {
 
   private func follow() async {
     for await status in session.statusUpdates where status == .signedOut {
+      if isLoggingOut {
+        analytics.capture(.accountSignedOut)
+        isLoggingOut = false
+      }
+      analytics.reset()
       phase = .signedOut
       isGreetingNewAccount = false
     }
@@ -119,6 +132,7 @@ public final class SessionStore {
     do {
       let account = try await accounts.currentAccount()
       guard case .signedIn = phase else { return }
+      analytics.identify(account.id)
       phase = .signedIn(account)
     } catch SessionError.signedOut {
       try? await session.signOut()

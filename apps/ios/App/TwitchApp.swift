@@ -1,3 +1,4 @@
+import Analytics
 import Auth
 import Channel
 import Chat
@@ -249,6 +250,7 @@ struct ChannelScreen: View {
 }
 
 struct Stores {
+  let analytics: ProductAnalytics
   let session: SessionStore
   let launch: LaunchStore
   let home: HomeStore
@@ -270,31 +272,17 @@ struct Stores {
 
 @MainActor
 enum Composition {
-  nonisolated static func clientVersion(info: [String: Any]) -> String? {
-    info["CFBundleShortVersionString"] as? String
-  }
-
-  nonisolated static func chatBaseURL(info: [String: Any]) -> URL? {
-    guard let value = info["CHAT_BASE_URL"] as? String, let url = URL(string: value), url.host() != nil else {
-      return nil
-    }
-    return url
-  }
-
   static func stores(info: [String: Any]) -> Stores {
     let configuration = oauthConfiguration(info: info)
-    guard let version = clientVersion(info: info), let currentVersion = try? AppVersion(version) else {
-      fatalError("Info.plist : CFBundleShortVersionString manquant ou mal formé.")
-    }
-    guard let chatBaseURL = chatBaseURL(info: info) else {
-      fatalError("Info.plist : CHAT_BASE_URL manquant ou mal formé.")
-    }
+    let (version, currentVersion) = requiredVersion(info: info)
+    let chatBaseURL = requiredChatBaseURL(info: info)
     let transport = ClientVersionTransport(wrapping: URLSessionHTTPTransport(), version: version)
     let session = OAuthSession(
       endpoint: TokenEndpoint(configuration: configuration, transport: transport),
       store: KeychainTokenStore(service: Bundle.main.bundleIdentifier ?? "com.muhammedcavus.twitch")
     )
     let now: @Sendable () -> Date = { Date.now }
+    let analytics = ProductAnalytics.live(info: info, defaults: .standard)
     let player = PlayerController(player: AVMediaPlayer(), startupRetry: .every(.seconds(2), attempts: 15))
     let channels = ChannelClient(apiBaseURL: configuration.apiBaseURL, transport: transport)
     let channelPlayback = ChannelPlayback(
@@ -302,8 +290,9 @@ enum Composition {
       playback: PlaybackClient(apiBaseURL: configuration.apiBaseURL, transport: transport),
       controller: player
     )
-    let sessionStore = Self.sessionStore(configuration: configuration, session: session, transport: transport, now: now)
+    let sessionStore = Self.sessionStore(configuration: configuration, session: session, transport: transport, analytics: analytics, now: now)
     return Stores(
+      analytics: analytics,
       session: sessionStore,
       launch: LaunchStore(
         source: BootstrapClient(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
@@ -372,6 +361,7 @@ enum Composition {
     configuration: OAuthConfiguration,
     session: OAuthSession,
     transport: ClientVersionTransport,
+    analytics: ProductAnalytics,
     now: @escaping @Sendable () -> Date
   ) -> SessionStore {
     SessionStore(
@@ -380,7 +370,8 @@ enum Composition {
       accounts: AccountClient(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
       authenticator: SystemWebAuthenticator(),
       randomBytes: PKCE.systemRandomBytes,
-      now: now
+      now: now,
+      analytics: analytics
     )
   }
 }
