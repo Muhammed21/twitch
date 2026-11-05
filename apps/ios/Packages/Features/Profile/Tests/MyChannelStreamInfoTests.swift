@@ -45,7 +45,32 @@ struct MyChannelStreamInfoTests {
 
     await store.load()
 
-    #expect(store.info.language == .german)
+    #expect(store.proposedInfo.language == .german)
+    #expect(store.info.language == nil)
+  }
+
+  @Test("enregistre la langue proposée quand la chaîne n'en a pas encore")
+  func savesProposedLanguage() async throws {
+    let repository = try FakeMyChannel(owned: .success(makeOwnedChannel()))
+    let store = makeStore(repository, deviceLanguage: .german)
+    await store.load()
+    let draft = try #require(store.proposedInfo.adding(tag: "speedrun"))
+
+    await store.save(draft)
+
+    #expect(await repository.changes == [
+      StreamInfoChange(title: "Speedrun du dimanche", category: .keep, tags: ["speedrun"], language: .german),
+    ])
+  }
+
+  @Test("garde la langue de la chaîne plutôt que celle de l'appareil")
+  func keepsChannelLanguage() async throws {
+    let channels = FakeChannels(title: "Rank", category: nil, language: .french)
+    let store = try makeStore(FakeMyChannel(owned: .success(makeOwnedChannel())), channels: channels, deviceLanguage: .german)
+
+    await store.load()
+
+    #expect(store.proposedInfo.language == .french)
   }
 
   @Test("enregistre les infos du stream et garde celles que rend le serveur")
