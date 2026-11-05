@@ -10,8 +10,13 @@ struct PersonalizationRoot: View {
   static let steps: [PersonalizationStep] = [.intro, .categories, .interests, .contentPreferences, .liveLanguage, .summary]
 
   @State private var journey: PersonalizationJourney
+  @State private var categories: CategoryChoices
+  @State private var interests: InterestChoices
 
-  init(session: SessionStore, preferences: PreferencesStore) {
+  init(session: SessionStore, preferences: PreferencesStore, sources: PersonalizationSources) {
+    let choices = sources.choices(preferences: preferences)
+    _categories = State(initialValue: choices.categories)
+    _interests = State(initialValue: choices.interests)
     _journey = State(initialValue: PersonalizationJourney(
       steps: Self.steps,
       now: { Date.now },
@@ -25,6 +30,8 @@ struct PersonalizationRoot: View {
   var body: some View {
     PersonalizationScreen()
       .environment(journey)
+      .environment(categories)
+      .environment(interests)
   }
 
   @MainActor
@@ -44,16 +51,31 @@ struct PersonalizationRoot: View {
   }
 }
 
+struct PersonalizationSources {
+  let categories: any CategoryDirectory
+  let following: any CategoryFollowing
+  let tags: any CategoryTagDirectory
+
+  @MainActor
+  func choices(preferences: PreferencesStore) -> (categories: CategoryChoices, interests: InterestChoices) {
+    (
+      CategoryChoices(directory: categories, following: following),
+      InterestChoices(tags: tags, preferences: preferences)
+    )
+  }
+}
+
 extension Composition {
-  static func categoryChoices(
+  static func personalizationSources(
     apiBaseURL: URL,
     transport: ClientVersionTransport,
     tokens: OAuthSession,
     now: @escaping @Sendable () -> Date
-  ) -> CategoryChoices {
-    CategoryChoices(
-      directory: CategoryDirectoryClient(apiBaseURL: apiBaseURL, transport: transport),
-      following: CategoryFollowClient(apiBaseURL: apiBaseURL, transport: transport, tokens: tokens, now: now)
+  ) -> PersonalizationSources {
+    PersonalizationSources(
+      categories: CategoryDirectoryClient(apiBaseURL: apiBaseURL, transport: transport),
+      following: CategoryFollowClient(apiBaseURL: apiBaseURL, transport: transport, tokens: tokens, now: now),
+      tags: CategoryTagClient(apiBaseURL: apiBaseURL, transport: transport)
     )
   }
 }
