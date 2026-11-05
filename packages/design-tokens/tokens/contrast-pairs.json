@@ -179,6 +179,12 @@
       "background": "color.banner.start",
       "min": 3,
       "note": "Anneau de l'avatar sur la bannière par défaut d'Edit Profile"
+    },
+    {
+      "foreground": "color.icon.disabled",
+      "background": "color.background.primary",
+      "min": 1.5,
+      "note": "Icône d'un contrôle désactivé, exemptée de SC 1.4.11 ; relevée grisée sur docs/new-reference-ui/IMG_9626"
     }
   ]
 }
