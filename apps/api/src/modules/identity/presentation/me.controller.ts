@@ -49,9 +49,9 @@ class AvatarUploadRequest extends createZodDto(z.strictObject({ uploadId: Uuid }
 
 class ChatColorRequest extends requestDto(
   z.strictObject({
-    chatColor: z.string().nullable().meta({
+    chatColor: z.string().nullable().optional().meta({
       description:
-        "Couleur du pseudo dans le chat, #RRGGBB (casse indifférente, enregistrée en majuscules) ; null revient à la couleur par défaut.",
+        "Couleur du pseudo dans le chat, #RRGGBB (casse indifférente, enregistrée en majuscules) ; null ou une clé absente revient à la couleur par défaut.",
     }),
   }),
 ) {}
@@ -147,7 +147,7 @@ export class MeController {
   ): Promise<z.input<typeof responses.Me>> {
     const changed = await this.changeChatColor({
       userId: identity.userId,
-      chatColor: body.chatColor,
+      chatColor: body.chatColor ?? null,
     });
     if (!changed.ok) {
       throw chatColorProblem(changed.error);
