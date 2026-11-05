@@ -19,6 +19,28 @@ struct JourneyMotionTests {
     #expect(JourneyMotion.pageEdges(direction: .backward) == (.leading, .trailing))
   }
 
+  @Test("les éléments d'une page entrent l'un après l'autre, décalés de 0,06 s, en remontant de 24 pt")
+  func entrance() {
+    #expect(JourneyMotion.stagger == 0.06)
+    #expect(JourneyMotion.entranceDistance == 24)
+    #expect(JourneyMotion.entrance(index: 0, reduceMotion: false) == .spring(response: 0.5, dampingFraction: 0.86).delay(0))
+    #expect(JourneyMotion.entrance(index: 3, reduceMotion: false) == .spring(response: 0.5, dampingFraction: 0.86).delay(0.18))
+    #expect(JourneyMotion.entranceOffset(isShown: false, reduceMotion: false) == 24)
+    #expect(JourneyMotion.entranceOffset(isShown: true, reduceMotion: false) == 0)
+  }
+
+  @Test("avec Réduire les animations, une entrée est un fondu court sans décalage ni déplacement", arguments: [0, 3])
+  func entranceReduced(index: Int) {
+    #expect(JourneyMotion.entrance(index: index, reduceMotion: true) == .easeInOut(duration: 0.2))
+    #expect(JourneyMotion.entranceOffset(isShown: false, reduceMotion: true) == 0)
+  }
+
+  @Test("le récap s'anime ; avec Réduire les animations, il s'affiche dans son état final")
+  func summaryRevealed() {
+    #expect(!JourneyMotion.startsRevealed(reduceMotion: false))
+    #expect(JourneyMotion.startsRevealed(reduceMotion: true))
+  }
+
   @Test("un choix réagit par un ressort court de 0,3 s ; avec Réduire les animations, le même fondu")
   func selection() {
     #expect(JourneyMotion.selectionResponse == 0.3)

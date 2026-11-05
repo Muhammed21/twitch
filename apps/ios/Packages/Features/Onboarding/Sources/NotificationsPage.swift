@@ -12,11 +12,13 @@ struct NotificationsPage: View {
       Spacer(minLength: 0)
       GlitchMark()
         .frame(width: LayoutRole.journeyHeroWidth.points)
+        .journeyEntrance(0)
       Text(PersonalizationText.notificationsTitle)
         .font(TextRole.journeyTitle.font)
         .foregroundStyle(JourneyStyle.title.color)
         .accessibilityAddTraits(.isHeader)
         .padding(.top, LayoutRole.journeyContentGap.points)
+        .journeyEntrance(1)
       Spacer(minLength: 0)
       Button(PersonalizationText.turnOnNotifications) {
         isAsking = true
@@ -28,6 +30,7 @@ struct NotificationsPage: View {
       .buttonStyle(ActionButtonStyle(.primary))
       .disabled(isAsking)
       .accessibilityIdentifier("journey.notifications.turnOn")
+      .journeyEntrance(2)
       Button(PersonalizationText.remindMeLater) { journey.skip() }
         .font(TextRole.journeyControl.font)
         .foregroundStyle(JourneyStyle.skip.color)
@@ -35,10 +38,12 @@ struct NotificationsPage: View {
         .padding(.top, LayoutRole.journeyMessageGap.points)
         .disabled(isAsking)
         .accessibilityIdentifier("journey.notifications.later")
+        .journeyEntrance(3)
       Text(PersonalizationText.notificationsFooter)
         .font(TextRole.editSectionFooter.font)
         .foregroundStyle(JourneyStyle.message.color)
         .padding(.top, LayoutRole.journeyMessageGap.points)
+        .journeyEntrance(4)
     }
     .multilineTextAlignment(.center)
     .padding([.horizontal, .bottom], LayoutRole.screenInset.points)
