@@ -25,7 +25,10 @@ export const Profile = z
 export const MobileBootstrap = z
   .looseObject({
     minSupportedVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-    flags: z.looseObject({ session_replay: z.boolean() }),
+    flags: z.looseObject({
+      session_replay: z.boolean(),
+      exp_paywall_variant: z.string().min(1).optional(),
+    }),
     profile: Profile.optional(),
   })
   .meta({ id: "MobileBootstrap" });

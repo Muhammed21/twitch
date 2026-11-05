@@ -6,10 +6,10 @@ actor FakeTokenProvider: AccessTokenProvider {
   private(set) var instants: [Date] = []
   private let current: String
   private let renewed: String
-  private let failure: SessionError?
-  private let renewalFailure: SessionError?
+  private let failure: (any Error)?
+  private let renewalFailure: (any Error)?
 
-  init(current: String = "access-1", renewed: String = "access-2", failure: SessionError? = nil, renewalFailure: SessionError? = nil) {
+  init(current: String = "access-1", renewed: String = "access-2", failure: (any Error)? = nil, renewalFailure: (any Error)? = nil) {
     self.current = current
     self.renewed = renewed
     self.failure = failure
