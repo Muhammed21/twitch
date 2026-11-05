@@ -3,7 +3,11 @@ import {
   type CategoryFollowView,
 } from "../domain/category-follow-view.ts";
 import { applyCategoryEvent, type CategoryView } from "../domain/category-view.ts";
-import { isCategoryEvent, isCategoryFollowEvent } from "../domain/discovery-event.ts";
+import {
+  isAccountAvatarEvent,
+  isCategoryEvent,
+  isCategoryFollowEvent,
+} from "../domain/discovery-event.ts";
 import { applyDiscoveryEvent, type LiveChannelView } from "../domain/live-channel-view.ts";
 import { DISCOVERY_EVENT_READERS, type PublishedEvent } from "./read-discovery-event.ts";
 
@@ -50,6 +54,9 @@ const foldInto =
     const decoded = read(event);
     if (decoded === null) {
       accumulator.skippedIds.push(event.id);
+      return;
+    }
+    if (isAccountAvatarEvent(decoded)) {
       return;
     }
     if (isCategoryFollowEvent(decoded)) {
