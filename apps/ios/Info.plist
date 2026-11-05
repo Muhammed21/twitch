@@ -22,6 +22,8 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Take a photo for your profile picture or banner.</string>
 	<key>OAUTH_CLIENT_ID</key>
 	<string>$(OAUTH_CLIENT_ID)</string>
 	<key>POSTHOG_HOST</key>

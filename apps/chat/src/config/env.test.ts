@@ -21,6 +21,16 @@ describe("loadEnv", () => {
     });
   });
 
+  it("lit la base publique des images, pour l'avatar des auteurs", () => {
+    expect(
+      loadEnv(makeEnv({ S3_PUBLIC_BASE_URL: "https://images.twitch.example" })).imageBaseUrl,
+    ).toBe("https://images.twitch.example");
+  });
+
+  it("n'a pas de base d'images sans S3_PUBLIC_BASE_URL", () => {
+    expect(Object.keys(loadEnv(makeEnv()))).not.toContain("imageBaseUrl");
+  });
+
   it("lit les seuils de saturation des clients lents", () => {
     expect(
       loadEnv(
@@ -60,6 +70,7 @@ describe("loadEnv", () => {
   it.each([
     ["une API en http explicite", { CHAT_API_BASE_URL: "http://api.twitch.test" }],
     ["un Redis en TLS", { REDIS_URL: "rediss://cache.twitch.test:6380" }],
+    ["une base d'images locale en http", { S3_PUBLIC_BASE_URL: "http://127.0.0.1:8333/local" }],
   ])("accepte %s", (_name, overrides) => {
     expect(() => loadEnv(makeEnv(overrides))).not.toThrow();
   });
@@ -86,6 +97,21 @@ describe("loadEnv", () => {
     ],
     ["avec un Redis qui n'est pas une URL redis", makeEnv({ REDIS_URL: "http://x" }), "REDIS_URL"],
     ["avec un port hors plage", makeEnv({ CHAT_HTTP_PORT: "70000" }), "CHAT_HTTP_PORT"],
+    [
+      "avec une base d'images hors HTTP",
+      makeEnv({ S3_PUBLIC_BASE_URL: "ftp://images.twitch.example" }),
+      "S3_PUBLIC_BASE_URL",
+    ],
+    [
+      "avec une base d'images au schéma qui finit par http",
+      makeEnv({ S3_PUBLIC_BASE_URL: "xhttp://images" }),
+      "S3_PUBLIC_BASE_URL",
+    ],
+    [
+      "avec une base d'images au schéma qui commence par http",
+      makeEnv({ S3_PUBLIC_BASE_URL: "httpx://images" }),
+      "S3_PUBLIC_BASE_URL",
+    ],
     ["avec un port nul", makeEnv({ CHAT_HTTP_PORT: "0" }), "CHAT_HTTP_PORT"],
     [
       "avec un seuil de paquets nul",

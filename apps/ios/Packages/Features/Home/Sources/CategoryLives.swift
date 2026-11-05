@@ -66,6 +66,19 @@ public struct CategoryLivesScreen: View {
         ColorRole.background.color.ignoresSafeArea()
       }
     }
+    .confirmDialog(
+      isPresented: header?.isConfirmingUnfollow == true,
+      onDismiss: { header?.cancelUnfollow() },
+      dialog: {
+        ConfirmDialog(
+          message: BrowseText.unfollowQuestion(name: heading.name),
+          actions: [
+            DialogAction(title: BrowseText.unfollow, kind: .destructive) { Task { await header?.confirmUnfollow() } },
+            DialogAction(title: BrowseText.cancel, kind: .cancel) { header?.cancelUnfollow() },
+          ]
+        )
+      }
+    )
     .navigationTitle(heading.name)
     .navigationBarTitleDisplayMode(.inline)
     .task(id: heading.slug) {
@@ -81,10 +94,11 @@ public struct CategoryLivesScreen: View {
       CategoryFollowAction(
         isFollowing: state.isFollowing,
         label: BrowseText.followLabel(isFollowing: state.isFollowing),
-        isEnabled: !header.follow.isPending
-      ) {
-        Task { await header.follow.toggle() }
-      }
+        unfollowLabel: BrowseText.unfollow,
+        isEnabled: !header.follow.isPending,
+        onFollow: { Task { await header.followNow() } },
+        onUnfollow: { header.requestUnfollow() }
+      )
     }
   }
 }

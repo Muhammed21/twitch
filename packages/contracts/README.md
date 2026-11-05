@@ -51,7 +51,7 @@ Les schémas de requête restent en `z.object` strict : refuser un champ inconnu
 - deux événements qui donnent le même identifiant Swift (`a:b_c` et `a_b:c`) ;
 - une propriété énumérée dont les valeurs changent d'un événement à l'autre.
 
-`pnpm generate` écrit les événements client en Swift dans `apps/ios/Packages/Domain/Sources/AnalyticsEvent+Generated.swift` :
+`pnpm generate` (tâche `generate` de `@repo/ios`, qui appelle `generate:swift`) écrit les événements client en Swift dans `apps/ios/Packages/Domain/Sources/AnalyticsEvent+Generated.swift` :
 
 - `AnalyticsEventName` ;
 - une énumération par propriété énumérée, nommée d'après la clé et partagée entre les événements (`step` → `AnalyticsStep`) ;

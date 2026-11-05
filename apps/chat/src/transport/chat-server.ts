@@ -130,6 +130,7 @@ export const startChatServer = async ({
   messages,
   saturation,
   adapter,
+  imageUrlOf,
 }: {
   port: number;
   verifier: TokenVerifier;
@@ -139,6 +140,7 @@ export const startChatServer = async ({
   messages: MessageSender;
   saturation: SaturationLimits;
   adapter: SocketOptions["adapter"];
+  imageUrlOf?: (key: string) => string;
 }) => {
   const engine = new EngineServer(ENGINE_OPTIONS);
   const io: ChatIo = new SocketServer({ adapter });
@@ -153,16 +155,23 @@ export const startChatServer = async ({
 
   const sessions = new WeakMap<IncomingMessage, Promise<ChatSession | undefined>>();
   const openSession = async ({ userId, sid }: AccessTokenIdentity, token: string) => {
-    const [displayName, sanctions] = await Promise.all([
+    const [displayName, sanctions, avatarKey] = await Promise.all([
       chatters.displayNameOf(userId),
       chatters.sanctionsOf(userId),
+      chatters.avatarKeyOf(userId),
     ]);
     if (displayName === null) {
       return undefined;
     }
     return {
       chatter: { ...chatterContextFor({ userId, assignments: [], now: new Date() }), sanctions },
-      author: { id: userId, displayName },
+      author: {
+        id: userId,
+        displayName,
+        ...(avatarKey === null || imageUrlOf === undefined
+          ? {}
+          : { avatarUrl: imageUrlOf(avatarKey) }),
+      },
       credentials: { sid, token },
     };
   };

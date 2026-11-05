@@ -128,6 +128,13 @@ public enum BrowseText {
     return AttributedString(localized: "category.followers \(number)", bundle: .module)
   }
 
+  static var unfollow: String { localized("category.unfollow") }
+  static var cancel: String { localized("category.cancel") }
+
+  static func unfollowQuestion(name: String) -> String {
+    String(localized: "category.unfollow.question \(name)", bundle: .module)
+  }
+
   static func followLabel(isFollowing: Bool) -> String {
     isFollowing ? localized("category.following") : localized("category.follow")
   }
