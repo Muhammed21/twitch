@@ -1,0 +1,57 @@
+import { alreadyProcessed } from "@repo/db";
+
+import type { CategoryFollowProjection } from "../application/project-discovery-event.ts";
+import { followerDelta } from "../domain/category-follow-view.ts";
+import {
+  DISCOVERY_HANDLER,
+  type DiscoveryPrisma,
+  PROCESSED_EVENTS,
+} from "./prisma-live-channel-projection.ts";
+
+type PairRow = { readonly following: boolean; readonly version: number };
+
+export const prismaCategoryFollowProjection = (
+  prisma: DiscoveryPrisma,
+): CategoryFollowProjection => ({
+  update: ({ eventId, userId, categoryId, change }) =>
+    prisma.$transaction(async (tx) => {
+      if (
+        await alreadyProcessed(tx, {
+          processedEvents: PROCESSED_EVENTS,
+          eventId,
+          handler: DISCOVERY_HANDLER,
+        })
+      ) {
+        return;
+      }
+      await tx.$executeRaw`
+        INSERT INTO "discovery"."DiscoveryCategoryFollow" ("userId", "categoryId", "following", "version")
+        VALUES (${userId}::uuid, ${categoryId}::uuid, false, 0)
+        ON CONFLICT DO NOTHING
+      `;
+      const [row] = await tx.$queryRaw<PairRow[]>`
+        SELECT "following", "version"
+        FROM "discovery"."DiscoveryCategoryFollow"
+        WHERE "userId" = ${userId}::uuid AND "categoryId" = ${categoryId}::uuid
+        FOR UPDATE
+      `;
+      if (row === undefined) {
+        throw new Error(`paire ${userId} / ${categoryId} introuvable après insertion`);
+      }
+      const current = { userId, categoryId, ...row };
+      const next = change(current);
+      if (next === null) {
+        return;
+      }
+      await tx.discoveryCategoryFollow.update({
+        where: { userId_categoryId: { userId, categoryId } },
+        data: { following: next.following, version: next.version },
+      });
+      await tx.$executeRaw`
+        INSERT INTO "discovery"."DiscoveryCategoryFollowerCount" ("categoryId", "followerCount")
+        VALUES (${categoryId}::uuid, ${followerDelta(current, next)})
+        ON CONFLICT ("categoryId") DO UPDATE
+          SET "followerCount" = "DiscoveryCategoryFollowerCount"."followerCount" + EXCLUDED."followerCount"
+      `;
+    }),
+});

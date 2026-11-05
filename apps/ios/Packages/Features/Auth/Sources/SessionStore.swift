@@ -103,6 +103,11 @@ public final class SessionStore {
     hasLogOutFailure = false
   }
 
+  public func accountSaved(_ account: Account) {
+    guard case .signedIn = phase else { return }
+    phase = .signedIn(account)
+  }
+
   private func follow() async {
     for await status in session.statusUpdates where status == .signedOut {
       phase = .signedOut

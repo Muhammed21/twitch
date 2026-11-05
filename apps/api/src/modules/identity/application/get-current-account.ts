@@ -5,9 +5,13 @@ export type StoredAccount = {
   readonly name: string;
   readonly email: string;
   readonly bio?: string;
+  readonly avatarKey?: string;
 };
 
-export type Account = StoredAccount & { readonly lastLiveAt?: Date };
+export type Account = Omit<StoredAccount, "avatarKey"> & {
+  readonly lastLiveAt?: Date;
+  readonly avatarUrl?: string;
+};
 
 export interface AccountDirectory {
   findById(id: string): Promise<StoredAccount | null>;
@@ -16,7 +20,15 @@ export interface AccountDirectory {
 export type LastLiveOf = (userId: string) => Promise<Date | undefined>;
 
 export const getCurrentAccount =
-  ({ directory, lastLiveOf }: { directory: AccountDirectory; lastLiveOf: LastLiveOf }) =>
+  ({
+    directory,
+    lastLiveOf,
+    imageUrlOf,
+  }: {
+    directory: AccountDirectory;
+    lastLiveOf: LastLiveOf;
+    imageUrlOf: (key: string) => string;
+  }) =>
   async (userId: string): Promise<Result<Account, "account_not_found">> => {
     const [account, lastLiveAt] = await Promise.all([
       directory.findById(userId),
@@ -25,5 +37,10 @@ export const getCurrentAccount =
     if (account === null) {
       return err("account_not_found");
     }
-    return ok(lastLiveAt === undefined ? account : { ...account, lastLiveAt });
+    const { avatarKey, ...stored } = account;
+    return ok({
+      ...stored,
+      ...(lastLiveAt === undefined ? {} : { lastLiveAt }),
+      ...(avatarKey === undefined ? {} : { avatarUrl: imageUrlOf(avatarKey) }),
+    });
   };

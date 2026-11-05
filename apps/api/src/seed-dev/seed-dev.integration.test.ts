@@ -236,14 +236,31 @@ describe("seed de développement (ADR 0039, §6)", () => {
     });
   });
 
-  it("crée les dix catégories de Browse, actives, chacune annoncée par channel.category.created", async () => {
-    await seedDevelopment(process.env);
+  it("crée les dix catégories de Browse, actives, avec leurs tags, chacune annoncée une seule fois", async () => {
     const slugs = DEV_CATEGORIES.map(({ slug }) => slug);
+    const taggedEvents = () =>
+      asMigrator(
+        async (client) =>
+          (
+            await client.query<{ categoryId: string; count: string }>(
+              `SELECT o."payload"->>'categoryId' AS "categoryId", count(*)::text AS "count"
+                 FROM "channel"."ChannelOutbox" o
+                 JOIN "channel"."ChannelCategory" c ON c."id"::text = o."payload"->>'categoryId'
+                WHERE o."name" = 'channel.category.updated' AND c."slug" = ANY($1)
+                  AND o."payload"->'tags' = to_jsonb(c."tags")
+                GROUP BY 1 ORDER BY 1`,
+              [slugs],
+            )
+          ).rows,
+      );
+    await seedDevelopment(process.env);
+    const taggedOnce = await taggedEvents();
+    await seedDevelopment(process.env);
 
     const { categories, announced } = await asMigrator(async (client) => ({
       categories: (
-        await client.query<{ slug: string; name: string; status: string }>(
-          `SELECT "slug", "name", "status"::text AS "status" FROM "channel"."ChannelCategory"
+        await client.query<{ slug: string; name: string; status: string; tags: string[] }>(
+          `SELECT "slug", "name", "status"::text AS "status", "tags" FROM "channel"."ChannelCategory"
             WHERE "slug" = ANY($1) ORDER BY "slug"`,
           [slugs],
         )
@@ -259,11 +276,54 @@ describe("seed de développement (ADR 0039, §6)", () => {
 
     expect(slugs).toHaveLength(10);
     expect(categories).toEqual(
-      DEV_CATEGORIES.map(({ slug, name }) => ({ slug, name, status: "active" })).toSorted(
-        (left, right) => left.slug.localeCompare(right.slug),
-      ),
+      DEV_CATEGORIES.map(({ slug, name, tags }) => ({
+        slug,
+        name,
+        status: "active",
+        tags,
+      })).toSorted((left, right) => left.slug.localeCompare(right.slug)),
     );
     expect(announced).toHaveLength(10);
+    expect(DEV_CATEGORIES.every(({ tags }) => tags.length > 0)).toBe(true);
+    expect(taggedOnce).toHaveLength(10);
+    expect(await taggedEvents()).toEqual(taggedOnce);
+  });
+
+  it("rend ses tags à une catégorie de seed active, et s'arrête en la nommant si elle ne l'est plus", async () => {
+    await seedDevelopment(process.env);
+    const irl = DEV_CATEGORIES.find((category) => category.slug === "irl");
+    if (irl === undefined) {
+      throw new Error("catégorie irl absente du seed");
+    }
+    const { slug, tags } = irl;
+    const setCategory = (status: string, values: readonly string[]) =>
+      asMigrator((client) =>
+        client.query(
+          `UPDATE "channel"."ChannelCategory"
+              SET "status" = $2::"channel"."ChannelCategoryStatus", "tags" = $3
+            WHERE "slug" = $1`,
+          [slug, status, [...values]],
+        ),
+      );
+    await setCategory("retired", ["Ancien"]);
+
+    try {
+      await expect(seedDevelopment(process.env)).rejects.toThrow(`tags de la catégorie ${slug}`);
+    } finally {
+      await setCategory("active", ["Ancien"]);
+    }
+    await seedDevelopment(process.env);
+
+    const restored = await asMigrator(
+      async (client) =>
+        (
+          await client.query<{ tags: string[] }>(
+            `SELECT "tags" FROM "channel"."ChannelCategory" WHERE "slug" = $1`,
+            [slug],
+          )
+        ).rows,
+    );
+    expect(restored).toEqual([{ tags }]);
   });
 
   it("donne sa catégorie à la chaîne de démo du compte de test, une seule fois, par channel.metadata.updated", async () => {
