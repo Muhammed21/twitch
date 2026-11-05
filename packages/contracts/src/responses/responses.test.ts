@@ -470,6 +470,41 @@ describe("CategoryHeader (ADR 0050)", () => {
   });
 });
 
+describe("CategoryTagList (ADR 0050, ADR 0051)", () => {
+  const makeTag = (overrides: Record<string, unknown> = {}) => ({
+    name: "Shooter",
+    categoryCount: 2,
+    ...overrides,
+  });
+
+  it.each([
+    [
+      "avec ses tags et leur nombre de catégories",
+      { items: [makeTag(), makeTag({ name: "FPS", categoryCount: 1 })] },
+    ],
+    ["vide", { items: [] }],
+  ])("décode une liste de tags %s", (_name, list) => {
+    expect(responses.CategoryTagList.parse(list)).toEqual(list);
+  });
+
+  it("garde un champ ajouté plus tard par le serveur", () => {
+    expect(
+      responses.CategoryTagList.parse({ items: [makeTag({ icon: "shooter" })], total: 1 }),
+    ).toMatchObject({ items: [{ icon: "shooter" }], total: 1 });
+  });
+
+  it.each([
+    ["sans liste", undefined],
+    ["avec un tag sans nom", [makeTag({ name: undefined })]],
+    ["avec un tag au nom vide", [makeTag({ name: "" })]],
+    ["avec un tag sans nombre de catégories", [makeTag({ categoryCount: undefined })]],
+    ["avec un tag porté par aucune catégorie", [makeTag({ categoryCount: 0 })]],
+    ["avec un nombre de catégories fractionnaire", [makeTag({ categoryCount: 1.5 })]],
+  ])("refuse une liste %s", (_name, items) => {
+    expect(responses.CategoryTagList.safeParse({ items }).success).toBe(false);
+  });
+});
+
 const CHANNEL_ID = "9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69";
 
 const makeProfile = (overrides: Record<string, unknown> = {}) => ({
