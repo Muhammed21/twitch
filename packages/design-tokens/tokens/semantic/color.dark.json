@@ -192,6 +192,23 @@
         "$value": "{core.color.red.50}",
         "$description": "Point rouge devant le nombre de viewers d'une catégorie en live, identique dans les deux thèmes (parcourir/liste-categories--defaut et --theme-sombre, mesuré #ec1817 et #ed1918)."
       }
+    },
+    "banner": {
+      "start": {
+        "$type": "color",
+        "$value": "{core.color.purple.35}",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : haut du dégradé de la bannière par défaut d'Edit Profile (profil/modifier-profil--defaut). Convention : identique dans les deux thèmes, comme une image."
+      },
+      "end": {
+        "$type": "color",
+        "$value": "{core.color.purple.60}",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : bas du dégradé de la bannière par défaut d'Edit Profile, mesuré #9047ff (profil/modifier-profil--defaut). Valeur de la charte (violet de marque) retenue, identique dans les deux thèmes."
+      },
+      "avatarRing": {
+        "$type": "color",
+        "$value": "{core.color.neutral.97}",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : anneau de 4 pt autour de l'avatar posé sur la bannière d'Edit Profile, mesuré de #ececee à #f8f4f8 (profil/modifier-profil--defaut). Valeur de la charte (background) retenue, identique dans les deux thèmes."
+      }
     }
   }
 }
