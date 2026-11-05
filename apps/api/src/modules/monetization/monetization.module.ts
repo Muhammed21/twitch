@@ -28,6 +28,7 @@ import {
 } from "./presentation/revenuecat-webhook.controller.ts";
 
 export type { MonetizationPrisma } from "./infrastructure/prisma-webhook-inbox.ts";
+export { prismaActiveEntitlements as createActiveEntitlementsReader } from "./infrastructure/prisma-active-entitlements.ts";
 
 const MONETIZATION_DEPENDENCIES = Symbol("MONETIZATION_DEPENDENCIES");
 
