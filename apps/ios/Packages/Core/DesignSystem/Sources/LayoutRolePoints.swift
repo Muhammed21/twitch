@@ -152,6 +152,8 @@ public extension LayoutRole {
     case .dashboardFieldGlyphGap: Spacing.x6
     case .dashboardEmptyTop: Spacing.x256
     case .dashboardEmptyWidth: Spacing.x256
+    case .dashboardEmptyClapperboardGap: Spacing.x12
+    case .dashboardEmptyBarChartGap: Spacing.x8
     case .dashboardPillHeight: Spacing.x40
     case .dashboardPillLeading: Spacing.x10
     case .dashboardPillTrailing: Spacing.x12

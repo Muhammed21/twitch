@@ -112,7 +112,7 @@ public struct DashboardStatsScreen: View {
         }
         .padding(.trailing, -LayoutRole.dashboardIconOverhang.points)
       }
-      DashboardEmptyState(message: String(localized: DashboardText.statsEmpty))
+      DashboardEmptyState(message: String(localized: DashboardText.statsEmpty), illustration: .stats)
     }
     .background(ColorRole.background.color.ignoresSafeArea())
   }
@@ -131,7 +131,7 @@ public struct DashboardContentScreen: View {
           .foregroundStyle(ColorRole.textPrimary.color)
       }
       DashboardSearchField(text: $query, prompt: String(localized: DashboardText.search))
-      DashboardEmptyState(message: String(localized: DashboardText.contentEmpty))
+      DashboardEmptyState(message: String(localized: DashboardText.contentEmpty), illustration: .content)
     }
     .background(ColorRole.background.color.ignoresSafeArea())
   }

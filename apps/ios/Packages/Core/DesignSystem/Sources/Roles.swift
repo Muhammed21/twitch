@@ -278,6 +278,8 @@ public enum LayoutRole: Sendable {
   case dashboardFieldGlyphGap
   case dashboardEmptyTop
   case dashboardEmptyWidth
+  case dashboardEmptyClapperboardGap
+  case dashboardEmptyBarChartGap
   case dashboardPillHeight
   case dashboardPillLeading
   case dashboardPillTrailing
