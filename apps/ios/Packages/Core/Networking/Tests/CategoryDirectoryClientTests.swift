@@ -32,7 +32,14 @@ struct CategoryDirectoryClientTests {
 
     #expect(try page == CategoryPage(
       categories: [
-        BrowseCategory(slug: CategorySlug("just-chatting"), name: "Just Chatting", imageURL: nil, liveCount: 3, viewers: ViewerCount(184_000)),
+        BrowseCategory(
+          slug: CategorySlug("just-chatting"),
+          name: "Just Chatting",
+          imageURL: nil,
+          liveCount: 3,
+          viewers: ViewerCount(184_000),
+          tags: ["IRL", "Discussion"]
+        ),
         BrowseCategory(slug: CategorySlug("fortnite"), name: "Just Chatting", imageURL: nil, liveCount: 1, viewers: ViewerCount(22000)),
       ],
       nextCursor: CategoryCursor("c2")
@@ -63,6 +70,15 @@ struct CategoryDirectoryClientTests {
     let page = try await makeClient(transport).categories(after: nil)
 
     #expect(page.categories.first?.imageURL == URL(string: "https://cdn.example/just-chatting.png"))
+  }
+
+  @Test("lit les tags d'une catégorie dans l'ordre de l'API")
+  func readsTags() async throws {
+    let transport = FakeTransport(json: #"{"items":[\#(categoryJSON(tags: ["Jeux de tir", "FPS"]))]}"#)
+
+    let page = try await makeClient(transport).categories(after: nil)
+
+    #expect(page.categories.first?.tags == ["Jeux de tir", "FPS"])
   }
 
   @Test("lit zéro viewer, et ignore un nombre de viewers négatif sans perdre la catégorie", arguments: [(0, 0), (-1, nil)])
