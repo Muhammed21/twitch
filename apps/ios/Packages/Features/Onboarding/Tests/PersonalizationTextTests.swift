@@ -71,4 +71,33 @@ struct PersonalizationTextTests {
     #expect(PersonalizationText.languageName(.japanese) == "日本語")
     #expect(PersonalizationText.languageName(.english) == "English")
   }
+
+  @Test("la page 6 reprend les libellés de apparence--theme-systeme et --theme-manuel")
+  func appearance() {
+    #expect(PersonalizationText.appearanceTitle == "Pick your theme")
+    #expect(PersonalizationText.appearanceMessage == "Match your device, or choose a theme just for Twitch.")
+    #expect(PersonalizationText.themeSection == "Theme")
+    #expect(PersonalizationText.matchSystemTheme == "Match System Theme")
+    #expect(PersonalizationText.darkTheme == "Dark Theme")
+  }
+
+  @Test("la page 7 reprend les choix de lecture-auto-videos--defaut")
+  func autoplay() {
+    #expect(PersonalizationText.autoplayTitle == "Autoplay Videos")
+    #expect(PersonalizationText.autoplayMessage == "Choose when live videos can start playing on their own.")
+    #expect(VideoAutoplay.allCases.map(PersonalizationText.autoplay) == [
+      "On Wi-Fi and mobile data",
+      "On Wi-Fi only",
+      "Never autoplay videos",
+    ])
+  }
+
+  @Test("la page 9 règle la taille du texte et l'horodatage du chat")
+  func chat() {
+    #expect(PersonalizationText.chatTitle == "Set up your chat")
+    #expect(PersonalizationText.chatMessage == "Pick a text size, and whether each message shows when it was sent.")
+    #expect(PersonalizationText.chatTextSizeSection == "Text Size")
+    #expect(ChatTextSize.allCases.map(PersonalizationText.chatTextSize) == ["Small", "Medium", "Large"])
+    #expect(PersonalizationText.chatTimestamps == "Show Timestamps")
+  }
 }
