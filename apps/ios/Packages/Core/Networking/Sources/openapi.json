@@ -1325,16 +1325,13 @@
         "type": "object",
         "properties": {
           "chatColor": {
-            "description": "Couleur du pseudo dans le chat, #RRGGBB (casse indifférente, enregistrée en majuscules) ; null revient à la couleur par défaut.",
+            "description": "Couleur du pseudo dans le chat, #RRGGBB (casse indifférente, enregistrée en majuscules) ; null ou une clé absente revient à la couleur par défaut.",
             "type": [
               "string",
               "null"
             ]
           }
         },
-        "required": [
-          "chatColor"
-        ],
         "additionalProperties": false
       },
       "CategorySummary": {

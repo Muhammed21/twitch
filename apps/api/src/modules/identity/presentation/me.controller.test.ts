@@ -344,9 +344,12 @@ describe("PUT /v1/me/chat-color (ADR 0051)", () => {
     });
   });
 
-  it("revient à la couleur par défaut avec null", async () => {
+  it.each([
+    ["null", { chatColor: null }],
+    ["un corps sans couleur", {}],
+  ])("revient à la couleur par défaut avec %s", async (_name, body) => {
     await withMe({}, async (base, _bio, _openApi, _avatar, chatColorChanges) => {
-      expect((await put(`${base}/chat-color`, { chatColor: null })).status).toBe(200);
+      expect((await put(`${base}/chat-color`, body)).status).toBe(200);
       expect(chatColorChanges).toEqual([{ userId: USER_ID, chatColor: null }]);
     });
   });
@@ -365,7 +368,6 @@ describe("PUT /v1/me/chat-color (ADR 0051)", () => {
   });
 
   it.each([
-    ["sans couleur", {}],
     ["avec une couleur qui n'est pas du texte", { chatColor: 9_520_895 }],
     ["avec un champ inconnu", { chatColor: "#9146FF", badge: "turbo" }],
   ])("refuse en 400 un corps %s, sans appeler le use-case", async (_name, body) => {

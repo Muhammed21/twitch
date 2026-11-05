@@ -916,6 +916,25 @@ describe("identity : caractérisation OAuth de l'ADR 0026, contre le vrai better
     });
   });
 
+  it("revient à la couleur par défaut sur un corps sans chatColor, avec son event, et sans event quand rien ne change", async () => {
+    await withApi(async (base) => {
+      const { tokens } = await signIn(base);
+      const { userId } = identityOf(tokens.access_token);
+      await changeChatColor(base, tokens.access_token, "#9146FF");
+
+      const reset = await changeChatColor(base, tokens.access_token, undefined);
+      await changeChatColor(base, tokens.access_token, undefined);
+
+      expect(reset.status).toBe(200);
+      expect(reset.body).not.toHaveProperty("chatColor");
+      expect((await me(base, tokens.access_token)).body).not.toHaveProperty("chatColor");
+      expect(await chatColorEventsOf(userId)).toEqual([
+        { accountId: userId, chatColor: "#9146FF" },
+        { accountId: userId, chatColor: null },
+      ]);
+    });
+  });
+
   it("refuse en 400 une couleur hors format, sans event ni changement", async () => {
     await withApi(async (base) => {
       const { tokens } = await signIn(base);
