@@ -74,6 +74,7 @@ struct VideoAutoplayPage: View {
 struct ChatSettingsPage: View {
   @Environment(PreferencesStore.self) private var preferences
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.locale) private var locale
 
   var body: some View {
     let choices = SettingChoices(preferences: preferences)
@@ -107,7 +108,7 @@ struct ChatSettingsPage: View {
           )
           .accessibilityIdentifier("journey.chat.timestamps")
         }
-        EditSection(label: ChatPreview.label()) {
+        EditSection(label: ChatPreview.label(locale: locale)) {
           ChatPreviewCard(style: choices.chatPreviewStyle)
         }
       }
@@ -116,12 +117,13 @@ struct ChatSettingsPage: View {
 }
 
 struct ChatPreviewCard: View {
+  @Environment(\.locale) private var locale
   let style: ChatLineStyle
 
   var body: some View {
     JourneyChoiceCard {
       VStack(alignment: .leading, spacing: LayoutRole.chatRowGap.points) {
-        ForEach(Array(ChatPreview.lines().enumerated()), id: \.offset) { _, line in
+        ForEach(Array(ChatPreview.lines(locale: locale).enumerated()), id: \.offset) { _, line in
           ChatLineRow(line: line, style: style)
         }
       }

@@ -4,11 +4,11 @@ import Foundation
 public enum ChatPreview {
   private static let authorIDs = [UUID(), UUID(), UUID()]
 
-  public static func label(locale: Locale = .current) -> String {
+  public static func label(locale: Locale) -> String {
     text("journey.chat.preview", locale: locale)
   }
 
-  public static func lines(locale: Locale = .current) -> [ChatLine] {
+  public static func lines(locale: Locale) -> [ChatLine] {
     [
       ChatLine(
         time: "21:04",
