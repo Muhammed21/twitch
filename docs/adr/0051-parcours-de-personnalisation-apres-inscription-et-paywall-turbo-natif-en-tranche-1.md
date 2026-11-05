@@ -280,3 +280,12 @@ Convention de l'ADR 0012 : `objet:action_au_passé`, propriétés en `snake_case
 - ADR 0040 — Illustration de « You're All Set! » (écran qui précède le parcours)
 - ADR 0049 — Suivi d'une catégorie (page 2 du parcours)
 - ADR 0050 — Tags d'une catégorie (page 3 du parcours)
+
+## Amendement du 2026-11-05 — sons système
+
+Validé par l'utilisateur. Le statut reste Accepté.
+
+Les sons du parcours se jouent comme sons système (`AudioServicesPlaySystemSound`), et non plus sur une session audio `.ambient`. Cela remplace la ligne **Sons** de la Décision et la mitigation des **Sons gênants**.
+
+- **Raison.** Une session `.ambient` avec `.mixWithOthers` change la catégorie audio de toute l'app. Un live ouvert après le parcours se mélangeait alors à la musique de l'utilisateur, au lieu de l'interrompre.
+- **Effet.** Un son système se tait en mode silencieux et se mélange à la musique en cours, sans toucher à la session audio de l'app. Le lecteur du live garde sa propre catégorie.

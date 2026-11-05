@@ -26,10 +26,18 @@ public struct BootstrapClient: BootstrapSource {
       let body = try response.body.json
       return try AppBootstrap(
         minSupportedVersion: AppVersion(body.minSupportedVersion),
-        flags: FeatureFlags(sessionReplay: body.flags.sessionReplay, paywallVariant: body.flags.expPaywallVariant)
+        flags: FeatureFlags(sessionReplay: body.flags.sessionReplay, paywallVariant: body.flags.expPaywallVariant),
+        entitlements: body.entitlements.compactMap(Self.entitlement)
       )
     case let .default(_, response):
       throw try ServiceProblem(response.body.applicationProblemJson)
+    }
+  }
+
+  private static func entitlement(_ entitlement: Components.Schemas.Entitlement) -> Entitlement? {
+    switch entitlement.scope {
+    case "platform": Entitlement(scope: .platform, expiresAt: entitlement.expiresAt)
+    default: nil
     }
   }
 }

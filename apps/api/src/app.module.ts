@@ -18,6 +18,7 @@ import {
 import { createFeatureFlags, MobileModule } from "./modules/mobile/mobile.module.ts";
 import { ModerationModule, type ModerationPrisma } from "./modules/moderation/moderation.module.ts";
 import {
+  createActiveEntitlementsReader,
   MonetizationModule,
   type MonetizationPrisma,
 } from "./modules/monetization/monetization.module.ts";
@@ -142,6 +143,7 @@ export class AppModule {
             bannerUrlOf,
           }),
           ownedChannel,
+          readEntitlements: createActiveEntitlementsReader({ prisma: monetization.prisma }),
           minSupportedVersion: mobile.minSupportedVersion,
           logSink: platform.logSink,
         }),

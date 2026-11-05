@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { Uuid } from "../conventions/schemas.ts";
+import { openEnum, Uuid } from "../conventions/schemas.ts";
 
 export const OwnedChannel = z
   .looseObject({
@@ -22,6 +22,13 @@ export const Profile = z
   })
   .meta({ id: "Profile" });
 
+export const Entitlement = z
+  .looseObject({
+    scope: openEnum(["platform"]).pipe(z.string().min(1)),
+    expiresAt: z.iso.datetime(),
+  })
+  .meta({ id: "Entitlement" });
+
 export const MobileBootstrap = z
   .looseObject({
     minSupportedVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
@@ -30,5 +37,6 @@ export const MobileBootstrap = z
       exp_paywall_variant: z.string().min(1).optional(),
     }),
     profile: Profile.optional(),
+    entitlements: z.array(Entitlement),
   })
   .meta({ id: "MobileBootstrap" });
