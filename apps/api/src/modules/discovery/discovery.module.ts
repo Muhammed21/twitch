@@ -15,6 +15,7 @@ import { startPeriodicJob } from "../../platform/periodic-job.ts";
 import { startStreamConsumer, type StreamConsumerRedis } from "../../platform/stream-consumer.ts";
 import { browseCategories, refreshCategoryAudience } from "./application/category-audience.ts";
 import { listCategoryLives, readCategoryHeader } from "./application/category-reads.ts";
+import { listCategoryTags } from "./application/category-tags.ts";
 import {
   type ListLives,
   listLives,
@@ -41,6 +42,7 @@ import {
   prismaCategoryFollowLookup,
   prismaCategoryFollowProjection,
 } from "./infrastructure/prisma-category-follow-projection.ts";
+import { prismaActiveCategoryTags } from "./infrastructure/prisma-category-tags.ts";
 import {
   type DiscoveryPrisma,
   prismaCategoryProjection,
@@ -63,6 +65,7 @@ import {
   LiveStatusController,
 } from "./presentation/live-status.controller.ts";
 import { LIST_LIVES, LivesController } from "./presentation/lives.controller.ts";
+import { LIST_CATEGORY_TAGS, TagsController } from "./presentation/tags.controller.ts";
 
 export type { DiscoveryPrisma };
 
@@ -156,7 +159,7 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
   static register(dependencies: DiscoveryDependencies): DynamicModule {
     return {
       module: DiscoveryModule,
-      controllers: [LivesController, LiveStatusController, CategoriesController],
+      controllers: [LivesController, LiveStatusController, CategoriesController, TagsController],
       providers: [
         { provide: DISCOVERY_DEPENDENCIES, useValue: dependencies },
         {
@@ -194,6 +197,10 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
             audience: prismaCategoryAudienceLookup(dependencies.prisma),
             follows: prismaCategoryFollowLookup(dependencies.prisma),
           }),
+        },
+        {
+          provide: LIST_CATEGORY_TAGS,
+          useValue: listCategoryTags(prismaActiveCategoryTags(dependencies.prisma)),
         },
         { provide: CATEGORY_IMAGE_URL, useValue: dependencies.images.imageUrlOf },
       ],
