@@ -40,6 +40,8 @@ public enum Spacing {
     public static let x40: CGFloat = 40
     /// Hauteur des boutons d'action, relevée sur l'app iOS Twitch (44 pt), cible tactile minimale d'iOS.
     public static let x44: CGFloat = 44
+    /// Largeur de la pochette d'une catégorie dans une liste de réglages, relevée sur l'app iOS Twitch (47 pt, parametres/recommandations-categories--defaut).
+    public static let x47: CGFloat = 47
     /// Hauteur de la barre d'onglets, relevée sur l'app iOS Twitch (49 pt).
     public static let x49: CGFloat = 49
     /// Hauteur des lignes du menu du compte, relevée sur l'app iOS Twitch (56 pt, profil/menu-compte--defaut).

@@ -1,3 +1,4 @@
+import DesignTokens
 import SwiftUI
 
 struct TurboWave: Shape {
@@ -31,7 +32,35 @@ public struct TurboBand: View {
           endPoint: .bottomTrailing
         )
       )
-      .frame(height: LayoutRole.paywallBandHeight.points)
+      .frame(height: PaywallLayout.bandHeight.points)
       .accessibilityHidden(true)
+  }
+}
+
+public enum PaywallLayout: CaseIterable, Sendable {
+  case bandHeight
+  case headlineTop
+  case taglineGap
+  case actionTop
+  case buttonInset
+  case billingGap
+  case packageGap
+  case legalGap
+  case cardTop
+  case cardPadding
+
+  public var points: CGFloat {
+    switch self {
+    case .bandHeight: Spacing.x72
+    case .headlineTop: Spacing.x12
+    case .taglineGap: Spacing.x12
+    case .actionTop: Spacing.x24
+    case .buttonInset: Spacing.x44
+    case .billingGap: Spacing.x8
+    case .packageGap: Spacing.x16
+    case .legalGap: Spacing.x12
+    case .cardTop: Spacing.x20
+    case .cardPadding: Spacing.x20
+    }
   }
 }

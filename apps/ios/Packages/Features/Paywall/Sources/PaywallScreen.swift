@@ -38,7 +38,7 @@ public struct PaywallScreen: View {
     switch store.phase {
     case .loading:
       ProgressView()
-        .padding(.top, LayoutRole.paywallActionTop.points)
+        .padding(.top, PaywallLayout.actionTop.points)
     case .unavailable:
       message(PaywallText.unavailable)
     case .subscribed:
@@ -51,23 +51,23 @@ public struct PaywallScreen: View {
   private func offer(_ offering: SubscriptionOffering) -> some View {
     VStack(spacing: 0) {
       headline(PaywallText.headline, PaywallText.tagline)
-      VStack(spacing: LayoutRole.paywallPackageGap.points) {
+      VStack(spacing: PaywallLayout.packageGap.points) {
         ForEach(Array(offering.packages.enumerated()), id: \.element.id) { index, package in
           packageButton(package, kind: index == 0 ? .primary : .secondary)
         }
       }
-      .padding(.top, LayoutRole.paywallActionTop.points)
-      .padding(.horizontal, LayoutRole.paywallButtonInset.points - LayoutRole.screenInset.points)
+      .padding(.top, PaywallLayout.actionTop.points)
+      .padding(.horizontal, PaywallLayout.buttonInset.points - LayoutRole.screenInset.points)
       Text(PaywallText.legal(terms: links.terms, privacy: links.privacy))
         .font(TextRole.paywallLegal.font)
         .foregroundStyle(ColorRole.textSecondary.color)
         .tint(ColorRole.link.color)
-        .padding(.top, LayoutRole.paywallLegalGap.points)
+        .padding(.top, PaywallLayout.legalGap.points)
       if let notice = store.notice {
         Text(PaywallText.notice(notice))
           .font(TextRole.paywallLegal.font)
           .foregroundStyle(ColorRole.danger.color)
-          .padding(.top, LayoutRole.paywallLegalGap.points)
+          .padding(.top, PaywallLayout.legalGap.points)
           .accessibilityIdentifier("paywall.notice")
       }
       perks
@@ -75,16 +75,16 @@ public struct PaywallScreen: View {
         .font(TextRole.paywallLegal.font)
         .tint(ColorRole.link.color)
         .disabled(store.purchasing != nil || store.isRestoring)
-        .padding(.top, LayoutRole.paywallCardTop.points)
+        .padding(.top, PaywallLayout.cardTop.points)
         .accessibilityIdentifier("paywall.restore")
     }
     .multilineTextAlignment(.center)
     .padding(.horizontal, LayoutRole.screenInset.points)
-    .padding(.bottom, LayoutRole.paywallCardTop.points)
+    .padding(.bottom, PaywallLayout.cardTop.points)
   }
 
   private func packageButton(_ package: SubscriptionPackage, kind: ActionButtonKind) -> some View {
-    VStack(spacing: LayoutRole.paywallBillingGap.points) {
+    VStack(spacing: PaywallLayout.billingGap.points) {
       Button { Task { await store.subscribe(package) } } label: {
         if store.purchasing == package {
           ProgressView()
@@ -107,13 +107,13 @@ public struct PaywallScreen: View {
       .foregroundStyle(ColorRole.textPrimary.color)
       .multilineTextAlignment(.leading)
       .frame(maxWidth: .infinity, alignment: .leading)
-      .padding(LayoutRole.paywallCardPadding.points)
+      .padding(PaywallLayout.cardPadding.points)
       .background(ColorRole.surfaceTertiary.color, in: RoundedRectangle(cornerRadius: LayoutRole.menuCardRadius.points))
-      .padding(.top, LayoutRole.paywallCardTop.points)
+      .padding(.top, PaywallLayout.cardTop.points)
   }
 
   private func headline(_ title: LocalizedStringResource, _ detail: LocalizedStringResource) -> some View {
-    VStack(spacing: LayoutRole.paywallTaglineGap.points) {
+    VStack(spacing: PaywallLayout.taglineGap.points) {
       Text(title)
         .font(TextRole.paywallHeadline.font)
       Text(detail)
@@ -121,7 +121,7 @@ public struct PaywallScreen: View {
     }
     .foregroundStyle(ColorRole.textPrimary.color)
     .multilineTextAlignment(.center)
-    .padding(.top, LayoutRole.paywallHeadlineTop.points)
+    .padding(.top, PaywallLayout.headlineTop.points)
     .padding(.horizontal, LayoutRole.screenInset.points)
   }
 
@@ -130,7 +130,7 @@ public struct PaywallScreen: View {
       .font(TextRole.paywallBody.font)
       .foregroundStyle(ColorRole.textSecondary.color)
       .multilineTextAlignment(.center)
-      .padding(.top, LayoutRole.paywallActionTop.points)
+      .padding(.top, PaywallLayout.actionTop.points)
       .padding(.horizontal, LayoutRole.screenInset.points)
       .accessibilityIdentifier("paywall.unavailable")
   }

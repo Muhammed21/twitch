@@ -10,7 +10,9 @@ import Home
 import Navigation
 import Networking
 import Onboarding
+import Paywall
 import Player
+import Preferences
 import Profile
 import Purchases
 import SwiftUI
@@ -23,72 +25,47 @@ struct TwitchApp: App {
 
   var body: some Scene {
     WindowGroup {
-      RootView()
-        .environment(stores.session)
-        .environment(stores.launch)
-        .environment(stores.home)
-        .environment(stores.browse)
-        .environment(stores.categoryLives)
-        .environment(stores.categoryHeaders)
-        .environment(stores.router)
-        .environment(stores.player)
-        .environment(stores.channelPlayback)
-        .environment(stores.liveStatus)
-        .environment(stores.presence)
-        .environment(stores.chat)
-        .environment(stores.myChannel)
-        .environment(stores.categorySearch)
-        .environment(stores.profileEdit)
-        .environment(stores.profileImages)
-        .environment(\.feedbackPlayer, stores.feedback)
-    }
-  }
-}
-
-enum RootScreen: Equatable {
-  case splash
-  case welcome
-  case allSet
-  case signedIn
-  case updateRequired
-
-  init(isSplashVisible: Bool, phase: SessionPhase, isGreetingNewAccount: Bool, isUpdateRequired: Bool) {
-    switch (isSplashVisible, phase) {
-    case (true, _): self = .splash
-    case (false, _) where isUpdateRequired: self = .updateRequired
-    case (false, .launching): self = .splash
-    case (false, .signedOut), (false, .signingIn): self = .welcome
-    case (false, .signedIn): self = isGreetingNewAccount ? .allSet : .signedIn
-    }
-  }
-
-  static func resetsNavigation(from old: SessionPhase, to new: SessionPhase) -> Bool {
-    switch (old, new) {
-    case (.signedIn, .signedIn): false
-    case (.signedIn, _): true
-    default: false
-    }
-  }
-}
-
-extension AuthorizationIntent {
-  init(_ intent: WelcomeIntent) {
-    switch intent {
-    case .logIn: self = .signIn
-    case .signUp: self = .signUp
+      RootView(
+        personalization: stores.personalization,
+        purchases: stores.purchases,
+        paywallLinks: PaywallLinks(info: Bundle.main.infoDictionary ?? [:])
+      )
+      .environment(stores.session)
+      .environment(stores.launch)
+      .environment(stores.home)
+      .environment(stores.browse)
+      .environment(stores.categoryLives)
+      .environment(stores.categoryHeaders)
+      .environment(stores.router)
+      .environment(stores.player)
+      .environment(stores.channelPlayback)
+      .environment(stores.liveStatus)
+      .environment(stores.presence)
+      .environment(stores.chat)
+      .environment(stores.myChannel)
+      .environment(stores.categorySearch)
+      .environment(stores.profileEdit)
+      .environment(stores.profileImages)
+      .environment(stores.preferences)
+      .environment(\.feedbackPlayer, stores.feedback)
     }
   }
 }
 
 struct RootView: View {
+  let personalization: PersonalizationSources
+  let purchases: any Purchases
+  let paywallLinks: PaywallLinks
   @Environment(SessionStore.self) private var session
   @Environment(LaunchStore.self) private var launch
   @Environment(Router.self) private var router
   @Environment(MyChannelStore.self) private var myChannel
+  @Environment(PreferencesStore.self) private var preferences
   @State private var isSplashVisible = true
 
   var body: some View {
     screen
+      .preferredColorScheme(preferences.current.appearance.colorScheme)
       .signInFailureAlert(session)
       .logOutFailureAlert(session)
       .onOpenURL { router.open($0) }
@@ -107,7 +84,12 @@ struct RootView: View {
       isSplashVisible: isSplashVisible,
       phase: session.phase,
       isGreetingNewAccount: session.isGreetingNewAccount,
-      isUpdateRequired: launch.isUpdateRequired
+      isUpdateRequired: launch.isUpdateRequired,
+      isPersonalizationDue: RootScreen.isPersonalizationDue(
+        isPersonalizing: session.isPersonalizing,
+        account: session.accountID,
+        hasCompleted: preferences.hasCompletedOnboarding
+      )
     ) {
     case .splash:
       ZStack {
@@ -120,6 +102,13 @@ struct RootView: View {
       }
     case .allSet:
       AllSetScreen()
+    case .personalization:
+      PersonalizationRoot(
+        session: session,
+        preferences: preferences,
+        sources: personalization,
+        paywall: PersonalizationPaywall(purchases: purchases, variant: launch.flags.paywallVariant, links: paywallLinks)
+      )
     case .signedIn:
       SignedInRoot()
     case .updateRequired:
@@ -228,6 +217,7 @@ struct ChannelScreen: View {
   @Environment(LiveStatusChannel.self) private var liveStatus
   @Environment(ChannelPresence.self) private var presence
   @Environment(ChatSession.self) private var chat
+  @Environment(PreferencesStore.self) private var preferences
   @Environment(\.scenePhase) private var scenePhase
 
   private var watching: ChannelPresence.Watching {
@@ -241,6 +231,7 @@ struct ChannelScreen: View {
       ChatList()
       ChatComposer()
     }
+    .environment(\.chatDisplay, ChatDisplay(preferences.current))
     .navigationTitle(slug.rawValue)
     .navigationBarTitleDisplayMode(.inline)
     .task(id: slug) { await channelPlayback.open(slug) }
@@ -268,6 +259,8 @@ struct Stores {
   let categorySearch: CategorySearch
   let profileEdit: ProfileEditStore
   let profileImages: ProfileImageStore
+  let preferences: PreferencesStore
+  let personalization: PersonalizationSources
   let purchases: StorePurchases
   let feedback: FeedbackPlayer
 }
@@ -287,11 +280,9 @@ enum Composition {
     let analytics = ProductAnalytics.live(info: info, defaults: .standard)
     let player = PlayerController(player: AVMediaPlayer(), startupRetry: .every(.seconds(2), attempts: 15))
     let channels = ChannelClient(apiBaseURL: configuration.apiBaseURL, transport: transport)
-    let channelPlayback = ChannelPlayback(
-      channels: channels,
-      playback: PlaybackClient(apiBaseURL: configuration.apiBaseURL, transport: transport),
-      controller: player
-    )
+    let preferences = PersonalizationRoot.preferences()
+    let playback = PlaybackClient(apiBaseURL: configuration.apiBaseURL, transport: transport)
+    let channelPlayback = Self.channelPlayback(playback: playback, channels: channels, player: player, preferences: preferences)
     let sessionStore = Self.sessionStore(configuration: configuration, session: session, transport: transport, analytics: analytics, now: now)
     return Stores(
       analytics: analytics,
@@ -320,6 +311,8 @@ enum Composition {
       categorySearch: CategorySearch(catalog: CategoryCatalogClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
       profileEdit: Self.profileEdit(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
       profileImages: Self.profileImages(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
+      preferences: preferences,
+      personalization: Self.personalizationSources(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
       purchases: StorePurchases.live(info: info),
       feedback: FeedbackPlayer()
     )
@@ -331,6 +324,21 @@ enum Composition {
     } catch {
       fatalError("Info.plist : configuration OAuth invalide (\(error)).")
     }
+  }
+
+  private static func channelPlayback(
+    playback: PlaybackClient,
+    channels: ChannelClient,
+    player: PlayerController,
+    preferences: PreferencesStore
+  ) -> ChannelPlayback {
+    let network = NetworkCost()
+    return ChannelPlayback(
+      channels: channels,
+      playback: playback,
+      controller: player,
+      allowsAutoplay: { preferences.current.videoAutoplay.allowsPlayback(onExpensiveNetwork: network.isExpensive) }
+    )
   }
 
   private static func liveStatus(

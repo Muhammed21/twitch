@@ -1,0 +1,100 @@
+{
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyText" : "",
+        "policyURL" : ""
+      }
+    ]
+  },
+  "identifier" : "6F3C2D1A",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_applicationInternalID" : "",
+    "_developerTeamID" : "",
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "21A0F7B4",
+      "localizations" : [
+
+      ],
+      "name" : "Turbo",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "9.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "8C51E2A0",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Battery Chat Badge and custom chat username colors.",
+              "displayName" : "Turbo Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Turbo Monthly",
+          "subscriptionGroupID" : "21A0F7B4",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "79.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "8C51E2A1",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Battery Chat Badge and custom chat username colors.",
+              "displayName" : "Turbo Yearly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Turbo Yearly",
+          "subscriptionGroupID" : "21A0F7B4",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

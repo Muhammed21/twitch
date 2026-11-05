@@ -76,6 +76,21 @@ struct DevicePreferencesTests {
     #expect(!ContentPreferences(hidden: [.sexualThemes], blursSexualThemes: true).isBlurAvailable)
   }
 
+  @Test(
+    "la lecture auto démarre selon le réglage et le coût du réseau",
+    arguments: [
+      (VideoAutoplay.wifiAndMobileData, false, true),
+      (.wifiAndMobileData, true, true),
+      (.wifiOnly, false, true),
+      (.wifiOnly, true, false),
+      (.never, false, false),
+      (.never, true, false),
+    ]
+  )
+  func autoplay(setting: VideoAutoplay, isExpensive: Bool, allowed: Bool) {
+    #expect(setting.allowsPlayback(onExpensiveNetwork: isExpensive) == allowed)
+  }
+
   @Test("les sept labels de contenu suivent l'ordre de preferences-contenu--defaut")
   func contentLabelsOrder() {
     #expect(ContentLabel.allCases.map(\.rawValue) == [

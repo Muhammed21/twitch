@@ -175,6 +175,14 @@ struct RolesTests {
     #expect(TextRole.chatAuthor.font == Font.caption.weight(.medium))
   }
 
+  @Test("la petite taille du chat descend d'un cran en caption2, la grande monte d'un cran en footnote, l'auteur toujours en medium")
+  func chatTextSizes() {
+    #expect(TextRole.chatMessageSmall.font == Font.caption2.weight(.regular))
+    #expect(TextRole.chatAuthorSmall.font == Font.caption2.weight(.medium))
+    #expect(TextRole.chatMessageLarge.font == Font.footnote.weight(.regular))
+    #expect(TextRole.chatAuthorLarge.font == Font.footnote.weight(.medium))
+  }
+
   @Test("le champ « Send chat » reste en body 17 pt, comme sur chat/chat-chaine--defaut")
   func chatComposerTextRole() {
     #expect(TextRole.chatComposer.font == Font.body.weight(.regular))

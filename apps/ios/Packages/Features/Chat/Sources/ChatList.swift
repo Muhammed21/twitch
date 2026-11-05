@@ -6,6 +6,7 @@ public struct ChatList: View {
   @Environment(ChatSession.self) private var session
   @Environment(\.locale) private var locale
   @Environment(\.timeZone) private var timeZone
+  @Environment(\.chatDisplay) private var display
   @State private var unread = UnreadMarker()
   @State private var viewport = ChatViewport()
 
@@ -22,13 +23,13 @@ public struct ChatList: View {
         }
         if let notice = session.moderationNotice {
           Text(ChatText.moderation(notice))
-            .font(TextRole.chatMessage.font)
+            .font(display.messageRole.font)
             .foregroundStyle(ColorRole.textSecondary.color)
             .accessibilityIdentifier("chat.moderation.notice")
         }
         if let notice = ChatNotice.text(for: session.status) {
           Text(notice)
-            .font(TextRole.chatMessage.font)
+            .font(display.messageRole.font)
             .foregroundStyle(ColorRole.textSecondary.color)
             .accessibilityIdentifier("chat.notice")
         }
@@ -66,13 +67,14 @@ struct ChatEntryRow: View {
   @Environment(ChatSession.self) private var session
   @Environment(\.locale) private var locale
   @Environment(\.timeZone) private var timeZone
+  @Environment(\.chatDisplay) private var display
   let entry: ChatEntry
 
   var body: some View {
     switch entry {
     case .welcome:
       Text(ChatText.welcome)
-        .font(TextRole.chatMessage.font)
+        .font(display.messageRole.font)
         .foregroundStyle(ColorRole.textSecondary.color)
         .accessibilityIdentifier("chat.welcome")
     case .unread:
@@ -92,11 +94,12 @@ struct ChatEntryRow: View {
 }
 
 struct ChatRow: View {
+  @Environment(\.chatDisplay) private var display
   let line: ChatLine
 
   var body: some View {
-    Text("\(Text(line.timeStyled)) \(badges)\(Text(line.messageStyled))")
-      .font(TextRole.chatMessage.font)
+    Text("\(Text(line.timeStyled(display)))\(badges)\(Text(line.messageStyled(display)))")
+      .font(display.messageRole.font)
       .frame(maxWidth: .infinity, alignment: .leading)
   }
 
@@ -109,13 +112,15 @@ struct ChatRow: View {
 }
 
 struct UnreadSeparator: View {
+  @Environment(\.chatDisplay) private var display
+
   var body: some View {
     HStack(spacing: LayoutRole.chatUnreadLabelGap.points) {
       Rectangle()
         .fill(ColorRole.chatUnread.color)
         .frame(height: LayoutRole.chatUnreadLineWidth.points)
       Text(ChatText.unread)
-        .font(TextRole.chatMessage.font)
+        .font(display.messageRole.font)
         .foregroundStyle(ColorRole.chatUnread.color)
         .fixedSize()
     }

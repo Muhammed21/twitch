@@ -70,6 +70,14 @@
   --typography-chat-text-weight: 400;
   --typography-chat-author-text-font: -apple-system-caption1;
   --typography-chat-author-text-weight: 500;
+  --typography-chat-text-small-font: -apple-system-caption2;
+  --typography-chat-text-small-weight: 400;
+  --typography-chat-author-text-small-font: -apple-system-caption2;
+  --typography-chat-author-text-small-weight: 500;
+  --typography-chat-text-large-font: -apple-system-footnote;
+  --typography-chat-text-large-weight: 400;
+  --typography-chat-author-text-large-font: -apple-system-footnote;
+  --typography-chat-author-text-large-weight: 500;
   --typography-hint-text-font: -apple-system-caption1;
   --typography-hint-text-weight: 400;
   --typography-tag-text-font: -apple-system-caption1;
@@ -92,6 +100,7 @@
   --spacing-x36: 36px;
   --spacing-x40: 40px;
   --spacing-x44: 44px;
+  --spacing-x47: 47px;
   --spacing-x49: 49px;
   --spacing-x56: 56px;
   --spacing-x70: 70px;

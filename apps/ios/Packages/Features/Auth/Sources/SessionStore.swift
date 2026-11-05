@@ -22,6 +22,7 @@ public final class SessionStore {
   public private(set) var hasSignInFailure = false
   public private(set) var hasLogOutFailure = false
   public private(set) var isGreetingNewAccount = false
+  public private(set) var isPersonalizing = false
 
   public var accountID: UUID? {
     guard case let .signedIn(account) = phase else {
@@ -83,6 +84,7 @@ public final class SessionStore {
     }
     phase = .signedIn(nil)
     isGreetingNewAccount = intent == .signUp
+    isPersonalizing = intent == .signUp
     await loadAccount()
     guard case .signedIn = phase else { return }
     analytics.capture(intent == .signUp ? .accountSignedUp : .accountSignedIn)
@@ -101,6 +103,10 @@ public final class SessionStore {
 
   public func finishGreeting() {
     isGreetingNewAccount = false
+  }
+
+  public func finishPersonalization() {
+    isPersonalizing = false
   }
 
   public func dismissSignInFailure() {
@@ -125,6 +131,7 @@ public final class SessionStore {
       analytics.reset()
       phase = .signedOut
       isGreetingNewAccount = false
+      isPersonalizing = false
     }
   }
 

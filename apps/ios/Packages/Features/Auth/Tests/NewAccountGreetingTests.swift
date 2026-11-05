@@ -52,6 +52,57 @@ struct NewAccountGreetingTests {
     #expect(harness.store.phase == .signedIn(viewer))
   }
 
+  @Test("une inscription ouvre le parcours de personnalisation, qui reste dû après « You're All Set! »")
+  func signUpOpensPersonalization() async {
+    let harness = Harness(reply: approved)
+    let running = await harness.launch()
+    defer { running.cancel() }
+
+    await harness.store.signIn(.signUp)
+    harness.store.finishGreeting()
+
+    #expect(harness.store.isPersonalizing)
+  }
+
+  @Test("une connexion à un compte existant n'ouvre pas le parcours")
+  func logInSkipsPersonalization() async {
+    let harness = Harness(reply: approved)
+    let running = await harness.launch()
+    defer { running.cancel() }
+
+    await harness.store.signIn(.signIn)
+
+    #expect(harness.store.isPersonalizing == false)
+  }
+
+  @Test("terminer le parcours mène à l'app connectée")
+  func finishPersonalization() async throws {
+    let harness = Harness(reply: approved)
+    let running = await harness.launch()
+    defer { running.cancel() }
+    await harness.store.signIn(.signUp)
+    try #require(harness.store.isPersonalizing)
+
+    harness.store.finishPersonalization()
+
+    #expect(harness.store.isPersonalizing == false)
+    #expect(harness.store.phase == .signedIn(viewer))
+  }
+
+  @Test("une session perdue pendant le parcours ne le garde pas pour la connexion suivante")
+  func signedOutEndsPersonalization() async {
+    let harness = Harness(reply: approved)
+    let running = await harness.launch()
+    defer { running.cancel() }
+    await harness.store.signIn(.signUp)
+    harness.store.finishGreeting()
+
+    await harness.store.resolveLogOut(.logOut)
+
+    #expect(await eventually { harness.store.phase == .signedOut })
+    #expect(harness.store.isPersonalizing == false)
+  }
+
   @Test("une session perdue pendant l'accueil ramène à l'accueil sans le garder pour la connexion suivante")
   func signedOutEndsGreeting() async throws {
     let harness = Harness(reply: approved)

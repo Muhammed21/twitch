@@ -38,21 +38,22 @@ extension ChatLine {
     )
   }
 
-  var styled: AttributedString {
-    timeStyled + AttributedString(" ") + messageStyled
+  func styled(_ display: ChatDisplay) -> AttributedString {
+    timeStyled(display) + messageStyled(display)
   }
 
-  var timeStyled: AttributedString {
-    Self.styled(time, color: .textSecondary)
+  func timeStyled(_ display: ChatDisplay) -> AttributedString {
+    guard display.showsTimestamps else { return AttributedString() }
+    return Self.styled(time, color: .textSecondary, font: display.messageRole.font) + AttributedString(" ")
   }
 
-  var messageStyled: AttributedString {
-    Self.styled(author, color: nameColor.map(ColorRole.chosenChatName) ?? .chatName(authorID), font: TextRole.chatAuthor.font)
+  func messageStyled(_ display: ChatDisplay) -> AttributedString {
+    Self.styled(author, color: nameColor.map(ColorRole.chosenChatName) ?? .chatName(authorID), font: display.authorRole.font)
       + AttributedString(" ")
-      + Self.styled(body, color: isDeleted ? .textSecondary : .textPrimary)
+      + Self.styled(body, color: isDeleted ? .textSecondary : .textPrimary, font: display.messageRole.font)
   }
 
-  private static func styled(_ text: String, color: ColorRole, font: Font = TextRole.chatMessage.font) -> AttributedString {
+  private static func styled(_ text: String, color: ColorRole, font: Font) -> AttributedString {
     AttributedString(text, attributes: AttributeContainer().foregroundColor(color.color).font(font))
   }
 }

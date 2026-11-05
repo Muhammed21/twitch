@@ -8,8 +8,8 @@ private let annual = SubscriptionPackage(id: "$rc_annual", offeringID: "default"
 private let defaultOffering = SubscriptionOffering(id: "default", packages: [monthly, annual])
 
 @MainActor
-private func makeStore(_ purchases: FakePurchases, offeringID: String? = nil) -> PaywallStore {
-  PaywallStore(purchases: purchases, offeringID: offeringID)
+private func makeStore(_ purchases: FakePurchases, offeringID: String? = nil, variant: String? = nil) -> PaywallStore {
+  PaywallStore(purchases: purchases, offeringID: offeringID, variant: variant)
 }
 
 @MainActor
@@ -203,5 +203,27 @@ struct PaywallStoreTests {
     await store.subscribe(monthly)
 
     #expect(store.notice == nil)
+  }
+
+  @Test("la variante du paywall est posée en attribut ph_paywall_variant avant l'appel d'achat (ADR 0016)")
+  func variantBeforePurchase() async {
+    let purchases = FakePurchases(offering: defaultOffering)
+    let store = makeStore(purchases, variant: "variant_b")
+    await store.load()
+
+    await store.subscribe(monthly)
+
+    #expect(purchases.calls.suffix(2) == [.attribute(key: "ph_paywall_variant", value: "variant_b"), .purchase(monthly)])
+  }
+
+  @Test("sans variante, l'achat ne pose aucun attribut")
+  func noVariant() async {
+    let purchases = FakePurchases(offering: defaultOffering)
+    let store = makeStore(purchases)
+    await store.load()
+
+    await store.subscribe(monthly)
+
+    #expect(purchases.calls == [.isTurboActive, .offering(nil), .purchase(monthly)])
   }
 }
