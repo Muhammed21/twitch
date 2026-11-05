@@ -70,6 +70,19 @@ struct GlyphTests {
     #expect(EditRowAccessory.disclosure.glyph == nil)
   }
 
+  @MainActor
+  @Test("un glyphe dans le texte se dessine une fois par taille, puis chaque ligne réutilise la même image")
+  func inlineGlyphIsCached() throws {
+    let first = try #require(Glyph.turboBattery.inline(side: LayoutRole.chatBadgeSize.points))
+    let second = try #require(Glyph.turboBattery.inline(side: LayoutRole.chatBadgeSize.points))
+    let larger = try #require(Glyph.turboBattery.inline(side: LayoutRole.chatBadgeSize.points * 2))
+
+    #expect(first === second)
+    #expect(larger !== first)
+    #expect(larger.size.width == LayoutRole.chatBadgeSize.points * 2)
+  }
+
+  @MainActor
   @Test("un glyphe se dessine dans le texte à la taille demandée, en gabarit teinté par le texte")
   func inlineGlyph() throws {
     let image = try #require(Glyph.turboBattery.inline(side: LayoutRole.chatBadgeSize.points))
