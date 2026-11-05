@@ -61,6 +61,7 @@ describe("sortie CSS des tokens (ADR 0019, ADR 0039)", () => {
     ["footnote", "-apple-system-footnote"],
     ["body", "-apple-system-body"],
     ["title2", "-apple-system-title2"],
+    ["callout", "-apple-system-callout"],
     ["caption", "-apple-system-caption1"],
     ["caption2", "-apple-system-caption2"],
   ])("traduit le style iOS %s en police système de Safari %s", (textStyle, font) => {

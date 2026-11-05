@@ -47,6 +47,11 @@
           "$value": "#d9d9d9",
           "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : filet au-dessus de la barre d'onglets, thème clair (profil/menu-compte--defaut)."
         },
+        "88": {
+          "$type": "color",
+          "$value": "#e0e0e4",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9624) : bouton gris Modifier les infos du stream, mesuré #e0e0e4 sur la carte #efeff1."
+        },
         "90": {
           "$type": "color",
           "$value": "#efeff1",

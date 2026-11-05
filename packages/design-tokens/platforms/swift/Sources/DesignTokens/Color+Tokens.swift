@@ -32,6 +32,13 @@ public extension Color {
             ? UIColor(red: 0.161, green: 0.157, blue: 0.184, alpha: 1)
             : UIColor(red: 0.933, green: 0.929, blue: 0.941, alpha: 1)
     })
+    /// Bouton secondaire posé sur une carte : Modifier les infos du stream de l'accueil du tableau de bord des créateurs.
+    /// clair #E0E0E4 · sombre #2D2D2F
+    static let surfaceRaised = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.176, green: 0.176, blue: 0.184, alpha: 1)
+            : UIColor(red: 0.878, green: 0.878, blue: 0.894, alpha: 1)
+    })
     /// Texte courant.
     /// clair #0E0E10 · sombre #EFEFF1
     static let textPrimary = Color(uiColor: UIColor { trait in
@@ -288,6 +295,8 @@ public extension Color {
         public static let surfaceSecondaryDark = Color(.sRGB, red: 0.161, green: 0.157, blue: 0.184, opacity: 1)
         public static let surfaceTertiaryLight = Color(.sRGB, red: 0.933, green: 0.929, blue: 0.941, opacity: 1)
         public static let surfaceTertiaryDark = Color(.sRGB, red: 0.161, green: 0.157, blue: 0.184, opacity: 1)
+        public static let surfaceRaisedLight = Color(.sRGB, red: 0.878, green: 0.878, blue: 0.894, opacity: 1)
+        public static let surfaceRaisedDark = Color(.sRGB, red: 0.176, green: 0.176, blue: 0.184, opacity: 1)
         public static let textPrimaryLight = Color(.sRGB, red: 0.055, green: 0.055, blue: 0.063, opacity: 1)
         public static let textPrimaryDark = Color(.sRGB, red: 0.937, green: 0.937, blue: 0.945, opacity: 1)
         public static let textSecondaryLight = Color(.sRGB, red: 0.325, green: 0.325, blue: 0.373, opacity: 1)

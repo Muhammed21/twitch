@@ -6,6 +6,7 @@
   --color-surface-primary: #ffffff;
   --color-surface-secondary: #e8e7ea;
   --color-surface-tertiary: #eeedf0;
+  --color-surface-raised: #e0e0e4;
   --color-text-primary: #0e0e10;
   --color-text-secondary: #53535f;
   --color-text-link: #5c16c5;
@@ -87,6 +88,8 @@
   --typography-sheet-hero-text-weight: 500;
   --typography-sheet-row-title-font: -apple-system-headline;
   --typography-sheet-row-title-weight: 500;
+  --typography-card-action-font: -apple-system-callout;
+  --typography-card-action-weight: 700;
   --spacing-x1: 1px;
   --spacing-x2: 2px;
   --spacing-x3: 3px;
@@ -100,6 +103,7 @@
   --spacing-x15: 15px;
   --spacing-x16: 16px;
   --spacing-x20: 20px;
+  --spacing-x22: 22px;
   --spacing-x24: 24px;
   --spacing-x30: 30px;
   --spacing-x32: 32px;
@@ -112,8 +116,10 @@
   --spacing-x70: 70px;
   --spacing-x72: 72px;
   --spacing-x75: 75px;
+  --spacing-x78: 78px;
   --spacing-x84: 84px;
   --spacing-x88: 88px;
+  --spacing-x132: 132px;
   --spacing-x256: 256px;
   --spacing-x300: 300px;
   --radius-sm: 2px;
@@ -133,6 +139,7 @@
     --color-surface-primary: #18181b;
     --color-surface-secondary: #29282f;
     --color-surface-tertiary: #29282f;
+    --color-surface-raised: #2d2d2f;
     --color-text-primary: #efeff1;
     --color-text-secondary: #adadb8;
     --color-text-link: #bf94ff;

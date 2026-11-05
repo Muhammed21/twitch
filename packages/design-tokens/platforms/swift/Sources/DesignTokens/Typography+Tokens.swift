@@ -50,4 +50,6 @@ public extension Font {
     static let sheetHeroText = Font.largeTitle.weight(.medium)
     /// Titre d'une ligne de la feuille d'actions (« Tableau de bord des créateurs »). Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9611) : hauteur de capitale 36 px à @3x, soit 17 pt, text style iOS headline.
     static let sheetRowTitle = Font.headline.weight(.medium)
+    /// Boutons et lien d'une carte de l'accueil du tableau de bord (« Gestionnaire de stream », « Voir toutes les activités »). Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9624) : « Modifier les infos du stream » 637 px de large à @3x, soit 16 pt, text style iOS callout.
+    static let cardAction = Font.callout.weight(.bold)
 }

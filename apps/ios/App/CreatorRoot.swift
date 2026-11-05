@@ -30,14 +30,26 @@ struct SignedInModes: View {
 struct CreatorRoot: View {
   @Environment(CreatorMode.self) private var creatorMode
   @Environment(SessionStore.self) private var session
+  @Environment(Router.self) private var router
+  @Environment(MyChannelStore.self) private var myChannel
   @State private var channelPath: [Route] = []
+  @State private var isEditingStreamInfo = false
 
   var body: some View {
     @Bindable var creatorMode = creatorMode
     TabView(selection: $creatorMode.dashboardTab) {
-      DashboardHomeScreen { Task { await creatorMode.switchMode() } }
-        .toolbar(.hidden, for: .tabBar)
-        .tag(DashboardTab.home)
+      DashboardHomeScreen {
+        Task { await creatorMode.switchMode() }
+      } onStreamManager: {
+        router.create()
+      } onEditStreamInfo: {
+        Task { isEditingStreamInfo = await myChannel.loadForEditing() }
+      }
+      .toolbar(.hidden, for: .tabBar)
+      .tag(DashboardTab.home)
+      .sheet(isPresented: $isEditingStreamInfo) {
+        EditStreamInfoSheet(initialTitle: myChannel.title, initialCategory: myChannel.category)
+      }
       DashboardContentScreen()
         .toolbar(.hidden, for: .tabBar)
         .tag(DashboardTab.content)

@@ -185,6 +185,12 @@
       "background": "color.background.primary",
       "min": 1.5,
       "note": "Icône d'un contrôle désactivé, exemptée de SC 1.4.11 ; relevée grisée sur docs/new-reference-ui/IMG_9626"
+    },
+    {
+      "foreground": "color.text.primary",
+      "background": "color.surface.raised",
+      "min": 4.5,
+      "note": "Libellé du bouton Modifier les infos du stream, docs/new-reference-ui/IMG_9624"
     }
   ]
 }

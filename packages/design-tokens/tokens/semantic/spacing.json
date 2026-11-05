@@ -65,6 +65,11 @@
       "$value": "{core.dimension.20}",
       "$description": "Marges latérales et basse des boutons de l'accueil, relevées sur l'app iOS Twitch (20 pt)."
     },
+    "x22": {
+      "$type": "dimension",
+      "$value": "{core.dimension.22}",
+      "$description": "Accueil du tableau de bord des créateurs : première carte sous l'en-tête, marge du texte d'aide, relevés sur l'app iOS Twitch (22 pt)."
+    },
     "x24": {
       "$type": "dimension",
       "$value": "{core.dimension.24}",
@@ -125,6 +130,11 @@
       "$value": "{core.dimension.75}",
       "$description": "Largeur de la pochette d'une catégorie dans la recherche, relevée sur l'app iOS Twitch (75 pt)."
     },
+    "x78": {
+      "$type": "dimension",
+      "$value": "{core.dimension.78}",
+      "$description": "Carte de chiffres de l'accueil du tableau de bord des créateurs, relevée sur l'app iOS Twitch (78 pt)."
+    },
     "x84": {
       "$type": "dimension",
       "$value": "{core.dimension.84}",
@@ -134,6 +144,11 @@
       "$type": "dimension",
       "$value": "{core.dimension.88}",
       "$description": "Avatar de l'en-tête du profil, relevé sur l'app iOS Twitch (88 pt)."
+    },
+    "x132": {
+      "$type": "dimension",
+      "$value": "{core.dimension.132}",
+      "$description": "Carte d'activité de l'accueil du tableau de bord des créateurs, relevée sur l'app iOS Twitch (132 pt)."
     },
     "x256": {
       "$type": "dimension",

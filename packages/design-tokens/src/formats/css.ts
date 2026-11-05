@@ -11,6 +11,7 @@ const SAFARI_SYSTEM_FONTS: Readonly<Record<string, string>> = {
   title2: "-apple-system-title2",
   headline: "-apple-system-headline",
   subheadline: "-apple-system-subheadline",
+  callout: "-apple-system-callout",
   body: "-apple-system-body",
   footnote: "-apple-system-footnote",
   caption: "-apple-system-caption1",

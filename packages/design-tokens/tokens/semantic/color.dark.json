@@ -22,6 +22,11 @@
         "$type": "color",
         "$value": "{core.color.neutral.16}",
         "$description": "Bouton d'annulation posé sur une modale : Cancel de la modale de déconnexion. Convention en thème sombre : la valeur de color.surface.secondary."
+      },
+      "raised": {
+        "$type": "color",
+        "$value": "{core.color.neutral.18}",
+        "$description": "Bouton secondaire posé sur une carte : Modifier les infos du stream de l'accueil du tableau de bord des créateurs. Convention en thème sombre : un cran au-dessus de color.surface.tertiary (aucune capture en thème sombre)."
       }
     },
     "text": {

@@ -62,6 +62,16 @@ public final class MyChannelStore {
     await load()
   }
 
+  public func loadForEditing() async -> Bool {
+    if phase == .failed {
+      await load()
+    } else {
+      await loadIfNeeded()
+    }
+    guard case .ready = phase else { return false }
+    return true
+  }
+
   public func reset() {
     hasStartedLoading = false
     phase = .loading
