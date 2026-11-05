@@ -1,6 +1,6 @@
 # 0013 — Modèle d'entitlement multi-tenant : abonnement scopé par chaîne
 
-- Statut : Accepté
+- Statut : Accepté — entitlement de portée plateforme (Turbo) ajouté par [0051](0051-parcours-de-personnalisation-apres-inscription-et-paywall-turbo-natif-en-tranche-1.md)
 - Date : 2026-09-22 (spike tranché le 2026-09-23, décision révisée le 2026-09-23 — voir « Verdict du spike » puis « Révision »)
 - Décideurs : Muhammed Cavus
 
