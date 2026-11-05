@@ -8,6 +8,12 @@
             "state" : "translated",
             "value" : "Dark Theme"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thème sombre"
+          }
         }
       }
     },
@@ -17,6 +23,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Match your device, or choose a theme just for Twitch."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suivez le réglage de votre appareil ou choisissez un thème rien que pour Twitch."
           }
         }
       }
@@ -28,6 +40,12 @@
             "state" : "translated",
             "value" : "Theme"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thème"
+          }
         }
       }
     },
@@ -37,6 +55,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Match System Theme"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utiliser le thème du système"
           }
         }
       }
@@ -48,6 +72,12 @@
             "state" : "translated",
             "value" : "Pick your theme"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez votre thème"
+          }
         }
       }
     },
@@ -57,6 +87,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose when live videos can start playing on their own."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez quand les vidéos live peuvent démarrer toutes seules."
           }
         }
       }
@@ -68,6 +104,12 @@
             "state" : "translated",
             "value" : "Never autoplay videos"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne jamais lire automatiquement les vidéos"
+          }
         }
       }
     },
@@ -77,6 +119,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Autoplay Videos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lecture automatique des vidéos"
           }
         }
       }
@@ -88,6 +136,12 @@
             "state" : "translated",
             "value" : "On Wi-Fi and mobile data"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En Wi-Fi et en données mobiles"
+          }
         }
       }
     },
@@ -97,6 +151,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "On Wi-Fi only"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En Wi-Fi uniquement"
           }
         }
       }
@@ -108,6 +168,12 @@
             "state" : "translated",
             "value" : "Back"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retour"
+          }
         }
       }
     },
@@ -117,6 +183,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No categories to show yet."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune catégorie à afficher pour le moment."
           }
         }
       }
@@ -128,6 +200,12 @@
             "state" : "translated",
             "value" : "Couldn't load categories."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de charger les catégories."
+          }
         }
       }
     },
@@ -137,6 +215,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't update this category. Tap it to try again."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de mettre à jour cette catégorie. Touchez-la pour réessayer."
           }
         }
       }
@@ -148,6 +232,12 @@
             "state" : "translated",
             "value" : "We'll recommend live channels from the categories you follow."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nous vous recommanderons des chaînes live des catégories que vous suivez."
+          }
         }
       }
     },
@@ -157,6 +247,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pick categories you like"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez des catégories qui vous plaisent"
           }
         }
       }
@@ -168,6 +264,12 @@
             "state" : "translated",
             "value" : "%@ viewers"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ spectateurs"
+          }
         }
       }
     },
@@ -177,6 +279,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Large"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grande"
           }
         }
       }
@@ -188,6 +296,12 @@
             "state" : "translated",
             "value" : "Medium"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moyenne"
+          }
         }
       }
     },
@@ -197,6 +311,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pick a text size, and whether each message shows when it was sent."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez une taille de texte, et si chaque message affiche son heure d'envoi."
           }
         }
       }
@@ -208,6 +328,12 @@
             "state" : "translated",
             "value" : "Text Size"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Taille du texte"
+          }
         }
       }
     },
@@ -217,6 +343,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Small"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Petite"
           }
         }
       }
@@ -228,6 +360,12 @@
             "state" : "translated",
             "value" : "Show Timestamps"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher l'horodatage"
+          }
         }
       }
     },
@@ -237,6 +375,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Set up your chat"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configurez votre chat"
           }
         }
       }
@@ -248,6 +392,12 @@
             "state" : "translated",
             "value" : "Blur Sexual Themes"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flouter les thèmes sexuels"
+          }
         }
       }
     },
@@ -257,6 +407,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Blur preview thumbnails for content labeled as including \"Sexual Themes\""
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Floute les miniatures d'aperçu des contenus signalés comme comportant des « Thèmes sexuels »"
           }
         }
       }
@@ -268,6 +424,12 @@
             "state" : "translated",
             "value" : "Control how content labeled with Content Classification Labels is displayed across Twitch. Content from channels you follow will still be shown"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contrôlez l'affichage sur Twitch des contenus signalés par des étiquettes de classification de contenu. Les contenus des chaînes que vous suivez resteront affichés"
+          }
         }
       }
     },
@@ -277,6 +439,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hide Drugs, Intoxication, or Excessive Tobacco Use"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer Drogues, intoxication ou consommation excessive de tabac"
           }
         }
       }
@@ -288,6 +456,12 @@
             "state" : "translated",
             "value" : "Hide Gambling"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer Jeux d'argent"
+          }
         }
       }
     },
@@ -297,6 +471,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hide Mature-Rated Games"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer Jeux pour adultes"
           }
         }
       }
@@ -308,6 +488,12 @@
             "state" : "translated",
             "value" : "Hide Politics and Sensitive Social Issues"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer Politique et questions sociales sensibles"
+          }
         }
       }
     },
@@ -317,6 +503,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hide Significant Profanity or Vulgarity"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer Grossièretés ou vulgarité importantes"
           }
         }
       }
@@ -328,6 +520,12 @@
             "state" : "translated",
             "value" : "Hide Sexual Themes"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer Thèmes sexuels"
+          }
         }
       }
     },
@@ -337,6 +535,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hide Violent and Graphic Depictions"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer Représentations violentes et explicites"
           }
         }
       }
@@ -348,6 +552,12 @@
             "state" : "translated",
             "value" : "Hide content you'd rather not come across. You can change this later in Settings."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquez les contenus que vous préférez ne pas voir. Vous pourrez changer cela plus tard dans Paramètres."
+          }
         }
       }
     },
@@ -357,6 +567,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Content Display Preferences"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Préférences d'affichage du contenu"
           }
         }
       }
@@ -368,6 +584,12 @@
             "state" : "translated",
             "value" : "Choose what you see"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez ce que vous voyez"
+          }
         }
       }
     },
@@ -377,6 +599,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Get Started"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "C'est parti"
           }
         }
       }
@@ -388,6 +616,12 @@
             "state" : "translated",
             "value" : "No tags to show yet."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun tag à afficher pour le moment."
+          }
         }
       }
     },
@@ -397,6 +631,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't load tags."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de charger les tags."
           }
         }
       }
@@ -408,6 +648,12 @@
             "state" : "translated",
             "value" : "Choose a few tags to tailor your recommendations."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez quelques tags pour affiner vos recommandations."
+          }
         }
       }
     },
@@ -417,6 +663,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "What are you into?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qu'est-ce qui vous intéresse ?"
           }
         }
       }
@@ -428,6 +680,12 @@
             "state" : "translated",
             "value" : "Tell us what you like to watch. It takes a minute, and you can skip any step."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dites-nous ce que vous aimez regarder. Ça prend une minute, et vous pouvez passer chaque étape."
+          }
         }
       }
     },
@@ -437,6 +695,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Make Twitch yours"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faites de Twitch votre univers"
           }
         }
       }
@@ -448,6 +712,12 @@
             "state" : "translated",
             "value" : "We'll favor live channels in this language."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nous privilégierons les chaînes live dans cette langue."
+          }
         }
       }
     },
@@ -457,6 +727,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Which language do you watch in?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dans quelle langue regardez-vous ?"
           }
         }
       }
@@ -468,6 +744,12 @@
             "state" : "translated",
             "value" : "Next"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suivant"
+          }
         }
       }
     },
@@ -477,6 +759,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "You can change this anytime in the iOS Settings."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous pouvez changer cela à tout moment dans les Réglages d'iOS."
           }
         }
       }
@@ -488,6 +776,12 @@
             "state" : "translated",
             "value" : "Remind me later"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Me le rappeler plus tard"
+          }
         }
       }
     },
@@ -497,6 +791,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Never miss your favorite stream!"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne manquez plus jamais votre stream préféré !"
           }
         }
       }
@@ -508,6 +808,12 @@
             "state" : "translated",
             "value" : "Turn on Notifications"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activer les notifications"
+          }
         }
       }
     },
@@ -517,6 +823,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Step %1$lld of %2$lld"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Étape %1$lld sur %2$lld"
           }
         }
       }
@@ -528,6 +840,12 @@
             "state" : "translated",
             "value" : "Try Again"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réessayer"
+          }
         }
       }
     },
@@ -537,6 +855,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Skip"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passer"
           }
         }
       }
@@ -548,6 +872,12 @@
             "state" : "translated",
             "value" : "Start Watching"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Commencer à regarder"
+          }
         }
       }
     },
@@ -557,6 +887,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Autoplay"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lecture automatique"
           }
         }
       }
@@ -568,12 +904,24 @@
             "state" : "translated",
             "value" : "Categories"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Catégories"
+          }
         }
       }
     },
     "journey.summary.chat" : {
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat"
+          }
+        },
+        "fr" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Chat"
@@ -588,6 +936,12 @@
             "state" : "translated",
             "value" : "Content"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contenu"
+          }
         }
       }
     },
@@ -597,6 +951,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dark"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sombre"
           }
         }
       }
@@ -620,6 +980,24 @@
               }
             }
           }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld étiquette masquée"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld étiquettes masquées"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -629,6 +1007,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Interests"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Centres d'intérêt"
           }
         }
       }
@@ -640,6 +1024,12 @@
             "state" : "translated",
             "value" : "Live language"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Langue des lives"
+          }
         }
       }
     },
@@ -649,6 +1039,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Light"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clair"
           }
         }
       }
@@ -660,12 +1056,24 @@
             "state" : "translated",
             "value" : "You can change these choices anytime in Settings."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous pouvez modifier ces choix à tout moment dans Paramètres."
+          }
         }
       }
     },
     "journey.summary.notifications" : {
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications"
+          }
+        },
+        "fr" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Notifications"
@@ -680,6 +1088,12 @@
             "state" : "translated",
             "value" : "Off"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Désactivé"
+          }
         }
       }
     },
@@ -689,6 +1103,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "On"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activé"
           }
         }
       }
@@ -700,6 +1120,12 @@
             "state" : "translated",
             "value" : "System"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Système"
+          }
         }
       }
     },
@@ -709,6 +1135,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Theme"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thème"
           }
         }
       }
@@ -720,6 +1152,12 @@
             "state" : "translated",
             "value" : "You're all set to watch"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous êtes prêt à regarder"
+          }
         }
       }
     },
@@ -729,6 +1167,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@, with timestamps"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, avec horodatage"
           }
         }
       }
@@ -740,6 +1184,12 @@
             "state" : "translated",
             "value" : "Log In"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se connecter"
+          }
         }
       }
     },
@@ -750,6 +1200,12 @@
             "state" : "translated",
             "value" : "Sign Up"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "S'inscrire"
+          }
         }
       }
     },
@@ -759,6 +1215,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "There's something\nfor you on Twitch"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il y a forcément quelque chose\npour vous sur Twitch"
           }
         }
       }
