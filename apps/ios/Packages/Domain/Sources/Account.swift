@@ -19,3 +19,19 @@ public struct Account: Equatable, Sendable {
 public protocol AccountRepository: Sendable {
   func currentAccount() async throws -> Account
 }
+
+public protocol ProfileEditor: Sendable {
+  func updateBio(_ bio: String) async throws -> Account
+}
+
+public enum Bio {
+  public static let maxLength = 300
+
+  public static func remaining(in text: String) -> Int {
+    maxLength - text.trimmingCharacters(in: .whitespacesAndNewlines).count
+  }
+
+  public static func fits(_ text: String) -> Bool {
+    remaining(in: text) >= 0
+  }
+}

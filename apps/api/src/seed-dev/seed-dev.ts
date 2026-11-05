@@ -9,7 +9,11 @@ import { appendToOutbox, createContextClient } from "@repo/db";
 import { err, ok, type Result } from "@repo/result";
 
 import { createAuthzRedis, invalidateAssignments } from "../authz/authz-context.ts";
-import { parseCategoryName, parseCategorySlug } from "../modules/channel/domain/category.ts";
+import {
+  parseCategoryName,
+  parseCategorySlug,
+  parseCategoryTags,
+} from "../modules/channel/domain/category.ts";
 import { prismaCategoryCatalog } from "../modules/channel/infrastructure/prisma-category-catalog.ts";
 import {
   apiResourceOf,
@@ -41,16 +45,16 @@ export const ADMIN_ACCOUNT = {
 } as const;
 
 export const DEV_CATEGORIES = [
-  { slug: "just-chatting", name: "Just Chatting" },
-  { slug: "league-of-legends", name: "League of Legends" },
-  { slug: "valorant", name: "Valorant" },
-  { slug: "minecraft", name: "Minecraft" },
-  { slug: "fortnite", name: "Fortnite" },
-  { slug: "gta-v", name: "GTA V" },
-  { slug: "counter-strike", name: "Counter-Strike" },
-  { slug: "music", name: "Music" },
-  { slug: "art", name: "Art" },
-  { slug: "irl", name: "IRL" },
+  { slug: "just-chatting", name: "Just Chatting", tags: ["IRL"] },
+  { slug: "league-of-legends", name: "League of Legends", tags: ["MOBA", "Strategy"] },
+  { slug: "valorant", name: "Valorant", tags: ["FPS", "Shooter"] },
+  { slug: "minecraft", name: "Minecraft", tags: ["Simulation", "Adventure"] },
+  { slug: "fortnite", name: "Fortnite", tags: ["Shooter", "RPG"] },
+  { slug: "gta-v", name: "GTA V", tags: ["Action", "Adventure"] },
+  { slug: "counter-strike", name: "Counter-Strike", tags: ["FPS", "Shooter"] },
+  { slug: "music", name: "Music", tags: ["Creative", "Music"] },
+  { slug: "art", name: "Art", tags: ["Creative"] },
+  { slug: "irl", name: "IRL", tags: ["IRL"] },
 ] as const;
 
 const DEMO_CATEGORY = "just-chatting";
@@ -203,30 +207,47 @@ const grantPlatformAdmin = async (env: Env, client: Client, userId: string): Pro
   }
 };
 
-const devCategory = ({ slug, name }: (typeof DEV_CATEGORIES)[number]) => {
+const devCategory = ({ slug, name, tags }: (typeof DEV_CATEGORIES)[number]) => {
   const parsedSlug = parseCategorySlug(slug);
   const parsedName = parseCategoryName(name);
-  if (!parsedSlug.ok || !parsedName.ok) {
+  const parsedTags = parseCategoryTags(tags);
+  if (!parsedSlug.ok || !parsedName.ok || !parsedTags.ok) {
     throw new Error(`catégorie de seed invalide : ${slug}`);
   }
-  return { slug: parsedSlug.value, name: parsedName.value };
+  return { slug: parsedSlug.value, name: parsedName.value, tags: parsedTags.value };
 };
+
+const sameTags = (left: readonly string[], right: readonly string[]): boolean =>
+  left.length === right.length && left.every((tag, index) => tag === right[index]);
 
 const seedCategories = (env: Env): Promise<number> =>
   withContext(env, "channel", async (prisma) => {
     const catalog = prismaCategoryCatalog(prisma);
     const outcomes = await DEV_CATEGORIES.reduce<Promise<readonly boolean[]>>(
-      async (previous, category) => [
-        ...(await previous),
-        (
-          await catalog.create({
-            ...devCategory(category),
-            categoryId: randomUUID(),
+      async (previous, category) => {
+        const done = await previous;
+        const { slug, name, tags } = devCategory(category);
+        const created = await catalog.create({
+          slug,
+          name,
+          categoryId: randomUUID(),
+          outboxEventId: randomUUID(),
+          occurredAt: new Date(),
+        });
+        const current = await catalog.findBySlug(slug);
+        if (current !== null && !sameTags(current.tags, tags)) {
+          const tagged = await catalog.changeTags({
+            categoryId: current.id,
+            tags,
             outboxEventId: randomUUID(),
             occurredAt: new Date(),
-          })
-        ).ok,
-      ],
+          });
+          if (!tagged.ok) {
+            throw new Error(`tags de la catégorie ${slug} inchangés : ${tagged.error}`);
+          }
+        }
+        return [...done, created.ok];
+      },
       Promise.resolve([]),
     );
     return outcomes.filter(Boolean).length;

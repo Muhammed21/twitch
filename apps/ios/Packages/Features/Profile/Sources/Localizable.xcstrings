@@ -31,6 +31,66 @@
         }
       }
     },
+    "editProfile.about" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About"
+          }
+        }
+      }
+    },
+    "editProfile.bio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bio"
+          }
+        }
+      }
+    },
+    "editProfile.bio.failed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't save your bio. Try again."
+          }
+        }
+      }
+    },
+    "editProfile.bio.placeholder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Who you are in fewer than 300 characters."
+          }
+        }
+      }
+    },
+    "editProfile.bio.remaining %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld characters remaining"
+          }
+        }
+      }
+    },
+    "editProfile.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Profile"
+          }
+        }
+      }
+    },
     "editStreamInfo.cancel" : {
       "localizations" : {
         "en" : {
@@ -187,6 +247,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "H.264"
+          }
+        }
+      }
+    },
+    "profile.edit" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Profile"
           }
         }
       }

@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import type { CategoryView } from "../domain/category-view.ts";
-import { type CategoryViewReader, listCategoryLives } from "./category-reads.ts";
+import {
+  type CategoryAudienceLookup,
+  type CategoryViewReader,
+  listCategoryLives,
+  readCategoryHeader,
+} from "./category-reads.ts";
 import type { ListedLive, ListLives, LivesRequest } from "./list-lives.ts";
 
 const JUST_CHATTING = "0b5e4d3c-2a19-4f08-8e7d-6c5b4a392817";
@@ -16,12 +21,19 @@ const makeCategory = (overrides: Partial<CategoryView> = {}): CategoryView => ({
   status: "active",
   mergedIntoId: null,
   imageKey: null,
+  tags: [],
   ...overrides,
 });
 
 const CATEGORIES: readonly CategoryView[] = [
   makeCategory(),
-  makeCategory({ categoryId: IRL, slug: "irl", name: "IRL" }),
+  makeCategory({
+    categoryId: IRL,
+    slug: "irl",
+    name: "IRL",
+    imageKey: "images/category/irl.webp",
+    tags: ["IRL", "Discussion"],
+  }),
   makeCategory({
     categoryId: TALK,
     slug: "talk",
@@ -108,5 +120,72 @@ describe("lives d'une catégorie", () => {
 
     expect(await result).toEqual({ ok: false, error: "category_not_found" });
     expect(requests).toEqual([]);
+  });
+});
+
+describe("en-tête d'une catégorie (ADR 0050)", () => {
+  const audienceOf =
+    (known: Readonly<Record<string, { liveCount: number; viewerCount: number }>>) =>
+    (asked: string[]): CategoryAudienceLookup => ({
+      of: async (categoryId) => {
+        asked.push(categoryId);
+        return known[categoryId] ?? null;
+      },
+    });
+
+  const headerFor = async (
+    slug: string,
+    known: Readonly<Record<string, { liveCount: number; viewerCount: number }>> = {},
+  ) => {
+    const asked: string[] = [];
+    const { reader } = recordingReader();
+    const result = await readCategoryHeader({
+      categories: reader,
+      audience: audienceOf(known)(asked),
+    })(slug);
+    return { result, asked };
+  };
+
+  it("rend le nom, la pochette, les tags et l'audience de la catégorie", async () => {
+    const { result, asked } = await headerFor("irl", { [IRL]: { liveCount: 2, viewerCount: 70 } });
+
+    expect(result).toEqual({
+      ok: true,
+      value: {
+        categoryId: IRL,
+        slug: "irl",
+        name: "IRL",
+        imageKey: "images/category/irl.webp",
+        tags: ["IRL", "Discussion"],
+        liveCount: 2,
+        viewerCount: 70,
+      },
+    });
+    expect(asked).toEqual([IRL]);
+  });
+
+  it("rend une audience nulle pour une catégorie sans live", async () => {
+    const { result } = await headerFor("just-chatting");
+
+    expect(result).toMatchObject({
+      ok: true,
+      value: { slug: "just-chatting", liveCount: 0, viewerCount: 0 },
+    });
+  });
+
+  it("mène le slug d'une catégorie fusionnée à l'en-tête de sa cible", async () => {
+    const { result } = await headerFor("talk", { [IRL]: { liveCount: 1, viewerCount: 5 } });
+
+    expect(result).toMatchObject({
+      ok: true,
+      value: { slug: "irl", liveCount: 1, viewerCount: 5 },
+    });
+  });
+
+  it.each(["inconnue", "art"])("ne trouve pas la catégorie %s", async (slug) => {
+    const { result, asked } = await headerFor(slug);
+
+    expect(result).toEqual({ ok: false, error: "category_not_found" });
+    expect(asked).toEqual([]);
   });
 });

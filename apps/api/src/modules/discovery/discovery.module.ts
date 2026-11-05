@@ -14,7 +14,7 @@ import { errorDetails, type LogSink, writeLog } from "../../platform/logging.ts"
 import { startPeriodicJob } from "../../platform/periodic-job.ts";
 import { startStreamConsumer, type StreamConsumerRedis } from "../../platform/stream-consumer.ts";
 import { browseCategories, refreshCategoryAudience } from "./application/category-audience.ts";
-import { listCategoryLives } from "./application/category-reads.ts";
+import { listCategoryLives, readCategoryHeader } from "./application/category-reads.ts";
 import {
   type ListLives,
   listLives,
@@ -32,10 +32,12 @@ import {
 } from "./application/rebuild-live-channel-views.ts";
 import { pgOutboxHistory } from "./infrastructure/pg-outbox-history.ts";
 import {
+  prismaCategoryAudienceLookup,
   prismaCategoryAudienceReader,
   prismaCategoryAudienceStore,
   prismaLivesInCategory,
 } from "./infrastructure/prisma-category-audience.ts";
+import { prismaCategoryFollowProjection } from "./infrastructure/prisma-category-follow-projection.ts";
 import {
   type DiscoveryPrisma,
   prismaCategoryProjection,
@@ -46,6 +48,7 @@ import { prismaCategoryViewReader, prismaLiveReader } from "./infrastructure/pri
 import { prismaLiveStatusReader } from "./infrastructure/prisma-live-status-reader.ts";
 import {
   BROWSE_CATEGORIES,
+  READ_CATEGORY_HEADER,
   CategoriesController,
   LIST_CATEGORY_LIVES,
 } from "./presentation/categories.controller.ts";
@@ -181,6 +184,13 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
           provide: BROWSE_CATEGORIES,
           useValue: browseCategories(prismaCategoryAudienceReader(dependencies.prisma)),
         },
+        {
+          provide: READ_CATEGORY_HEADER,
+          useValue: readCategoryHeader({
+            categories: prismaCategoryViewReader(dependencies.prisma),
+            audience: prismaCategoryAudienceLookup(dependencies.prisma),
+          }),
+        },
         { provide: CATEGORY_IMAGE_URL, useValue: dependencies.images.imageUrlOf },
       ],
     };
@@ -192,6 +202,7 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
       project: projectDiscoveryEvent({
         channels: prismaLiveChannelProjection(prisma),
         categories: prismaCategoryProjection(prisma),
+        follows: prismaCategoryFollowProjection(prisma),
       }),
       logSink,
     });
