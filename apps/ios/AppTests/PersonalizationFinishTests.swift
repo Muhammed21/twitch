@@ -98,7 +98,7 @@ private struct LateVariant: BootstrapSource {
   }
 }
 
-private let monthly = SubscriptionPackage(id: "$rc_monthly", offeringID: "default", period: .month, localizedPrice: "4,99 €")
+private let monthly = SubscriptionPackage(id: "$rc_monthly", offeringID: "default", period: .month, localizedPrice: "4,99 €", price: 4.99)
 private let noLinks = PaywallLinks(terms: nil, privacy: nil)
 
 @MainActor

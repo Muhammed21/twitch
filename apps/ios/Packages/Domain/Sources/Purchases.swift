@@ -10,12 +10,14 @@ public struct SubscriptionPackage: Equatable, Sendable {
   public let offeringID: String
   public let period: SubscriptionPeriod
   public let localizedPrice: String
+  public let price: Decimal
 
-  public init(id: String, offeringID: String, period: SubscriptionPeriod, localizedPrice: String) {
+  public init(id: String, offeringID: String, period: SubscriptionPeriod, localizedPrice: String, price: Decimal) {
     self.id = id
     self.offeringID = offeringID
     self.period = period
     self.localizedPrice = localizedPrice
+    self.price = price
   }
 }
 
