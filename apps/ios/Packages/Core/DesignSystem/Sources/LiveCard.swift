@@ -27,27 +27,56 @@ public struct LiveCard: View {
   private let title: String
   private let category: String?
   private let preview: LivePreview
+  private let avatarURL: URL?
 
-  public init(badge: String, viewers: String?, name: String, title: String, category: String?, preview: LivePreview) {
+  public init(
+    badge: String,
+    viewers: String?,
+    name: String,
+    title: String,
+    category: String?,
+    preview: LivePreview,
+    avatarURL: URL? = nil
+  ) {
     self.badge = badge
     self.viewers = viewers
     self.name = name
     self.title = title
     self.category = category
     self.preview = preview
+    self.avatarURL = avatarURL
   }
 
   public var body: some View {
     VStack(alignment: .leading, spacing: 0) {
       thumbnail
       HStack(alignment: .top, spacing: LayoutRole.cardAvatarGap.points) {
-        DefaultAvatar(diameter: LayoutRole.cardAvatarSize.points, glyphInset: LayoutRole.cardAvatarGlyphInset.points)
+        avatar
         info
       }
       .padding(.horizontal, LayoutRole.cardInset.points)
       .padding(.top, LayoutRole.cardInfoTop.points)
       .padding(.bottom, LayoutRole.cardInfoBottom.points)
     }
+  }
+
+  @ViewBuilder private var avatar: some View {
+    if let avatarURL {
+      AsyncImage(url: avatarURL) { image in
+        image.resizable().scaledToFill()
+          .frame(width: LayoutRole.cardAvatarSize.points, height: LayoutRole.cardAvatarSize.points)
+          .clipShape(Circle())
+          .accessibilityHidden(true)
+      } placeholder: {
+        defaultAvatar
+      }
+    } else {
+      defaultAvatar
+    }
+  }
+
+  private var defaultAvatar: some View {
+    DefaultAvatar(diameter: LayoutRole.cardAvatarSize.points, glyphInset: LayoutRole.cardAvatarGlyphInset.points)
   }
 
   private var thumbnail: some View {

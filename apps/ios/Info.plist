@@ -32,6 +32,10 @@
 	<string>https://www.apple.com/legal/internet-services/itunes/dev/stdeula/</string>
 	<key>PRIVACY_URL</key>
 	<string></string>
+	<key>POSTHOG_HOST</key>
+	<string>https://eu.i.posthog.com</string>
+	<key>POSTHOG_PROJECT_KEY</key>
+	<string>phc_x8qVBvQyHmpTTxtReyWBi487xBP4jSavvfJYPd5Na9ai</string>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>

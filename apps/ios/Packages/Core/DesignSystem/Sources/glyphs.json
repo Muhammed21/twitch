@@ -104,6 +104,21 @@
         "transparentAtOrBelow": 6,
         "opaqueAtOrAbove": 505
       }
+    },
+    {
+      "name": "turboBattery",
+      "source": "docs/reference-ui/abonnement/turbo--defaut.png",
+      "rect": {
+        "x": 165,
+        "y": 794,
+        "width": 81,
+        "height": 81
+      },
+      "background": "#9047ff",
+      "opacity": {
+        "transparentAtOrBelow": 4,
+        "opaqueAtOrAbove": 293
+      }
     }
   ]
 }

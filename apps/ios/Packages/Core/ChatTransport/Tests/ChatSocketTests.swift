@@ -5,7 +5,7 @@ import Testing
 
 private let messageFrame = #"""
 42["chat:message",{"id":"1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f","channelId":"9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69",\#
-"author":{"id":"4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b","displayName":"Viewer de test"},\#
+"author":{"id":"4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b","displayName":"Viewer de test","badges":[]},\#
 "body":"Bonjour le chat","sentAt":"2026-11-03T20:15:00Z"}]
 """#
 

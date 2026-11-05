@@ -68,6 +68,17 @@ const seedChannel = async (ownerId: string) => {
   return channel;
 };
 
+const seedTurboEntitlement = async ({ userId, expiresAt }: { userId: string; expiresAt: Date }) => {
+  await asMigrator((client) =>
+    client.query(
+      `INSERT INTO "monetization"."MonetizationEntitlement"
+         ("id", "userId", "scope", "status", "source", "expiresAt", "lastEventAt", "updatedAt")
+       VALUES ($1, $2, 'PLATFORM', 'ACTIVE', 'APPLE_IAP', $3, now(), now())`,
+      [randomUUID(), userId, expiresAt],
+    ),
+  );
+};
+
 const seedStreamSession = async ({
   channelId,
   startedAt,
@@ -93,6 +104,26 @@ const changeBio = async (base: string, accessToken: string, bio: unknown) => {
   });
   return { status: response.status, body: (await response.json()) as Record<string, unknown> };
 };
+
+const changeChatColor = async (base: string, accessToken: string, chatColor: unknown) => {
+  const response = await fetch(`${base}/v1/me/chat-color`, {
+    method: "PUT",
+    headers: { "content-type": "application/json", authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify({ chatColor }),
+  });
+  return { status: response.status, body: (await response.json()) as Record<string, unknown> };
+};
+
+const chatColorEventsOf = (accountId: string) =>
+  asMigrator(async (client) => {
+    const { rows } = await client.query<{ payload: unknown }>(
+      `SELECT "payload" FROM "identity"."IdentityOutbox"
+        WHERE "name" = 'identity.chat_color.changed' AND "payload"->>'accountId' = $1
+        ORDER BY "occurredAt", "id"`,
+      [accountId],
+    );
+    return rows.map(({ payload }) => payload);
+  });
 
 const sessionCookieOf = async (base: string) => {
   const response = await fetch(`${base}/auth/sign-up/email`, {
@@ -880,6 +911,52 @@ describe("identity : caractérisation OAuth de l'ADR 0026, contre le vrai better
     });
   });
 
+  it("enregistre la couleur de PUT /v1/me/chat-color en majuscules, avec son event, et la relit sur GET /v1/me", async () => {
+    await withApi(async (base) => {
+      const { tokens } = await signIn(base);
+      const { userId } = identityOf(tokens.access_token);
+
+      expect(await changeChatColor(base, tokens.access_token, "#9146ff")).toMatchObject({
+        status: 200,
+        body: { chatColor: "#9146FF" },
+      });
+      expect((await me(base, tokens.access_token)).body).toMatchObject({ chatColor: "#9146FF" });
+      expect(await chatColorEventsOf(userId)).toEqual([
+        { accountId: userId, chatColor: "#9146FF" },
+      ]);
+    });
+  });
+
+  it("revient à la couleur par défaut sur un corps sans chatColor, avec son event, et sans event quand rien ne change", async () => {
+    await withApi(async (base) => {
+      const { tokens } = await signIn(base);
+      const { userId } = identityOf(tokens.access_token);
+      await changeChatColor(base, tokens.access_token, "#9146FF");
+
+      const reset = await changeChatColor(base, tokens.access_token, undefined);
+      await changeChatColor(base, tokens.access_token, undefined);
+
+      expect(reset.status).toBe(200);
+      expect(reset.body).not.toHaveProperty("chatColor");
+      expect((await me(base, tokens.access_token)).body).not.toHaveProperty("chatColor");
+      expect(await chatColorEventsOf(userId)).toEqual([
+        { accountId: userId, chatColor: "#9146FF" },
+        { accountId: userId, chatColor: null },
+      ]);
+    });
+  });
+
+  it("refuse en 400 une couleur hors format, sans event ni changement", async () => {
+    await withApi(async (base) => {
+      const { tokens } = await signIn(base);
+      const { userId } = identityOf(tokens.access_token);
+
+      expect((await changeChatColor(base, tokens.access_token, "violet")).status).toBe(400);
+      expect((await me(base, tokens.access_token)).body).not.toHaveProperty("chatColor");
+      expect(await chatColorEventsOf(userId)).toEqual([]);
+    });
+  });
+
   it("enregistre la bio de PATCH /v1/me et la relit sur GET /v1/me", async () => {
     await withApi(async (base) => {
       const { tokens } = await signIn(base);
@@ -963,6 +1040,23 @@ describe("identity : caractérisation OAuth de l'ADR 0026, contre le vrai better
       });
 
       expect(await response.json()).toMatchObject({ profile: { id: userId, channel } });
+    });
+  });
+
+  it("rend l'entitlement Turbo actif du compte dans GET /v1/mobile/bootstrap", async () => {
+    await withApi(async (base) => {
+      const { tokens } = await signIn(base);
+      const { userId } = identityOf(tokens.access_token);
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      await seedTurboEntitlement({ userId, expiresAt });
+
+      const response = await fetch(`${base}/v1/mobile/bootstrap`, {
+        headers: { authorization: `Bearer ${tokens.access_token}` },
+      });
+
+      expect(await response.json()).toMatchObject({
+        entitlements: [{ scope: "platform", expiresAt: expiresAt.toISOString() }],
+      });
     });
   });
 

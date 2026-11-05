@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { Uuid } from "../conventions/schemas.ts";
+import { ChatColor, openEnum, Uuid } from "../conventions/schemas.ts";
 
 export const OwnedChannel = z
   .looseObject({
@@ -18,9 +18,21 @@ export const Profile = z
     lastLiveAt: z.iso.datetime().optional(),
     avatarUrl: z.url({ protocol: /^https?$/ }).optional(),
     bannerUrl: z.url({ protocol: /^https?$/ }).optional(),
+    chatColor: ChatColor.optional(),
     channel: OwnedChannel.optional(),
   })
   .meta({ id: "Profile" });
+
+export const Entitlement = z
+  .looseObject({
+    scope: openEnum(["platform"]).pipe(z.string().min(1)),
+    expiresAt: z.iso.datetime(),
+  })
+  .meta({ id: "Entitlement" });
+
+export const EntitlementList = z
+  .looseObject({ entitlements: z.array(Entitlement) })
+  .meta({ id: "EntitlementList" });
 
 export const MobileBootstrap = z
   .looseObject({
@@ -30,5 +42,6 @@ export const MobileBootstrap = z
       exp_paywall_variant: z.string().min(1).optional(),
     }),
     profile: Profile.optional(),
+    entitlements: z.array(Entitlement),
   })
   .meta({ id: "MobileBootstrap" });

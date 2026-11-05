@@ -13,6 +13,7 @@ import { startChatServer } from "./chat-server.ts";
 import { LocalAdapter } from "./testing/local-adapter.ts";
 import { readMetrics } from "./testing/metrics.ts";
 import { makeTokenAuthority } from "./testing/tokens.ts";
+import { NO_TURBO } from "./testing/turbo.ts";
 import { pendingPacketsOf } from "./write-buffer.ts";
 
 const MAX_PACKETS = 100;
@@ -64,6 +65,7 @@ const startStallableProxy = async (targetPort: number) => {
 const startServer = async (room: RoomState, closeAfterMs: number) => {
   const authority = await makeTokenAuthority();
   const server = await startChatServer({
+    turbos: NO_TURBO,
     port: 0,
     verifier: authority.verifier(),
     log: () => undefined,

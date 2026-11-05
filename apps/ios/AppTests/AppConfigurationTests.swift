@@ -1,3 +1,4 @@
+import Analytics
 import Domain
 import Foundation
 import Networking
@@ -42,6 +43,14 @@ struct AppConfigurationTests {
     let schemes = types.flatMap { $0["CFBundleURLSchemes"] as? [String] ?? [] }
 
     #expect(schemes == [OAuthConfiguration.callbackScheme])
+  }
+
+  @Test("porte la clé du projet PostHog et l'hôte de la région EU")
+  func analyticsConfiguration() throws {
+    let configuration = try #require(AnalyticsConfiguration(info: info))
+
+    #expect(configuration.projectKey == "phc_x8qVBvQyHmpTTxtReyWBi487xBP4jSavvfJYPd5Na9ai")
+    #expect(configuration.host.absoluteString == "https://eu.i.posthog.com")
   }
 
   @Test("n'ouvre ATS qu'au réseau local")

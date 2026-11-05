@@ -31,7 +31,8 @@ extension LiveChannel {
       slug: slug,
       title: live.title,
       viewers: live.viewerCount.flatMap { try? ViewerCount($0) },
-      thumbnailURL: live.thumbnailUrl.flatMap { URL(webAddress: $0) }
+      thumbnailURL: live.thumbnailUrl.flatMap { URL(webAddress: $0) },
+      avatarURL: live.avatarUrl.flatMap { URL(webAddress: $0) }
     )
   }
 }
