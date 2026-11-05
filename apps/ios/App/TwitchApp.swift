@@ -116,7 +116,7 @@ struct RootView: View {
         router: router
       )
     case .signedIn:
-      SignedInModes()
+      SignedInModes(paywall: PersonalizationPaywall(purchases: purchases, launch: launch, links: paywallLinks))
     case .updateRequired:
       UpdateRequiredScreen()
     }
@@ -124,6 +124,7 @@ struct RootView: View {
 }
 
 struct SignedInRoot: View {
+  let paywall: PersonalizationPaywall
   @Environment(Router.self) private var router
   @Environment(CreatorMode.self) private var creatorMode
   @Environment(SessionStore.self) private var session
@@ -166,15 +167,8 @@ struct SignedInRoot: View {
       .toolbar(.hidden, for: .tabBar)
       .tag(AppTab.browse)
       NavigationStack(path: $router.profilePath) {
-        ProfileScreen(account: account, actions: ProfileActions(
-          onOpenChannel: { router.push(.channel($0)) },
-          onAccountSaved: { session.accountSaved($0) },
-          onStreamManager: { router.create() },
-          onAnalytics: { Task { await creatorMode.switchMode(landingOn: .stats) } }
-        )) {
-          SignedInScreen()
-        }
-        .withRouteDestinations()
+        ViewerProfileTab(account: account, paywall: paywall)
+          .withRouteDestinations()
       }
       .toolbar(.hidden, for: .tabBar)
       .tag(AppTab.profile)
