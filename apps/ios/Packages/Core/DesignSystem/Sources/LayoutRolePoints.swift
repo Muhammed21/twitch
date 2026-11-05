@@ -128,16 +128,6 @@ public extension LayoutRole {
     case .journeyChipPaddingH: Spacing.x16
     case .journeyChipPaddingV: Spacing.x8
     case .journeyChipGap: Spacing.x8
-    case .paywallBandHeight: Spacing.x72
-    case .paywallHeadlineTop: Spacing.x12
-    case .paywallTaglineGap: Spacing.x12
-    case .paywallActionTop: Spacing.x24
-    case .paywallButtonInset: Spacing.x44
-    case .paywallBillingGap: Spacing.x8
-    case .paywallPackageGap: Spacing.x16
-    case .paywallLegalGap: Spacing.x12
-    case .paywallCardTop: Spacing.x20
-    case .paywallCardPadding: Spacing.x20
     }
   }
 }

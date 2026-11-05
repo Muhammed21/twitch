@@ -10,6 +10,7 @@ import Home
 import Navigation
 import Networking
 import Onboarding
+import Paywall
 import Player
 import Preferences
 import Profile
@@ -24,31 +25,37 @@ struct TwitchApp: App {
 
   var body: some Scene {
     WindowGroup {
-      RootView(personalization: stores.personalization)
-        .environment(stores.session)
-        .environment(stores.launch)
-        .environment(stores.home)
-        .environment(stores.browse)
-        .environment(stores.categoryLives)
-        .environment(stores.categoryHeaders)
-        .environment(stores.router)
-        .environment(stores.player)
-        .environment(stores.channelPlayback)
-        .environment(stores.liveStatus)
-        .environment(stores.presence)
-        .environment(stores.chat)
-        .environment(stores.myChannel)
-        .environment(stores.categorySearch)
-        .environment(stores.profileEdit)
-        .environment(stores.profileImages)
-        .environment(stores.preferences)
-        .environment(\.feedbackPlayer, stores.feedback)
+      RootView(
+        personalization: stores.personalization,
+        purchases: stores.purchases,
+        paywallLinks: PaywallLinks(info: Bundle.main.infoDictionary ?? [:])
+      )
+      .environment(stores.session)
+      .environment(stores.launch)
+      .environment(stores.home)
+      .environment(stores.browse)
+      .environment(stores.categoryLives)
+      .environment(stores.categoryHeaders)
+      .environment(stores.router)
+      .environment(stores.player)
+      .environment(stores.channelPlayback)
+      .environment(stores.liveStatus)
+      .environment(stores.presence)
+      .environment(stores.chat)
+      .environment(stores.myChannel)
+      .environment(stores.categorySearch)
+      .environment(stores.profileEdit)
+      .environment(stores.profileImages)
+      .environment(stores.preferences)
+      .environment(\.feedbackPlayer, stores.feedback)
     }
   }
 }
 
 struct RootView: View {
   let personalization: PersonalizationSources
+  let purchases: any Purchases
+  let paywallLinks: PaywallLinks
   @Environment(SessionStore.self) private var session
   @Environment(LaunchStore.self) private var launch
   @Environment(Router.self) private var router
@@ -96,7 +103,12 @@ struct RootView: View {
     case .allSet:
       AllSetScreen()
     case .personalization:
-      PersonalizationRoot(session: session, preferences: preferences, sources: personalization)
+      PersonalizationRoot(
+        session: session,
+        preferences: preferences,
+        sources: personalization,
+        paywall: PersonalizationPaywall(purchases: purchases, variant: launch.flags.paywallVariant, links: paywallLinks)
+      )
     case .signedIn:
       SignedInRoot()
     case .updateRequired:

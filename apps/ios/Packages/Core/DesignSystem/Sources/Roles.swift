@@ -222,16 +222,6 @@ public enum LayoutRole: Sendable {
   case journeyChipPaddingH
   case journeyChipPaddingV
   case journeyChipGap
-  case paywallBandHeight
-  case paywallHeadlineTop
-  case paywallTaglineGap
-  case paywallActionTop
-  case paywallButtonInset
-  case paywallBillingGap
-  case paywallPackageGap
-  case paywallLegalGap
-  case paywallCardTop
-  case paywallCardPadding
 }
 
 public enum ActionButtonKind: Sendable {

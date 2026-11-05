@@ -3,8 +3,15 @@ import Domain
 import Foundation
 import Networking
 import Onboarding
+import Paywall
 import Preferences
 import SwiftUI
+
+@MainActor
+@Observable
+final class PaywallPresentation {
+  var isShown = false
+}
 
 struct PersonalizationRoot: View {
   static let steps: [PersonalizationStep] = [
@@ -16,18 +23,36 @@ struct PersonalizationRoot: View {
   @State private var categories: CategoryChoices
   @State private var interests: InterestChoices
   @State private var notifications: NotificationChoices
+  @State private var presentation: PaywallPresentation
+  @State private var paywall: PaywallStore
+  private let links: PaywallLinks
+  private let onClose: () -> Void
 
-  init(session: SessionStore, preferences: PreferencesStore, sources: PersonalizationSources) {
+  init(session: SessionStore, preferences: PreferencesStore, sources: PersonalizationSources, paywall: PersonalizationPaywall) {
     let choices = sources.choices(preferences: preferences)
     _categories = State(initialValue: choices.categories)
     _interests = State(initialValue: choices.interests)
     _notifications = State(initialValue: choices.notifications)
+    let presentation = PaywallPresentation()
+    let purchases = paywall.purchases
+    _presentation = State(initialValue: presentation)
+    _paywall = State(initialValue: PaywallStore(purchases: purchases, offeringID: nil, variant: paywall.variant))
+    links = paywall.links
+    onClose = { Self.complete(account: session.accountID, preferences: preferences, close: session.finishPersonalization) }
     _journey = State(initialValue: PersonalizationJourney(
       steps: Self.steps,
       now: { Date.now },
       record: { _ in },
       onFinish: {
-        Self.finish(account: session.accountID, preferences: preferences, close: session.finishPersonalization)
+        Task {
+          await Self.finish(
+            account: session.accountID,
+            preferences: preferences,
+            purchases: purchases,
+            showPaywall: { presentation.isShown = true },
+            close: { Self.complete(account: session.accountID, preferences: preferences, close: session.finishPersonalization) }
+          )
+        }
       }
     ))
   }
@@ -38,10 +63,28 @@ struct PersonalizationRoot: View {
       .environment(categories)
       .environment(interests)
       .environment(notifications)
+      .fullScreenCover(isPresented: Binding(get: { presentation.isShown }, set: { presentation.isShown = $0 })) {
+        PaywallScreen(store: paywall, links: links, onClose: onClose)
+      }
   }
 
   @MainActor
-  static func finish(account: UUID?, preferences: PreferencesStore, close: () -> Void) {
+  static func finish(
+    account: UUID?,
+    preferences: PreferencesStore,
+    purchases: any Purchases,
+    showPaywall: () -> Void,
+    close: () -> Void
+  ) async {
+    guard purchases.isAvailable, await (try? purchases.isTurboActive()) != true else {
+      complete(account: account, preferences: preferences, close: close)
+      return
+    }
+    showPaywall()
+  }
+
+  @MainActor
+  static func complete(account: UUID?, preferences: PreferencesStore, close: () -> Void) {
     if let account {
       preferences.completeOnboarding(account)
     }
@@ -55,6 +98,12 @@ struct PersonalizationRoot: View {
       onChange: { _ in }
     )
   }
+}
+
+struct PersonalizationPaywall {
+  let purchases: any Purchases
+  let variant: String?
+  let links: PaywallLinks
 }
 
 struct PersonalizationSources {

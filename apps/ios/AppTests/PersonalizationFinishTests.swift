@@ -6,12 +6,47 @@ import Testing
 @testable import Twitch
 
 @MainActor
-private final class CloseRecorder {
-  private(set) var closes = 0
+private final class EndingRecorder {
+  private(set) var endings: [String] = []
 
   func close() {
-    closes += 1
+    endings.append("home")
   }
+
+  func showPaywall() {
+    endings.append("paywall")
+  }
+}
+
+@MainActor
+private final class StubPurchases: Purchases {
+  let isAvailable: Bool
+  let turbo: Result<Bool, PurchasesFailure>
+
+  init(isAvailable: Bool = true, turbo: Result<Bool, PurchasesFailure> = .success(false)) {
+    self.isAvailable = isAvailable
+    self.turbo = turbo
+  }
+
+  func offering(_: String?) async throws(PurchasesFailure) -> SubscriptionOffering {
+    throw .noOffering
+  }
+
+  func purchase(_: SubscriptionPackage) async throws(PurchasesFailure) -> PurchaseOutcome {
+    .cancelled
+  }
+
+  func restore() async throws(PurchasesFailure) -> Bool {
+    false
+  }
+
+  func isTurboActive() async throws(PurchasesFailure) -> Bool {
+    try turbo.get()
+  }
+
+  func setAttribute(_: String, for _: String) {}
+  func logIn(_: UUID) async {}
+  func logOut() async {}
 }
 
 private struct OneCategory: CategoryDirectory {
@@ -50,29 +85,81 @@ private func makePreferences() -> PreferencesStore {
 }
 
 @MainActor
-@Suite("Fin du parcours de personnalisation (ADR 0051)")
+private func finish(account: UUID?, preferences: PreferencesStore, purchases: StubPurchases, recorder: EndingRecorder) async {
+  await PersonalizationRoot.finish(
+    account: account,
+    preferences: preferences,
+    purchases: purchases,
+    showPaywall: recorder.showPaywall,
+    close: recorder.close
+  )
+}
+
+@MainActor
+@Suite("Fin du parcours de personnalisation et page 11, le paywall (ADR 0051)")
 struct PersonalizationFinishTests {
-  @Test("terminer le parcours le marque terminé pour ce compte, puis ferme le parcours")
-  func marksAccount() {
+  @Test("le récap ouvre le paywall sans marquer le parcours, qui doit rester affiché sous le paywall")
+  func paywallAfterSummary() async {
     let preferences = makePreferences()
-    let recorder = CloseRecorder()
+    let recorder = EndingRecorder()
     let account = UUID()
 
-    PersonalizationRoot.finish(account: account, preferences: preferences, close: recorder.close)
+    await finish(account: account, preferences: preferences, purchases: StubPurchases(), recorder: recorder)
+
+    #expect(!preferences.hasCompletedOnboarding(account))
+    #expect(recorder.endings == ["paywall"])
+  }
+
+  @Test("fermer le paywall marque le parcours terminé pour ce compte, puis mène à l'accueil")
+  func closingPaywallCompletes() {
+    let preferences = makePreferences()
+    let recorder = EndingRecorder()
+    let account = UUID()
+
+    PersonalizationRoot.complete(account: account, preferences: preferences, close: recorder.close)
 
     #expect(preferences.hasCompletedOnboarding(account))
     #expect(!preferences.hasCompletedOnboarding(UUID()))
-    #expect(recorder.closes == 1)
+    #expect(recorder.endings == ["home"])
   }
 
-  @Test("un compte toujours inconnu au récap ne bloque pas l'utilisateur : le parcours se ferme sans rien marquer")
-  func unknownAccountStillCloses() {
+  @Test("un abonné Turbo passe directement à l'accueil")
+  func subscriberGoesHome() async {
     let preferences = makePreferences()
-    let recorder = CloseRecorder()
+    let recorder = EndingRecorder()
+    let account = UUID()
 
-    PersonalizationRoot.finish(account: nil, preferences: preferences, close: recorder.close)
+    await finish(account: account, preferences: preferences, purchases: StubPurchases(turbo: .success(true)), recorder: recorder)
 
-    #expect(recorder.closes == 1)
+    #expect(preferences.hasCompletedOnboarding(account))
+    #expect(recorder.endings == ["home"])
+  }
+
+  @Test("sans RevenueCat configuré, aucun paywall vide : l'utilisateur passe à l'accueil")
+  func unavailableGoesHome() async {
+    let recorder = EndingRecorder()
+
+    await finish(account: UUID(), preferences: makePreferences(), purchases: StubPurchases(isAvailable: false), recorder: recorder)
+
+    #expect(recorder.endings == ["home"])
+  }
+
+  @Test("un état Turbo illisible n'empêche pas d'ouvrir le paywall")
+  func unknownTurboShowsPaywall() async {
+    let recorder = EndingRecorder()
+
+    await finish(account: UUID(), preferences: makePreferences(), purchases: StubPurchases(turbo: .failure(.failed(code: "networkError"))), recorder: recorder)
+
+    #expect(recorder.endings == ["paywall"])
+  }
+
+  @Test("un compte toujours inconnu ne bloque pas l'utilisateur : le parcours se ferme sans rien marquer")
+  func unknownAccountStillCloses() {
+    let recorder = EndingRecorder()
+
+    PersonalizationRoot.complete(account: nil, preferences: makePreferences(), close: recorder.close)
+
+    #expect(recorder.endings == ["home"])
   }
 
   @Test("chaque parcours repart de zéro : ce qu'un compte a suivi ne se coche pas pour le suivant")

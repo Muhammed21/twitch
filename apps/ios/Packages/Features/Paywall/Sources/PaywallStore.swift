@@ -24,10 +24,12 @@ public final class PaywallStore {
 
   private let purchases: any Purchases
   private let offeringID: String?
+  private let variant: String?
 
-  public init(purchases: any Purchases, offeringID: String?) {
+  public init(purchases: any Purchases, offeringID: String?, variant: String? = nil) {
     self.purchases = purchases
     self.offeringID = offeringID
+    self.variant = variant
   }
 
   public func load() async {
@@ -51,6 +53,9 @@ public final class PaywallStore {
     notice = nil
     purchasing = package
     defer { purchasing = nil }
+    if let variant {
+      purchases.setAttribute(variant, for: "ph_paywall_variant")
+    }
     do {
       if try await purchases.purchase(package) == .subscribed {
         phase = .subscribed
