@@ -43,11 +43,12 @@ struct AppConfigurationTests {
     #expect(schemes == [OAuthConfiguration.callbackScheme])
   }
 
-  @Test("déclare la clé PostHog et son hôte, vides tant qu'aucune clé n'est fournie : l'analytics reste un no-op")
-  func analyticsWithoutKey() {
-    #expect(info[AnalyticsConfiguration.projectKeyInfoKey] as? String == "")
-    #expect(info[AnalyticsConfiguration.hostInfoKey] as? String == "")
-    #expect(AnalyticsConfiguration(info: info) == nil)
+  @Test("porte la clé du projet PostHog et l'hôte de la région EU")
+  func analyticsConfiguration() throws {
+    let configuration = try #require(AnalyticsConfiguration(info: info))
+
+    #expect(configuration.projectKey == "phc_x8qVBvQyHmpTTxtReyWBi487xBP4jSavvfJYPd5Na9ai")
+    #expect(configuration.host.absoluteString == "https://eu.i.posthog.com")
   }
 
   @Test("n'ouvre ATS qu'au réseau local")

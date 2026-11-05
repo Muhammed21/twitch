@@ -25,9 +25,9 @@
 	<key>OAUTH_CLIENT_ID</key>
 	<string>$(OAUTH_CLIENT_ID)</string>
 	<key>POSTHOG_HOST</key>
-	<string>$(POSTHOG_HOST)</string>
+	<string>https://eu.i.posthog.com</string>
 	<key>POSTHOG_PROJECT_KEY</key>
-	<string>$(POSTHOG_PROJECT_KEY)</string>
+	<string>phc_x8qVBvQyHmpTTxtReyWBi487xBP4jSavvfJYPd5Na9ai</string>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>
