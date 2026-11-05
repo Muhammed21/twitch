@@ -72,6 +72,29 @@ describe("lecture d'un webhook RevenueCat", () => {
     expect(readRevenueCatWebhook(body)).toBeNull();
   });
 
+  it("retire NUL des valeurs et des clés, que PostgreSQL refuse en jsonb comme en text", () => {
+    const envelope = makeEnvelope({
+      id: "evt\u0000-1",
+      product_id: "turbo\u0000_monthly",
+      subscriber_attributes: { "$display\u0000Name": { value: ["a\u0000b"] } },
+    });
+
+    expect(readRevenueCatWebhook(bodyOf(envelope))).toEqual({
+      eventId: "evt-1",
+      payload: makeEnvelope({
+        id: "evt-1",
+        product_id: "turbo_monthly",
+        subscriber_attributes: { $displayName: { value: ["ab"] } },
+      }),
+    });
+  });
+
+  it("garde le texte littéral \\u0000, qui n'est pas un caractère NUL", () => {
+    const envelope = makeEnvelope({ product_id: "turbo\\u0000_monthly" });
+
+    expect(readRevenueCatWebhook(bodyOf(envelope))?.payload).toEqual(envelope);
+  });
+
   it("accepte un identifiant de 128 caractères", () => {
     expect(readRevenueCatWebhook(bodyOf(makeEnvelope({ id: "a".repeat(128) })))).toMatchObject({
       eventId: "a".repeat(128),

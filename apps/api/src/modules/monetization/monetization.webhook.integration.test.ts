@@ -87,6 +87,32 @@ describe("POST /v1/webhooks/revenuecat (ADR 0014, ADR 0051 §2)", () => {
     ]);
   });
 
+  it("enregistre en 200 un événement dont une chaîne contient NUL, sans ce caractère", async () => {
+    const eventId = randomUUID();
+    seededEventIds.push(eventId);
+    const body = JSON.stringify({
+      api_version: "1.0",
+      event: {
+        id: eventId,
+        type: "INITIAL_PURCHASE",
+        event_timestamp_ms: 1_794_128_400_000,
+        product_id: "turbo\u0000_monthly",
+      },
+    });
+
+    await withApi(configured, async (url) => {
+      expect((await deliver(url, { body, authorization: AUTHORIZATION })).status).toBe(200);
+    });
+
+    expect(await receivedOf(eventId)).toEqual([
+      expect.objectContaining({
+        payload: expect.objectContaining({
+          event: expect.objectContaining({ product_id: "turbo_monthly" }),
+        }),
+      }),
+    ]);
+  });
+
   it("répond 200 à un doublon sans écrire de seconde ligne", async () => {
     const webhook = makeWebhook();
 
