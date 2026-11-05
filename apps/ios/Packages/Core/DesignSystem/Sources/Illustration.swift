@@ -21,6 +21,14 @@ enum IllustrationTint: String, CaseIterable, Sendable {
   case outline
   case ink
 
+  var maskSuffix: String {
+    switch self {
+    case .fill: "Fill"
+    case .outline: "Outline"
+    case .ink: "Ink"
+    }
+  }
+
   var role: ColorRole {
     switch self {
     case .fill: .illustrationFill
@@ -35,7 +43,7 @@ struct IllustrationLayer: Equatable, Sendable {
   let tint: IllustrationTint
 
   var mask: String {
-    illustration.rawValue + tint.rawValue.prefix(1).uppercased() + tint.rawValue.dropFirst()
+    illustration.rawValue + tint.maskSuffix
   }
 }
 
