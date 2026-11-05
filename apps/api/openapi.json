@@ -1651,6 +1651,14 @@
             "items": {
               "type": "string"
             }
+          },
+          "followerCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "isFollowing": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -1658,7 +1666,8 @@
           "name",
           "liveCount",
           "viewerCount",
-          "tags"
+          "tags",
+          "followerCount"
         ],
         "additionalProperties": {}
       },

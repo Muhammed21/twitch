@@ -412,23 +412,24 @@ describe("CategoryHeader (ADR 0050)", () => {
     liveCount: 12,
     viewerCount: 22000,
     tags: ["Shooter", "RPG"],
+    followerCount: 340,
     ...overrides,
   });
 
   it.each([
     ["avec sa pochette, son audience et ses tags", makeHeader()],
+    ["lu par un compte qui la suit (ADR 0049)", makeHeader({ isFollowing: true })],
+    ["lu par un compte qui ne la suit pas", makeHeader({ isFollowing: false })],
     [
       "sans pochette, sans live ni tag",
-      makeHeader({ imageUrl: undefined, liveCount: 0, viewerCount: 0, tags: [] }),
+      makeHeader({ imageUrl: undefined, liveCount: 0, viewerCount: 0, tags: [], followerCount: 0 }),
     ],
   ])("décode l'en-tête d'une catégorie %s", (_name, header) => {
     expect(responses.CategoryHeader.parse(header)).toEqual(header);
   });
 
   it("garde un champ ajouté plus tard par le serveur", () => {
-    expect(responses.CategoryHeader.parse(makeHeader({ followerCount: 3 }))).toMatchObject({
-      followerCount: 3,
-    });
+    expect(responses.CategoryHeader.parse(makeHeader({ rank: 3 }))).toMatchObject({ rank: 3 });
   });
 
   it.each([
@@ -438,6 +439,10 @@ describe("CategoryHeader (ADR 0050)", () => {
     ["avec un nombre de lives négatif", { liveCount: -1 }],
     ["sans nombre de viewers", { viewerCount: undefined }],
     ["sans tags", { tags: undefined }],
+    ["sans nombre de followers", { followerCount: undefined }],
+    ["avec un nombre de followers négatif", { followerCount: -1 }],
+    ["avec un nombre de followers fractionnaire", { followerCount: 1.5 }],
+    ["avec un suivi qui n'est pas un booléen", { isFollowing: "oui" }],
   ])("refuse un en-tête %s", (_name, overrides) => {
     expect(responses.CategoryHeader.safeParse(makeHeader(overrides)).success).toBe(false);
   });

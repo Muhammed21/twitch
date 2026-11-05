@@ -1,10 +1,12 @@
-import { Controller, Get, Inject, Param, Query } from "@nestjs/common";
+import { Controller, Get, Inject, Param, Query, UseGuards } from "@nestjs/common";
 import { createZodDto, ZodResponse } from "nestjs-zod";
 import type { z } from "zod";
 
+import type { AccessTokenIdentity } from "@repo/auth-verifier";
 import { responses } from "@repo/contracts";
 
 import { responseDto } from "../../../openapi/response-dto.ts";
+import { CurrentIdentity, OptionalAccessTokenGuard } from "../../../platform/authentication.ts";
 import { ProblemException } from "../../../platform/problem.ts";
 import type { BrowseCategories } from "../application/category-audience.ts";
 import type { ListCategoryLives, ReadCategoryHeader } from "../application/category-reads.ts";
@@ -70,15 +72,29 @@ export class CategoriesController {
   }
 
   @Get(":slug")
+  @UseGuards(OptionalAccessTokenGuard)
   @ZodResponse({ status: 200, type: CategoryHeader })
-  async header(@Param("slug") slug: string): Promise<z.input<typeof responses.CategoryHeader>> {
-    const header = await this.readCategoryHeader(slug);
+  async header(
+    @Param("slug") slug: string,
+    @CurrentIdentity() identity: AccessTokenIdentity | undefined,
+  ): Promise<z.input<typeof responses.CategoryHeader>> {
+    const header = await this.readCategoryHeader({ slug, viewerId: identity?.userId });
     if (!header.ok) {
       throw categoryNotFound();
     }
-    const { name, imageKey, liveCount, viewerCount, tags } = header.value;
+    const { name, imageKey, liveCount, viewerCount, tags, followerCount, isFollowing } =
+      header.value;
     return withImageUrl(
-      { slug: header.value.slug, name, imageKey, liveCount, viewerCount, tags: [...tags] },
+      {
+        slug: header.value.slug,
+        name,
+        imageKey,
+        liveCount,
+        viewerCount,
+        tags: [...tags],
+        followerCount,
+        isFollowing,
+      },
       this.imageUrlOf,
     );
   }

@@ -1,8 +1,11 @@
 import { Test } from "@nestjs/testing";
 import { describe, expect, it } from "vitest";
 
+import type { AccessTokenIdentity } from "@repo/auth-verifier";
+import { err, ok } from "@repo/result";
+
 import { buildOpenApiDocument } from "../../../openapi/build-document.ts";
-import { rejectingVerifier } from "../../../platform/authentication.ts";
+import type { AccessTokenVerifier } from "../../../platform/authentication.ts";
 import { configureApp } from "../../../platform/configure-app.ts";
 import { PlatformModule } from "../../../platform/platform.module.ts";
 import type { BrowseCategories, BrowsePage } from "../application/category-audience.ts";
@@ -36,6 +39,22 @@ const IRL_LIVE = makeLive({
   viewerCount: 12,
 });
 
+const VIEWER_ID = "4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b";
+const INVALID_TOKEN = "jeton-invalide";
+
+const makeIdentity = (): AccessTokenIdentity => ({
+  userId: VIEWER_ID,
+  sid: "sid-1",
+  scopes: [],
+  authTime: null,
+  amr: [],
+  revocation: "checked",
+});
+
+const verifier: AccessTokenVerifier = {
+  verify: async (token) => (token === INVALID_TOKEN ? err("invalid_token") : ok(makeIdentity())),
+};
+
 const HEADER = {
   ok: true,
   value: {
@@ -46,13 +65,14 @@ const HEADER = {
     tags: ["Shooter", "RPG"],
     liveCount: 12,
     viewerCount: 22000,
+    followerCount: 340,
   },
 } as const;
 
 type Calls = {
   categoryLives: Parameters<ListCategoryLives>[0][];
   browse: Parameters<BrowseCategories>[0][];
-  headers: string[];
+  headers: Parameters<ReadCategoryHeader>[0][];
 };
 
 const withControllers = async (
@@ -70,8 +90,8 @@ const withControllers = async (
   run: (base: string, calls: Calls, document: () => unknown) => Promise<void>,
 ) => {
   const calls: Calls = { categoryLives: [], browse: [], headers: [] };
-  const readCategoryHeader: ReadCategoryHeader = async (slug) => {
-    calls.headers.push(slug);
+  const readCategoryHeader: ReadCategoryHeader = async (request) => {
+    calls.headers.push(request);
     return header;
   };
   const browseCategories: BrowseCategories = async (request) => {
@@ -87,7 +107,7 @@ const withControllers = async (
       PlatformModule.register({
         schemaVersionCheck: async () => {},
         logSink: () => {},
-        accessTokenVerifier: rejectingVerifier,
+        accessTokenVerifier: verifier,
       }),
     ],
     controllers: [CategoriesController],
@@ -275,8 +295,36 @@ describe("GET /v1/categories/{slug} (ADR 0050)", () => {
         liveCount: 12,
         viewerCount: 22000,
         tags: ["Shooter", "RPG"],
+        followerCount: 340,
       });
-      expect(calls.headers).toEqual(["fortnite"]);
+      expect(calls.headers).toEqual([{ slug: "fortnite", viewerId: undefined }]);
+    });
+  });
+
+  it.each([true, false])(
+    "dit au compte connecté s'il suit la catégorie (isFollowing %s, ADR 0049 §6)",
+    async (isFollowing) => {
+      const header = { ok: true, value: { ...HEADER.value, isFollowing } } as const;
+      await withControllers({ header }, async (base, calls) => {
+        const response = await fetch(`${base}/categories/fortnite`, {
+          headers: { authorization: "Bearer jeton" },
+        });
+
+        expect(response.status).toBe(200);
+        expect(await response.json()).toMatchObject({ followerCount: 340, isFollowing });
+        expect(calls.headers).toEqual([{ slug: "fortnite", viewerId: VIEWER_ID }]);
+      });
+    },
+  );
+
+  it("répond 401 à un jeton invalide, sans lire l'en-tête", async () => {
+    await withControllers({}, async (base, calls) => {
+      const response = await fetch(`${base}/categories/fortnite`, {
+        headers: { authorization: `Bearer ${INVALID_TOKEN}` },
+      });
+
+      expect(response.status).toBe(401);
+      expect(calls.headers).toEqual([]);
     });
   });
 

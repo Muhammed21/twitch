@@ -26,5 +26,7 @@ export const CategoryHeader = z
     liveCount: z.int().min(0),
     viewerCount: z.int().min(0),
     tags: z.array(z.string()),
+    followerCount: z.int().min(0),
+    isFollowing: z.boolean().optional(),
   })
   .meta({ id: "CategoryHeader" });

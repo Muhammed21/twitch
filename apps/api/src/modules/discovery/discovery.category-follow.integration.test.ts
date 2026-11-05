@@ -7,7 +7,10 @@ import { createContextClient } from "@repo/db";
 
 import { rebuildDiscoveryProjection } from "./discovery.module.ts";
 import { applyCategoryFollowEvent } from "./domain/category-follow-view.ts";
-import { prismaCategoryFollowProjection } from "./infrastructure/prisma-category-follow-projection.ts";
+import {
+  prismaCategoryFollowLookup,
+  prismaCategoryFollowProjection,
+} from "./infrastructure/prisma-category-follow-projection.ts";
 
 const urlOf = (variable: string): string => {
   const url = process.env[variable];
@@ -161,6 +164,33 @@ describe("projection du suivi d'une catégorie dans discovery (ADR 0049 §6)", (
 
     expect(await pairOf(userId, categoryId)).toEqual({ following: true, version: 5 });
     expect(await followerCountOf(categoryId)).toBe(1);
+  });
+});
+
+describe("lecture du suivi pour l'en-tête d'une catégorie (ADR 0049 §6)", () => {
+  const lookup = prismaCategoryFollowLookup(discovery);
+
+  it("lit le nombre de followers, et zéro pour une catégorie jamais suivie", async () => {
+    const categoryId = randomUUID();
+    await project({ userId: randomUUID(), categoryId, following: true, version: 1 });
+    await project({ userId: randomUUID(), categoryId, following: true, version: 1 });
+
+    expect(await lookup.followerCountOf(categoryId)).toBe(2);
+    expect(await lookup.followerCountOf(randomUUID())).toBe(0);
+  });
+
+  it("dit qu'un compte suit la catégorie seulement quand sa paire est suivie", async () => {
+    const categoryId = randomUUID();
+    const follower = randomUUID();
+    const former = randomUUID();
+    await project({ userId: follower, categoryId, following: true, version: 1 });
+    await project({ userId: former, categoryId, following: true, version: 1 });
+    await project({ userId: former, categoryId, following: false, version: 2 });
+
+    expect(await lookup.isFollowing({ userId: follower, categoryId })).toBe(true);
+    expect(await lookup.isFollowing({ userId: former, categoryId })).toBe(false);
+    expect(await lookup.isFollowing({ userId: randomUUID(), categoryId })).toBe(false);
+    expect(await lookup.isFollowing({ userId: follower, categoryId: randomUUID() })).toBe(false);
   });
 });
 
