@@ -92,6 +92,8 @@ public enum LayoutRole: Sendable {
   case chatUnreadGap
   case chatUnreadLabelGap
   case chatUnreadLineWidth
+  case chatBadgeSize
+  case chatBadgeDrop
   case composerHeight
   case composerPadding
   case composerRadius
@@ -205,6 +207,8 @@ public enum LayoutRole: Sendable {
     case .chatUnreadGap: Spacing.x2
     case .chatUnreadLabelGap: Spacing.x4
     case .chatUnreadLineWidth: Spacing.x1
+    case .chatBadgeSize: Spacing.x16
+    case .chatBadgeDrop: Spacing.x3
     case .composerHeight: Spacing.x40
     case .composerPadding: Spacing.x12
     case .composerRadius: Radius.lg

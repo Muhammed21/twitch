@@ -9,6 +9,17 @@ struct ChatLine: Equatable {
   let author: String
   let body: String
   let isDeleted: Bool
+  var badges: [ChatBadge] = []
+  var nameColor: ChatNameColor?
+}
+
+extension ChatBadge {
+  var glyph: Glyph? {
+    switch self {
+    case .turbo: .turboBattery
+    case .unknown: nil
+    }
+  }
 }
 
 extension ChatLine {
@@ -21,16 +32,23 @@ extension ChatLine {
       authorID: message.author.id,
       author: "\(message.author.displayName):",
       body: message.isDeleted ? ChatText.messageDeleted : message.body,
-      isDeleted: message.isDeleted
+      isDeleted: message.isDeleted,
+      badges: message.author.badges.filter { $0.glyph != nil },
+      nameColor: message.author.color.flatMap(ChatNameColor.init(hex:))
     )
   }
 
   var styled: AttributedString {
-    let separator = AttributedString(" ")
-    return Self.styled(time, color: .textSecondary)
-      + separator
-      + Self.styled(author, color: .chatName(authorID), font: TextRole.chatAuthor.font)
-      + separator
+    timeStyled + AttributedString(" ") + messageStyled
+  }
+
+  var timeStyled: AttributedString {
+    Self.styled(time, color: .textSecondary)
+  }
+
+  var messageStyled: AttributedString {
+    Self.styled(author, color: nameColor.map(ColorRole.chosenChatName) ?? .chatName(authorID), font: TextRole.chatAuthor.font)
+      + AttributedString(" ")
       + Self.styled(body, color: isDeleted ? .textSecondary : .textPrimary)
   }
 
