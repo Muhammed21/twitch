@@ -119,6 +119,9 @@ const makeChannel = (overrides: Record<string, unknown> = {}) => ({
   slug: "streamer_de_test",
   title: "Speedrun du dimanche",
   ownerId: "4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b",
+  tags: [],
+  contentLabels: [],
+  isBrandedContent: false,
   ...overrides,
 });
 
@@ -141,6 +144,23 @@ describe("Channel", () => {
     };
 
     expect(responses.Channel.parse(makeChannel({ category }))).toEqual(makeChannel({ category }));
+  });
+
+  it("décode les tags, la langue, la classification et le contenu promotionnel", () => {
+    const channel = makeChannel({
+      tags: ["francais", "speedrun"],
+      language: "fr",
+      contentLabels: ["gambling", "profanity"],
+      isBrandedContent: true,
+    });
+
+    expect(responses.Channel.parse(channel)).toEqual(channel);
+  });
+
+  it("garde une langue et un descripteur ajoutés plus tard par le serveur", () => {
+    const channel = makeChannel({ language: "nl", contentLabels: ["horror"] });
+
+    expect(responses.Channel.parse(channel)).toEqual(channel);
   });
 
   it("décode l'URL de la bannière, en HTTP comme en HTTPS", () => {
@@ -166,6 +186,12 @@ describe("Channel", () => {
     ],
     ["avec une bannière qui n'est pas une URL", { bannerUrl: "banner.webp" }],
     ["avec une bannière hors HTTP", { bannerUrl: "ftp://images.twitch.example/b.webp" }],
+    ["sans tags", { tags: undefined }],
+    ["avec un tag qui n'est pas un texte", { tags: [42] }],
+    ["sans classification du contenu", { contentLabels: undefined }],
+    ["avec une langue qui n'est pas un texte", { language: 42 }],
+    ["sans contenu promotionnel", { isBrandedContent: undefined }],
+    ["avec un contenu promotionnel qui n'est pas un booléen", { isBrandedContent: "oui" }],
   ])("refuse une chaîne %s", (_name, overrides) => {
     expect(responses.Channel.safeParse(makeChannel(overrides)).success).toBe(false);
   });

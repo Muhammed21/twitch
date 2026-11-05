@@ -11,6 +11,7 @@ private func statusLines(_ json: String) -> [String] {
 }
 
 private let liveJSON = #"{"channelId":"0f5e2d7a-3c41-4b8e-9a6d-1e2f3a4b5c6d","live":true,"startedAt":"2026-11-03T20:00:00.000Z","viewerCount":42}"#
+private let liveStart = Date(timeIntervalSince1970: 1_793_736_000)
 private let offlineJSON = #"{"channelId":"0f5e2d7a-3c41-4b8e-9a6d-1e2f3a4b5c6d","live":false}"#
 
 private actor FakeLineTransport: HTTPLineTransport {
@@ -52,11 +53,25 @@ struct LiveStatusClientTests {
     #expect(request.headers == ["Accept": "text/event-stream"])
   }
 
-  @Test("traduit chaque événement status, live avec son compteur ou hors live")
+  @Test("traduit chaque événement status, live avec son compteur et son début ou hors live")
   func decodesStatuses() async throws {
     let transport = FakeLineTransport(lines: statusLines(liveJSON) + statusLines(offlineJSON))
 
-    #expect(try await statuses(from: transport) == [.live(viewers: ViewerCount(42)), .offline])
+    #expect(try await statuses(from: transport) == [.live(viewers: ViewerCount(42), startedAt: liveStart), .offline])
+  }
+
+  @Test("lit un début sans fraction de seconde")
+  func startWithoutFraction() async throws {
+    let json = #"{"channelId":"0f5e2d7a-3c41-4b8e-9a6d-1e2f3a4b5c6d","live":true,"startedAt":"2026-11-03T20:00:00Z","viewerCount":42}"#
+
+    #expect(try await statuses(from: FakeLineTransport(lines: statusLines(json))) == [.live(viewers: ViewerCount(42), startedAt: liveStart)])
+  }
+
+  @Test("un début illisible laisse le début inconnu sans écarter le statut")
+  func unreadableStart() async throws {
+    let json = #"{"channelId":"0f5e2d7a-3c41-4b8e-9a6d-1e2f3a4b5c6d","live":true,"startedAt":"hier","viewerCount":42}"#
+
+    #expect(try await statuses(from: FakeLineTransport(lines: statusLines(json))) == [.live(viewers: ViewerCount(42), startedAt: nil)])
   }
 
   @Test("un live sans compteur garde un compteur inconnu")

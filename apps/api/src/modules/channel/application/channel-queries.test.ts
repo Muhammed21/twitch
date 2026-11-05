@@ -24,6 +24,10 @@ const CHANNEL: ChannelView = {
   ownerId: OWNER,
   category: null,
   bannerKey: null,
+  tags: [],
+  language: null,
+  contentLabels: [],
+  isBrandedContent: false,
 };
 
 const JUST_CHATTING: ChannelCategoryView = {
@@ -61,6 +65,10 @@ const memoryDirectory = (channels: readonly ChannelView[] = [CHANNEL]) => {
         ...channel,
         title: change.title ?? channel.title,
         category: change.categoryId === undefined ? channel.category : category,
+        tags: change.tags ?? channel.tags,
+        language: change.language ?? channel.language,
+        contentLabels: change.contentLabels ?? channel.contentLabels,
+        isBrandedContent: change.isBrandedContent ?? channel.isBrandedContent,
       });
     },
   };
@@ -268,6 +276,87 @@ describe("changement de la catégorie d'une chaîne", () => {
       actorId: VIEWER,
       channelId: CHANNEL.id,
       categoryId: JUST_CHATTING.id,
+    });
+
+    expect(outcome).toEqual({ ok: false, error: "forbidden" });
+    expect(changes).toEqual([]);
+  });
+});
+
+describe("changement des infos du stream d'une chaîne", () => {
+  it("pose les tags normalisés, la langue, la classification et le contenu promotionnel", async () => {
+    const { changes, directory } = memoryDirectory();
+
+    const outcome = await rename({ directory })({
+      actorId: OWNER,
+      channelId: CHANNEL.id,
+      tags: ["Français", "SpeedRun"],
+      language: "fr",
+      contentLabels: ["profanity", "gambling", "profanity"],
+      isBrandedContent: true,
+    });
+
+    expect(outcome).toEqual({
+      ok: true,
+      value: {
+        ...CHANNEL,
+        tags: ["francais", "speedrun"],
+        language: "fr",
+        contentLabels: ["gambling", "profanity"],
+        isBrandedContent: true,
+      },
+    });
+    expect(changes).toEqual([
+      {
+        channelId: CHANNEL.id,
+        tags: ["francais", "speedrun"],
+        language: "fr",
+        contentLabels: ["gambling", "profanity"],
+        isBrandedContent: true,
+        outboxEventId: "00000000-0000-4000-8000-000000000001",
+        occurredAt: NOW,
+      },
+    ]);
+  });
+
+  it("retire le contenu promotionnel et vide les tags et la classification", async () => {
+    const { changes, directory } = memoryDirectory([
+      { ...CHANNEL, tags: ["irl"], contentLabels: ["gambling"], isBrandedContent: true },
+    ]);
+
+    const outcome = await rename({ directory })({
+      actorId: OWNER,
+      channelId: CHANNEL.id,
+      tags: [],
+      contentLabels: [],
+      isBrandedContent: false,
+    });
+
+    expect(outcome).toEqual({ ok: true, value: CHANNEL });
+    expect(changes).toMatchObject([{ tags: [], contentLabels: [], isBrandedContent: false }]);
+  });
+
+  it("refuse des tags invalides au propriétaire, sans rien écrire", async () => {
+    const { changes, directory } = memoryDirectory();
+
+    const outcome = await rename({ directory })({
+      actorId: OWNER,
+      channelId: CHANNEL.id,
+      tags: ["speed run"],
+    });
+
+    expect(outcome).toEqual({ ok: false, error: "invalid_tags" });
+    expect(changes).toEqual([]);
+  });
+
+  it("ne révèle pas la règle des tags à un compte sans droit", async () => {
+    const { changes, directory } = memoryDirectory();
+
+    const outcome = await rename({ directory })({
+      actorId: VIEWER,
+      channelId: CHANNEL.id,
+      tags: ["speed run"],
+      isBrandedContent: true,
     });
 
     expect(outcome).toEqual({ ok: false, error: "forbidden" });
