@@ -9,6 +9,7 @@ import Home
 import Navigation
 import Networking
 import Onboarding
+import Paywall
 import Player
 import Preferences
 import Profile
@@ -23,7 +24,7 @@ struct TwitchApp: App {
 
   var body: some Scene {
     WindowGroup {
-      RootView()
+      RootView(purchases: stores.purchases, paywallLinks: PaywallLinks(info: Bundle.main.infoDictionary ?? [:]))
         .environment(stores.session)
         .environment(stores.launch)
         .environment(stores.home)
@@ -48,6 +49,8 @@ struct TwitchApp: App {
 }
 
 struct RootView: View {
+  let purchases: any Purchases
+  let paywallLinks: PaywallLinks
   @Environment(SessionStore.self) private var session
   @Environment(LaunchStore.self) private var launch
   @Environment(Router.self) private var router
@@ -94,7 +97,13 @@ struct RootView: View {
     case .allSet:
       AllSetScreen()
     case .personalization:
-      PersonalizationRoot(session: session, preferences: preferences)
+      PersonalizationRoot(
+        session: session,
+        preferences: preferences,
+        purchases: purchases,
+        variant: launch.flags.paywallVariant,
+        links: paywallLinks
+      )
     case .signedIn:
       SignedInRoot()
     case .updateRequired:
