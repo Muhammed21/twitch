@@ -81,8 +81,14 @@ const channelCreated = (channelId: string, slug: string, ownerId: string = rando
     payload: { channelId, ownerId, slug },
   });
 
-const avatarChanged = (accountId: string, avatarKey: string, occurredAt: Date) =>
+const avatarChanged = (
+  accountId: string,
+  avatarKey: string,
+  occurredAt: Date,
+  id: string = randomUUID(),
+) =>
   publish("events.identity", {
+    id,
     occurredAt,
     name: "identity.avatar.changed",
     payload: { accountId, avatarKey },
@@ -352,6 +358,36 @@ describe("projection LiveChannelView de discovery (ADR 0003, §6)", () => {
       await eventually(async () => expect(await avatarOf(afterReplay)).not.toBeNull());
 
       expect(await avatarOf(accountId)).toEqual({ accountId, ...recent });
+    });
+  });
+
+  it("ignore un avatar dont l'event est déjà traité, et marque l'event traité", async () => {
+    const accountId = randomUUID();
+    const eventId = randomUUID();
+    const first = {
+      avatarKey: "images/avatar/premier.webp",
+      changedAt: new Date("2026-11-05T10:00:00.000Z"),
+    };
+    const afterReplay = randomUUID();
+
+    await withDiscoveryModule(async () => {
+      await avatarChanged(accountId, first.avatarKey, first.changedAt, eventId);
+      await avatarChanged(
+        accountId,
+        "images/avatar/rejoue.webp",
+        new Date("2026-11-05T10:05:00.000Z"),
+        eventId,
+      );
+      await avatarChanged(afterReplay, "images/avatar/suivant.webp", first.changedAt);
+      await eventually(async () => expect(await avatarOf(afterReplay)).not.toBeNull());
+
+      expect(await avatarOf(accountId)).toEqual({ accountId, ...first });
+      expect(
+        await discovery.discoveryProcessedEvent.findMany({
+          where: { eventId },
+          select: { handlerName: true },
+        }),
+      ).toEqual([{ handlerName: "discovery.live-channel-view" }]);
     });
   });
 
