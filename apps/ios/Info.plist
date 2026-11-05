@@ -24,6 +24,10 @@
 	</dict>
 	<key>OAUTH_CLIENT_ID</key>
 	<string>$(OAUTH_CLIENT_ID)</string>
+	<key>POSTHOG_HOST</key>
+	<string>$(POSTHOG_HOST)</string>
+	<key>POSTHOG_PROJECT_KEY</key>
+	<string>$(POSTHOG_PROJECT_KEY)</string>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>

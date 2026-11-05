@@ -1,3 +1,4 @@
+import Analytics
 import Auth
 import Channel
 import Chat
@@ -248,6 +249,7 @@ struct ChannelScreen: View {
 }
 
 struct Stores {
+  let analytics: ProductAnalytics
   let session: SessionStore
   let launch: LaunchStore
   let home: HomeStore
@@ -293,6 +295,7 @@ enum Composition {
       store: KeychainTokenStore(service: Bundle.main.bundleIdentifier ?? "com.muhammedcavus.twitch")
     )
     let now: @Sendable () -> Date = { Date.now }
+    let analytics = ProductAnalytics.live(info: info, defaults: .standard)
     let player = PlayerController(player: AVMediaPlayer(), startupRetry: .every(.seconds(2), attempts: 15))
     let channels = ChannelClient(apiBaseURL: configuration.apiBaseURL, transport: transport)
     let channelPlayback = ChannelPlayback(
@@ -300,8 +303,9 @@ enum Composition {
       playback: PlaybackClient(apiBaseURL: configuration.apiBaseURL, transport: transport),
       controller: player
     )
-    let sessionStore = Self.sessionStore(configuration: configuration, session: session, transport: transport, now: now)
+    let sessionStore = Self.sessionStore(configuration: configuration, session: session, transport: transport, analytics: analytics, now: now)
     return Stores(
+      analytics: analytics,
       session: sessionStore,
       launch: LaunchStore(source: BootstrapClient(apiBaseURL: configuration.apiBaseURL, transport: transport), currentVersion: currentVersion),
       home: HomeStore(directory: LiveDirectoryClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
@@ -366,6 +370,7 @@ enum Composition {
     configuration: OAuthConfiguration,
     session: OAuthSession,
     transport: ClientVersionTransport,
+    analytics: ProductAnalytics,
     now: @escaping @Sendable () -> Date
   ) -> SessionStore {
     SessionStore(
@@ -374,7 +379,8 @@ enum Composition {
       accounts: AccountClient(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
       authenticator: SystemWebAuthenticator(),
       randomBytes: PKCE.systemRandomBytes,
-      now: now
+      now: now,
+      analytics: analytics
     )
   }
 }
