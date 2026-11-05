@@ -13,6 +13,7 @@ struct EditProfileSheet: View {
   @State private var menu: ImagePurpose?
   @State private var target: ImagePurpose?
   @State private var isPicking = false
+  @State private var isShooting = false
   @State private var selection: PhotosPickerItem?
   @State private var avatar: Image?
   @State private var banner: Image?
@@ -56,6 +57,10 @@ struct EditProfileSheet: View {
           isPicking = true
         }
         .accessibilityIdentifier("editProfile.photo.choose")
+        Button(String(localized: EditProfileText.takePhoto)) {
+          Task { await openCamera(for: purpose) }
+        }
+        .accessibilityIdentifier("editProfile.photo.take")
         Button(String(localized: EditProfileText.close), role: .cancel) {}
       }
       .photosPicker(isPresented: $isPicking, selection: $selection, matching: .images)
@@ -64,7 +69,20 @@ struct EditProfileSheet: View {
         selection = nil
         Task { await send(item, as: purpose, through: images) }
       }
+      .fullScreenCover(isPresented: $isShooting) {
+        CameraPicker(onShot: { shot in
+          guard let purpose = target, let images else { return }
+          Task { await send(shot, as: purpose, through: images) }
+        }, onClose: { isShooting = false })
+          .ignoresSafeArea()
+      }
     }
+  }
+
+  private func openCamera(for purpose: ImagePurpose) async {
+    guard let images, await images.canTakePhoto(purpose) else { return }
+    target = purpose
+    isShooting = true
   }
 
   private func brand(_ images: ProfileImageStore) -> some View {
@@ -125,7 +143,11 @@ struct EditProfileSheet: View {
   }
 
   private func send(_ item: PhotosPickerItem, as purpose: ImagePurpose, through images: ProfileImageStore) async {
-    guard let picked = try? await item.loadTransferable(type: Data.self) else {
+    await send(try? item.loadTransferable(type: Data.self), as: purpose, through: images)
+  }
+
+  private func send(_ picked: Data?, as purpose: ImagePurpose, through images: ProfileImageStore) async {
+    guard let picked else {
       images.pickFailed(purpose)
       return
     }
