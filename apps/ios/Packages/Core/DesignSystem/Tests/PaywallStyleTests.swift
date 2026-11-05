@@ -3,17 +3,17 @@ import DesignSystem
 import SwiftUI
 import Testing
 
-private let paywallMeasures: [(LayoutRole, CGFloat)] = [
-  (.paywallBandHeight, 72),
-  (.paywallHeadlineTop, 12),
-  (.paywallTaglineGap, 12),
-  (.paywallActionTop, 24),
-  (.paywallButtonInset, 44),
-  (.paywallBillingGap, 8),
-  (.paywallPackageGap, 16),
-  (.paywallLegalGap, 12),
-  (.paywallCardTop, 20),
-  (.paywallCardPadding, 20),
+private let paywallMeasures: [(PaywallLayout, CGFloat)] = [
+  (.bandHeight, 72),
+  (.headlineTop, 12),
+  (.taglineGap, 12),
+  (.actionTop, 24),
+  (.buttonInset, 44),
+  (.billingGap, 8),
+  (.packageGap, 16),
+  (.legalGap, 12),
+  (.cardTop, 20),
+  (.cardPadding, 20),
 ]
 
 private func hex(of color: Color, in scheme: ColorScheme) -> String? {
@@ -30,7 +30,7 @@ private func hex(of color: Color, in scheme: ColorScheme) -> String? {
 @Suite("Paywall Turbo : relevés sur abonnement/turbo--defaut")
 struct PaywallStyleTests {
   @Test("les mesures de la bande, des boutons, des mentions et de la carte", arguments: paywallMeasures)
-  func layout(role: LayoutRole, points: CGFloat) {
+  func layout(role: PaywallLayout, points: CGFloat) {
     #expect(role.points == points)
   }
 

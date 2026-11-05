@@ -295,10 +295,7 @@ enum Composition {
     let sessionStore = Self.sessionStore(configuration: configuration, session: session, transport: transport, now: now)
     return Stores(
       session: sessionStore,
-      launch: LaunchStore(
-        source: BootstrapClient(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
-        currentVersion: currentVersion
-      ),
+      launch: Self.launch(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, version: currentVersion),
       home: HomeStore(directory: LiveDirectoryClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
       browse: BrowseStore(directory: CategoryDirectoryClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
       categoryLives: CategoryLivesCatalog(source: CategoryLivesClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
@@ -323,6 +320,18 @@ enum Composition {
       categoryChoices: Self.categoryChoices(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
       interestChoices: InterestChoices(tags: CategoryTagClient(apiBaseURL: configuration.apiBaseURL, transport: transport), preferences: preferences),
       purchases: StorePurchases.live(info: info)
+    )
+  }
+
+  private static func launch(
+    apiBaseURL: URL,
+    transport: ClientVersionTransport,
+    tokens: OAuthSession,
+    version: AppVersion
+  ) -> LaunchStore {
+    LaunchStore(
+      source: BootstrapClient(apiBaseURL: apiBaseURL, transport: transport, tokens: tokens, now: { Date.now }),
+      currentVersion: version
     )
   }
 
