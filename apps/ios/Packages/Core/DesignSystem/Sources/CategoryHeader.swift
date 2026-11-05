@@ -21,19 +21,32 @@ public enum CategoryFollowStyle {
   public static func glyph(isFollowing: Bool) -> String {
     isFollowing ? "heart.fill" : "heart"
   }
+
+  public static let menuGlyph = "chevron.down"
 }
 
 public struct CategoryFollowAction {
   public let isFollowing: Bool
   public let label: String
+  public let unfollowLabel: String
   public let isEnabled: Bool
-  public let action: () -> Void
+  public let onFollow: () -> Void
+  public let onUnfollow: () -> Void
 
-  public init(isFollowing: Bool, label: String, isEnabled: Bool, action: @escaping () -> Void) {
+  public init(
+    isFollowing: Bool,
+    label: String,
+    unfollowLabel: String,
+    isEnabled: Bool,
+    onFollow: @escaping () -> Void,
+    onUnfollow: @escaping () -> Void
+  ) {
     self.isFollowing = isFollowing
     self.label = label
+    self.unfollowLabel = unfollowLabel
     self.isEnabled = isEnabled
-    self.action = action
+    self.onFollow = onFollow
+    self.onUnfollow = onUnfollow
   }
 }
 
@@ -41,23 +54,57 @@ struct CategoryFollowButton: View {
   let follow: CategoryFollowAction
 
   var body: some View {
-    let kind = CategoryFollowStyle.kind(isFollowing: follow.isFollowing)
-    Button(action: follow.action) {
-      Label {
-        if !follow.isFollowing { Text(follow.label) }
-      } icon: {
-        Image(systemName: CategoryFollowStyle.glyph(isFollowing: follow.isFollowing))
+    Group {
+      if follow.isFollowing {
+        Menu {
+          Button(follow.unfollowLabel, role: .destructive, action: follow.onUnfollow)
+        } label: {
+          followingLabel
+        }
+      } else {
+        Button(action: follow.onFollow) { followLabel }
+          .buttonStyle(.plain)
       }
-      .font(TextRole.actionLabel.font)
-      .foregroundStyle(kind.foreground.color)
-      .frame(maxWidth: .infinity, minHeight: LayoutRole.followButtonHeight.points)
-      .background(kind.background.color, in: RoundedRectangle(cornerRadius: LayoutRole.actionRadius.points))
     }
-    .buttonStyle(.plain)
     .disabled(!follow.isEnabled)
     .accessibilityLabel(follow.label)
     .accessibilityAddTraits(follow.isFollowing ? .isSelected : [])
     .accessibilityIdentifier("category.follow")
+  }
+
+  private var followLabel: some View {
+    HStack(spacing: LayoutRole.followGlyphGap.points) {
+      Image(systemName: CategoryFollowStyle.glyph(isFollowing: false))
+      Text(follow.label)
+    }
+    .styled(as: CategoryFollowStyle.kind(isFollowing: false))
+    .frame(maxWidth: .infinity)
+    .background(
+      CategoryFollowStyle.kind(isFollowing: false).background.color,
+      in: RoundedRectangle(cornerRadius: LayoutRole.actionRadius.points)
+    )
+  }
+
+  private var followingLabel: some View {
+    HStack(spacing: LayoutRole.followingGlyphGap.points) {
+      Image(systemName: CategoryFollowStyle.glyph(isFollowing: true))
+      Image(systemName: CategoryFollowStyle.menuGlyph)
+        .font(TextRole.meta.font.weight(.bold))
+    }
+    .styled(as: CategoryFollowStyle.kind(isFollowing: true))
+    .frame(width: LayoutRole.followingButtonWidth.points)
+    .background(
+      CategoryFollowStyle.kind(isFollowing: true).background.color,
+      in: RoundedRectangle(cornerRadius: LayoutRole.actionRadius.points)
+    )
+  }
+}
+
+private extension View {
+  func styled(as kind: ActionButtonKind) -> some View {
+    font(TextRole.followLabel.font)
+      .foregroundStyle(kind.foreground.color)
+      .frame(minHeight: LayoutRole.followButtonHeight.points)
   }
 }
 
@@ -108,6 +155,7 @@ public struct CategoryHeader: View {
       if let follow {
         HStack(spacing: LayoutRole.followButtonColumnGap.points) {
           CategoryFollowButton(follow: follow)
+            .frame(maxWidth: .infinity, alignment: .leading)
           Color.clear.frame(maxWidth: .infinity, maxHeight: 0)
         }
       }

@@ -1,4 +1,4 @@
-const MIGRATION_DIRECTORY = /^\d{14}_\w+$/;
+export const MIGRATION_DIRECTORY = /^\d{14}_\w+$/;
 
 export const latestMigration = (entries: readonly string[]): string => {
   const latest = entries

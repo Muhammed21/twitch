@@ -51,6 +51,16 @@
         }
       }
     },
+    "category.cancel" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        }
+      }
+    },
     "category.follow" : {
       "localizations" : {
         "en" : {
@@ -77,6 +87,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Following"
+          }
+        }
+      }
+    },
+    "category.unfollow" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unfollow"
+          }
+        }
+      }
+    },
+    "category.unfollow.question %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to unfollow %@?"
           }
         }
       }
