@@ -79,6 +79,19 @@ describe("confirmation d'un envoi d'image", () => {
     expect(calls).toEqual([{ bytes: JPEG_BYTES, type: "image/jpeg", spec: IMAGE_PURPOSES.banner }]);
   });
 
+  it("retrouve le dépôt quand l'identifiant d'envoi arrive en majuscules, comme l'encode un client Swift", async () => {
+    const memory = memoryImageStorage({ [depositOf(USER_ID, "avatar")]: JPEG_BYTES });
+
+    const finalized = await finalizeWith({ storage: memory.storage })({
+      uploadId: UPLOAD_ID.toUpperCase(),
+      purpose: "avatar",
+      userId: USER_ID,
+    });
+
+    expect(finalized.ok).toBe(true);
+    expect(memory.deleted).toEqual([depositOf(USER_ID, "avatar")]);
+  });
+
   it("ne trouve pas le dépôt d'un autre utilisateur", async () => {
     const memory = memoryImageStorage({ [depositOf(OTHER_USER_ID, "avatar")]: JPEG_BYTES });
 
