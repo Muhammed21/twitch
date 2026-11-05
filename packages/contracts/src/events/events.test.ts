@@ -52,6 +52,45 @@ describe("identity.account.registered", () => {
   });
 });
 
+const AVATAR_KEY = "images/avatar/1f0e8d2c-3b4a-4c5d-8e6f-7a8b9c0d1e2f.webp";
+
+const makeAvatarChange = (overrides: Record<string, unknown> = {}) => ({
+  accountId: ACCOUNT_ID,
+  avatarKey: AVATAR_KEY,
+  ...overrides,
+});
+
+describe("identity.avatar.changed", () => {
+  it("porte son nom et sa version", () => {
+    expect(events.identity.avatarChanged).toMatchObject({
+      name: "identity.avatar.changed",
+      version: 1,
+    });
+  });
+
+  it("décode le compte et la clé de son nouvel avatar", () => {
+    expect(events.identity.avatarChanged.payload.parse(makeAvatarChange())).toEqual({
+      accountId: ACCOUNT_ID,
+      avatarKey: AVATAR_KEY,
+    });
+  });
+
+  it("garde un champ ajouté plus tard par l'émetteur", () => {
+    expect(
+      events.identity.avatarChanged.payload.parse(makeAvatarChange({ width: 512 })),
+    ).toMatchObject({ width: 512 });
+  });
+
+  it.each([
+    ["sans compte", makeAvatarChange({ accountId: undefined })],
+    ["avec un compte qui n'est pas un UUID", makeAvatarChange({ accountId: "moi" })],
+    ["sans clé", makeAvatarChange({ avatarKey: undefined })],
+    ["avec une clé vide", makeAvatarChange({ avatarKey: "" })],
+  ])("refuse un event %s", (_name, payload) => {
+    expect(events.identity.avatarChanged.payload.safeParse(payload).success).toBe(false);
+  });
+});
+
 describe("channel.created", () => {
   it("porte son nom et sa version", () => {
     expect(events.channel.channelCreated).toMatchObject({ name: "channel.created", version: 1 });

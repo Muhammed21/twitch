@@ -1,5 +1,9 @@
+import { randomUUID } from "node:crypto";
+
 import { z } from "zod";
 
+import { events } from "@repo/contracts";
+import { appendToOutbox } from "@repo/db";
 import { err, ok } from "@repo/result";
 
 import type { AvatarStore } from "../application/change-avatar.ts";
@@ -35,6 +39,10 @@ export const prismaBioStore = (prisma: IdentityPrisma): BioStore => ({
   },
 });
 
+const OUTBOX = { schema: "identity", table: "IdentityOutbox" };
+
+const { avatarChanged } = events.identity;
+
 const LockedAvatar = z.array(z.object({ avatarKey: z.string().nullable() })).max(1);
 
 export const prismaAvatarStore = (prisma: IdentityPrisma): AvatarStore => ({
@@ -47,6 +55,16 @@ export const prismaAvatarStore = (prisma: IdentityPrisma): AvatarStore => ({
         return err("account_not_found");
       }
       await tx.identityUser.update({ where: { id: userId }, data: { avatarKey } });
+      await appendToOutbox(tx, {
+        outbox: OUTBOX,
+        event: {
+          id: randomUUID(),
+          name: avatarChanged.name,
+          version: avatarChanged.version,
+          payload: { accountId: userId, avatarKey } satisfies z.input<typeof avatarChanged.payload>,
+          occurredAt: new Date(),
+        },
+      });
       return ok({ replacedKey: locked.avatarKey ?? undefined });
     }),
   readAvatarKey: async (userId) => {

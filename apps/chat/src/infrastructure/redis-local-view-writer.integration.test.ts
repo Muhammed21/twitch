@@ -33,6 +33,16 @@ const setup = async () => {
   };
 };
 
+const FIRST_AVATAR = {
+  avatarKey: "images/avatar/premier.webp",
+  changedAt: new Date("2026-11-05T10:00:00.000Z"),
+};
+
+const SECOND_AVATAR = {
+  avatarKey: "images/avatar/second.webp",
+  changedAt: new Date("2026-11-05T10:05:00.000Z"),
+};
+
 describe("écriture des vues locales du chat, contre le Redis de Compose", () => {
   it("ouvre hors live le salon d'une chaîne créée, et un rejeu ne ferme pas un live", async () => {
     const { writer, directory, channelId } = await setup();
@@ -114,6 +124,41 @@ describe("écriture des vues locales du chat, contre le Redis de Compose", () =>
     await writer.registerChatter({ userId, displayName: "Alice" });
 
     expect(await redisChatterProfiles(redis).displayNameOf(userId)).toBe("Alice");
+  });
+
+  it("garde la clé du dernier avatar d'un chatter, à côté de son nom affiché", async () => {
+    const { redis, writer } = await setup();
+    const userId = `test-chat-${randomUUID()}`;
+    onTestFinished(async () => {
+      await redis.del(chatterKey(userId));
+    });
+
+    await writer.registerChatter({ userId, displayName: "Alice" });
+    await writer.changeAvatar({ userId, ...FIRST_AVATAR });
+    await writer.changeAvatar({ userId, ...SECOND_AVATAR });
+
+    const profiles = redisChatterProfiles(redis);
+    expect(await profiles.avatarKeyOf(userId)).toBe(SECOND_AVATAR.avatarKey);
+    expect(await profiles.displayNameOf(userId)).toBe("Alice");
+  });
+
+  it("garde l'avatar le plus récent quand un avatar plus ancien est rejoué après lui", async () => {
+    const { redis, writer } = await setup();
+    const userId = `test-chat-${randomUUID()}`;
+    onTestFinished(async () => {
+      await redis.del(chatterKey(userId));
+    });
+
+    await writer.changeAvatar({ userId, ...SECOND_AVATAR });
+    await writer.changeAvatar({ userId, ...FIRST_AVATAR });
+
+    expect(await redisChatterProfiles(redis).avatarKeyOf(userId)).toBe(SECOND_AVATAR.avatarKey);
+  });
+
+  it("ne rend pas d'avatar à un chatter qui n'en a pas", async () => {
+    const { redis } = await setup();
+
+    expect(await redisChatterProfiles(redis).avatarKeyOf(`test-chat-${randomUUID()}`)).toBeNull();
   });
 
   it("garde la fin la plus tardive des timeouts d'un chatter sur un salon, rejeu compris", async () => {

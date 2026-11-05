@@ -58,6 +58,7 @@ const startServer = async ({
     log: () => undefined,
     chatters: {
       displayNameOf,
+      avatarKeyOf: async () => null,
       sanctionsOf: async (userId) => sanctions.get(userId) ?? [],
     },
     rooms: createRoomRegistry({

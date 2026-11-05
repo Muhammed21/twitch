@@ -20,7 +20,11 @@ const deferred = <T>() => {
   return { promise, resolve: (value: T) => settle.resolve(value) };
 };
 
-const ALICE: ChatterProfiles = { displayNameOf: async () => "Alice", sanctionsOf: async () => [] };
+const ALICE: ChatterProfiles = {
+  displayNameOf: async () => "Alice",
+  avatarKeyOf: async () => null,
+  sanctionsOf: async () => [],
+};
 
 const startServer = async ({ chatters = ALICE }: { chatters?: ChatterProfiles } = {}) => {
   const authority = await makeTokenAuthority();
@@ -161,6 +165,7 @@ describe("révocation pendant le handshake", () => {
           reading.resolve();
           return profile.promise;
         },
+        avatarKeyOf: async () => null,
         sanctionsOf: async () => [],
       },
     });
