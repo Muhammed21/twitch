@@ -8,6 +8,7 @@ import {
   chatterKey,
   redisChatterProfiles,
   redisRoomDirectory,
+  redisTurboProfiles,
   roomKey,
   sanctionsKey,
 } from "./redis-local-views.ts";
@@ -41,6 +42,22 @@ const FIRST_AVATAR = {
 const SECOND_AVATAR = {
   avatarKey: "images/avatar/second.webp",
   changedAt: new Date("2026-11-05T10:05:00.000Z"),
+};
+
+const GRANTED_AT = new Date("2026-11-08T09:00:00.000Z");
+
+const REVOKED_AT = new Date("2026-11-09T09:00:00.000Z");
+
+const TURBO_EXPIRY = new Date("2026-12-08T09:00:00.000Z");
+
+const NO_TURBO = { expiresAt: null, chatColor: null };
+
+const makeChatter = async (redis: Awaited<ReturnType<typeof connectRedis>>) => {
+  const userId = `test-chat-${randomUUID()}`;
+  onTestFinished(async () => {
+    await redis.del(chatterKey(userId));
+  });
+  return userId;
 };
 
 describe("écriture des vues locales du chat, contre le Redis de Compose", () => {
@@ -195,5 +212,77 @@ describe("écriture des vues locales du chat, contre le Redis de Compose", () =>
     });
 
     expect(await redis.pExpireTime(sanctionsKey(userId))).toBe(later.getTime());
+  });
+  it("tient l'échéance Turbo d'un abonné", async () => {
+    const { redis, writer } = await setup();
+    const userId = await makeChatter(redis);
+
+    await writer.changeTurbo({ userId, expiresAt: TURBO_EXPIRY, changedAt: GRANTED_AT });
+
+    expect(await redisTurboProfiles(redis).turboOf(userId)).toEqual({
+      expiresAt: TURBO_EXPIRY,
+      chatColor: null,
+    });
+  });
+
+  it("laisse sans Turbo un abonné accordé puis révoqué", async () => {
+    const { redis, writer } = await setup();
+    const userId = await makeChatter(redis);
+
+    await writer.changeTurbo({ userId, expiresAt: TURBO_EXPIRY, changedAt: GRANTED_AT });
+    await writer.changeTurbo({ userId, expiresAt: null, changedAt: REVOKED_AT });
+
+    expect(await redisTurboProfiles(redis).turboOf(userId)).toEqual(NO_TURBO);
+  });
+
+  it("ne rend pas Turbo quand l'accord rejoué arrive après la révocation", async () => {
+    const { redis, writer } = await setup();
+    const userId = await makeChatter(redis);
+
+    await writer.changeTurbo({ userId, expiresAt: TURBO_EXPIRY, changedAt: GRANTED_AT });
+    await writer.changeTurbo({ userId, expiresAt: null, changedAt: REVOKED_AT });
+    await writer.changeTurbo({ userId, expiresAt: TURBO_EXPIRY, changedAt: GRANTED_AT });
+
+    expect(await redisTurboProfiles(redis).turboOf(userId)).toEqual(NO_TURBO);
+  });
+
+  it("prolonge l'échéance avec un accord plus récent", async () => {
+    const { redis, writer } = await setup();
+    const userId = await makeChatter(redis);
+    const renewedExpiry = new Date("2027-01-08T09:00:00.000Z");
+
+    await writer.changeTurbo({ userId, expiresAt: TURBO_EXPIRY, changedAt: GRANTED_AT });
+    await writer.changeTurbo({ userId, expiresAt: renewedExpiry, changedAt: REVOKED_AT });
+
+    expect((await redisTurboProfiles(redis).turboOf(userId)).expiresAt).toEqual(renewedExpiry);
+  });
+
+  it("garde la couleur la plus récente, et un retour au défaut l'efface", async () => {
+    const { redis, writer } = await setup();
+    const userId = await makeChatter(redis);
+
+    await writer.changeChatColor({ userId, chatColor: "#9147FF", changedAt: GRANTED_AT });
+    expect((await redisTurboProfiles(redis).turboOf(userId)).chatColor).toBe("#9147FF");
+    await writer.changeChatColor({ userId, chatColor: null, changedAt: REVOKED_AT });
+    await writer.changeChatColor({ userId, chatColor: "#9147FF", changedAt: GRANTED_AT });
+
+    expect((await redisTurboProfiles(redis).turboOf(userId)).chatColor).toBeNull();
+  });
+
+  it("ne perd pas une couleur reçue avant l'inscription du chatter", async () => {
+    const { redis, writer } = await setup();
+    const userId = await makeChatter(redis);
+
+    await writer.changeChatColor({ userId, chatColor: "#9147FF", changedAt: GRANTED_AT });
+    await writer.registerChatter({ userId, displayName: "Alice" });
+
+    expect((await redisTurboProfiles(redis).turboOf(userId)).chatColor).toBe("#9147FF");
+    expect(await redisChatterProfiles(redis).displayNameOf(userId)).toBe("Alice");
+  });
+
+  it("ne rend ni Turbo ni couleur à un chatter inconnu de la vue", async () => {
+    const { redis } = await setup();
+
+    expect(await redisTurboProfiles(redis).turboOf(`test-chat-${randomUUID()}`)).toEqual(NO_TURBO);
   });
 });

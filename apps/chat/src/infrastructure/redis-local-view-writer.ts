@@ -1,7 +1,14 @@
 import { z } from "zod";
 
 import type { LiveSession, LocalViewWriter } from "../application/ports.ts";
-import { chatterKey, roomKey, sanctionsKey, toRoomState } from "./redis-local-views.ts";
+import {
+  CHAT_COLOR,
+  chatterKey,
+  roomKey,
+  sanctionsKey,
+  toRoomState,
+  TURBO_EXPIRES_AT,
+} from "./redis-local-views.ts";
 
 export type HashWriter = {
   eval(script: string, options: { keys: string[]; arguments: string[] }): Promise<unknown>;
@@ -48,6 +55,16 @@ end
 return 1
 `;
 
+const CHANGE_IF_NEWER = `
+local current = tonumber(redis.call('HGET', KEYS[1], ARGV[3]) or '-1')
+if tonumber(ARGV[4]) > current then
+  redis.call('HSET', KEYS[1], ARGV[1], ARGV[2], ARGV[3], ARGV[4])
+end
+return 1
+`;
+
+const NONE = "";
+
 const SessionReply = z.string();
 
 const runSessionScript = async (
@@ -60,6 +77,22 @@ const runSessionScript = async (
     arguments: [sessionId, String(ENDED_SESSIONS_TTL_SECONDS)],
   });
   return toRoomState(channelId, SessionReply.parse(reply));
+};
+
+const changeIfNewer = async (
+  redis: HashWriter,
+  {
+    userId,
+    field,
+    value,
+    stampField,
+    changedAt,
+  }: { userId: string; field: string; value: string; stampField: string; changedAt: Date },
+) => {
+  await redis.eval(CHANGE_IF_NEWER, {
+    keys: [chatterKey(userId)],
+    arguments: [field, value, stampField, String(changedAt.getTime())],
+  });
 };
 
 export const redisLocalViewWriter = (redis: HashWriter): LocalViewWriter => ({
@@ -83,4 +116,20 @@ export const redisLocalViewWriter = (redis: HashWriter): LocalViewWriter => ({
       arguments: [channelId, String(expiresAt.getTime())],
     });
   },
+  changeTurbo: ({ userId, expiresAt, changedAt }) =>
+    changeIfNewer(redis, {
+      userId,
+      field: TURBO_EXPIRES_AT,
+      stampField: "turboChangedAt",
+      value: expiresAt === null ? NONE : String(expiresAt.getTime()),
+      changedAt,
+    }),
+  changeChatColor: ({ userId, chatColor, changedAt }) =>
+    changeIfNewer(redis, {
+      userId,
+      field: CHAT_COLOR,
+      value: chatColor ?? NONE,
+      stampField: "chatColorChangedAt",
+      changedAt,
+    }),
 });

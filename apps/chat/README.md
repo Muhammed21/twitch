@@ -115,31 +115,34 @@ Un seau remonté à 5 jetons vaut l'absence de seau (`isBucketFull`). Le `Chatte
 
 - `chatEventHandlers({ views, rooms, sockets, metrics, log })` projette les events dans les vues locales et rafraîchit l'état d'un salon chargé, même pendant sa lecture. Un payload hors contrat est journalisé puis écarté ; une version non gérée fait échouer le handler, et l'event reste à traiter.
 
-Les ports `RoomDirectory`, `ChatterProfiles`, `LocalViewWriter`, `SanctionedSockets` et `SanctionMetrics` sont dans `application/ports.ts`.
+Les ports `RoomDirectory`, `ChatterProfiles`, `TurboProfiles`, `LocalViewWriter`, `SanctionedSockets` et `SanctionMetrics` sont dans `application/ports.ts`. `TurboProfiles` rend l'échéance Turbo et la couleur de pseudo d'un chatter, lues sans appel réseau ; une valeur vide ou illisible se lit comme absente.
 
 ## Infrastructure
 
 Vues locales dans Redis, lues sans appel à l'API (ADR 0004) :
 
-| Clé                               | Contenu                                                                                                                                             |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `chat:room:<channelId>`           | `sessionId` : session du live en cours, vide hors live                                                                                              |
-| `chat:room:<channelId>:ended`     | set des sessions terminées, expiré 7 jours après la dernière fin de live                                                                            |
-| `chat:chatter:<userId>`           | `displayName` : nom affiché de l'auteur ; `avatarKey` et `avatarChangedAt` : clé de son avatar et `occurredAt` de son event, en millisecondes epoch |
-| `chat:chatter:<userId>:sanctions` | par `channelId`, fin du timeout en millisecondes epoch ; expire à la fin du dernier                                                                 |
+| Clé                               | Contenu                                                                                                                                                                                                                                                                                                                                                                             |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `chat:room:<channelId>`           | `sessionId` : session du live en cours, vide hors live                                                                                                                                                                                                                                                                                                                              |
+| `chat:room:<channelId>:ended`     | set des sessions terminées, expiré 7 jours après la dernière fin de live                                                                                                                                                                                                                                                                                                            |
+| `chat:chatter:<userId>`           | `displayName` : nom affiché de l'auteur ; `avatarKey` et `avatarChangedAt` : clé de son avatar et `occurredAt` de son event, en millisecondes epoch ; `turboExpiresAt` et `turboChangedAt` : échéance Turbo (vide sans Turbo) et `occurredAt` de son event ; `chatColor` et `chatColorChangedAt` : couleur de pseudo (vide pour la couleur par défaut) et `occurredAt` de son event |
+| `chat:chatter:<userId>:sanctions` | par `channelId`, fin du timeout en millisecondes epoch ; expire à la fin du dernier                                                                                                                                                                                                                                                                                                 |
 
-Une chaîne sans hash n'a pas de salon. Le groupe de consommateurs `chat` lit `events.channel`, `events.stream`, `events.identity` et `events.moderation`, écrits par le relais d'outbox de l'API :
+Une chaîne sans hash n'a pas de salon. Le groupe de consommateurs `chat` lit le stream de chaque contexte dont il traite un event (`eventStreamsOf`) : `events.channel`, `events.identity`, `events.moderation`, `events.monetization` et `events.stream`, écrits par le relais d'outbox de l'API :
 
-| Event                         | Écriture                                                                                                           |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `channel.created`             | `HSETNX sessionId ""` : ouvre le salon hors live, sans fermer un live déjà enregistré                              |
-| `stream.started`              | pose `sessionId`, sauf pour une session terminée (script Lua)                                                      |
-| `stream.ended`                | vide `sessionId` s'il porte cette session, puis ajoute la session au set des terminées (script Lua)                |
-| `identity.account.registered` | `HSET displayName`                                                                                                 |
-| `identity.avatar.changed`     | pose `avatarKey` et `avatarChangedAt`, sauf si l'avatar enregistré vient d'un event plus récent (script Lua)       |
-| `moderation.user.timed_out`   | garde la fin la plus tardive du timeout sur ce salon (script Lua), puis l'applique aux sockets ouvertes du chatter |
+| Event                              | Écriture                                                                                                                                                               |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `channel.created`                  | `HSETNX sessionId ""` : ouvre le salon hors live, sans fermer un live déjà enregistré                                                                                  |
+| `stream.started`                   | pose `sessionId`, sauf pour une session terminée (script Lua)                                                                                                          |
+| `stream.ended`                     | vide `sessionId` s'il porte cette session, puis ajoute la session au set des terminées (script Lua)                                                                    |
+| `identity.account.registered`      | `HSET displayName`                                                                                                                                                     |
+| `identity.avatar.changed`          | pose `avatarKey` et `avatarChangedAt`, sauf si l'avatar enregistré vient d'un event plus récent (script Lua)                                                           |
+| `identity.chat_color.changed`      | pose `chatColor` et `chatColorChangedAt`, sauf si la couleur enregistrée vient d'un event plus récent (script Lua) ; `null` vide la couleur                            |
+| `moderation.user.timed_out`        | garde la fin la plus tardive du timeout sur ce salon (script Lua), puis l'applique aux sockets ouvertes du chatter                                                     |
+| `monetization.entitlement.granted` | portée `platform` : pose `turboExpiresAt` et `turboChangedAt`, sauf si l'échéance enregistrée vient d'un event plus récent (script Lua) ; une autre portée est ignorée |
+| `monetization.entitlement.revoked` | portée `platform` : vide `turboExpiresAt`, avec la même règle d'ordre ; une autre portée est ignorée                                                                   |
 
-Chaque écriture est idempotente et supporte le désordre : un event rejoué, un début de live repris après sa fin, ou une fin de live arrivée après le live suivant, laisse la vue juste. Un seul `XREADGROUP` bloquant lit les quatre streams, sur une connexion Redis à part ; à chaque tour, `XAUTOCLAIM` reprend les entrées en attente depuis plus de 30 s. Une entrée est acquittée après son traitement, ou si elle est illisible ou sans handler ; un handler en échec la laisse en attente.
+Chaque écriture est idempotente et supporte le désordre : un event rejoué, un début de live repris après sa fin, ou une fin de live arrivée après le live suivant, laisse la vue juste. Un seul `XREADGROUP` bloquant lit tous ces streams, sur une connexion Redis à part ; à chaque tour, `XAUTOCLAIM` reprend les entrées en attente depuis plus de 30 s. Une entrée est acquittée après son traitement, ou si elle est illisible ou sans handler ; un handler en échec la laisse en attente.
 
 La connexion Redis ne journalise que ses transitions : `redis injoignable` à la première erreur d'une panne, `redis rétabli` au retour, et rien pour les tentatives de reconnexion entre les deux. Le consommateur se tait pendant une panne de sa connexion, qui a son propre journal de transitions (`client: "events"`).
 

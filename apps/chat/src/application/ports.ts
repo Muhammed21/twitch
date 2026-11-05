@@ -40,4 +40,21 @@ export type LocalViewWriter = {
     readonly changedAt: Date;
   }): Promise<void>;
   sanctionChatter(sanction: ChatterSanction): Promise<void>;
+  changeTurbo(turbo: {
+    readonly userId: string;
+    readonly expiresAt: Date | null;
+    readonly changedAt: Date;
+  }): Promise<void>;
+  changeChatColor(color: {
+    readonly userId: string;
+    readonly chatColor: string | null;
+    readonly changedAt: Date;
+  }): Promise<void>;
 };
+
+export type ChatterTurbo = {
+  readonly expiresAt: Date | null;
+  readonly chatColor: string | null;
+};
+
+export type TurboProfiles = { turboOf(userId: string): Promise<ChatterTurbo> };
