@@ -1,0 +1,206 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "paywall.billing.month" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Billed monthly • Cancel anytime"
+          }
+        }
+      }
+    },
+    "paywall.billing.year" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Billed yearly • Cancel anytime"
+          }
+        }
+      }
+    },
+    "paywall.close" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close"
+          }
+        }
+      }
+    },
+    "paywall.headline" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stand Out in Every Chat"
+          }
+        }
+      }
+    },
+    "paywall.legal.join" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " and acknowledge our "
+          }
+        }
+      }
+    },
+    "paywall.legal.lead" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By subscribing, you agree to Twitch's "
+          }
+        }
+      }
+    },
+    "paywall.legal.privacy" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy Notice"
+          }
+        }
+      }
+    },
+    "paywall.legal.terms" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terms of Sale"
+          }
+        }
+      }
+    },
+    "paywall.notice.nothingToRestore" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Turbo subscription found to restore."
+          }
+        }
+      }
+    },
+    "paywall.notice.purchaseFailed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't complete your purchase. Try again."
+          }
+        }
+      }
+    },
+    "paywall.notice.restoreFailed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't restore your purchases. Try again."
+          }
+        }
+      }
+    },
+    "paywall.perks" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom chat username colors, Battery Chat Badge"
+          }
+        }
+      }
+    },
+    "paywall.restore" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restore Purchases"
+          }
+        }
+      }
+    },
+    "paywall.subscribe.month %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subscribe for %@/month"
+          }
+        }
+      }
+    },
+    "paywall.subscribe.year %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subscribe for %@/year"
+          }
+        }
+      }
+    },
+    "paywall.subscribed.message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your Battery Chat Badge and username colors are ready."
+          }
+        }
+      }
+    },
+    "paywall.subscribed.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're a Turbo subscriber"
+          }
+        }
+      }
+    },
+    "paywall.tagline" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Support streamers and make your name shine in chat."
+          }
+        }
+      }
+    },
+    "paywall.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turbo"
+          }
+        }
+      }
+    },
+    "paywall.unavailable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turbo isn't available right now. Try again later."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

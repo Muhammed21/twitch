@@ -18,6 +18,8 @@ public final class FakePurchases: Purchases {
   public var offerings: Result<SubscriptionOffering, PurchasesFailure>
   public var purchaseReply: Result<PurchaseOutcome, PurchasesFailure> = .success(.subscribed)
   public var turboActive: Result<Bool, PurchasesFailure> = .success(false)
+  public var holdsPurchases = false
+  private var held: CheckedContinuation<Void, Never>?
 
   public init(offering: SubscriptionOffering, isAvailable: Bool = true) {
     offerings = .success(offering)
@@ -31,7 +33,21 @@ public final class FakePurchases: Purchases {
 
   public func purchase(_ package: SubscriptionPackage) async throws(PurchasesFailure) -> PurchaseOutcome {
     calls.append(.purchase(package))
+    if holdsPurchases {
+      await withCheckedContinuation { held = $0 }
+    }
     return try purchaseReply.get()
+  }
+
+  public func waitForHeldPurchase() async {
+    while held == nil {
+      await Task.yield()
+    }
+  }
+
+  public func releasePurchase() {
+    held?.resume()
+    held = nil
   }
 
   public func restore() async throws(PurchasesFailure) -> Bool {

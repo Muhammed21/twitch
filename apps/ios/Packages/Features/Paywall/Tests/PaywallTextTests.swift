@@ -1,0 +1,83 @@
+import Domain
+import Foundation
+import Paywall
+import Testing
+
+private let terms = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")
+private let privacy = URL(string: "https://example.org/privacy")
+
+private func links(in text: AttributedString) -> [String: URL] {
+  Dictionary(
+    text.runs.compactMap { run in run.link.map { (String(text[run.range].characters), $0) } },
+    uniquingKeysWith: { first, _ in first }
+  )
+}
+
+@Suite("Textes du paywall Turbo, d'après abonnement/turbo--defaut et les décisions de l'ADR 0051")
+struct PaywallTextTests {
+  @Test("le titre, l'accroche et la carte d'avantages ne promettent que le badge et la couleur")
+  func labels() {
+    #expect(String(localized: PaywallText.title) == "Turbo")
+    #expect(String(localized: PaywallText.headline) == "Stand Out in Every Chat")
+    #expect(String(localized: PaywallText.tagline) == "Support streamers and make your name shine in chat.")
+    #expect(String(localized: PaywallText.perks) == "Custom chat username colors, Battery Chat Badge")
+    #expect(String(localized: PaywallText.restore) == "Restore Purchases")
+    #expect(String(localized: PaywallText.close) == "Close")
+  }
+
+  @Test(
+    "le bouton reprend le prix et la période de l'offre",
+    arguments: [
+      (SubscriptionPeriod.month, "4,99 €", "Subscribe for 4,99 €/month"),
+      (.year, "SGD 194.99", "Subscribe for SGD 194.99/year"),
+    ]
+  )
+  func subscribe(period: SubscriptionPeriod, price: String, expected: String) {
+    let package = SubscriptionPackage(id: "p", offeringID: "default", period: period, localizedPrice: price)
+
+    #expect(String(localized: PaywallText.subscribe(package)) == expected)
+  }
+
+  @Test("la ligne de facturation suit la période", arguments: [
+    (SubscriptionPeriod.month, "Billed monthly • Cancel anytime"),
+    (.year, "Billed yearly • Cancel anytime"),
+  ])
+  func billing(period: SubscriptionPeriod, expected: String) {
+    #expect(String(localized: PaywallText.billing(period)) == expected)
+  }
+
+  @Test("les mentions légales lient les conditions et la confidentialité quand leurs adresses existent")
+  func legalWithLinks() throws {
+    let legal = PaywallText.legal(terms: terms, privacy: privacy)
+
+    #expect(String(legal.characters) == "By subscribing, you agree to Twitch's Terms of Sale and acknowledge our Privacy Notice")
+    #expect(try links(in: legal) == ["Terms of Sale": #require(terms), "Privacy Notice": #require(privacy)])
+  }
+
+  @Test("sans adresse de confidentialité, la phrase reste entière et seul le lien des conditions existe")
+  func legalWithoutPrivacy() throws {
+    let legal = PaywallText.legal(terms: terms, privacy: nil)
+
+    #expect(String(legal.characters) == "By subscribing, you agree to Twitch's Terms of Sale and acknowledge our Privacy Notice")
+    #expect(try links(in: legal) == ["Terms of Sale": #require(terms)])
+  }
+
+  @Test(
+    "chaque message dit ce qui s'est passé",
+    arguments: [
+      (PaywallStore.Notice.purchaseFailed, "Couldn't complete your purchase. Try again."),
+      (.nothingToRestore, "No Turbo subscription found to restore."),
+      (.restoreFailed, "Couldn't restore your purchases. Try again."),
+    ]
+  )
+  func notices(notice: PaywallStore.Notice, expected: String) {
+    #expect(String(localized: PaywallText.notice(notice)) == expected)
+  }
+
+  @Test("l'état abonné et l'état indisponible")
+  func states() {
+    #expect(String(localized: PaywallText.subscribedTitle) == "You're a Turbo subscriber")
+    #expect(String(localized: PaywallText.subscribedMessage) == "Your Battery Chat Badge and username colors are ready.")
+    #expect(String(localized: PaywallText.unavailable) == "Turbo isn't available right now. Try again later.")
+  }
+}

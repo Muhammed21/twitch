@@ -28,6 +28,10 @@
 	<string>$(OAUTH_CLIENT_ID)</string>
 	<key>REVENUECAT_API_KEY</key>
 	<string>test_wuBPtHBdoPVnvUUdOAvMbaiTWBI</string>
+	<key>TERMS_URL</key>
+	<string>https://www.apple.com/legal/internet-services/itunes/dev/stdeula/</string>
+	<key>PRIVACY_URL</key>
+	<string></string>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>
