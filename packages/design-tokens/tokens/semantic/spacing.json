@@ -162,6 +162,11 @@
       "$value": "{core.dimension.12}",
       "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : rayon des modales, 36 px à @3x (parametres/menu-parametres--modale-deconnexion)."
     },
+    "sheet": {
+      "$type": "dimension",
+      "$value": "{core.dimension.10}",
+      "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9611) : coins supérieurs de la feuille d'actions du bouton « + », 30 px à @3x."
+    },
     "pill": {
       "$type": "dimension",
       "$value": "{core.dimension.full}",
