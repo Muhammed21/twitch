@@ -22,7 +22,7 @@ struct TwitchApp: App {
 
   var body: some Scene {
     WindowGroup {
-      RootView()
+      RootView(personalization: stores.personalization)
         .environment(stores.session)
         .environment(stores.launch)
         .environment(stores.home)
@@ -38,8 +38,6 @@ struct TwitchApp: App {
         .environment(stores.myChannel)
         .environment(stores.categorySearch)
         .environment(stores.profileEdit)
-        .environment(stores.categoryChoices)
-        .environment(stores.interestChoices)
         .environment(stores.profileImages)
         .environment(stores.preferences)
     }
@@ -47,6 +45,7 @@ struct TwitchApp: App {
 }
 
 struct RootView: View {
+  let personalization: PersonalizationSources
   @Environment(SessionStore.self) private var session
   @Environment(LaunchStore.self) private var launch
   @Environment(Router.self) private var router
@@ -93,7 +92,7 @@ struct RootView: View {
     case .allSet:
       AllSetScreen()
     case .personalization:
-      PersonalizationRoot(session: session, preferences: preferences)
+      PersonalizationRoot(session: session, preferences: preferences, sources: personalization)
     case .signedIn:
       SignedInRoot()
     case .updateRequired:
@@ -242,8 +241,7 @@ struct Stores {
   let profileEdit: ProfileEditStore
   let profileImages: ProfileImageStore
   let preferences: PreferencesStore
-  let categoryChoices: CategoryChoices
-  let interestChoices: InterestChoices
+  let personalization: PersonalizationSources
 }
 
 @MainActor
@@ -306,8 +304,7 @@ enum Composition {
       profileEdit: Self.profileEdit(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
       profileImages: Self.profileImages(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
       preferences: preferences,
-      categoryChoices: Self.categoryChoices(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
-      interestChoices: InterestChoices(tags: CategoryTagClient(apiBaseURL: configuration.apiBaseURL, transport: transport), preferences: preferences)
+      personalization: Self.personalizationSources(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now)
     )
   }
 
