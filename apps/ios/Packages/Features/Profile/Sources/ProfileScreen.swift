@@ -7,20 +7,14 @@ public struct ProfileScreen<Settings: View>: View {
 
   @Environment(\.locale) private var locale
   @State private var isEditing = false
+  @State private var isShowingSettings = false
   private let account: Account?
-  private let onOpenChannel: (ChannelSlug) -> Void
-  private let onAccountSaved: (Account) -> Void
+  private let actions: ProfileActions
   private let settings: () -> Settings
 
-  public init(
-    account: Account?,
-    onOpenChannel: @escaping (ChannelSlug) -> Void,
-    onAccountSaved: @escaping (Account) -> Void,
-    @ViewBuilder settings: @escaping () -> Settings
-  ) {
+  public init(account: Account?, actions: ProfileActions, @ViewBuilder settings: @escaping () -> Settings) {
     self.account = account
-    self.onOpenChannel = onOpenChannel
-    self.onAccountSaved = onAccountSaved
+    self.actions = actions
     self.settings = settings
   }
 
@@ -32,43 +26,56 @@ public struct ProfileScreen<Settings: View>: View {
             name: account.name,
             lastLive: account.lastLiveAt.map { ProfileText.lastLive(at: $0, now: context.date, locale: locale) },
             bio: account.bio,
+            settings: ProfileHeaderAction(label: String(localized: ProfileText.settings)) { isShowingSettings = true },
             edit: ProfileHeaderAction(label: String(localized: EditProfileText.edit)) { isEditing = true }
           )
         }
         .sheet(isPresented: $isEditing) {
-          EditProfileSheet(account: account, onSaved: onAccountSaved)
+          EditProfileSheet(account: account, onSaved: actions.onAccountSaved)
         }
       }
-      VStack(alignment: .leading, spacing: LayoutRole.menuCardGap.points) {
+      VStack(alignment: .leading, spacing: LayoutRole.profileActionRowGap.points) {
+        HStack(spacing: LayoutRole.profileActionGap.points) {
+          ProfileActionButton(label: String(localized: ProfileText.streamManager), action: actions.onStreamManager)
+            .accessibilityIdentifier("profile.streamManager")
+          ProfileActionButton(label: String(localized: ProfileText.analytics), glyph: .statsOutline, action: actions.onAnalytics)
+            .accessibilityIdentifier("profile.analytics")
+        }
         MenuCard {
           Button {
-            if case let .ready(owned) = store.phase { onOpenChannel(owned.slug) }
+            if case let .ready(owned) = store.phase { actions.onOpenChannel(owned.slug) }
           } label: {
             MenuRow(systemImage: "person.crop.square", label: ProfileText.myChannel, showsChevron: true)
           }
           .disabled(!store.isReady)
           .accessibilityIdentifier("profile.myChannel")
         }
-        MenuCard {
-          NavigationLink {
-            StreamManagerScreen()
-          } label: {
-            MenuRow(systemImage: "dot.radiowaves.left.and.right", label: ProfileText.streamManager, showsChevron: false)
-          }
-          .accessibilityIdentifier("profile.streamManager")
-        }
-        MenuCard {
-          NavigationLink(destination: settings) {
-            MenuRow(systemImage: "gearshape", label: ProfileText.settings, showsChevron: true)
-          }
-          .accessibilityIdentifier("profile.settings")
-        }
       }
-      .padding(LayoutRole.screenInset.points)
+      .padding(.horizontal, LayoutRole.screenInset.points)
     }
     .background(ColorRole.background.color.ignoresSafeArea())
     .toolbar(.hidden, for: .navigationBar)
+    .navigationDestination(isPresented: $isShowingSettings, destination: settings)
     .task { await store.load() }
+  }
+}
+
+public struct ProfileActions {
+  let onOpenChannel: (ChannelSlug) -> Void
+  let onAccountSaved: (Account) -> Void
+  let onStreamManager: () -> Void
+  let onAnalytics: () -> Void
+
+  public init(
+    onOpenChannel: @escaping (ChannelSlug) -> Void,
+    onAccountSaved: @escaping (Account) -> Void,
+    onStreamManager: @escaping () -> Void,
+    onAnalytics: @escaping () -> Void
+  ) {
+    self.onOpenChannel = onOpenChannel
+    self.onAccountSaved = onAccountSaved
+    self.onStreamManager = onStreamManager
+    self.onAnalytics = onAnalytics
   }
 }
 

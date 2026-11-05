@@ -5,18 +5,30 @@ public enum ProfileHeaderStyle {
   public static let name = ColorRole.textPrimary
   public static let lastLive = ColorRole.textPrimary
   public static let bio = ColorRole.textSecondary
+  public static let bannerControl = ColorRole.scrim
+  public static let onBannerControl = ColorRole.onMedia
+  public static let action = ColorRole.surfaceSecondary
+  public static let onAction = ColorRole.textPrimary
 }
 
 public struct ProfileHeader: View {
   private let name: String
   private let lastLive: String?
   private let bio: String?
+  private let settings: ProfileHeaderAction?
   private let edit: ProfileHeaderAction?
 
-  public init(name: String, lastLive: String?, bio: String?, edit: ProfileHeaderAction? = nil) {
+  public init(
+    name: String,
+    lastLive: String?,
+    bio: String?,
+    settings: ProfileHeaderAction? = nil,
+    edit: ProfileHeaderAction? = nil
+  ) {
     self.name = name
     self.lastLive = lastLive
     self.bio = bio
+    self.settings = settings
     self.edit = edit
   }
 
@@ -27,9 +39,7 @@ public struct ProfileHeader: View {
         .background(alignment: .bottom) {
           ProfileHeaderStyle.banner.color.containerRelativeFrame(.vertical)
         }
-        .overlay(alignment: .topTrailing) {
-          if let edit { ProfileEditButton(edit: edit) }
-        }
+        .overlay(alignment: .top) { bannerControls }
       HStack(alignment: .top, spacing: LayoutRole.profileAvatarGap.points) {
         DefaultAvatar(
           diameter: LayoutRole.profileAvatarSize.points,
@@ -61,5 +71,15 @@ public struct ProfileHeader: View {
     }
     .padding(.bottom, LayoutRole.profileHeaderBottom.points)
     .frame(maxWidth: .infinity, alignment: .leading)
+  }
+
+  private var bannerControls: some View {
+    HStack(spacing: 0) {
+      if let settings { ProfileSettingsButton(settings: settings) }
+      Spacer(minLength: 0)
+      if let edit { ProfileEditButton(edit: edit) }
+    }
+    .padding(.horizontal, LayoutRole.screenInset.points)
+    .alignmentGuide(.top) { $0[VerticalAlignment.center] - LayoutRole.profileBannerControlCenter.points }
   }
 }

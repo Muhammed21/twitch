@@ -166,11 +166,12 @@ struct SignedInRoot: View {
       .toolbar(.hidden, for: .tabBar)
       .tag(AppTab.browse)
       NavigationStack(path: $router.profilePath) {
-        ProfileScreen(account: account) { slug in
-          router.push(.channel(slug))
-        } onAccountSaved: { saved in
-          session.accountSaved(saved)
-        } settings: {
+        ProfileScreen(account: account, actions: ProfileActions(
+          onOpenChannel: { router.push(.channel($0)) },
+          onAccountSaved: { session.accountSaved($0) },
+          onStreamManager: { router.create() },
+          onAnalytics: { Task { await creatorMode.switchMode(landingOn: .stats) } }
+        )) {
           SignedInScreen()
         }
         .withRouteDestinations()

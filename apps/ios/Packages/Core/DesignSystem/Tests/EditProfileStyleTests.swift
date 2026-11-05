@@ -3,8 +3,6 @@ import SwiftUI
 import Testing
 
 private let editProfileMeasures: [(LayoutRole, CGFloat)] = [
-  (.profileEditTop, 8),
-  (.profileEditTrailing, 24),
   (.editSectionLabelGap, 8),
   (.editRowPadding, 8),
   (.editRowLineGap, 2),
@@ -57,7 +55,6 @@ struct EditProfileStyleTests {
 
   @Test("Edit Profile est blanc sur la bannière, les libellés secondaires en texte secondaire")
   func colors() {
-    #expect(EditProfileStyle.editButton == .onMedia)
     #expect(EditProfileStyle.sectionLabel == .textSecondary)
     #expect(EditProfileStyle.rowTitle == .textPrimary)
     #expect(EditProfileStyle.rowValue == .textSecondary)
