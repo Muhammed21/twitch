@@ -16,13 +16,22 @@ public struct LiveChannel: Equatable, Sendable {
   public let title: String
   public let viewers: ViewerCount?
   public let thumbnailURL: URL?
+  public let avatarURL: URL?
 
-  public init(session: StreamSession, slug: ChannelSlug, title: String, viewers: ViewerCount?, thumbnailURL: URL? = nil) {
+  public init(
+    session: StreamSession,
+    slug: ChannelSlug,
+    title: String,
+    viewers: ViewerCount?,
+    thumbnailURL: URL? = nil,
+    avatarURL: URL? = nil
+  ) {
     self.session = session
     self.slug = slug
     self.title = title
     self.viewers = viewers
     self.thumbnailURL = thumbnailURL
+    self.avatarURL = avatarURL
   }
 }
 

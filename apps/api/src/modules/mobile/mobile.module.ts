@@ -5,6 +5,7 @@ import { errorDetails, type LogSink, writeLog } from "../../platform/logging.ts"
 import {
   type FeatureFlags,
   type FindOwnedChannel,
+  type ReadEntitlements,
   type ReadProfile,
   readBootstrap,
 } from "./application/read-bootstrap.ts";
@@ -30,6 +31,7 @@ export class MobileModule {
     featureFlags: FeatureFlags;
     readProfile: ReadProfile;
     ownedChannel: FindOwnedChannel;
+    readEntitlements: ReadEntitlements;
     minSupportedVersion: string;
     logSink: LogSink;
   }): DynamicModule {
@@ -45,6 +47,13 @@ export class MobileModule {
               writeLog(logSink, {
                 level: "error",
                 msg: "flags non évalués : valeurs par défaut servies",
+                ...errorDetails(error),
+              });
+            },
+            onEntitlementsFailure: (error) => {
+              writeLog(logSink, {
+                level: "error",
+                msg: "entitlements non lus : liste vide servie",
                 ...errorDetails(error),
               });
             },

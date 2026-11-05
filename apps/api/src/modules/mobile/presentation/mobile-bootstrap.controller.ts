@@ -12,7 +12,7 @@ import {
   invalidToken,
   OptionalAccessTokenGuard,
 } from "../../../platform/authentication.ts";
-import type { Bootstrap, Profile } from "../application/read-bootstrap.ts";
+import type { Bootstrap, Entitlement, Profile } from "../application/read-bootstrap.ts";
 
 export const READ_BOOTSTRAP = Symbol("READ_BOOTSTRAP");
 
@@ -30,8 +30,19 @@ const toProfileResponse = ({
 }: Profile): NonNullable<BootstrapResponse["profile"]> =>
   lastLiveAt === undefined ? profile : { ...profile, lastLiveAt: lastLiveAt.toISOString() };
 
-const toBootstrapResponse = ({ profile, ...bootstrap }: Bootstrap): BootstrapResponse =>
-  profile === undefined ? bootstrap : { ...bootstrap, profile: toProfileResponse(profile) };
+const toEntitlementResponse = ({ scope, expiresAt }: Entitlement) => ({
+  scope,
+  expiresAt: expiresAt.toISOString(),
+});
+
+const toBootstrapResponse = ({
+  profile,
+  entitlements,
+  ...bootstrap
+}: Bootstrap): BootstrapResponse => {
+  const response = { ...bootstrap, entitlements: entitlements.map(toEntitlementResponse) };
+  return profile === undefined ? response : { ...response, profile: toProfileResponse(profile) };
+};
 
 @Controller("mobile")
 @UseGuards(OptionalAccessTokenGuard)

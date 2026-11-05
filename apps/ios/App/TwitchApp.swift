@@ -40,6 +40,7 @@ struct TwitchApp: App {
         .environment(stores.profileEdit)
         .environment(stores.profileImages)
         .environment(stores.preferences)
+        .environment(\.feedbackPlayer, stores.feedback)
     }
   }
 }
@@ -240,6 +241,7 @@ struct Stores {
   let profileEdit: ProfileEditStore
   let profileImages: ProfileImageStore
   let preferences: PreferencesStore
+  let feedback: FeedbackPlayer
 }
 
 @MainActor
@@ -257,12 +259,8 @@ enum Composition {
 
   static func stores(info: [String: Any]) -> Stores {
     let configuration = oauthConfiguration(info: info)
-    guard let version = clientVersion(info: info), let currentVersion = try? AppVersion(version) else {
-      fatalError("Info.plist : CFBundleShortVersionString manquant ou mal formé.")
-    }
-    guard let chatBaseURL = chatBaseURL(info: info) else {
-      fatalError("Info.plist : CHAT_BASE_URL manquant ou mal formé.")
-    }
+    let (version, currentVersion) = requiredVersion(info: info)
+    let chatBaseURL = requiredChatBaseURL(info: info)
     let transport = ClientVersionTransport(wrapping: URLSessionHTTPTransport(), version: version)
     let session = OAuthSession(
       endpoint: TokenEndpoint(configuration: configuration, transport: transport),
@@ -303,8 +301,23 @@ enum Composition {
       categorySearch: CategorySearch(catalog: CategoryCatalogClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
       profileEdit: Self.profileEdit(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
       profileImages: Self.profileImages(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
-      preferences: PersonalizationRoot.preferences()
+      preferences: PersonalizationRoot.preferences(),
+      feedback: FeedbackPlayer()
     )
+  }
+
+  private static func requiredVersion(info: [String: Any]) -> (String, AppVersion) {
+    guard let version = clientVersion(info: info), let currentVersion = try? AppVersion(version) else {
+      fatalError("Info.plist : CFBundleShortVersionString manquant ou mal formé.")
+    }
+    return (version, currentVersion)
+  }
+
+  private static func requiredChatBaseURL(info: [String: Any]) -> URL {
+    guard let chatBaseURL = chatBaseURL(info: info) else {
+      fatalError("Info.plist : CHAT_BASE_URL manquant ou mal formé.")
+    }
+    return chatBaseURL
   }
 
   private static func oauthConfiguration(info: [String: Any]) -> OAuthConfiguration {
