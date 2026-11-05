@@ -166,8 +166,7 @@ public enum PersonalizationText {
   }
 
   public static func languageName(_ language: LiveLanguage) -> String {
-    let own = Locale(identifier: language.rawValue)
-    return own.localizedString(forLanguageCode: language.rawValue)?.capitalized(with: own) ?? language.rawValue
+    language.nativeName
   }
 
   public static func viewers(_ count: ViewerCount?, locale: Locale) -> String? {

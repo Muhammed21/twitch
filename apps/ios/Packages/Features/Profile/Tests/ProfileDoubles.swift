@@ -1,6 +1,7 @@
 import Domain
 import Foundation
 import os
+import Profile
 
 let ownerID = UUID(uuidString: "4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b") ?? UUID()
 let channelID = ChannelID(UUID(uuidString: "9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69") ?? UUID())
@@ -37,6 +38,7 @@ actor FakeMyChannel: MyChannelRepository {
   private let updated: Result<Channel, any Error>?
   private let rotated: Result<StreamKey, any Error>
   private(set) var updates: [UpdateCall] = []
+  private(set) var savedInfos: [StreamInfo] = []
 
   init(
     owned: Result<OwnedChannel?, any Error>,
@@ -62,10 +64,21 @@ actor FakeMyChannel: MyChannelRepository {
     try rotated.get()
   }
 
-  func update(_ channel: ChannelID, title: String, category: CategoryChange) throws -> Channel {
-    updates.append(UpdateCall(channel: channel, title: title, category: category))
+  func update(_ channel: ChannelID, info: StreamInfo, category: CategoryChange) throws -> Channel {
+    updates.append(UpdateCall(channel: channel, title: info.title, category: category))
+    savedInfos.append(info)
     guard let updated else {
-      return try Channel(id: channel, slug: ChannelSlug("viewer_de_test"), title: title, ownerID: ownerID, category: Self.chosen(category))
+      return try Channel(
+        id: channel,
+        slug: ChannelSlug("viewer_de_test"),
+        title: info.title,
+        ownerID: ownerID,
+        category: Self.chosen(category),
+        tags: info.tags,
+        language: info.language,
+        contentLabels: info.contentLabels,
+        isBrandedContent: info.isBrandedContent
+      )
     }
     return try updated.get()
   }
@@ -101,8 +114,8 @@ actor HeldKey: MyChannelRepository {
     return StreamKey(secret, ingestURL: ingestURL)
   }
 
-  func update(_ channel: ChannelID, title: String, category _: CategoryChange) throws -> Channel {
-    try Channel(id: channel, slug: ChannelSlug("viewer_de_test"), title: title, ownerID: ownerID)
+  func update(_ channel: ChannelID, info: StreamInfo, category _: CategoryChange) throws -> Channel {
+    try Channel(id: channel, slug: ChannelSlug("viewer_de_test"), title: info.title, ownerID: ownerID)
   }
 
   func rotateStreamKey(of _: ChannelID) -> StreamKey {
@@ -136,8 +149,8 @@ actor HeldRotation: MyChannelRepository {
     StreamKey(secret, ingestURL: ingestURL)
   }
 
-  func update(_ channel: ChannelID, title: String, category _: CategoryChange) throws -> Channel {
-    try Channel(id: channel, slug: ChannelSlug("viewer_de_test"), title: title, ownerID: ownerID)
+  func update(_ channel: ChannelID, info: StreamInfo, category _: CategoryChange) throws -> Channel {
+    try Channel(id: channel, slug: ChannelSlug("viewer_de_test"), title: info.title, ownerID: ownerID)
   }
 
   init(fails: Bool = false) {
@@ -174,9 +187,33 @@ struct FakeChannels: ChannelRepository {
   let title: String
   let category: ChannelCategory?
   var banner: URL?
+  var tags: [String] = []
+  var language: LiveLanguage?
+  var contentLabels: Set<ContentLabel> = []
+  var isBrandedContent = false
 
   func channel(withSlug slug: ChannelSlug) throws -> Channel {
-    Channel(id: channelID, slug: slug, title: title, ownerID: ownerID, category: category, bannerURL: banner)
+    Channel(
+      id: channelID,
+      slug: slug,
+      title: title,
+      ownerID: ownerID,
+      category: category,
+      bannerURL: banner,
+      tags: tags,
+      language: language,
+      contentLabels: contentLabels,
+      isBrandedContent: isBrandedContent
+    )
+  }
+}
+
+extension MyChannelStore {
+  func save(title: String, category: ChannelCategory?) async -> Bool {
+    var draft = info
+    draft.title = title
+    draft.category = category
+    return await save(draft)
   }
 }
 
