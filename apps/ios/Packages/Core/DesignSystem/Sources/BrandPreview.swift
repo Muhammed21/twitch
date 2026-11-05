@@ -15,13 +15,25 @@ public enum BrandBackdrop: Equatable {
   }
 }
 
+public struct BrandPicture {
+  let local: Image?
+  let url: URL?
+
+  public init(local: Image?, url: URL?) {
+    self.local = local
+    self.url = url
+  }
+
+  var isSet: Bool { local != nil || url != nil }
+}
+
 public struct BrandPreview: View {
-  private let avatar: Image?
-  private let banner: Image?
+  private let avatar: BrandPicture
+  private let banner: BrandPicture
   private let isSendingAvatar: Bool
   private let isSendingBanner: Bool
 
-  public init(avatar: Image?, banner: Image?, isSendingAvatar: Bool, isSendingBanner: Bool) {
+  public init(avatar: BrandPicture, banner: BrandPicture, isSendingAvatar: Bool, isSendingBanner: Bool) {
     self.avatar = avatar
     self.banner = banner
     self.isSendingAvatar = isSendingAvatar
@@ -33,11 +45,7 @@ public struct BrandPreview: View {
       .aspectRatio(BrandStyle.bannerAspectRatio, contentMode: .fit)
       .frame(maxWidth: .infinity)
       .background { backdrop }
-      .overlay {
-        if let banner {
-          banner.resizable().scaledToFill()
-        }
-      }
+      .overlay { bannerPicture }
       .clipped()
       .overlay {
         if isSendingBanner { ProgressView() }
@@ -47,7 +55,7 @@ public struct BrandPreview: View {
   }
 
   @ViewBuilder private var backdrop: some View {
-    switch BrandBackdrop(hasAvatar: avatar != nil) {
+    switch BrandBackdrop(hasAvatar: avatar.isSet) {
     case let .gradient(top, bottom):
       LinearGradient(colors: [top.color, bottom.color], startPoint: .top, endPoint: .bottom)
     case let .plain(role):
@@ -65,14 +73,28 @@ public struct BrandPreview: View {
       .background(BrandStyle.avatarRing.color, in: Circle())
   }
 
-  @ViewBuilder private var avatarPicture: some View {
-    if let avatar {
-      avatar.resizable().scaledToFill().clipShape(Circle())
-    } else {
-      DefaultAvatar(
-        diameter: LayoutRole.brandAvatarSize.points,
-        glyphInset: LayoutRole.brandAvatarGlyphInset.points
-      )
+  @ViewBuilder private var bannerPicture: some View {
+    if let local = banner.local {
+      local.resizable().scaledToFill()
+    } else if let url = banner.url {
+      AsyncImage(url: url) { $0.resizable().scaledToFill() } placeholder: { Color.clear }
     }
+  }
+
+  @ViewBuilder private var avatarPicture: some View {
+    if let local = avatar.local {
+      local.resizable().scaledToFill().clipShape(Circle())
+    } else if let url = avatar.url {
+      AsyncImage(url: url) { $0.resizable().scaledToFill().clipShape(Circle()) } placeholder: { defaultAvatar }
+    } else {
+      defaultAvatar
+    }
+  }
+
+  private var defaultAvatar: some View {
+    DefaultAvatar(
+      diameter: LayoutRole.brandAvatarSize.points,
+      glyphInset: LayoutRole.brandAvatarGlyphInset.points
+    )
   }
 }

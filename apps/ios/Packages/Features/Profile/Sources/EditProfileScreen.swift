@@ -7,6 +7,7 @@ import UIKit
 struct EditProfileSheet: View {
   @Environment(\.dismiss) private var dismiss
   @Environment(ProfileImageStore.self) private var images: ProfileImageStore?
+  @Environment(MyChannelStore.self) private var channel
   @State private var account: Account
   @State private var hasChanges = false
   @State private var menu: ImagePurpose?
@@ -70,8 +71,8 @@ struct EditProfileSheet: View {
     VStack(alignment: .leading, spacing: LayoutRole.editSectionLabelGap.points) {
       EditSection(label: String(localized: EditProfileText.brand), footer: String(localized: EditProfileText.brandFooter)) {
         BrandPreview(
-          avatar: avatar,
-          banner: banner,
+          avatar: BrandPicture(local: avatar, url: account.avatarURL),
+          banner: BrandPicture(local: banner, url: channel.bannerURL),
           isSendingAvatar: images.phase == .sending(.avatar),
           isSendingBanner: images.phase == .sending(.banner)
         )
@@ -137,7 +138,8 @@ struct EditProfileSheet: View {
       hasChanges = true
       onSaved(saved)
     case .banner:
-      guard await images.setBanner(jpeg) != nil else { return }
+      guard let saved = await images.setBanner(jpeg) else { return }
+      channel.bannerSaved(saved)
       banner = preview
       hasChanges = true
     }

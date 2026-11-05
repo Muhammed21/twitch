@@ -36,6 +36,7 @@ struct TwitchApp: App {
         .environment(stores.myChannel)
         .environment(stores.categorySearch)
         .environment(stores.profileEdit)
+        .environment(stores.profileImages)
     }
   }
 }
@@ -260,6 +261,7 @@ struct Stores {
   let myChannel: MyChannelStore
   let categorySearch: CategorySearch
   let profileEdit: ProfileEditStore
+  let profileImages: ProfileImageStore
 }
 
 @MainActor
@@ -322,27 +324,8 @@ enum Composition {
       ),
       myChannel: Self.myChannel(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, channels: channels),
       categorySearch: CategorySearch(catalog: CategoryCatalogClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
-      profileEdit: ProfileEditStore(
-        editor: AccountClient(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now)
-      )
-    )
-  }
-
-  private static func myChannel(
-    apiBaseURL: URL,
-    transport: ClientVersionTransport,
-    tokens: OAuthSession,
-    channels: ChannelClient
-  ) -> MyChannelStore {
-    MyChannelStore(
-      repository: MyChannelClient(apiBaseURL: apiBaseURL, transport: transport, tokens: tokens, now: { Date.now }),
-      channels: channels,
-      copy: { key in
-        UIPasteboard.general.setItems(
-          [[UTType.plainText.identifier: key]],
-          options: [.localOnly: true, .expirationDate: Date.now.addingTimeInterval(120)]
-        )
-      }
+      profileEdit: Self.profileEdit(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
+      profileImages: Self.profileImages(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now)
     )
   }
 
