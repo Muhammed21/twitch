@@ -8,6 +8,7 @@
   "authz.AuthzRoleAssignment.subjectId",
   "channel.Channel.ownerId",
   "channel.Channel.slug",
+  "channel.ChannelCategoryFollow.userId",
   "discovery.DiscoveryLiveChannelView.slug",
   "identity.IdentityAccount.accessToken",
   "identity.IdentityAccount.accountId",

@@ -146,6 +146,7 @@ const makeCategory = (overrides: Record<string, unknown> = {}) => ({
   slug: "just-chatting",
   name: "Just Chatting",
   status: "active",
+  tags: ["IRL"],
   ...overrides,
 });
 
@@ -172,6 +173,8 @@ describe("Category", () => {
     ["sans nom", { name: undefined }],
     ["sans état", { status: undefined }],
     ["avec une pochette qui n'est pas une URL", { imageUrl: "jc.webp" }],
+    ["sans tags", { tags: undefined }],
+    ["avec un tag qui n'est pas un texte", { tags: [1] }],
   ])("refuse une catégorie %s", (_name, overrides) => {
     expect(responses.Category.safeParse(makeCategory(overrides)).success).toBe(false);
   });

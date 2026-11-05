@@ -201,6 +201,7 @@ describe("channel.category.updated", () => {
     categoryId: CATEGORY_ID,
     name: "Just Chatting",
     imageKey: "images/category/3a4b5c6d-7e8f-4a0b-9c1d-2e3f4a5b6c7d.webp",
+    tags: ["IRL"],
     ...overrides,
   });
 
@@ -214,6 +215,7 @@ describe("channel.category.updated", () => {
   it.each([
     ["avec sa pochette", makeUpdated()],
     ["sans pochette", makeUpdated({ imageKey: null })],
+    ["sans tag", makeUpdated({ tags: [] })],
   ])("décode la catégorie %s", (_name, updated) => {
     expect(events.channel.channelCategoryUpdated.payload.parse(updated)).toEqual(updated);
   });
@@ -222,8 +224,15 @@ describe("channel.category.updated", () => {
     ["sans catégorie", makeUpdated({ categoryId: undefined })],
     ["sans nom", makeUpdated({ name: undefined })],
     ["sans clé de pochette", makeUpdated({ imageKey: undefined })],
+    ["avec des tags qui ne sont pas une liste", makeUpdated({ tags: "IRL" })],
   ])("refuse un changement %s", (_name, updated) => {
     expect(events.channel.channelCategoryUpdated.payload.safeParse(updated).success).toBe(false);
+  });
+
+  it("lit un changement publié avant les tags comme une catégorie sans tag (ADR 0050 §3)", () => {
+    expect(
+      events.channel.channelCategoryUpdated.payload.parse(makeUpdated({ tags: undefined })),
+    ).toMatchObject({ tags: [] });
   });
 });
 
@@ -246,6 +255,84 @@ describe("channel.category.retired", () => {
     ["avec une catégorie qui n'est pas un UUID", { categoryId: "jeux" }],
   ])("refuse un event %s", (_name, payload) => {
     expect(events.channel.channelCategoryRetired.payload.safeParse(payload).success).toBe(false);
+  });
+});
+
+const FOLLOWER_ID = "6b4c1e3a-9d5f-4a0c-b132-4e7f8a9b0c1d";
+
+describe("channel.category.followed", () => {
+  const makeFollowed = (overrides: Record<string, unknown> = {}) => ({
+    userId: FOLLOWER_ID,
+    categoryId: CATEGORY_ID,
+    followedAt: "2026-11-04T12:00:00.000Z",
+    version: 3,
+    ...overrides,
+  });
+
+  it("porte son nom et sa version", () => {
+    expect(events.channel.channelCategoryFollowed).toMatchObject({
+      name: "channel.category.followed",
+      version: 1,
+    });
+  });
+
+  it("décode le compte, la catégorie, le début du suivi et la version de la paire", () => {
+    expect(events.channel.channelCategoryFollowed.payload.parse(makeFollowed())).toEqual(
+      makeFollowed(),
+    );
+  });
+
+  it.each([
+    ["sans compte", makeFollowed({ userId: undefined })],
+    ["avec un compte qui n'est pas un UUID", makeFollowed({ userId: "viewer" })],
+    ["sans catégorie", makeFollowed({ categoryId: undefined })],
+    ["avec une catégorie qui n'est pas un UUID", makeFollowed({ categoryId: "jeux" })],
+    ["sans début du suivi", makeFollowed({ followedAt: undefined })],
+    ["avec un début sans fuseau", makeFollowed({ followedAt: "2026-11-04T12:00:00" })],
+    ["sans version", makeFollowed({ version: undefined })],
+    ["avec une version nulle", makeFollowed({ version: 0 })],
+    ["avec une version fractionnaire", makeFollowed({ version: 1.5 })],
+  ])("refuse un event %s", (_name, payload) => {
+    expect(events.channel.channelCategoryFollowed.payload.safeParse(payload).success).toBe(false);
+  });
+});
+
+describe("channel.category.unfollowed", () => {
+  const makeUnfollowed = (overrides: Record<string, unknown> = {}) => ({
+    userId: FOLLOWER_ID,
+    categoryId: CATEGORY_ID,
+    reason: "unfollowed",
+    version: 4,
+    ...overrides,
+  });
+
+  it("porte son nom et sa version", () => {
+    expect(events.channel.channelCategoryUnfollowed).toMatchObject({
+      name: "channel.category.unfollowed",
+      version: 1,
+    });
+  });
+
+  it.each(["unfollowed", "category_merged", "category_retired", "raison_future"])(
+    "décode la raison %s",
+    (reason) => {
+      expect(
+        events.channel.channelCategoryUnfollowed.payload.parse(makeUnfollowed({ reason })),
+      ).toEqual(makeUnfollowed({ reason }));
+    },
+  );
+
+  it.each([
+    ["sans compte", makeUnfollowed({ userId: undefined })],
+    ["avec un compte qui n'est pas un UUID", makeUnfollowed({ userId: "viewer" })],
+    ["sans catégorie", makeUnfollowed({ categoryId: undefined })],
+    ["avec une catégorie qui n'est pas un UUID", makeUnfollowed({ categoryId: "jeux" })],
+    ["sans raison", makeUnfollowed({ reason: undefined })],
+    ["sans version", makeUnfollowed({ version: undefined })],
+    ["avec une version nulle", makeUnfollowed({ version: 0 })],
+    ["avec une version fractionnaire", makeUnfollowed({ version: 1.5 })],
+  ])("refuse un event %s", (_name, payload) => {
+    expect(events.channel.channelCategoryUnfollowed.payload.safeParse(payload).success).toBe(false);
   });
 });
 
