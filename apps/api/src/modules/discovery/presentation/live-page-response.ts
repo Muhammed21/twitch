@@ -22,13 +22,14 @@ export const toLivePage = (
   imageUrlOf: CategoryImageUrl,
 ): z.input<typeof responses.LivePage> => ({
   items: items.map(
-    ({ channelId, slug, title, startedAt, viewerCount, thumbnailUrl, category }) => ({
+    ({ channelId, slug, title, startedAt, viewerCount, thumbnailUrl, avatarKey, category }) => ({
       channelId,
       slug,
       title,
       startedAt: startedAt.toISOString(),
       viewerCount,
       thumbnailUrl,
+      avatarUrl: avatarKey === null ? undefined : imageUrlOf(avatarKey),
       category: category === undefined ? undefined : withImageUrl(category, imageUrlOf),
     }),
   ),

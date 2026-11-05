@@ -345,6 +345,17 @@ describe("LivePage", () => {
     expect(responses.LivePage.parse(page)).toEqual(page);
   });
 
+  it("décode l'URL de l'avatar du streamer d'un live, en HTTP comme en HTTPS", () => {
+    const page = {
+      items: [
+        makeLive({ avatarUrl: "https://cdn.twitch.local/images/avatar/a.webp" }),
+        makeLive({ avatarUrl: "http://127.0.0.1:8333/twitch-local/images/avatar/a.webp" }),
+      ],
+    };
+
+    expect(responses.LivePage.parse(page)).toEqual(page);
+  });
+
   it("décode la catégorie d'un live, avec ou sans pochette", () => {
     const page = {
       items: [
@@ -370,6 +381,8 @@ describe("LivePage", () => {
       "avec une vignette d'un schéma qui commence par https",
       { thumbnailUrl: "httpsx://v.example/t.jpg" },
     ],
+    ["avec un avatar qui n'est pas une URL", { avatarUrl: "avatar.webp" }],
+    ["avec un avatar hors HTTP", { avatarUrl: "ftp://cdn.twitch.local/a.webp" }],
     ["avec une catégorie sans nom", { category: { slug: "irl" } }],
     [
       "avec une pochette qui n'est pas une URL",

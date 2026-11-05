@@ -55,6 +55,13 @@ const app = configureApp(
           env: { DATABASE_URL_MODERATION: "postgresql://openapi@localhost/aucune-connexion" },
         }),
       },
+      monetization: {
+        prisma: createContextClient({
+          context: "monetization",
+          env: { DATABASE_URL_MONETIZATION: "postgresql://openapi@localhost/aucune-connexion" },
+        }),
+        webhookAuthorization: undefined,
+      },
       discovery: {
         prisma: createContextClient({
           context: "discovery",
@@ -62,6 +69,7 @@ const app = configureApp(
         }),
         channelConsumerRedis: createStreamConsumerRedis(),
         streamConsumerRedis: createStreamConsumerRedis(),
+        identityConsumerRedis: createStreamConsumerRedis(),
       },
       mobile: { featureFlags: { provider: "defaults" }, minSupportedVersion: "0.0.0" },
       images: {

@@ -6,6 +6,7 @@ export type LiveSession = {
 export type LiveChannelView = {
   readonly channelId: string;
   readonly slug: string | null;
+  readonly ownerId: string | null;
   readonly title: string;
   readonly titleChangedAt: Date | null;
   readonly categoryId: string | null;
@@ -14,7 +15,12 @@ export type LiveChannelView = {
 };
 
 export type LiveChannelEvent =
-  | { readonly kind: "channel-created"; readonly channelId: string; readonly slug: string }
+  | {
+      readonly kind: "channel-created";
+      readonly channelId: string;
+      readonly ownerId: string;
+      readonly slug: string;
+    }
   | {
       readonly kind: "metadata-changed";
       readonly channelId: string;
@@ -38,6 +44,7 @@ export type LiveChannelEvent =
 const unknownChannel = (channelId: string): LiveChannelView => ({
   channelId,
   slug: null,
+  ownerId: null,
   title: "",
   titleChangedAt: null,
   categoryId: null,
@@ -61,7 +68,7 @@ export const applyDiscoveryEvent = (
   const view = current ?? unknownChannel(event.channelId);
   switch (event.kind) {
     case "channel-created":
-      return { ...view, slug: event.slug };
+      return { ...view, slug: event.slug, ownerId: event.ownerId };
     case "metadata-changed":
       return isAfter(event.changedAt, view.titleChangedAt)
         ? {
