@@ -99,7 +99,10 @@ describe("handlers de discovery pour events.channel et events.stream", () => {
   });
 
   it.each<[string, DiscoveryEvent]>([
-    ["channel.created", { kind: "channel-created", channelId: CHANNEL_ID, slug: "streamer" }],
+    [
+      "channel.created",
+      { kind: "channel-created", channelId: CHANNEL_ID, ownerId: OWNER_ID, slug: "streamer" },
+    ],
     [
       "channel.metadata.updated",
       {

@@ -46,9 +46,10 @@ const { streamStarted, streamEnded } = events.stream;
 export const DISCOVERY_EVENT_READERS: Readonly<
   Record<string, (event: PublishedEvent) => DiscoveryEvent | null>
 > = {
-  [channelCreated.name]: reader(channelCreated, ({ channelId, slug }) => ({
+  [channelCreated.name]: reader(channelCreated, ({ channelId, ownerId, slug }) => ({
     kind: "channel-created",
     channelId,
+    ownerId,
     slug,
   })),
   [channelMetadataUpdated.name]: reader(

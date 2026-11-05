@@ -687,6 +687,7 @@ describe("reconstruction de la projection depuis les outbox (ADR 0003, ADR 0034)
           {
             channelId,
             slug: null,
+            ownerId: null,
             title: "Reconstruit",
             titleChangedAt: null,
             categoryId: null,

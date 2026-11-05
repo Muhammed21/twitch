@@ -14,10 +14,12 @@ const CHANNEL_ID = "6f1c2d3e-4a5b-4c6d-8e7f-9a0b1c2d3e4f";
 const CATEGORY_ID = "0b5e4d3c-2a19-4f08-8e7d-6c5b4a392817";
 const EVENT_ID = "0e1d2c3b-4a59-4687-9a1b-2c3d4e5f6a7b";
 const FOLLOWER_ID = "6b4c1e3a-9d5f-4a0c-b132-4e7f8a9b0c1d";
+const OWNER_ID = "4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b";
 
 const UNKNOWN_CHANNEL: LiveChannelView = {
   channelId: CHANNEL_ID,
   slug: null,
+  ownerId: null,
   title: "",
   titleChangedAt: null,
   categoryId: null,
@@ -75,11 +77,15 @@ describe("projection d'un event de discovery", () => {
 
     await project({
       eventId: EVENT_ID,
-      event: { kind: "channel-created", channelId: CHANNEL_ID, slug: "chaine" },
+      event: { kind: "channel-created", channelId: CHANNEL_ID, ownerId: OWNER_ID, slug: "chaine" },
     });
 
     expect(channelUpdates).toEqual([
-      { eventId: EVENT_ID, channelId: CHANNEL_ID, result: { ...UNKNOWN_CHANNEL, slug: "chaine" } },
+      {
+        eventId: EVENT_ID,
+        channelId: CHANNEL_ID,
+        result: { ...UNKNOWN_CHANNEL, slug: "chaine", ownerId: OWNER_ID },
+      },
     ]);
     expect(categoryUpdates).toEqual([]);
   });
