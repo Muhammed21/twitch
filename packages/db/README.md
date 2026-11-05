@@ -27,6 +27,18 @@ Le client est généré dans `src/generated/` par `pnpm generate`, que `check-ty
 
 Dans Compose, le service `migrate` du profil `full` (image `packages/db/Dockerfile`) lance `pnpm migrate` après `db-init`. Une application n'applique jamais de migration au démarrage : elle appelle `assertSchemaVersion({ connectionString: DATABASE_URL_HEALTH, migration: LATEST_MIGRATION })`, qui refuse une base où cette migration n'est pas appliquée, terminée et non annulée (ADR 0008, ADR 0028 §8). `LATEST_MIGRATION` est généré par `pnpm generate` depuis `prisma/migrations/`.
 
+Prisma applique les migrations dans l'ordre de leur nom. Le job CI `Repo hygiene` lance `node packages/db/scripts/check-migration-order.ts <ref>` et échoue si deux migrations partagent un horodatage, ou si une migration absente de la branche de base (reconnue à son contenu, un simple renommage n'en fait pas une nouvelle) n'est pas postérieure à la dernière migration de cette branche. Sans `<ref>`, seul le premier contrôle s'applique. Après un `git pull`, une migration qui en précède une autre se renomme avec un horodatage plus récent avant d'ouvrir la PR.
+
+### Base qui connaît `20261104170000_identity_user_bio`
+
+Une base migrée avant le 5 novembre 2026 enregistre `20261104170001_identity_user_bio` et `20261105120001_identity_user_avatar_key` sous les noms `20261104170000_identity_user_bio` et `20261105120000_identity_user_avatar_key`. `pnpm migrate` y échoue sur `column "bio" of relation "IdentityUser" already exists`. Avant `pnpm migrate`, renommer les lignes de `_prisma_migrations` :
+
+```sh
+docker compose exec -T postgres psql -U postgres -d app -v ON_ERROR_STOP=1 < packages/db/scripts/rename-duplicate-migrations.sql
+```
+
+Le script tourne dans une transaction et peut se relancer : il retire la tentative échouée sous le nouveau nom si `pnpm migrate` a déjà été lancé, renomme les lignes appliquées sous l'ancien nom, et ne touche pas une base migrée sous les nouveaux noms.
+
 Les variables viennent du `.env` racine. Les droits vivent dans la migration `socle` : chaque `app_<contexte>` lit et écrit son schéma seul ; `audit` est en `INSERT` et `SELECT` pour tous ; `authz` est lu par tous et écrit par `channel` et `moderation`, sans `DELETE` (ADR 0006). Ils passent par des privilèges par défaut de `migrator` : toute table doit être créée par ce rôle.
 
 ## Lint du schéma

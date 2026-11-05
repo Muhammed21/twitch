@@ -92,6 +92,16 @@ jobs:
             echo "::error::Fichier .env versionné. Retirez-le avec 'git rm --cached' et faites tourner les secrets qu'il contient."
             exit 1
           fi
+      - name: Migration timestamps are unique and follow the base branch
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if [ -n "$BASE_REF" ]; then
+            git fetch --quiet --depth=1 origin "$BASE_REF"
+            node packages/db/scripts/check-migration-order.ts FETCH_HEAD
+          else
+            node packages/db/scripts/check-migration-order.ts
+          fi
       - run: pnpm audit --prod --audit-level=high
 
   build:
