@@ -18,6 +18,7 @@ export const Live = z
     startedAt: z.iso.datetime(),
     viewerCount: z.int().min(0).optional(),
     thumbnailUrl: z.url({ protocol: /^https?$/ }).optional(),
+    avatarUrl: z.url({ protocol: /^https?$/ }).optional(),
     category: LiveCategory.optional(),
   })
   .meta({ id: "Live" });

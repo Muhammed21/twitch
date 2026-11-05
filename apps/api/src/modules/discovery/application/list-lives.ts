@@ -6,6 +6,7 @@ export type LiveListItem = {
   readonly title: string;
   readonly startedAt: Date;
   readonly categoryId: string | null;
+  readonly avatarKey: string | null;
 };
 
 export type ListedCategory = {
