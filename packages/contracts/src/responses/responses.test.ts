@@ -368,14 +368,15 @@ describe("BrowseCategoryList", () => {
     name: "Just Chatting",
     liveCount: 3,
     viewerCount: 40,
+    tags: ["IRL"],
     ...overrides,
   });
 
-  it("décode les catégories en live, avec leurs viewers et leur pochette", () => {
+  it("décode les catégories en live, avec leurs viewers, leur pochette et leurs tags", () => {
     const list = {
       items: [
         makeBrowseCategory({ viewerCount: 1200, imageUrl: "https://cdn.twitch.local/jc.webp" }),
-        makeBrowseCategory({ slug: "irl", name: "IRL", liveCount: 1, viewerCount: 0 }),
+        makeBrowseCategory({ slug: "irl", name: "IRL", liveCount: 1, viewerCount: 0, tags: [] }),
       ],
     };
 
@@ -394,10 +395,51 @@ describe("BrowseCategoryList", () => {
     ["avec un nombre de viewers négatif", { viewerCount: -1 }],
     ["sans nombre de viewers", { viewerCount: undefined }],
     ["avec une pochette qui n'est pas une URL", { imageUrl: "jc.webp" }],
+    ["sans tags", { tags: undefined }],
+    ["avec un tag qui n'est pas un texte", { tags: [1] }],
   ])("refuse une catégorie %s", (_name, overrides) => {
     expect(
       responses.BrowseCategoryList.safeParse({ items: [makeBrowseCategory(overrides)] }).success,
     ).toBe(false);
+  });
+});
+
+describe("CategoryHeader (ADR 0050)", () => {
+  const makeHeader = (overrides: Record<string, unknown> = {}) => ({
+    slug: "fortnite",
+    name: "Fortnite",
+    imageUrl: "https://cdn.twitch.local/images/category/fortnite.webp",
+    liveCount: 12,
+    viewerCount: 22000,
+    tags: ["Shooter", "RPG"],
+    ...overrides,
+  });
+
+  it.each([
+    ["avec sa pochette, son audience et ses tags", makeHeader()],
+    [
+      "sans pochette, sans live ni tag",
+      makeHeader({ imageUrl: undefined, liveCount: 0, viewerCount: 0, tags: [] }),
+    ],
+  ])("décode l'en-tête d'une catégorie %s", (_name, header) => {
+    expect(responses.CategoryHeader.parse(header)).toEqual(header);
+  });
+
+  it("garde un champ ajouté plus tard par le serveur", () => {
+    expect(responses.CategoryHeader.parse(makeHeader({ followerCount: 3 }))).toMatchObject({
+      followerCount: 3,
+    });
+  });
+
+  it.each([
+    ["sans slug", { slug: undefined }],
+    ["sans nom", { name: undefined }],
+    ["avec une pochette qui n'est pas une URL", { imageUrl: "fortnite.webp" }],
+    ["avec un nombre de lives négatif", { liveCount: -1 }],
+    ["sans nombre de viewers", { viewerCount: undefined }],
+    ["sans tags", { tags: undefined }],
+  ])("refuse un en-tête %s", (_name, overrides) => {
+    expect(responses.CategoryHeader.safeParse(makeHeader(overrides)).success).toBe(false);
   });
 });
 

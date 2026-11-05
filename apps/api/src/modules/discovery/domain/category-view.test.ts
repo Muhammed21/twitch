@@ -18,6 +18,7 @@ const makeView = (overrides: Partial<CategoryView> = {}): CategoryView => ({
   status: "active",
   mergedIntoId: null,
   imageKey: null,
+  tags: [],
   ...overrides,
 });
 
@@ -41,6 +42,7 @@ const updated: CategoryEvent = {
   categoryId: SOURCE,
   name: "Discussion",
   imageKey: "images/category/jc.webp",
+  tags: ["IRL", "Discussion"],
 };
 
 const viewsOf = (...views: readonly CategoryView[]): ReadonlyMap<string, CategoryView> =>
@@ -61,28 +63,33 @@ describe("vue d'une catégorie dans discovery", () => {
     expect(applyCategoryEvent(makeView(), retired)).toEqual(makeView({ status: "retired" }));
   });
 
-  it("prend le nom et la pochette d'une catégorie mise à jour", () => {
+  it("prend le nom, la pochette et les tags d'une catégorie mise à jour", () => {
     expect(applyCategoryEvent(makeView(), updated)).toEqual(
-      makeView({ name: "Discussion", imageKey: "images/category/jc.webp" }),
+      makeView({
+        name: "Discussion",
+        imageKey: "images/category/jc.webp",
+        tags: ["IRL", "Discussion"],
+      }),
     );
   });
 
-  it("retire la pochette quand la mise à jour n'en porte plus", () => {
+  it("retire la pochette et les tags quand la mise à jour n'en porte plus", () => {
     expect(
-      applyCategoryEvent(makeView({ imageKey: "images/category/jc.webp" }), {
+      applyCategoryEvent(makeView({ imageKey: "images/category/jc.webp", tags: ["IRL"] }), {
         kind: "category-updated",
         categoryId: SOURCE,
         name: "Just Chatting",
         imageKey: null,
+        tags: [],
       }),
     ).toEqual(makeView());
   });
 
-  it("garde la pochette d'une mise à jour arrivée avant la création", () => {
+  it("garde la pochette et les tags d'une mise à jour arrivée avant la création", () => {
     const early = applyCategoryEvent(null, updated);
 
     expect(applyCategoryEvent(early, created)).toEqual(
-      makeView({ imageKey: "images/category/jc.webp" }),
+      makeView({ imageKey: "images/category/jc.webp", tags: ["IRL", "Discussion"] }),
     );
   });
 
@@ -104,6 +111,7 @@ describe("résolution d'une catégorie dans discovery", () => {
       slug: "just-chatting",
       name: "Just Chatting",
       imageKey: null,
+      tags: [],
     });
   });
 
@@ -116,6 +124,7 @@ describe("résolution d'une catégorie dans discovery", () => {
         slug: "talk",
         name: "Talk",
         imageKey: "images/category/talk.webp",
+        tags: ["Talk show"],
       }),
     );
 
@@ -124,6 +133,7 @@ describe("résolution d'une catégorie dans discovery", () => {
       slug: "talk",
       name: "Talk",
       imageKey: "images/category/talk.webp",
+      tags: ["Talk show"],
     });
   });
 

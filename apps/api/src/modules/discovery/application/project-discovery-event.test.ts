@@ -32,6 +32,7 @@ const ACTIVE_CATEGORY: CategoryView = {
   status: "active",
   mergedIntoId: null,
   imageKey: null,
+  tags: [],
 };
 
 const inMemoryProjections = ({
@@ -111,6 +112,7 @@ describe("projection d'un event de discovery", () => {
         categoryId: CATEGORY_ID,
         name: "IRL",
         imageKey: "images/category/irl.webp",
+        tags: [],
       },
     });
 
