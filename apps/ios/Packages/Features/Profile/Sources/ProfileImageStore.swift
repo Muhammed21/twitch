@@ -7,6 +7,7 @@ import Observation
 public final class ProfileImageStore {
   public enum Failure: Equatable, Sendable {
     case tooLarge
+    case tooSmall
     case notSaved
   }
 
@@ -22,26 +23,43 @@ public final class ProfileImageStore {
 
   private let uploads: any ImageUploads
   private let images: any ProfileImages
+  private let prepare: @Sendable (Data, ImagePurpose) -> PreparedImage
 
-  public init(uploads: any ImageUploads, images: any ProfileImages) {
+  public init(
+    uploads: any ImageUploads,
+    images: any ProfileImages,
+    prepare: @escaping @Sendable (Data, ImagePurpose) -> PreparedImage = ProfileImageEncoding.prepare
+  ) {
     self.uploads = uploads
     self.images = images
+    self.prepare = prepare
   }
 
-  public func setAvatar(_ jpeg: Data) async -> Account? {
-    await send(jpeg, as: .avatar) { try await self.images.setAvatar($0) }
+  public func setAvatar(_ picked: Data) async -> Account? {
+    await send(picked, as: .avatar) { try await self.images.setAvatar($0) }
   }
 
-  public func setBanner(_ jpeg: Data) async -> Channel? {
-    await send(jpeg, as: .banner) { try await self.images.setBanner($0) }
+  public func setBanner(_ picked: Data) async -> Channel? {
+    await send(picked, as: .banner) { try await self.images.setBanner($0) }
   }
 
   public func dismissFailure() {
     if case .failed = phase { phase = .idle }
   }
 
-  private func send<Saved>(_ jpeg: Data, as purpose: ImagePurpose, confirm: (UploadID) async throws -> Saved) async -> Saved? {
+  private func send<Saved>(_ picked: Data, as purpose: ImagePurpose, confirm: (UploadID) async throws -> Saved) async -> Saved? {
     if case .sending = phase { return nil }
+    let jpeg: Data
+    switch prepare(picked, purpose) {
+    case let .jpeg(prepared):
+      jpeg = prepared
+    case .tooSmall:
+      phase = .failed(purpose, .tooSmall)
+      return nil
+    case .unreadable:
+      phase = .failed(purpose, .notSaved)
+      return nil
+    }
     guard jpeg.count < Self.maxBytes else {
       phase = .failed(purpose, .tooLarge)
       return nil

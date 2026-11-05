@@ -27,6 +27,8 @@ public enum EditProfileText {
     return switch (purpose, failure) {
     case (.avatar, .tooLarge): LocalizedStringResource("editProfile.picture.tooLarge", bundle: .module)
     case (.banner, .tooLarge): LocalizedStringResource("editProfile.banner.tooLarge", bundle: .module)
+    case (.avatar, .tooSmall): LocalizedStringResource("editProfile.picture.tooSmall", bundle: .module)
+    case (.banner, .tooSmall): LocalizedStringResource("editProfile.banner.tooSmall", bundle: .module)
     case (.avatar, .notSaved): LocalizedStringResource("editProfile.picture.failed", bundle: .module)
     case (.banner, .notSaved): LocalizedStringResource("editProfile.banner.failed", bundle: .module)
     }

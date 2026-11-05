@@ -65,10 +65,16 @@ private struct FakeProfileImages: ProfileImages {
 }
 
 @MainActor
-private func makeStore(_ journal: Journal, failsSending: Bool = false, failsConfirming: Bool = false) throws -> ProfileImageStore {
+private func makeStore(
+  _ journal: Journal,
+  failsSending: Bool = false,
+  failsConfirming: Bool = false,
+  prepared: PreparedImage? = nil
+) throws -> ProfileImageStore {
   try ProfileImageStore(
     uploads: FakeUploads(journal: journal, failsSending: failsSending),
-    images: FakeProfileImages(journal: journal, failsConfirming: failsConfirming, channel: makeChannel())
+    images: FakeProfileImages(journal: journal, failsConfirming: failsConfirming, channel: makeChannel()),
+    prepare: { picked, _ in prepared ?? .jpeg(picked) }
   )
 }
 
@@ -115,6 +121,32 @@ struct ProfileImageStoreTests {
 
     #expect(saved == nil)
     #expect(store.phase == .failed(.avatar, .tooLarge))
+    #expect(await journal.steps.isEmpty)
+  }
+
+  @Test("une image sous le minimum de l'API est refusée sans rien envoyer", arguments: [ImagePurpose.avatar, .banner])
+  func tooSmall(purpose: ImagePurpose) async throws {
+    let journal = Journal()
+    let store = try makeStore(journal, prepared: .tooSmall)
+
+    switch purpose {
+    case .avatar: _ = await store.setAvatar(Data([0x01]))
+    case .banner: _ = await store.setBanner(Data([0x01]))
+    }
+
+    #expect(store.phase == .failed(purpose, .tooSmall))
+    #expect(await journal.steps.isEmpty)
+  }
+
+  @Test("une image illisible s'annonce comme un échec, sans rien envoyer")
+  func unreadable() async throws {
+    let journal = Journal()
+    let store = try makeStore(journal, prepared: .unreadable)
+
+    let saved = await store.setAvatar(Data([0x01]))
+
+    #expect(saved == nil)
+    #expect(store.phase == .failed(.avatar, .notSaved))
     #expect(await journal.steps.isEmpty)
   }
 

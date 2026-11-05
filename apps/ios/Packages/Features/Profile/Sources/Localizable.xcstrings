@@ -81,6 +81,16 @@
         }
       }
     },
+    "editProfile.banner.tooSmall" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your banner must be at least 1200×480."
+          }
+        }
+      }
+    },
     "editProfile.bio" : {
       "localizations" : {
         "en" : {
@@ -197,6 +207,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your profile picture is over 10MB. Choose a smaller one."
+          }
+        }
+      }
+    },
+    "editProfile.picture.tooSmall" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your profile picture must be at least 256×256."
           }
         }
       }

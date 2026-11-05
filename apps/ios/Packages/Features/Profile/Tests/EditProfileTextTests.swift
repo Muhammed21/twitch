@@ -40,6 +40,8 @@ struct EditProfileTextTests {
     arguments: [
       (ProfileImageStore.Phase.failed(.avatar, .tooLarge), "Your profile picture is over 10MB. Choose a smaller one."),
       (ProfileImageStore.Phase.failed(.banner, .tooLarge), "Your banner is over 10MB. Choose a smaller one."),
+      (ProfileImageStore.Phase.failed(.avatar, .tooSmall), "Your profile picture must be at least 256×256."),
+      (ProfileImageStore.Phase.failed(.banner, .tooSmall), "Your banner must be at least 1200×480."),
       (ProfileImageStore.Phase.failed(.avatar, .notSaved), "Couldn't save your profile picture. Try again."),
       (ProfileImageStore.Phase.failed(.banner, .notSaved), "Couldn't save your banner. Try again."),
     ]

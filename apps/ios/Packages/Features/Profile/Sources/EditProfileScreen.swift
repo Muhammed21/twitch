@@ -125,20 +125,17 @@ struct EditProfileSheet: View {
   }
 
   private func send(_ item: PhotosPickerItem, as purpose: ImagePurpose, through images: ProfileImageStore) async {
-    guard
-      let data = try? await item.loadTransferable(type: Data.self),
-      let jpeg = ProfileImageEncoding.jpeg(from: data)
-    else { return }
-    let preview = UIImage(data: jpeg).map { Image(uiImage: $0) }
+    guard let picked = try? await item.loadTransferable(type: Data.self) else { return }
+    let preview = UIImage(data: picked).map { Image(uiImage: $0) }
     switch purpose {
     case .avatar:
-      guard let saved = await images.setAvatar(jpeg) else { return }
+      guard let saved = await images.setAvatar(picked) else { return }
       account = saved
       avatar = preview
       hasChanges = true
       onSaved(saved)
     case .banner:
-      guard let saved = await images.setBanner(jpeg) else { return }
+      guard let saved = await images.setBanner(picked) else { return }
       channel.bannerSaved(saved)
       banner = preview
       hasChanges = true
