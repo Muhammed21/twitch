@@ -32,6 +32,8 @@ public enum TextRole: Sendable {
   case fieldText
   case profileEdit
   case profileAction
+  case profileAboutTitle
+  case profileAboutMessage
   case editSectionLabel
   case editRowTitle
   case editRowValue
@@ -96,6 +98,8 @@ public enum TextRole: Sendable {
     case .fieldText: .supportingText
     case .profileEdit: .chatAuthorText
     case .profileAction: .headingText
+    case .profileAboutTitle: .actionLabel
+    case .profileAboutMessage: .supportingText
     case .editSectionLabel: .viewerCount
     case .editRowTitle: .actionLabel
     case .editRowValue: .viewerCount
@@ -210,6 +214,10 @@ public enum LayoutRole: Sendable {
   case profileActionRowGap
   case profileActionGlyph
   case profileActionGlyphGap
+  case profileTabTop
+  case profileAboutTop
+  case profileAboutTextGap
+  case profileAboutInset
   case categoryCardCoverWidth
   case categoryCardRadius
   case categoryCardBorderWidth

@@ -8,6 +8,7 @@ public struct ProfileScreen<Settings: View>: View {
   @Environment(\.locale) private var locale
   @State private var isEditing = false
   @State private var isShowingSettings = false
+  @State private var section = ProfileSection.about
   private let account: Account?
   private let actions: ProfileActions
   private let settings: () -> Settings
@@ -25,7 +26,6 @@ public struct ProfileScreen<Settings: View>: View {
           ProfileHeader(
             name: account.name,
             lastLive: account.lastLiveAt.map { ProfileText.lastLive(at: $0, now: context.date, locale: locale) },
-            bio: account.bio,
             settings: settingsAction,
             edit: ProfileHeaderAction(label: String(localized: EditProfileText.edit)) { isEditing = true }
           )
@@ -36,26 +36,15 @@ public struct ProfileScreen<Settings: View>: View {
       } else {
         ProfileBanner(settings: settingsAction)
       }
-      VStack(alignment: .leading, spacing: LayoutRole.profileActionRowGap.points) {
-        HStack(spacing: LayoutRole.profileActionGap.points) {
-          ProfileActionButton(label: String(localized: ProfileText.streamManager), action: actions.onStreamManager)
-            .accessibilityIdentifier("profile.streamManager")
-          ProfileActionButton(label: String(localized: ProfileText.analytics), glyph: .statsOutline, action: actions.onAnalytics)
-            .accessibilityIdentifier("profile.analytics")
-        }
-        if let onTryAdFree = actions.onTryAdFree {
-          ProfileActionButton(label: String(localized: ProfileText.tryAdFree), glyph: .turboBattery, action: onTryAdFree)
-            .accessibilityIdentifier("profile.tryAdFree")
-        }
-        MenuCard {
-          Button {
-            if case let .ready(owned) = store.phase { actions.onOpenChannel(owned.slug) }
-          } label: {
-            MenuRow(systemImage: "person.crop.square", label: ProfileText.myChannel, showsChevron: true)
-          }
-          .disabled(!store.isReady)
-          .accessibilityIdentifier("profile.myChannel")
-        }
+      VStack(alignment: .leading, spacing: 0) {
+        headerActions
+        BrowseTabs(selection: $section, items: [
+          BrowseTabItem(tab: .about, title: String(localized: ProfileText.title(of: .about)), accessibilityIdentifier: "profile.about"),
+        ])
+        .padding(.top, LayoutRole.profileTabTop.points)
+        about
+        myChannel
+          .padding(.top, LayoutRole.menuCardGap.points)
       }
       .padding(.horizontal, LayoutRole.screenInset.points)
     }
@@ -63,6 +52,48 @@ public struct ProfileScreen<Settings: View>: View {
     .toolbar(.hidden, for: .navigationBar)
     .navigationDestination(isPresented: $isShowingSettings, destination: settings)
     .task { await store.load() }
+  }
+
+  private var headerActions: some View {
+    VStack(spacing: LayoutRole.profileActionRowGap.points) {
+      HStack(spacing: LayoutRole.profileActionGap.points) {
+        ProfileActionButton(label: String(localized: ProfileText.streamManager), action: actions.onStreamManager)
+          .accessibilityIdentifier("profile.streamManager")
+        ProfileActionButton(label: String(localized: ProfileText.analytics), glyph: .statsOutline, action: actions.onAnalytics)
+          .accessibilityIdentifier("profile.analytics")
+      }
+      if let onTryAdFree = actions.onTryAdFree {
+        ProfileActionButton(label: String(localized: ProfileText.tryAdFree), glyph: .turboBattery, action: onTryAdFree)
+          .accessibilityIdentifier("profile.tryAdFree")
+      }
+    }
+  }
+
+  @ViewBuilder private var about: some View {
+    if let bio = account?.bio {
+      Text(bio)
+        .font(TextRole.profileDetail.font)
+        .foregroundStyle(ProfileHeaderStyle.bio.color)
+        .padding(.top, LayoutRole.profileBioTop.points)
+        .accessibilityIdentifier("profile.bio")
+    } else {
+      ProfileAboutEmpty(
+        title: String(localized: ProfileText.aboutEmptyTitle),
+        message: String(localized: ProfileText.aboutEmptyMessage)
+      )
+    }
+  }
+
+  private var myChannel: some View {
+    MenuCard {
+      Button {
+        if case let .ready(owned) = store.phase { actions.onOpenChannel(owned.slug) }
+      } label: {
+        MenuRow(systemImage: "person.crop.square", label: ProfileText.myChannel, showsChevron: true)
+      }
+      .disabled(!store.isReady)
+      .accessibilityIdentifier("profile.myChannel")
+    }
   }
 
   private var settingsAction: ProfileHeaderAction {
