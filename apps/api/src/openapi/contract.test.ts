@@ -125,7 +125,7 @@ describe("document OpenAPI", () => {
       Object.keys(schemas)
         .filter((name) => !name.startsWith("Realtime"))
         .toSorted(),
-    ).toEqual(["LiveChannel", "LiveDto", "Problem", "StartLiveDto", "Uuid", "Viewer"]);
+    ).toEqual(["ChatColor", "LiveChannel", "LiveDto", "Problem", "StartLiveDto", "Uuid", "Viewer"]);
     expect(at(schemas, "LiveDto", "additionalProperties")).toEqual({});
     expect(at(schemas, "Viewer", "additionalProperties")).toEqual({});
     expect(at(schemas, "LiveChannel", "additionalProperties")).toEqual({});
