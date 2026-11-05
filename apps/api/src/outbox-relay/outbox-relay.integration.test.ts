@@ -120,12 +120,13 @@ afterAll(async () => {
 });
 
 describe("relais de l'outbox vers Redis Streams", () => {
-  it("relaie les outbox d'identity, de channel, de stream et de moderation", () => {
+  it("relaie les outbox d'identity, de channel, de stream, de moderation et de monetization", () => {
     expect(OUTBOXES).toEqual([
       IDENTITY_OUTBOX,
       { schema: "channel", table: "ChannelOutbox" },
       { schema: "stream", table: "StreamOutbox" },
       { schema: "moderation", table: "ModerationOutbox" },
+      { schema: "monetization", table: "MonetizationOutbox" },
     ]);
   });
 

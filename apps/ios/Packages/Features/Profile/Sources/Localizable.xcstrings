@@ -151,6 +151,26 @@
         }
       }
     },
+    "editProfile.camera.missing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No camera is available on this device."
+          }
+        }
+      }
+    },
+    "editProfile.camera.refused" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow camera access in Settings to take a photo."
+          }
+        }
+      }
+    },
     "editProfile.photo.choose" : {
       "localizations" : {
         "en" : {
@@ -167,6 +187,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Close"
+          }
+        }
+      }
+    },
+    "editProfile.photo.take" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Take photo"
           }
         }
       }
