@@ -31,6 +31,8 @@ public enum ColorRole: Equatable, Sendable {
   case onMedia
   case bannerStart
   case bannerEnd
+  case turboStart
+  case turboEnd
   case avatarRing
 
   public var color: Color {
@@ -63,6 +65,8 @@ public enum ColorRole: Equatable, Sendable {
     case .onMedia: .mediaOnOverlay
     case .bannerStart: .bannerStart
     case .bannerEnd: .bannerEnd
+    case .turboStart: .turboStart
+    case .turboEnd: .turboEnd
     case .avatarRing: .bannerAvatarRing
     }
   }

@@ -1,6 +1,7 @@
 import Domain
 import Foundation
 import Networking
+import Paywall
 import Purchases
 import Testing
 @testable import Twitch
@@ -60,5 +61,13 @@ struct AppConfigurationTests {
     let configuration = try #require(PurchasesConfiguration(info: info))
 
     #expect(configuration.apiKey == "test_wuBPtHBdoPVnvUUdOAvMbaiTWBI")
+  }
+
+  @Test("lie les conditions de vente à l'EULA standard d'Apple, sans page de confidentialité pour l'instant")
+  func paywallLinks() {
+    let links = PaywallLinks(info: info)
+
+    #expect(links.terms?.absoluteString == "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")
+    #expect(links.privacy == nil)
   }
 }

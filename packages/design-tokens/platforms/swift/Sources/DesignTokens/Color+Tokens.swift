@@ -256,6 +256,20 @@ public extension Color {
             ? UIColor(red: 0.969, green: 0.969, blue: 0.973, alpha: 1)
             : UIColor(red: 0.969, green: 0.969, blue: 0.973, alpha: 1)
     })
+    /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : début du dégradé de la bande de la page Turbo, mesuré #b537f3 (abonnement/turbo--defaut). Convention : identique dans les deux thèmes, comme une image.
+    /// clair #B537F3 · sombre #B537F3
+    static let turboStart = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.71, green: 0.216, blue: 0.953, alpha: 1)
+            : UIColor(red: 0.71, green: 0.216, blue: 0.953, alpha: 1)
+    })
+    /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : fin du dégradé de la bande de la page Turbo, mesuré #ff2f8e (abonnement/turbo--defaut). Convention : identique dans les deux thèmes, comme une image.
+    /// clair #FF2F8E · sombre #FF2F8E
+    static let turboEnd = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 1, green: 0.184, blue: 0.557, alpha: 1)
+            : UIColor(red: 1, green: 0.184, blue: 0.557, alpha: 1)
+    })
 
     /// Valeurs fixes par thème, réservées aux contextes sans traits et aux tests (ADR 0019 §2.2).
     enum Static {
@@ -331,5 +345,9 @@ public extension Color {
         public static let bannerEndDark = Color(.sRGB, red: 0.569, green: 0.278, blue: 1, opacity: 1)
         public static let bannerAvatarRingLight = Color(.sRGB, red: 0.969, green: 0.969, blue: 0.973, opacity: 1)
         public static let bannerAvatarRingDark = Color(.sRGB, red: 0.969, green: 0.969, blue: 0.973, opacity: 1)
+        public static let turboStartLight = Color(.sRGB, red: 0.71, green: 0.216, blue: 0.953, opacity: 1)
+        public static let turboStartDark = Color(.sRGB, red: 0.71, green: 0.216, blue: 0.953, opacity: 1)
+        public static let turboEndLight = Color(.sRGB, red: 1, green: 0.184, blue: 0.557, opacity: 1)
+        public static let turboEndDark = Color(.sRGB, red: 1, green: 0.184, blue: 0.557, opacity: 1)
     }
 }

@@ -33,6 +33,9 @@ public enum TextRole: Sendable {
   case bioText
   case bioCounter
   case editSectionFooter
+  case paywallHeadline
+  case paywallBody
+  case paywallLegal
 
   public var font: Font {
     switch self {
@@ -67,6 +70,9 @@ public enum TextRole: Sendable {
     case .bioText: .supportingText
     case .bioCounter: .viewerCount
     case .editSectionFooter: .metaText
+    case .paywallHeadline: .displayText
+    case .paywallBody: .supportingText
+    case .paywallLegal: .viewerCount
     }
   }
 }
@@ -182,6 +188,16 @@ public enum LayoutRole: Sendable {
   case brandAvatarRing
   case brandAvatarGlyphInset
   case editRowIconSize
+  case paywallBandHeight
+  case paywallHeadlineTop
+  case paywallTaglineGap
+  case paywallActionTop
+  case paywallButtonInset
+  case paywallBillingGap
+  case paywallPackageGap
+  case paywallLegalGap
+  case paywallCardTop
+  case paywallCardPadding
 
   public var points: CGFloat {
     switch self {
@@ -295,6 +311,16 @@ public enum LayoutRole: Sendable {
     case .brandAvatarRing: Spacing.x4
     case .brandAvatarGlyphInset: Spacing.x14
     case .editRowIconSize: Spacing.x20
+    case .paywallBandHeight: Spacing.x72
+    case .paywallHeadlineTop: Spacing.x12
+    case .paywallTaglineGap: Spacing.x12
+    case .paywallActionTop: Spacing.x24
+    case .paywallButtonInset: Spacing.x44
+    case .paywallBillingGap: Spacing.x8
+    case .paywallPackageGap: Spacing.x16
+    case .paywallLegalGap: Spacing.x12
+    case .paywallCardTop: Spacing.x20
+    case .paywallCardPadding: Spacing.x20
     }
   }
 }
