@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { openEnum, Uuid } from "../conventions/schemas.ts";
+import { ChatColor, openEnum, Uuid } from "../conventions/schemas.ts";
 
 export const OwnedChannel = z
   .looseObject({
@@ -18,6 +18,7 @@ export const Profile = z
     lastLiveAt: z.iso.datetime().optional(),
     avatarUrl: z.url({ protocol: /^https?$/ }).optional(),
     bannerUrl: z.url({ protocol: /^https?$/ }).optional(),
+    chatColor: ChatColor.optional(),
     channel: OwnedChannel.optional(),
   })
   .meta({ id: "Profile" });
