@@ -55,11 +55,17 @@ public enum PaywallText {
     }
   }
 
-  public static func legal(terms termsURL: URL?, privacy privacyURL: URL?) -> AttributedString {
-    AttributedString(String(localized: legalLead))
-      + link(String(localized: terms), to: termsURL)
-      + AttributedString(String(localized: legalJoin))
-      + link(String(localized: privacy), to: privacyURL)
+  public static func legal(terms termsURL: URL?, privacy privacyURL: URL?, locale: Locale = .current) -> AttributedString {
+    AttributedString(text(legalLead, in: locale))
+      + link(text(terms, in: locale), to: termsURL)
+      + AttributedString(text(legalJoin, in: locale))
+      + link(text(privacy, in: locale), to: privacyURL)
+  }
+
+  private static func text(_ resource: LocalizedStringResource, in locale: Locale) -> String {
+    var localized = resource
+    localized.locale = locale
+    return String(localized: localized)
   }
 
   private static func link(_ text: String, to url: URL?) -> AttributedString {
