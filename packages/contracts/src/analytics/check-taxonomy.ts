@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { camelCase, SWIFT_RESERVED_WORDS } from "./naming.ts";
+
 export type EventSource = "client" | "server";
 
 export type EventDefinition = {
@@ -80,6 +82,7 @@ const propertyViolations = (event: string, property: Property): readonly string[
   const at = `${event}.${key}`;
   return [
     ...(SNAKE_CASE.test(key) ? [] : [`${at} : propriété hors du snake_case`]),
+    ...(SWIFT_RESERVED_WORDS.has(key) ? [`${at} : mot réservé en Swift`] : []),
     ...(isPii(key) ? [`${at} : clé PII interdite`] : []),
     ...(isSupported(property) ? [] : [`${at} : ${UNSUPPORTED}`]),
     ...(isRequired ? [] : [`${at} : propriété facultative`]),
@@ -91,6 +94,11 @@ const propertyViolations = (event: string, property: Property): readonly string[
           .filter((value) => !SNAKE_CASE.test(value))
           .map((value) => `${at} : valeur ${value} hors du snake_case`)
       : []),
+    ...(type?.kind === "enum"
+      ? type.values
+          .filter((value) => SWIFT_RESERVED_WORDS.has(value))
+          .map((value) => `${at} : valeur ${value}, mot réservé en Swift`)
+      : []),
   ];
 };
 
@@ -100,5 +108,42 @@ const eventViolations = (event: string, { properties }: EventDefinition): readon
   ...propertiesOf(properties).flatMap((property) => propertyViolations(event, property)),
 ];
 
-export const findTaxonomyViolations = (events: Taxonomy): readonly string[] =>
-  Object.entries(events).flatMap(([event, definition]) => eventViolations(event, definition));
+const identifierCollisions = (events: Taxonomy): readonly string[] => {
+  const names = Object.keys(events);
+  return names.flatMap((event, index) => {
+    const identifier = camelCase(event);
+    const first = names.slice(0, index).find((other) => camelCase(other) === identifier);
+    return first === undefined
+      ? []
+      : [`${event} : même identifiant Swift ${identifier} que ${first}`];
+  });
+};
+
+type EnumProperty = { readonly event: string; readonly key: string; readonly values: string };
+
+const enumProperties = (events: Taxonomy): readonly EnumProperty[] =>
+  Object.entries(events).flatMap(([event, { properties }]) =>
+    propertiesOf(properties).flatMap(({ key, type }) =>
+      type?.kind === "enum" ? [{ event, key, values: JSON.stringify(type.values) }] : [],
+    ),
+  );
+
+const enumMismatches = (events: Taxonomy): readonly string[] => {
+  const enums = enumProperties(events);
+  return enums.flatMap((property) =>
+    enums
+      .filter(({ key }) => key === property.key)
+      .slice(0, 1)
+      .filter(({ values }) => values !== property.values)
+      .map(
+        (first) =>
+          `${property.event}.${property.key} : valeurs différentes de ${first.event}.${first.key}`,
+      ),
+  );
+};
+
+export const findTaxonomyViolations = (events: Taxonomy): readonly string[] => [
+  ...Object.entries(events).flatMap(([event, definition]) => eventViolations(event, definition)),
+  ...identifierCollisions(events),
+  ...enumMismatches(events),
+];

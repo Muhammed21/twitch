@@ -5,6 +5,7 @@ import {
   AnalyticsEvents,
   FORBIDDEN_PROPERTY_KEYS,
   findTaxonomyViolations,
+  SWIFT_RESERVED_WORDS,
   type EventDefinition,
 } from "./index.ts";
 
@@ -21,7 +22,7 @@ describe("taxonomie des événements analytics (ADR 0012)", () => {
     expect(findTaxonomyViolations(AnalyticsEvents)).toEqual([]);
   });
 
-  it("déclare les événements du compte et du futur onboarding", () => {
+  it("déclare les événements du compte et ceux du funnel d'onboarding de l'ADR 0051, §7", () => {
     expect(Object.keys(AnalyticsEvents)).toEqual([
       "account:signed_up",
       "account:signed_in",
@@ -30,50 +31,134 @@ describe("taxonomie des événements analytics (ADR 0012)", () => {
       "onboarding:step_completed",
       "onboarding:step_skipped",
       "onboarding:completed",
-      "onboarding:abandoned",
-      "category:followed",
+      "preference:changed",
+      "notification_permission:answered",
       "paywall:viewed",
       "paywall:dismissed",
-      "paywall:purchase_started",
+      "purchase:started",
+      "purchase:cancelled",
+      "purchase:failed",
+      "purchase:restored",
     ]);
   });
 
-  it("déclare une source unique pour chaque événement, ici le client", () => {
+  it("n'émet du client aucun fait métier : suivre une catégorie se capture côté serveur (ADR 0012, §3)", () => {
     expect(new Set(Object.values(AnalyticsEvents).map(({ source }) => source))).toEqual(
       new Set(["client"]),
     );
+    expect(Object.keys(AnalyticsEvents)).not.toContain("category:followed");
   });
 
-  it("décrit une étape terminée par son nom et sa durée entière en millisecondes", () => {
+  it("ouvre le parcours avec le nombre de pages", () => {
+    const { properties } = AnalyticsEvents["onboarding:started"];
+
+    expect(properties.safeParse({ step_count: 10 }).success).toBe(true);
+    expect(properties.safeParse({}).success).toBe(false);
+  });
+
+  it("décrit une page validée par son nom, sa position, sa durée et le nombre de choix", () => {
     const { properties } = AnalyticsEvents["onboarding:step_completed"];
+    const completed = { step: "categories", step_index: 1, duration_ms: 1200, selection_count: 3 };
 
-    expect(properties.safeParse({ step: "categories", duration_ms: 1200 }).success).toBe(true);
-    expect(properties.safeParse({ step: "categories", duration_ms: 1.5 }).success).toBe(false);
-    expect(properties.safeParse({ step: "categories" }).success).toBe(false);
+    expect(properties.safeParse(completed).success).toBe(true);
+    expect(properties.safeParse({ ...completed, duration_ms: 1.5 }).success).toBe(false);
+    expect(properties.safeParse({ ...completed, step_index: -1 }).success).toBe(false);
+    expect(properties.safeParse({ ...completed, selection_count: -1 }).success).toBe(false);
+    expect(properties.safeParse({ ...completed, step: "paywall" }).success).toBe(false);
   });
 
-  it("décrit le suivi d'une catégorie par son identifiant et sa provenance", () => {
-    const { properties } = AnalyticsEvents["category:followed"];
-
-    expect(properties.safeParse({ category_id: "c-1", source: "onboarding" }).success).toBe(true);
-    expect(properties.safeParse({ category_id: "c-1", source: "push" }).success).toBe(false);
-  });
-
-  it("porte la variante du paywall sur chaque événement du paywall (ADR 0016)", () => {
-    const paywall = [
-      AnalyticsEvents["paywall:viewed"],
-      AnalyticsEvents["paywall:dismissed"],
-      AnalyticsEvents["paywall:purchase_started"],
+  it("nomme les dix pages du parcours par une énumération fermée", () => {
+    const { properties } = AnalyticsEvents["onboarding:step_skipped"];
+    const steps = [
+      "intro",
+      "categories",
+      "interests",
+      "content_preferences",
+      "live_language",
+      "appearance",
+      "video_autoplay",
+      "notifications",
+      "chat",
+      "summary",
     ];
 
-    expect(paywall.map(({ properties }) => properties.safeParse({}).success)).toEqual([
-      false,
-      false,
-      false,
-    ]);
+    expect(steps.map((step) => properties.safeParse({ step, step_index: 0 }).success)).toEqual(
+      steps.map(() => true),
+    );
+  });
+
+  it("termine le parcours avec sa durée et le nombre de pages passées", () => {
+    const { properties } = AnalyticsEvents["onboarding:completed"];
+
+    expect(properties.safeParse({ duration_ms: 90_000, skipped_step_count: 2 }).success).toBe(true);
+  });
+
+  it("décrit un réglage changé par une préférence fermée, sa valeur et sa provenance", () => {
+    const { properties } = AnalyticsEvents["preference:changed"];
+    const changed = { preference: "appearance", value: "dark", source: "onboarding" };
+
+    expect(properties.safeParse(changed).success).toBe(true);
+    expect(properties.safeParse({ ...changed, source: "settings" }).success).toBe(true);
+    expect(properties.safeParse({ ...changed, source: "push" }).success).toBe(false);
+    expect(properties.safeParse({ ...changed, preference: "email" }).success).toBe(false);
+  });
+
+  it("décrit la réponse à l'alerte de notifications par un booléen", () => {
+    const { properties } = AnalyticsEvents["notification_permission:answered"];
+
+    expect(properties.safeParse({ is_granted: true }).success).toBe(true);
+    expect(properties.safeParse({ is_granted: "yes" }).success).toBe(false);
+  });
+
+  it("porte la variante sur l'exposition au paywall et sur chaque achat (ADR 0016)", () => {
+    const withVariant = [
+      AnalyticsEvents["paywall:viewed"].properties.safeParse({
+        variant: "control",
+        offering_id: "turbo",
+        placement: "onboarding",
+      }),
+      AnalyticsEvents["paywall:dismissed"].properties.safeParse({
+        variant: "control",
+        placement: "onboarding",
+      }),
+      AnalyticsEvents["purchase:started"].properties.safeParse({
+        product_id: "turbo_monthly",
+        variant: "control",
+      }),
+      AnalyticsEvents["purchase:cancelled"].properties.safeParse({
+        product_id: "turbo_monthly",
+        variant: "control",
+      }),
+      AnalyticsEvents["purchase:failed"].properties.safeParse({
+        product_id: "turbo_monthly",
+        variant: "control",
+        error_code: "network",
+      }),
+    ];
+
+    expect(withVariant.map(({ success }) => success)).toEqual([true, true, true, true, true]);
     expect(
-      paywall.map(({ properties }) => properties.safeParse({ paywall_variant: "control" }).success),
-    ).toEqual([true, true, true]);
+      AnalyticsEvents["paywall:viewed"].properties.safeParse({
+        offering_id: "turbo",
+        placement: "onboarding",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("place le paywall dans l'onboarding seulement, pour la tranche 1", () => {
+    expect(
+      AnalyticsEvents["paywall:dismissed"].properties.safeParse({
+        variant: "control",
+        placement: "settings",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("termine une restauration par l'état du droit", () => {
+    expect(
+      AnalyticsEvents["purchase:restored"].properties.safeParse({ has_active_entitlement: false })
+        .success,
+    ).toBe(true);
   });
 
   it("refuse une propriété inconnue", () => {
@@ -191,6 +276,88 @@ describe("findTaxonomyViolations", () => {
         ),
       }),
     ).toEqual(["stream:viewed.entry_point : valeur deepLink hors du snake_case"]);
+  });
+
+  it.each(["default", "in", "self", "true", "case", "repeat"])(
+    "refuse la propriété %s, mot réservé en Swift",
+    (key) => {
+      expect(
+        violationsOf({ "stream:viewed": makeClientEvent(z.strictObject({ [key]: z.string() })) }),
+      ).toEqual([`stream:viewed.${key} : mot réservé en Swift`]);
+    },
+  );
+
+  it.each([...SWIFT_RESERVED_WORDS])("refuse le mot réservé Swift %s comme propriété", (key) => {
+    expect(
+      violationsOf({ "stream:viewed": makeClientEvent(z.strictObject({ [key]: z.string() })) }),
+    ).toEqual([`stream:viewed.${key} : mot réservé en Swift`]);
+  });
+
+  it("refuse une valeur d'énumération qui est un mot réservé en Swift", () => {
+    expect(
+      violationsOf({
+        "stream:viewed": makeClientEvent(
+          z.strictObject({ entry_point: z.enum(["home", "default"]) }),
+        ),
+      }),
+    ).toEqual(["stream:viewed.entry_point : valeur default, mot réservé en Swift"]);
+  });
+
+  it("refuse deux événements qui donnent le même identifiant Swift", () => {
+    expect(
+      violationsOf({
+        "stream:viewed_live": makeClientEvent(z.strictObject({})),
+        "stream_viewed:live": makeClientEvent(z.strictObject({})),
+      }),
+    ).toEqual([
+      "stream_viewed:live : même identifiant Swift streamViewedLive que stream:viewed_live",
+    ]);
+  });
+
+  it("refuse une propriété énumérée dont les valeurs changent d'un événement à l'autre", () => {
+    expect(
+      violationsOf({
+        "stream:viewed": makeClientEvent(
+          z.strictObject({ entry_point: z.enum(["home", "search"]) }),
+        ),
+        "stream:exited": makeClientEvent(z.strictObject({ entry_point: z.enum(["home"]) })),
+      }),
+    ).toEqual(["stream:exited.entry_point : valeurs différentes de stream:viewed.entry_point"]);
+  });
+
+  it("compare chaque occurrence à la première seulement", () => {
+    expect(
+      violationsOf({
+        "stream:viewed": makeClientEvent(z.strictObject({ entry_point: z.enum(["home"]) })),
+        "stream:exited": makeClientEvent(z.strictObject({ entry_point: z.enum(["search"]) })),
+        "stream:paused": makeClientEvent(z.strictObject({ entry_point: z.enum(["category"]) })),
+      }),
+    ).toEqual([
+      "stream:exited.entry_point : valeurs différentes de stream:viewed.entry_point",
+      "stream:paused.entry_point : valeurs différentes de stream:viewed.entry_point",
+    ]);
+  });
+
+  it("compare les valeurs d'une énumération partagée une à une, pas leur concaténation", () => {
+    expect(
+      violationsOf({
+        "stream:viewed": makeClientEvent(z.strictObject({ entry_point: z.enum(["ab", "c"]) })),
+        "stream:exited": makeClientEvent(z.strictObject({ entry_point: z.enum(["a", "bc"]) })),
+      }),
+    ).toEqual(["stream:exited.entry_point : valeurs différentes de stream:viewed.entry_point"]);
+  });
+
+  it("accepte une propriété énumérée partagée avec les mêmes valeurs", () => {
+    expect(
+      violationsOf({
+        "stream:viewed": makeClientEvent(
+          z.strictObject({ entry_point: z.enum(["home", "search"]) }),
+        ),
+        "stream:exited": makeClientEvent(
+          z.strictObject({ entry_point: z.enum(["home", "search"]) }),
+        ),
+      }),
+    ).toEqual([]);
   });
 
   it("refuse un objet de propriétés qui accepte des clés inconnues", () => {

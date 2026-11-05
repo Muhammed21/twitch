@@ -6,6 +6,7 @@ import {
   type PropertyType,
   type Taxonomy,
 } from "./check-taxonomy.ts";
+import { camelCase, pascalCase } from "./naming.ts";
 
 type SwiftProperty = {
   readonly key: string;
@@ -20,26 +21,12 @@ type SwiftEvent = {
   readonly properties: readonly SwiftProperty[];
 };
 
-const words = (value: string): readonly string[] => value.split(/[:_]/);
-
-const capitalized = (word: string): string =>
-  word === "id" ? "ID" : `${word.charAt(0).toUpperCase()}${word.slice(1)}`;
-
-const camelCase = (value: string): string =>
-  words(value)
-    .map((word, index) => (index === 0 ? word : capitalized(word)))
-    .join("");
-
-const pascalCase = (value: string): string => words(value).map(capitalized).join("");
-
-const toSwiftProperty =
-  (event: string) =>
-  ({ key, type }: SupportedProperty): SwiftProperty => ({
-    key,
-    label: camelCase(key),
-    type,
-    enumName: `${pascalCase(event)}${pascalCase(key)}`,
-  });
+const toSwiftProperty = ({ key, type }: SupportedProperty): SwiftProperty => ({
+  key,
+  label: camelCase(key),
+  type,
+  enumName: `Analytics${pascalCase(key)}`,
+});
 
 const SCALARS = {
   string: { type: "String", value: "string" },
@@ -73,20 +60,24 @@ const nameEnum = (events: readonly SwiftEvent[]): string =>
     "}",
   ].join("\n");
 
-const propertyEnums = (events: readonly SwiftEvent[]): readonly string[] =>
-  events
+const enumDeclaration = (enumName: string, values: readonly string[]): string =>
+  [`public enum ${enumName}: String, CaseIterable, Sendable {`, ...values.map(enumCase), "}"].join(
+    "\n",
+  );
+
+const propertyEnums = (events: readonly SwiftEvent[]): readonly string[] => {
+  const enums = events
     .flatMap(({ properties }) => properties)
-    .flatMap((property) =>
-      property.type.kind === "enum"
-        ? [
-            [
-              `public enum ${property.enumName}: String, CaseIterable, Sendable {`,
-              ...property.type.values.map(enumCase),
-              "}",
-            ].join("\n"),
-          ]
-        : [],
+    .flatMap(({ type, enumName }) =>
+      type.kind === "enum" ? [{ enumName, values: type.values }] : [],
     );
+  return enums
+    .filter(
+      (declared, index) =>
+        enums.findIndex(({ enumName }) => enumName === declared.enumName) === index,
+    )
+    .map(({ enumName, values }) => enumDeclaration(enumName, values));
+};
 
 const constant = ({ identifier }: SwiftEvent): string =>
   `  public static let ${identifier} = AnalyticsEvent(name: .${identifier}, properties: [:])`;
@@ -137,7 +128,7 @@ export const formatSwiftAnalytics = ({
     .map(([name, { properties }]) => ({
       name,
       identifier: camelCase(name),
-      properties: propertiesOf(properties).filter(isSupported).map(toSwiftProperty(name)),
+      properties: propertiesOf(properties).filter(isSupported).map(toSwiftProperty),
     }));
   return `${[VALUE_TYPE, nameEnum(clientEvents), ...propertyEnums(clientEvents), eventStruct(clientEvents, forbiddenKeys)].join("\n\n")}\n`;
 };

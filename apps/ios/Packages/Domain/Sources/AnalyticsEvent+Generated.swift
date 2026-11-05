@@ -12,16 +12,46 @@ public enum AnalyticsEventName: String, CaseIterable, Sendable {
   case onboardingStepCompleted = "onboarding:step_completed"
   case onboardingStepSkipped = "onboarding:step_skipped"
   case onboardingCompleted = "onboarding:completed"
-  case onboardingAbandoned = "onboarding:abandoned"
-  case categoryFollowed = "category:followed"
+  case preferenceChanged = "preference:changed"
+  case notificationPermissionAnswered = "notification_permission:answered"
   case paywallViewed = "paywall:viewed"
   case paywallDismissed = "paywall:dismissed"
-  case paywallPurchaseStarted = "paywall:purchase_started"
+  case purchaseStarted = "purchase:started"
+  case purchaseCancelled = "purchase:cancelled"
+  case purchaseFailed = "purchase:failed"
+  case purchaseRestored = "purchase:restored"
 }
 
-public enum CategoryFollowedSource: String, CaseIterable, Sendable {
+public enum AnalyticsStep: String, CaseIterable, Sendable {
+  case intro
+  case categories
+  case interests
+  case contentPreferences = "content_preferences"
+  case liveLanguage = "live_language"
+  case appearance
+  case videoAutoplay = "video_autoplay"
+  case notifications
+  case chat
+  case summary
+}
+
+public enum AnalyticsPreference: String, CaseIterable, Sendable {
+  case appearance
+  case videoAutoplay = "video_autoplay"
+  case chatTextSize = "chat_text_size"
+  case chatTimestamps = "chat_timestamps"
+  case liveLanguage = "live_language"
+  case contentFilters = "content_filters"
+  case interests
+}
+
+public enum AnalyticsSource: String, CaseIterable, Sendable {
   case onboarding
-  case category
+  case settings
+}
+
+public enum AnalyticsPlacement: String, CaseIterable, Sendable {
+  case onboarding
 }
 
 public struct AnalyticsEvent: Equatable, Sendable {
@@ -30,8 +60,6 @@ public struct AnalyticsEvent: Equatable, Sendable {
   public static let accountSignedUp = AnalyticsEvent(name: .accountSignedUp, properties: [:])
   public static let accountSignedIn = AnalyticsEvent(name: .accountSignedIn, properties: [:])
   public static let accountSignedOut = AnalyticsEvent(name: .accountSignedOut, properties: [:])
-  public static let onboardingStarted = AnalyticsEvent(name: .onboardingStarted, properties: [:])
-  public static let onboardingCompleted = AnalyticsEvent(name: .onboardingCompleted, properties: [:])
 
   public let name: AnalyticsEventName
   public let properties: [String: AnalyticsValue]
@@ -41,31 +69,51 @@ public struct AnalyticsEvent: Equatable, Sendable {
     self.properties = properties
   }
 
-  public static func onboardingStepCompleted(step: String, durationMs: Int) -> AnalyticsEvent {
-    AnalyticsEvent(name: .onboardingStepCompleted, properties: ["step": .string(step), "duration_ms": .int(durationMs)])
+  public static func onboardingStarted(stepCount: Int) -> AnalyticsEvent {
+    AnalyticsEvent(name: .onboardingStarted, properties: ["step_count": .int(stepCount)])
   }
 
-  public static func onboardingStepSkipped(step: String) -> AnalyticsEvent {
-    AnalyticsEvent(name: .onboardingStepSkipped, properties: ["step": .string(step)])
+  public static func onboardingStepCompleted(step: AnalyticsStep, stepIndex: Int, durationMs: Int, selectionCount: Int) -> AnalyticsEvent {
+    AnalyticsEvent(name: .onboardingStepCompleted, properties: ["step": .string(step.rawValue), "step_index": .int(stepIndex), "duration_ms": .int(durationMs), "selection_count": .int(selectionCount)])
   }
 
-  public static func onboardingAbandoned(step: String) -> AnalyticsEvent {
-    AnalyticsEvent(name: .onboardingAbandoned, properties: ["step": .string(step)])
+  public static func onboardingStepSkipped(step: AnalyticsStep, stepIndex: Int) -> AnalyticsEvent {
+    AnalyticsEvent(name: .onboardingStepSkipped, properties: ["step": .string(step.rawValue), "step_index": .int(stepIndex)])
   }
 
-  public static func categoryFollowed(categoryID: String, source: CategoryFollowedSource) -> AnalyticsEvent {
-    AnalyticsEvent(name: .categoryFollowed, properties: ["category_id": .string(categoryID), "source": .string(source.rawValue)])
+  public static func onboardingCompleted(durationMs: Int, skippedStepCount: Int) -> AnalyticsEvent {
+    AnalyticsEvent(name: .onboardingCompleted, properties: ["duration_ms": .int(durationMs), "skipped_step_count": .int(skippedStepCount)])
   }
 
-  public static func paywallViewed(paywallVariant: String) -> AnalyticsEvent {
-    AnalyticsEvent(name: .paywallViewed, properties: ["paywall_variant": .string(paywallVariant)])
+  public static func preferenceChanged(preference: AnalyticsPreference, value: String, source: AnalyticsSource) -> AnalyticsEvent {
+    AnalyticsEvent(name: .preferenceChanged, properties: ["preference": .string(preference.rawValue), "value": .string(value), "source": .string(source.rawValue)])
   }
 
-  public static func paywallDismissed(paywallVariant: String) -> AnalyticsEvent {
-    AnalyticsEvent(name: .paywallDismissed, properties: ["paywall_variant": .string(paywallVariant)])
+  public static func notificationPermissionAnswered(isGranted: Bool) -> AnalyticsEvent {
+    AnalyticsEvent(name: .notificationPermissionAnswered, properties: ["is_granted": .bool(isGranted)])
   }
 
-  public static func paywallPurchaseStarted(paywallVariant: String) -> AnalyticsEvent {
-    AnalyticsEvent(name: .paywallPurchaseStarted, properties: ["paywall_variant": .string(paywallVariant)])
+  public static func paywallViewed(variant: String, offeringID: String, placement: AnalyticsPlacement) -> AnalyticsEvent {
+    AnalyticsEvent(name: .paywallViewed, properties: ["variant": .string(variant), "offering_id": .string(offeringID), "placement": .string(placement.rawValue)])
+  }
+
+  public static func paywallDismissed(variant: String, placement: AnalyticsPlacement) -> AnalyticsEvent {
+    AnalyticsEvent(name: .paywallDismissed, properties: ["variant": .string(variant), "placement": .string(placement.rawValue)])
+  }
+
+  public static func purchaseStarted(productID: String, variant: String) -> AnalyticsEvent {
+    AnalyticsEvent(name: .purchaseStarted, properties: ["product_id": .string(productID), "variant": .string(variant)])
+  }
+
+  public static func purchaseCancelled(productID: String, variant: String) -> AnalyticsEvent {
+    AnalyticsEvent(name: .purchaseCancelled, properties: ["product_id": .string(productID), "variant": .string(variant)])
+  }
+
+  public static func purchaseFailed(productID: String, variant: String, errorCode: String) -> AnalyticsEvent {
+    AnalyticsEvent(name: .purchaseFailed, properties: ["product_id": .string(productID), "variant": .string(variant), "error_code": .string(errorCode)])
+  }
+
+  public static func purchaseRestored(hasActiveEntitlement: Bool) -> AnalyticsEvent {
+    AnalyticsEvent(name: .purchaseRestored, properties: ["has_active_entitlement": .bool(hasActiveEntitlement)])
   }
 }

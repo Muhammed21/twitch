@@ -41,11 +41,20 @@ Les schémas de requête restent en `z.object` strict : refuser un champ inconnu
 
 ## Taxonomie analytics
 
-`analytics.AnalyticsEvents` est la source unique des événements PostHog (ADR 0012) : nom `objet:action_au_passé` en snake_case, source déclarée (`client` ou `server`), propriétés en `z.strictObject`. `findTaxonomyViolations` refuse, et un test l'applique à la taxonomie :
+`analytics.AnalyticsEvents` est la source unique des événements PostHog (ADR 0012), avec le funnel d'onboarding de l'ADR 0051 §7 : nom `objet:action_au_passé` en snake_case, source déclarée (`client` ou `server`), propriétés en `z.strictObject`. `findTaxonomyViolations` refuse, et un test l'applique à la taxonomie :
 
 - un nom hors de `objet:action_au_passé`, une propriété ou une valeur d'énumération hors du snake_case ;
 - une clé PII (`email`, `phone`, `name`, `address`, `ip`, `token`, `password`), seule ou comme mot d'une clé (`user_email`) ;
 - un booléen sans préfixe `is_` ou `has_`, une propriété facultative, des propriétés ouvertes ;
-- un type autre que chaîne, entier, booléen ou énumération.
+- un type autre que chaîne, entier, booléen ou énumération ;
+- une propriété ou une valeur d'énumération qui est un mot réservé de Swift (`default`, `in`…) ;
+- deux événements qui donnent le même identifiant Swift (`a:b_c` et `a_b:c`) ;
+- une propriété énumérée dont les valeurs changent d'un événement à l'autre.
 
-`pnpm generate` écrit les événements client en Swift dans `apps/ios/Packages/Domain/Sources/AnalyticsEvent+Generated.swift` : `AnalyticsEventName`, une énumération par propriété énumérée, et `AnalyticsEvent`, dont les cas sans propriété sont des constantes (`.accountSignedIn`) et les autres des fabriques typées (`.onboardingStepCompleted(step:durationMs:)`). Le job « Generated artefacts » échoue si le fichier commité diverge.
+`pnpm generate` écrit les événements client en Swift dans `apps/ios/Packages/Domain/Sources/AnalyticsEvent+Generated.swift` :
+
+- `AnalyticsEventName` ;
+- une énumération par propriété énumérée, nommée d'après la clé et partagée entre les événements (`step` → `AnalyticsStep`) ;
+- `AnalyticsEvent`, dont les cas sans propriété sont des constantes (`.accountSignedIn`) et les autres des fabriques typées (`.onboardingStepSkipped(step:stepIndex:)`).
+
+Le job « Generated artefacts » échoue si le fichier commité diverge.

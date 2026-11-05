@@ -24,7 +24,12 @@ public final class ProductAnalytics: Analytics, AnalyticsIdentity {
     backend.capture(event.name.rawValue, properties: event.properties)
   }
 
+  public var isEnabled: Bool {
+    !(backend is DisabledBackend)
+  }
+
   public func identify(_ userID: UUID) {
+    guard isEnabled else { return }
     let distinctID = userID.uuidString.lowercased()
     let identified = defaults.string(forKey: Self.identifiedUserKey)
     guard identified != distinctID else { return }
