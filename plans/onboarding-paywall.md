@@ -41,6 +41,7 @@ PostHog           1 ──▶ 2 ──▶ 3
                   └──────────▶ 4
 Parcours          5 (API, indépendante)
                   2 ──▶ 6 ──▶ 7 ──▶ 8 (après 5) ──▶ 9 ──▶ 10 ──▶ 11 ──▶ 12
+                  1 ──▶ 29 (API, capture serveur du suivi)
 Sons, vibrations  13 (indépendante) ──▶ 14 (après 12)
 Turbo, serveur    15 ──▶ 16 ──▶ 17 ──▶ 18 ──▶ 19 ──▶ 20
                   21 (identity, indépendante)
@@ -49,13 +50,14 @@ Turbo, iOS        3 ──▶ 24 ──▶ 25 ──▶ 26 (après 4, 14, 19, 20
                   23 ──▶ 27 ──▶ 28 (après 19, 21)
 ```
 
-PR 1, 5, 13, 15 et 21 démarrent sans attendre. Les PR serveur de Turbo avancent en parallèle du parcours ; l'ordre de livraison côté app reste PostHog, parcours, sons et vibrations, puis Turbo.
+PR 1, 5, 13, 15 et 21 démarrent sans attendre. La PR 29 suit la PR 1. Les PR serveur de Turbo avancent en parallèle du parcours ; l'ordre de livraison côté app reste PostHog, parcours, sons et vibrations, puis Turbo.
 
 ## PostHog
 
 ### PR 1 — Taxonomie analytics en Zod et enum Swift généré
 
-`packages/contracts/src/analytics` : les événements de l'ADR 0051 §7, avec la convention et la politique PII en tête du fichier (ADR 0012). Générateur TypeScript qui écrit l'enum Swift et ses payloads dans `apps/ios/Packages/Domain/Sources/Generated/AnalyticsEvent.swift`, branché sur la tâche `generate` (ADR 0018) pour que la CI refuse un généré périmé.
+`packages/contracts/src/analytics` : les événements de l'ADR 0051 §7, plus `category:followed` (`category_id`, source serveur, émis par la PR 29), avec la convention et la politique PII en tête du fichier (ADR 0012). Générateur TypeScript qui écrit l'enum Swift et ses payloads dans `apps/ios/Packages/Domain/Sources/Generated/AnalyticsEvent.swift`, branché sur la tâche `generate` (ADR 0018) pour que la CI refuse un généré périmé.
+`step_count` vaut 10 : il compte les pages 1 à 10, du premier écran au récap. Le paywall (page 11) se mesure par `paywall:*` avec `placement: onboarding`.
 _Tests d'abord_ : un schéma qui porte une clé interdite (`email`, `phone`, `name`, `address`, `ip`, `token`, `password`) fait échouer le test ; un nom hors du format `objet:action_au_passé` est refusé ; le générateur produit un cas Swift par événement avec ses propriétés typées, et la même entrée donne la même sortie.
 _Dépend de_ : rien.
 
@@ -94,7 +96,7 @@ _Dépend de_ : PR 2.
 ### PR 7 — Squelette du parcours et déclencheur
 
 `RootScreen` gagne l'étape du parcours entre `allSet` et `signedIn`, seulement après une inscription. Machine d'états du parcours dans `Features/Onboarding` : suivant, passer, retour, progression, fin. Événements `onboarding:started`, `step_completed`, `step_skipped`, `completed`. Pages 1 (intro) et 10 (récap) en version statique.
-_Tests d'abord_ : une inscription mène au parcours après « You're all set » ; une connexion à un compte existant n'y passe pas ; un parcours terminé ne se rejoue pas à la relance ; passer une page émet `step_skipped` et avance ; `duration_ms` mesure le temps sur la page avec une horloge injectée.
+_Tests d'abord_ : `onboarding:started` porte `step_count: 10` ; une inscription mène au parcours après « You're all set » ; une connexion à un compte existant n'y passe pas ; un parcours terminé ne se rejoue pas à la relance ; passer une page émet `step_skipped` et avance ; `duration_ms` mesure le temps sur la page avec une horloge injectée.
 _Dépend de_ : PR 6.
 
 ### PR 8 — Pages 2 et 3 : catégories et centres d'intérêt
@@ -126,6 +128,12 @@ _Dépend de_ : PR 7.
 Entrées, transitions et récap au niveau de `Welcome.swift`, durées et courbes en constantes testées. Avec Réduire les animations : fondu court, récap dans son état final.
 _Tests d'abord_ : Réduire les animations remplace chaque transition par le fondu ; le récap liste les choix faits ; les durées valent les constantes.
 _Dépend de_ : PR 8 à 11.
+
+### PR 29 — API : capture serveur du suivi d'une catégorie
+
+`AnalyticsPort` dans la couche application de `channel`, implémenté par un adapter PostHog en infrastructure (ADR 0012 §3 et Notes). Le use-case de suivi émet `category:followed` (`category_id`, `distinct_id` = ID utilisateur backend) après son succès, jamais avant. Clé PostHog serveur déjà lue par l'environnement de l'API (module `mobile`). Le parcours garde `selection_count` comme mesure de la page, pas comme source du fait.
+_Tests d'abord_ : un suivi réussi émet un `category:followed` avec l'ID de la catégorie ; un suivi déjà en place (idempotent, ADR 0049) n'émet rien ; une catégorie introuvable n'émet rien ; un échec de PostHog ne fait pas échouer le suivi ; le port ne reçoit aucune clé interdite.
+_Dépend de_ : PR 1.
 
 ## Sons et vibrations
 

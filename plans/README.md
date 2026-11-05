@@ -49,6 +49,8 @@ Ils ne sont pas écrits maintenant : leurs PR dépendent du code de la tranche 1
 | Modération complète     | Bans, mots interdits, signalements, blocages, modes de salon persistants | 0003, 0021, 0027, 0032 |
 | Notifications           | Contexte `notification`, APNs, préférences par chaîne, fan-out par lots  | 0003, 0004, 0020       |
 | Découverte              | Catégories, tags, miniatures, home curatée                               | 0021, 0007, 0031       |
-| Analytics               | Taxonomie typée, `Core/Analytics`, capture serveur                       | 0012                   |
+| Analytics               | Capture serveur hors `channel`, reverse proxy                            | 0012                   |
 
-En tranche 3 : **monétisation** (RevenueCat, entitlements, bits, reversement Stripe, ADR 0013 à 0017), emotes et raids (ADR 0021). L'**hébergement** attend son propre ADR (ADR 0028, §11), au premier besoin d'un backend joignable hors de la machine.
+La taxonomie analytics, `Core/Analytics`, Turbo côté client et le module `monetization` réduit à l'entitlement Turbo sont en tranche 1, avec le plan [Parcours de personnalisation et Turbo](onboarding-paywall.md) (ADR 0051).
+
+En tranche 3 : le reste de la **monétisation** (abonnements de chaîne, bits, reversement Stripe, ADR 0013 à 0017), emotes et raids (ADR 0021). L'**hébergement** attend son propre ADR (ADR 0028, §11), au premier besoin d'un backend joignable hors de la machine.
