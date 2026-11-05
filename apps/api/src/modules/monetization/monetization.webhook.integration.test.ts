@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { setTimeout as sleep } from "node:timers/promises";
 
 import { afterAll, describe, expect, it } from "vitest";
 
@@ -71,7 +72,7 @@ afterAll(async () => {
 });
 
 describe("POST /v1/webhooks/revenuecat (ADR 0014, ADR 0051 §2)", () => {
-  it("enregistre l'événement brut, à traiter, et répond 200", async () => {
+  it("enregistre l'événement brut et répond 200", async () => {
     const webhook = makeWebhook();
 
     await withApi(configured, async (url) => {
@@ -79,12 +80,46 @@ describe("POST /v1/webhooks/revenuecat (ADR 0014, ADR 0051 §2)", () => {
     });
 
     expect(await receivedOf(webhook.eventId)).toEqual([
-      expect.objectContaining({
-        payload: JSON.parse(webhook.body),
-        processedAt: null,
-        outcome: null,
-      }),
+      expect.objectContaining({ payload: JSON.parse(webhook.body) }),
     ]);
+  });
+
+  it("traite l'achat reçu hors de la requête : l'entitlement Turbo apparaît ensuite", async () => {
+    const userId = randomUUID();
+    const eventId = randomUUID();
+    seededEventIds.push(eventId);
+    const body = JSON.stringify({
+      api_version: "1.0",
+      event: {
+        id: eventId,
+        type: "INITIAL_PURCHASE",
+        event_timestamp_ms: Date.now(),
+        app_user_id: userId,
+        entitlement_ids: ["turbo"],
+        expiration_at_ms: Date.now() + 30 * 24 * 60 * 60 * 1000,
+      },
+    });
+    const processed = async (deadline: number): Promise<boolean> => {
+      const [row] = await receivedOf(eventId);
+      if (row?.processedAt !== null && row?.processedAt !== undefined) {
+        return true;
+      }
+      if (Date.now() > deadline) {
+        return false;
+      }
+      await sleep(200);
+      return processed(deadline);
+    };
+
+    await withApi(configured, async (url) => {
+      expect((await deliver(url, { body, authorization: AUTHORIZATION })).status).toBe(200);
+      expect(await processed(Date.now() + 10_000)).toBe(true);
+    });
+
+    expect(await prisma.monetizationEntitlement.findMany({ where: { userId } })).toEqual([
+      expect.objectContaining({ scope: "PLATFORM", status: "ACTIVE" }),
+    ]);
+    await prisma.monetizationEntitlement.deleteMany({ where: { userId } });
   });
 
   it("répond 200 à un doublon sans écrire de seconde ligne", async () => {

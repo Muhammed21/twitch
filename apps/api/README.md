@@ -189,6 +189,13 @@ Le limiteur de `platform/rate-limit.ts` compte dans Redis par fenêtre fixe, sou
 - un en-tête absent ou faux répond 401 ; un corps hors contrat (JSON sans `api_version`, ni `event.id`, `event.type` et `event.event_timestamp_ms` entier) répond 400. Les deux sont archivés dans `MonetizationRejectedWebhook` et journalisés en erreur, jamais interprétés ;
 - un événement valide est inséré dans `MonetizationProcessedWebhookEvent`, clé `(provider, eventId)`, avec son payload brut et `processedAt` nul, puis la route répond 200 sans aucun traitement métier. Un doublon répond 200 sans seconde ligne.
 
+Un job périodique (1 s, 50 événements par passe) traite les lignes où `processedAt` est nul, une par transaction, `FOR UPDATE SKIP LOCKED`, sous un verrou consultatif par utilisateur :
+
+- seuls les événements qui portent l'entitlement `turbo` et un `app_user_id` UUID sont traduits : `INITIAL_PURCHASE`, `RENEWAL`, `CANCELLATION` (remboursement si `cancel_reason` vaut `CUSTOMER_SUPPORT`), `EXPIRATION`, `SUBSCRIPTION_PAUSED`, `REFUND`, `BILLING_ISSUE` et `TRANSFER` ; les autres sont marqués traités avec leur raison (`unhandled_type`, `other_entitlement`, `unknown_user`, `malformed`) et journalisés en alerte ;
+- un événement antérieur au dernier appliqué est marqué `stale` sans rien écrire ;
+- `MonetizationEntitlement` et l'outbox s'écrivent dans la même transaction : `monetization.entitlement.granted` `{userId, scope, expiresAt}` quand l'échéance change, `monetization.entitlement.revoked` `{userId, scope}` quand l'accès se coupe, avec l'horodatage de l'événement RevenueCat pour `occurredAt` ;
+- un échec annule les écritures du traitement, incrémente `attempts` et reprogramme `nextAttemptAt` avec le backoff de l'outbox.
+
 ## Autorisation (ADR 0006)
 
 Les droits se décident dans les use-cases, à partir de `AuthzContext` (`@repo/authorization`) ; un garde NestJS ne porte aucune règle métier. `apps/api/src/authz/` implémente ce port sur PostgreSQL et Redis :
