@@ -1,10 +1,12 @@
 import { alreadyProcessed, type createContextClient } from "@repo/db";
 
 import type {
+  AccountAvatarProjection,
   CategoryProjection,
   LiveChannelProjection,
 } from "../application/project-discovery-event.ts";
 import type { LiveChannelStore } from "../application/rebuild-live-channel-views.ts";
+import type { AccountAvatarView } from "../domain/account-avatar-view.ts";
 import { followerCounts } from "../domain/category-follow-view.ts";
 import type { CategoryView } from "../domain/category-view.ts";
 import type { LiveChannelView } from "../domain/live-channel-view.ts";
@@ -17,6 +19,7 @@ export const PROCESSED_EVENTS = { schema: "discovery", table: "DiscoveryProcesse
 type ViewRow = {
   readonly channelId: string;
   readonly slug: string | null;
+  readonly ownerId: string | null;
   readonly title: string;
   readonly titleChangedAt: Date | null;
   readonly categoryId: string | null;
@@ -28,6 +31,7 @@ type ViewRow = {
 const toView = (row: ViewRow): LiveChannelView => ({
   channelId: row.channelId,
   slug: row.slug,
+  ownerId: row.ownerId,
   title: row.title,
   titleChangedAt: row.titleChangedAt,
   categoryId: row.categoryId,
@@ -41,6 +45,7 @@ const toView = (row: ViewRow): LiveChannelView => ({
 const toRow = (view: LiveChannelView): ViewRow => ({
   channelId: view.channelId,
   slug: view.slug,
+  ownerId: view.ownerId,
   title: view.title,
   titleChangedAt: view.titleChangedAt,
   categoryId: view.categoryId,
@@ -67,7 +72,7 @@ export const prismaLiveChannelProjection = (prisma: DiscoveryPrisma): LiveChanne
         ON CONFLICT DO NOTHING
       `;
       const rows = await tx.$queryRaw<ViewRow[]>`
-        SELECT "channelId"::text AS "channelId", "slug", "title", "titleChangedAt",
+        SELECT "channelId"::text AS "channelId", "slug", "ownerId"::text AS "ownerId", "title", "titleChangedAt",
                "categoryId"::text AS "categoryId", "liveSessionId"::text AS "liveSessionId", "liveStartedAt", "lastEndedAt"
         FROM "discovery"."DiscoveryLiveChannelView"
         WHERE "channelId" = ${channelId}::uuid
@@ -117,6 +122,37 @@ export const prismaCategoryProjection = (prisma: DiscoveryPrisma): CategoryProje
         where: { categoryId },
         data: { ...changed, tags: [...changed.tags] },
       });
+    }),
+});
+
+export const prismaAccountAvatarProjection = (
+  prisma: DiscoveryPrisma,
+): AccountAvatarProjection => ({
+  update: ({ eventId, accountId, change }) =>
+    prisma.$transaction(async (tx) => {
+      if (
+        await alreadyProcessed(tx, {
+          processedEvents: PROCESSED_EVENTS,
+          eventId,
+          handler: DISCOVERY_HANDLER,
+        })
+      ) {
+        return;
+      }
+      const rows = await tx.$queryRaw<AccountAvatarView[]>`
+        SELECT "accountId"::text AS "accountId", "avatarKey", "changedAt"
+        FROM "discovery"."DiscoveryAccountAvatar"
+        WHERE "accountId" = ${accountId}::uuid
+        FOR UPDATE
+      `;
+      const { avatarKey, changedAt } = change(rows[0] ?? null);
+      await tx.$executeRaw`
+        INSERT INTO "discovery"."DiscoveryAccountAvatar" ("accountId", "avatarKey", "changedAt")
+        VALUES (${accountId}::uuid, ${avatarKey}, ${changedAt})
+        ON CONFLICT ("accountId") DO UPDATE
+          SET "avatarKey" = EXCLUDED."avatarKey", "changedAt" = EXCLUDED."changedAt"
+          WHERE "DiscoveryAccountAvatar"."changedAt" < EXCLUDED."changedAt"
+      `;
     }),
 });
 

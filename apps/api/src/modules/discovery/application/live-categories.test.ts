@@ -55,6 +55,7 @@ const makeLive = (index: number, categoryId: string | null): ListedLive => ({
   title: `Live ${index}`,
   startedAt: new Date(Date.UTC(2026, 10, 4, 20, index)),
   categoryId,
+  avatarKey: null,
 });
 
 const fixedLives = (items: readonly ListedLive[]) => {
