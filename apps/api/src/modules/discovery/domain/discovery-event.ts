@@ -1,8 +1,13 @@
+import type { AccountAvatarEvent } from "./account-avatar-view.ts";
 import type { CategoryFollowEvent } from "./category-follow-view.ts";
 import type { CategoryEvent } from "./category-view.ts";
 import type { LiveChannelEvent } from "./live-channel-view.ts";
 
-export type DiscoveryEvent = LiveChannelEvent | CategoryEvent | CategoryFollowEvent;
+export type DiscoveryEvent =
+  | LiveChannelEvent
+  | CategoryEvent
+  | CategoryFollowEvent
+  | AccountAvatarEvent;
 
 const CATEGORY_KINDS: ReadonlySet<DiscoveryEvent["kind"]> = new Set([
   "category-created",
@@ -16,3 +21,6 @@ export const isCategoryEvent = (event: DiscoveryEvent): event is CategoryEvent =
 
 export const isCategoryFollowEvent = (event: DiscoveryEvent): event is CategoryFollowEvent =>
   event.kind === "category-follow-changed";
+
+export const isAccountAvatarEvent = (event: DiscoveryEvent): event is AccountAvatarEvent =>
+  event.kind === "avatar-changed";

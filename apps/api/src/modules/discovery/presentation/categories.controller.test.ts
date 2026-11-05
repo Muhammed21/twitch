@@ -30,6 +30,7 @@ const makeLive = (overrides: Partial<ListedLive> = {}): ListedLive => ({
   title: "Speedrun",
   startedAt: STARTED_AT,
   categoryId: null,
+  avatarKey: null,
   ...overrides,
 });
 

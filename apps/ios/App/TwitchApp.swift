@@ -95,7 +95,7 @@ struct RootView: View {
           myChannel.reset()
         }
       }
-      .task { await launch.run() }
+      .task(id: session.accountID) { await launch.run(accountID: session.accountID) }
       .task { await session.run() }
   }
 
@@ -303,7 +303,10 @@ enum Composition {
     let sessionStore = Self.sessionStore(configuration: configuration, session: session, transport: transport, now: now)
     return Stores(
       session: sessionStore,
-      launch: LaunchStore(source: BootstrapClient(apiBaseURL: configuration.apiBaseURL, transport: transport), currentVersion: currentVersion),
+      launch: LaunchStore(
+        source: BootstrapClient(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
+        currentVersion: currentVersion
+      ),
       home: HomeStore(directory: LiveDirectoryClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
       browse: BrowseStore(directory: CategoryDirectoryClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
       categoryLives: CategoryLivesCatalog(source: CategoryLivesClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),

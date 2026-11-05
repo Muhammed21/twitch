@@ -16,6 +16,7 @@ const makeLive = (index: number): LiveListItem => ({
   title: `Live ${index}`,
   startedAt: at(60 - index),
   categoryId: null,
+  avatarKey: null,
 });
 
 const LIVES = [1, 2, 3, 4, 5].map(makeLive);
