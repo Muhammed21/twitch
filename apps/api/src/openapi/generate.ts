@@ -61,6 +61,7 @@ const app = configureApp(
           env: { DATABASE_URL_MONETIZATION: "postgresql://openapi@localhost/aucune-connexion" },
         }),
         webhookAuthorization: undefined,
+        secretApiKey: undefined,
       },
       discovery: {
         prisma: createContextClient({

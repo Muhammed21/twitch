@@ -1,13 +1,15 @@
+import type { ReadActiveEntitlements } from "../application/sync-turbo-entitlement.ts";
 import type { MonetizationPrisma } from "./prisma-webhook-inbox.ts";
 
-export type ActiveEntitlement = {
-  readonly scope: "platform";
-  readonly expiresAt: Date;
-};
-
 export const prismaActiveEntitlements =
-  ({ prisma, now = () => new Date() }: { prisma: MonetizationPrisma; now?: () => Date }) =>
-  async (userId: string): Promise<readonly ActiveEntitlement[]> => {
+  ({
+    prisma,
+    now = () => new Date(),
+  }: {
+    prisma: MonetizationPrisma;
+    now?: () => Date;
+  }): ReadActiveEntitlements =>
+  async (userId) => {
     const rows = await prisma.monetizationEntitlement.findMany({
       where: {
         userId,

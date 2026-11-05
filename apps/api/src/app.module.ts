@@ -87,7 +87,11 @@ export class AppModule {
       trustedProxyCount: number;
     };
     moderation: { prisma: ModerationPrisma };
-    monetization: { prisma: MonetizationPrisma; webhookAuthorization: string | undefined };
+    monetization: {
+      prisma: MonetizationPrisma;
+      webhookAuthorization: string | undefined;
+      secretApiKey: string | undefined;
+    };
     discovery: {
       prisma: DiscoveryPrisma;
       channelConsumerRedis: StreamConsumerRedis;
@@ -125,7 +129,11 @@ export class AppModule {
           logSink: platform.logSink,
         }),
         ModerationModule.register({ ...moderation, authzRedis: channel.authzRedis }),
-        MonetizationModule.register({ ...monetization, logSink: platform.logSink }),
+        MonetizationModule.register({
+          ...monetization,
+          counter: images.counter,
+          logSink: platform.logSink,
+        }),
         DiscoveryModule.register({
           ...discovery,
           viewerCounts: createViewerCountReader(stream.presenceRedis),

@@ -51,6 +51,7 @@ const baseSchema = z.object({
   S3_SECRET_ACCESS_KEY: z.string().min(1),
   S3_PUBLIC_BASE_URL: z.url({ protocol: /^https?$/ }),
   REVENUECAT_WEBHOOK_AUTHORIZATION: optionalSecret,
+  REVENUECAT_SECRET_API_KEY: optionalSecret,
 });
 
 const envSchema = baseSchema.and(videoSchema).and(featureFlagsSchema);
@@ -87,6 +88,7 @@ export type ImageStorageConfig = {
 
 export type RevenueCatConfig = {
   readonly webhookAuthorization: string | undefined;
+  readonly secretApiKey: string | undefined;
 };
 
 export type AppConfig = {
@@ -144,6 +146,9 @@ export const loadEnv = (env: Readonly<Record<string, string | undefined>>): AppC
       secretAccessKey: variables.S3_SECRET_ACCESS_KEY,
       publicBaseUrl: variables.S3_PUBLIC_BASE_URL,
     },
-    revenueCat: { webhookAuthorization: variables.REVENUECAT_WEBHOOK_AUTHORIZATION },
+    revenueCat: {
+      webhookAuthorization: variables.REVENUECAT_WEBHOOK_AUTHORIZATION,
+      secretApiKey: variables.REVENUECAT_SECRET_API_KEY,
+    },
   };
 };

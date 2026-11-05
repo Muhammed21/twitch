@@ -102,6 +102,7 @@ export const createApp = async ({
       monetization: {
         prisma: createContextClient({ context: "monetization", env }),
         webhookAuthorization: config.revenueCat.webhookAuthorization,
+        secretApiKey: config.revenueCat.secretApiKey,
       },
       discovery: {
         prisma: createContextClient({ context: "discovery", env }),
