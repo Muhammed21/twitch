@@ -4,20 +4,6 @@ import Foundation
 import Navigation
 import Testing
 
-private func localized(_ resource: LocalizedStringResource, in language: String) -> String {
-  var localized = resource
-  localized.locale = Locale(identifier: language)
-  return String(localized: localized)
-}
-
-private func english(_ resource: LocalizedStringResource) -> String {
-  localized(resource, in: "en")
-}
-
-private func french(_ resource: LocalizedStringResource) -> String {
-  localized(resource, in: "fr")
-}
-
 @Suite("Textes de la feuille d'actions du bouton « + » (IMG_9611, IMG_9627)")
 struct CreateActionsTextTests {
   @Test("le bouton violet propose de streamer depuis cet appareil")

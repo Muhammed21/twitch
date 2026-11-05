@@ -70,7 +70,7 @@ struct RootView: View {
       .preferredColorScheme(preferences.current.appearance.colorScheme)
       .signInFailureAlert(session)
       .logOutFailureAlert(session)
-      .onOpenURL { router.open($0) }
+      .onOpenURL { DeepLinkOpening.open($0, router: router, creatorMode: creatorMode) }
       .onChange(of: session.phase) { old, new in
         if RootScreen.resetsNavigation(from: old, to: new) {
           router.reset()
@@ -114,7 +114,7 @@ struct RootView: View {
         router: router
       )
     case .signedIn:
-      SignedInRoot()
+      SignedInModes()
     case .updateRequired:
       UpdateRequiredScreen()
     }
@@ -176,11 +176,6 @@ struct SignedInRoot: View {
       .toolbar(.hidden, for: .tabBar)
       .tag(AppTab.profile)
     }
-    .fullScreenCover(isPresented: $router.isShowingStreamManager) {
-      NavigationStack {
-        StreamManagerScreen { router.isShowingStreamManager = false }
-      }
-    }
     .safeAreaInset(edge: .bottom, spacing: 0) {
       if router.isTabBarVisible {
         TabBar(
@@ -194,7 +189,6 @@ struct SignedInRoot: View {
         )
       }
     }
-    .creatorModePresentation { router.create() }
   }
 
   private var account: Account? {
@@ -203,7 +197,7 @@ struct SignedInRoot: View {
   }
 }
 
-private extension View {
+extension View {
   func withRouteDestinations() -> some View {
     navigationDestination(for: Route.self) { route in
       switch route {
