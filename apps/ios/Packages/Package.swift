@@ -158,14 +158,14 @@ let package = Package(
     ),
     .target(
       name: "Onboarding",
-      dependencies: ["Domain", "Preferences", "DesignSystem"],
+      dependencies: ["DesignSystem"],
       path: "Features/Onboarding/Sources",
       resources: [.process("Localizable.xcstrings")],
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
     .testTarget(
       name: "OnboardingTests",
-      dependencies: ["Onboarding", "Domain", "Preferences", "DesignSystem"],
+      dependencies: ["Onboarding", "DesignSystem"],
       path: "Features/Onboarding/Tests",
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
