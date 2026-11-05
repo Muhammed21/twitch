@@ -381,6 +381,22 @@ describe("transfert", () => {
     });
   });
 
+  it("recrée en grâce sur la cible une origine en grâce", () => {
+    const decision = transferTurbo({
+      origins: [makeEntitlement({ status: "grace", expiresAt: at(35) })],
+      target: undefined,
+      toUserId: OTHER_USER_ID,
+      occurredAt: at(8),
+      newId,
+    });
+
+    expect(decision.saved[1]).toMatchObject({
+      userId: OTHER_USER_ID,
+      status: "grace",
+      expiresAt: at(35),
+    });
+  });
+
   it("garde l'échéance la plus lointaine quand la cible est déjà abonnée", () => {
     const target = makeEntitlement({ id: NEW_ID, userId: OTHER_USER_ID, expiresAt: at(20) });
 
