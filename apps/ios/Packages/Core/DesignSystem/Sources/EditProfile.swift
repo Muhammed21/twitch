@@ -6,6 +6,7 @@ public enum EditProfileStyle {
   public static let rowTitle = ColorRole.textPrimary
   public static let rowValue = ColorRole.textSecondary
   public static let divider = ColorRole.border
+  public static let sectionFooter = ColorRole.textSecondary
 }
 
 public struct ProfileHeaderAction {
@@ -36,10 +37,12 @@ struct ProfileEditButton: View {
 
 public struct EditSection<Content: View>: View {
   private let label: String
+  private let footer: String?
   private let content: Content
 
-  public init(label: String, @ViewBuilder content: () -> Content) {
+  public init(label: String, footer: String? = nil, @ViewBuilder content: () -> Content) {
     self.label = label
+    self.footer = footer
     self.content = content()
   }
 
@@ -51,7 +54,40 @@ public struct EditSection<Content: View>: View {
         .foregroundStyle(EditProfileStyle.sectionLabel.color)
         .accessibilityAddTraits(.isHeader)
       VStack(spacing: 0) { content }
-        .background(ColorRole.surface.color, in: RoundedRectangle(cornerRadius: LayoutRole.menuCardRadius.points))
+        .background(ColorRole.surface.color)
+        .clipShape(RoundedRectangle(cornerRadius: LayoutRole.menuCardRadius.points))
+      if let footer {
+        Text(footer)
+          .font(TextRole.editSectionFooter.font)
+          .foregroundStyle(EditProfileStyle.sectionFooter.color)
+          .padding(.horizontal, LayoutRole.menuRowPadding.points)
+      }
+    }
+  }
+}
+
+public enum EditRowAccessory {
+  case disclosure
+  case edit
+
+  var systemImage: String {
+    switch self {
+    case .disclosure: "chevron.right"
+    case .edit: "pencil"
+    }
+  }
+
+  var font: Font {
+    switch self {
+    case .disclosure: TextRole.editRowValue.font
+    case .edit: TextRole.bioText.font
+    }
+  }
+
+  var inset: LayoutRole {
+    switch self {
+    case .disclosure: .menuRowPadding
+    case .edit: .editImageRowPadding
     }
   }
 }
@@ -59,10 +95,12 @@ public struct EditSection<Content: View>: View {
 public struct EditRow: View {
   private let title: String
   private let value: String
+  private let accessory: EditRowAccessory
 
-  public init(title: String, value: String) {
+  public init(title: String, value: String, accessory: EditRowAccessory = .disclosure) {
     self.title = title
     self.value = value
+    self.accessory = accessory
   }
 
   public var body: some View {
@@ -77,12 +115,12 @@ public struct EditRow: View {
           .lineLimit(2)
       }
       .frame(maxWidth: .infinity, alignment: .leading)
-      Image(systemName: "chevron.right")
-        .font(TextRole.editRowValue.font)
+      Image(systemName: accessory.systemImage)
+        .font(accessory.font)
         .foregroundStyle(EditProfileStyle.rowValue.color)
         .accessibilityHidden(true)
     }
-    .padding(.horizontal, LayoutRole.menuRowPadding.points)
+    .padding(.horizontal, accessory.inset.points)
     .padding(.vertical, LayoutRole.editRowPadding.points)
     .contentShape(Rectangle())
   }

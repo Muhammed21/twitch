@@ -41,6 +41,46 @@
         }
       }
     },
+    "editProfile.banner" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profile Banner"
+          }
+        }
+      }
+    },
+    "editProfile.banner.failed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't save your banner. Try again."
+          }
+        }
+      }
+    },
+    "editProfile.banner.hint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recommended 1200×480 and less than 10MB"
+          }
+        }
+      }
+    },
+    "editProfile.banner.tooLarge" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your banner is over 10MB. Choose a smaller one."
+          }
+        }
+      }
+    },
     "editProfile.bio" : {
       "localizations" : {
         "en" : {
@@ -77,6 +117,86 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld characters remaining"
+          }
+        }
+      }
+    },
+    "editProfile.brand" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brand"
+          }
+        }
+      }
+    },
+    "editProfile.brand.footer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Customize you and your channel's visual appearance across Twitch."
+          }
+        }
+      }
+    },
+    "editProfile.photo.choose" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose existing photo"
+          }
+        }
+      }
+    },
+    "editProfile.photo.close" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close"
+          }
+        }
+      }
+    },
+    "editProfile.picture" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profile Picture"
+          }
+        }
+      }
+    },
+    "editProfile.picture.failed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't save your profile picture. Try again."
+          }
+        }
+      }
+    },
+    "editProfile.picture.hint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JPEG, PNG, GIF and less than 10MB"
+          }
+        }
+      }
+    },
+    "editProfile.picture.tooLarge" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your profile picture is over 10MB. Choose a smaller one."
           }
         }
       }

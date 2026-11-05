@@ -173,6 +173,12 @@
       "background": "color.background.primary",
       "min": 3.0,
       "note": "SC 1.4.11 — point rouge non textuel devant les viewers d'une catégorie"
+    },
+    {
+      "foreground": "color.banner.avatarRing",
+      "background": "color.banner.start",
+      "min": 3,
+      "note": "Anneau de l'avatar sur la bannière par défaut d'Edit Profile"
     }
   ]
 }
