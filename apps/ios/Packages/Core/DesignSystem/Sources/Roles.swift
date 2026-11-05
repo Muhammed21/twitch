@@ -52,6 +52,9 @@ public enum TextRole: Sendable {
   case sheetRowDetail
   case sheetCancel
   case transitionTitle
+  case dashboardTitle
+  case dashboardEmpty
+  case dashboardAction
 
   public var font: Font {
     switch self {
@@ -105,6 +108,9 @@ public enum TextRole: Sendable {
     case .sheetRowDetail: .viewerCount
     case .sheetCancel: .supportingText
     case .transitionTitle: .actionLabel
+    case .dashboardTitle: .displayText
+    case .dashboardEmpty: .displayText
+    case .dashboardAction: .supportingText
     }
   }
 }
@@ -247,6 +253,20 @@ public enum LayoutRole: Sendable {
   case sheetRowLineGap
   case transitionGlitchHeight
   case transitionTitleGap
+  case dashboardHeaderHeight
+  case dashboardAvatarSize
+  case dashboardIconTarget
+  case dashboardIconGap
+  case dashboardIconOverhang
+  case dashboardFieldHeight
+  case dashboardFieldRadius
+  case dashboardFieldTop
+  case dashboardFieldGlyphGap
+  case dashboardEmptyTop
+  case dashboardEmptyWidth
+  case dashboardPillHeight
+  case dashboardPillLeading
+  case dashboardPillTrailing
 }
 
 public enum ActionButtonKind: Sendable {

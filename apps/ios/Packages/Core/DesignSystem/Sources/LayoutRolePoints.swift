@@ -141,6 +141,20 @@ public extension LayoutRole {
     case .sheetRowLineGap: Spacing.x4
     case .transitionGlitchHeight: Spacing.x32
     case .transitionTitleGap: Spacing.x20
+    case .dashboardHeaderHeight: Spacing.x32
+    case .dashboardAvatarSize: Spacing.x30
+    case .dashboardIconTarget: Spacing.x44
+    case .dashboardIconGap: Spacing.x10
+    case .dashboardIconOverhang: Spacing.x10
+    case .dashboardFieldHeight: Spacing.x40
+    case .dashboardFieldRadius: Radius.xl
+    case .dashboardFieldTop: Spacing.x6
+    case .dashboardFieldGlyphGap: Spacing.x6
+    case .dashboardEmptyTop: Spacing.x256
+    case .dashboardEmptyWidth: Spacing.x256
+    case .dashboardPillHeight: Spacing.x40
+    case .dashboardPillLeading: Spacing.x10
+    case .dashboardPillTrailing: Spacing.x12
     }
   }
 }

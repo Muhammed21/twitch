@@ -149,6 +149,141 @@
         "transparentAtOrBelow": 0,
         "opaqueAtOrAbove": 721
       }
+    },
+    {
+      "name": "contentOutline",
+      "source": "docs/new-reference-ui/IMG_9624.PNG",
+      "rect": {
+        "x": 317,
+        "y": 2328,
+        "width": 72,
+        "height": 72
+      },
+      "background": "#f7f7f8",
+      "opacity": {
+        "transparentAtOrBelow": 0,
+        "opaqueAtOrAbove": 698
+      }
+    },
+    {
+      "name": "contentFilled",
+      "source": "docs/new-reference-ui/IMG_9625.PNG",
+      "rect": {
+        "x": 317,
+        "y": 2328,
+        "width": 72,
+        "height": 72
+      },
+      "background": "#f7f7f8",
+      "opacity": {
+        "transparentAtOrBelow": 0,
+        "opaqueAtOrAbove": 347
+      }
+    },
+    {
+      "name": "statsOutline",
+      "source": "docs/new-reference-ui/IMG_9624.PNG",
+      "rect": {
+        "x": 788,
+        "y": 2328,
+        "width": 72,
+        "height": 72
+      },
+      "background": "#f7f7f8",
+      "opacity": {
+        "transparentAtOrBelow": 0,
+        "opaqueAtOrAbove": 698
+      }
+    },
+    {
+      "name": "statsFilled",
+      "source": "docs/new-reference-ui/IMG_9626.PNG",
+      "rect": {
+        "x": 788,
+        "y": 2328,
+        "width": 72,
+        "height": 72
+      },
+      "background": "#f7f7f8",
+      "opacity": {
+        "transparentAtOrBelow": 0,
+        "opaqueAtOrAbove": 347
+      }
+    },
+    {
+      "name": "channelOutline",
+      "source": "docs/new-reference-ui/IMG_9624.PNG",
+      "rect": {
+        "x": 1024,
+        "y": 2328,
+        "width": 72,
+        "height": 72
+      },
+      "background": "#f7f7f8",
+      "opacity": {
+        "transparentAtOrBelow": 0,
+        "opaqueAtOrAbove": 698
+      }
+    },
+    {
+      "name": "calendar",
+      "source": "docs/new-reference-ui/IMG_9626.PNG",
+      "rect": {
+        "x": 900,
+        "y": 193,
+        "width": 66,
+        "height": 66
+      },
+      "background": "#f7f7f8",
+      "opacity": {
+        "transparentAtOrBelow": 3,
+        "opaqueAtOrAbove": 166
+      }
+    },
+    {
+      "name": "info",
+      "source": "docs/new-reference-ui/IMG_9626.PNG",
+      "rect": {
+        "x": 1059,
+        "y": 190,
+        "width": 72,
+        "height": 72
+      },
+      "background": "#f7f7f8",
+      "opacity": {
+        "transparentAtOrBelow": 3,
+        "opaqueAtOrAbove": 698
+      }
+    },
+    {
+      "name": "watchEye",
+      "source": "docs/new-reference-ui/IMG_9624.PNG",
+      "rect": {
+        "x": 786,
+        "y": 191,
+        "width": 72,
+        "height": 72
+      },
+      "background": "#e6e6ea",
+      "opacity": {
+        "transparentAtOrBelow": 0,
+        "opaqueAtOrAbove": 650
+      }
+    },
+    {
+      "name": "searchField",
+      "source": "docs/new-reference-ui/IMG_9625.PNG",
+      "rect": {
+        "x": 74,
+        "y": 319,
+        "width": 66,
+        "height": 66
+      },
+      "background": "#e7e7ea",
+      "opacity": {
+        "transparentAtOrBelow": 0,
+        "opaqueAtOrAbove": 435
+      }
     }
   ]
 }
