@@ -27,6 +27,7 @@ public final class MyChannelStore {
   public private(set) var phase: Phase = .loading
   public private(set) var title = ""
   public private(set) var category: ChannelCategory?
+  public private(set) var bannerURL: URL?
   public private(set) var streamKey: StreamKey?
   public private(set) var notice: Notice?
 
@@ -66,6 +67,7 @@ public final class MyChannelStore {
     phase = .loading
     title = ""
     category = nil
+    bannerURL = nil
     leave()
   }
 
@@ -82,6 +84,7 @@ public final class MyChannelStore {
       let channel = try await channels.channel(withSlug: owned.slug)
       title = channel.title
       category = channel.category
+      bannerURL = channel.bannerURL
       phase = .ready(owned)
     } catch {
       log("my channel: channel not loaded (\(Self.kind(of: error)))")
@@ -148,6 +151,10 @@ public final class MyChannelStore {
     }
     copy(streamKey.revealed)
     notice = .keyCopied
+  }
+
+  public func bannerSaved(_ channel: Channel) {
+    bannerURL = channel.bannerURL
   }
 
   @discardableResult

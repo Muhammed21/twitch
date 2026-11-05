@@ -14,13 +14,22 @@ public struct Channel: Equatable, Sendable {
   public let title: String
   public let ownerID: UUID
   public let category: ChannelCategory?
+  public let bannerURL: URL?
 
-  public init(id: ChannelID, slug: ChannelSlug, title: String, ownerID: UUID, category: ChannelCategory? = nil) {
+  public init(
+    id: ChannelID,
+    slug: ChannelSlug,
+    title: String,
+    ownerID: UUID,
+    category: ChannelCategory? = nil,
+    bannerURL: URL? = nil
+  ) {
     self.id = id
     self.slug = slug
     self.title = title
     self.ownerID = ownerID
     self.category = category
+    self.bannerURL = bannerURL
   }
 }
 
