@@ -91,11 +91,12 @@ describe("chat name palette, on the real token files", () => {
 });
 
 describe("resolveSharedTokens, on the real token files", () => {
-  it("resolves typography, spacing and radius, without any colour", async () => {
+  it("resolves motion, typography, spacing and radius, without any colour", async () => {
     const tokens = await resolveSharedTokens();
     const categories = new Set(tokens.flatMap(({ path }) => path.slice(0, 1)));
 
     expect([...categories].toSorted((first, second) => first.localeCompare(second))).toEqual([
+      "motion",
       "radius",
       "spacing",
       "typography",
@@ -113,6 +114,16 @@ describe("resolveSharedTokens, on the real token files", () => {
     const x8 = tokens.find(({ path }) => path.join(".") === "spacing.x8");
 
     expect(x8).toEqual(expect.objectContaining({ $type: "dimension", value: "8px" }));
+  });
+
+  it("resolves motion durations, the page slide and the fade that replaces it", async () => {
+    const tokens = await resolveSharedTokens();
+    const motion = tokens.filter(({ path }) => path[0] === "motion");
+
+    expect(motion.map(({ path, $type, value }) => [path.join("."), $type, value])).toEqual([
+      ["motion.journeyPage", "duration", "350ms"],
+      ["motion.fade", "duration", "200ms"],
+    ]);
   });
 
   it("gives every shared token a description", async () => {

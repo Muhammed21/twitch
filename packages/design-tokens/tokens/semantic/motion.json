@@ -1,0 +1,14 @@
+{
+  "motion": {
+    "journeyPage": {
+      "$type": "duration",
+      "$value": "350ms",
+      "$description": "Glissement d'une page du parcours de personnalisation et de sa barre de progression, à la cadence d'un push de pile de navigation iOS (ADR 0051 §6)."
+    },
+    "fade": {
+      "$type": "duration",
+      "$value": "200ms",
+      "$description": "Fondu court qui remplace tout déplacement quand Réduire les animations est activé (ADR 0019 §6)."
+    }
+  }
+}

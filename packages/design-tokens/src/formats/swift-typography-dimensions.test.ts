@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { formatDimensions, formatTextStyles, type DesignToken } from "./swift.ts";
+import { formatDimensions, formatDurations, formatTextStyles, type DesignToken } from "./swift.ts";
+
+const durationToken = (overrides: Partial<DesignToken> = {}): DesignToken => ({
+  path: ["motion", "page"],
+  $type: "duration",
+  value: "350ms",
+  ...overrides,
+});
 
 const textStyleToken = (overrides: Partial<DesignToken> = {}): DesignToken => ({
   path: ["typography", "bodyText"],
@@ -186,5 +193,63 @@ describe("formatDimensions", () => {
         namespace: "Spacing",
       }),
     ).toThrow(/Unresolved alias.*spacing\.x8/);
+  });
+});
+
+describe("formatDurations", () => {
+  it("generates the complete Swift file, as TimeInterval seconds in a namespace", () => {
+    const output = formatDurations([durationToken({ comment: "Glissement d'une page." })], {
+      namespace: "Motion",
+    });
+
+    expect(output).toBe(
+      [
+        ...HEADER,
+        "public enum Motion {",
+        "    /// Glissement d'une page.",
+        "    public static let page: TimeInterval = 0.35",
+        "}",
+        "",
+      ].join("\n"),
+    );
+  });
+
+  it.each([
+    ["milliseconds", "200ms", "0.2"],
+    ["seconds", "1.2s", "1.2"],
+    ["whole seconds", "2s", "2"],
+    ["seconds with several decimals", "0.125s", "0.125"],
+    ["zero", "0ms", "0"],
+  ])("reads %s", (_label, value, seconds) => {
+    const output = formatDurations([durationToken({ value })], { namespace: "Motion" });
+
+    expect(output).toContain(`    public static let page: TimeInterval = ${seconds}\n`);
+  });
+
+  it("omits the doc comment when the token has no description", () => {
+    const output = formatDurations([durationToken()], { namespace: "Motion" });
+
+    expect(output).toContain(["public enum Motion {", "    public static let page"].join("\n"));
+  });
+
+  it.each([
+    ["a unitless string", "350"],
+    ["a pixel value", "350px"],
+    ["a negative duration", "-200ms"],
+    ["a value with leading garbage", "a200ms"],
+    ["a value with trailing garbage", "200mss"],
+    ["a dangling decimal point", "2.s"],
+    ["a number", 350],
+    ["a non-string value that would stringify to a duration", ["200ms"]],
+  ])("refuses %s", (_label, value) => {
+    expect(() => formatDurations([durationToken({ value })], { namespace: "Motion" })).toThrow(
+      /motion\.page.*not a duration/,
+    );
+  });
+
+  it("refuses an unresolved alias", () => {
+    expect(() =>
+      formatDurations([durationToken({ value: "{core.duration.page}" })], { namespace: "Motion" }),
+    ).toThrow(/Unresolved alias.*motion\.page/);
   });
 });

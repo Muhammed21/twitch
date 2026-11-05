@@ -123,6 +123,8 @@
   --radius-xxl: 12px;
   --radius-sheet: 10px;
   --radius-pill: 9999px;
+  --motion-journey-page: 350ms;
+  --motion-fade: 200ms;
 }
 
 @media (prefers-color-scheme: dark) {

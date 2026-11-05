@@ -212,6 +212,32 @@ export const formatThemedColors = (themes: ThemedTokens): string => {
   ].join("\n");
 };
 
+const toSeconds = (value: unknown, path: readonly string[]): string => {
+  assertResolved(value, path);
+
+  const duration = typeof value === "string" ? /^([0-9]+(\.[0-9]+)?)(ms|s)$/.exec(value) : null;
+
+  if (duration === null) {
+    throw new Error(`Token "${tokenId(path)}" is not a duration: ${String(value)}.`);
+  }
+
+  const milliseconds = Number(duration[1]) * (duration[3] === "s" ? 1000 : 1);
+
+  return String(Number((milliseconds / 1000).toFixed(3)));
+};
+
+export const formatDurations = (
+  tokens: readonly DesignToken[],
+  { namespace }: { readonly namespace: string },
+): string => {
+  const members = tokens.flatMap((token) => [
+    ...docComment(token.comment),
+    `    public static let ${swiftMemberName(token.path)}: TimeInterval = ${toSeconds(token.value, token.path)}`,
+  ]);
+
+  return [GENERATED_HEADER, `public enum ${namespace} {`, ...members, "}", ""].join("\n");
+};
+
 const toPoints = (value: unknown, path: readonly string[]): string => {
   assertResolved(value, path);
 
