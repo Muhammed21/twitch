@@ -45,10 +45,21 @@ private extension ChatMessage {
       id: message.id,
       channelID: ChannelID(message.channelId),
       sessionID: message.sessionId,
-      author: ChatAuthor(id: message.author.id, displayName: message.author.displayName),
+      author: ChatAuthor(
+        id: message.author.id,
+        displayName: message.author.displayName,
+        badges: message.author.badges.compactMap { $0.value1.map(ChatBadge.init) },
+        color: message.author.color
+      ),
       body: message.body,
       sentAt: message.sentAt
     )
+  }
+}
+
+private extension ChatBadge {
+  init(_ badge: Components.Schemas.RealtimeChatAuthor.BadgesPayloadPayload.Value1Payload) {
+    self.init(rawValue: badge.rawValue)
   }
 }
 

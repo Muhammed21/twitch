@@ -15,12 +15,13 @@ private func uuid(_ text: String) -> UUID {
 private func messageJSON(
   sentAt: String = "2026-11-03T20:15:00.250Z",
   session: String = #","sessionId":"\#(sessionID)""#,
-  extra: String = ""
+  extra: String = "",
+  author: String = #""badges":[]"#
 ) -> Data {
   Data(
     #"""
     {"id":"\#(messageID)","channelId":"\#(channelID)"\#(session),\#
-    "author":{"id":"\#(authorID)","displayName":"Viewer de test","badges":[]},\#
+    "author":{"id":"\#(authorID)","displayName":"Viewer de test",\#(author)},\#
     "body":"Bonjour le chat","sentAt":"\#(sentAt)"\#(extra)}
     """#.utf8
   )
@@ -46,6 +47,31 @@ struct ServerPayloadTests {
     let event = ServerPayload.event(name: "chat:message", payload: messageJSON())
 
     #expect(event == .message(expectedMessage(sentAt: quarterPast.addingTimeInterval(0.25))))
+  }
+
+  @Test("les badges et la couleur de l'auteur passent au domaine")
+  func authorBadgesAndColor() {
+    let event = ServerPayload.event(
+      name: "chat:message",
+      payload: messageJSON(author: ##""badges":["turbo"],"color":"#9147FF""##)
+    )
+
+    guard case let .message(message) = event else {
+      Issue.record("chat:message attendu")
+      return
+    }
+    #expect(message.author == ChatAuthor(id: uuid(authorID), displayName: "Viewer de test", badges: [.turbo], color: "#9147FF"))
+  }
+
+  @Test("un badge inconnu est écarté")
+  func unknownBadgeDropped() {
+    let event = ServerPayload.event(name: "chat:message", payload: messageJSON(author: #""badges":["sparkle","turbo"]"#))
+
+    guard case let .message(message) = event else {
+      Issue.record("chat:message attendu")
+      return
+    }
+    #expect(message.author.badges == [.turbo])
   }
 
   @Test("une date sans fraction de seconde se lit aussi")
