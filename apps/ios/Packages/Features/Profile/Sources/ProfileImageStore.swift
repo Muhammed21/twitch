@@ -9,6 +9,8 @@ public final class ProfileImageStore {
     case tooLarge
     case tooSmall
     case notSaved
+    case cameraMissing
+    case cameraRefused
   }
 
   public enum Phase: Equatable, Sendable {
@@ -29,15 +31,37 @@ public final class ProfileImageStore {
   private let uploads: any ImageUploads
   private let images: any ProfileImages
   private let prepare: @Sendable (Data, ImagePurpose) -> PreparedImage
+  private let camera: any CameraAccess
 
   public init(
     uploads: any ImageUploads,
     images: any ProfileImages,
-    prepare: @escaping @Sendable (Data, ImagePurpose) -> PreparedImage = ProfileImageEncoding.prepare
+    prepare: @escaping @Sendable (Data, ImagePurpose) -> PreparedImage = ProfileImageEncoding.prepare,
+    camera: any CameraAccess = DeviceCamera()
   ) {
     self.uploads = uploads
     self.images = images
     self.prepare = prepare
+    self.camera = camera
+  }
+
+  public func canTakePhoto(_ purpose: ImagePurpose) async -> Bool {
+    switch camera.status() {
+    case .allowed:
+      return true
+    case .missing:
+      phase = .failed(purpose, .cameraMissing)
+      return false
+    case .refused:
+      phase = .failed(purpose, .cameraRefused)
+      return false
+    case .undetermined:
+      guard await camera.requestAccess() else {
+        phase = .failed(purpose, .cameraRefused)
+        return false
+      }
+      return true
+    }
   }
 
   public func setAvatar(_ picked: Data) async -> Account? {
