@@ -10,6 +10,7 @@ import Navigation
 import Networking
 import Onboarding
 import Player
+import Preferences
 import Profile
 import SwiftUI
 import UIKit
@@ -38,41 +39,7 @@ struct TwitchApp: App {
         .environment(stores.categorySearch)
         .environment(stores.profileEdit)
         .environment(stores.profileImages)
-    }
-  }
-}
-
-enum RootScreen: Equatable {
-  case splash
-  case welcome
-  case allSet
-  case signedIn
-  case updateRequired
-
-  init(isSplashVisible: Bool, phase: SessionPhase, isGreetingNewAccount: Bool, isUpdateRequired: Bool) {
-    switch (isSplashVisible, phase) {
-    case (true, _): self = .splash
-    case (false, _) where isUpdateRequired: self = .updateRequired
-    case (false, .launching): self = .splash
-    case (false, .signedOut), (false, .signingIn): self = .welcome
-    case (false, .signedIn): self = isGreetingNewAccount ? .allSet : .signedIn
-    }
-  }
-
-  static func resetsNavigation(from old: SessionPhase, to new: SessionPhase) -> Bool {
-    switch (old, new) {
-    case (.signedIn, .signedIn): false
-    case (.signedIn, _): true
-    default: false
-    }
-  }
-}
-
-extension AuthorizationIntent {
-  init(_ intent: WelcomeIntent) {
-    switch intent {
-    case .logIn: self = .signIn
-    case .signUp: self = .signUp
+        .environment(stores.preferences)
     }
   }
 }
@@ -82,6 +49,7 @@ struct RootView: View {
   @Environment(LaunchStore.self) private var launch
   @Environment(Router.self) private var router
   @Environment(MyChannelStore.self) private var myChannel
+  @Environment(PreferencesStore.self) private var preferences
   @State private var isSplashVisible = true
 
   var body: some View {
@@ -104,7 +72,12 @@ struct RootView: View {
       isSplashVisible: isSplashVisible,
       phase: session.phase,
       isGreetingNewAccount: session.isGreetingNewAccount,
-      isUpdateRequired: launch.isUpdateRequired
+      isUpdateRequired: launch.isUpdateRequired,
+      isPersonalizationDue: RootScreen.isPersonalizationDue(
+        isPersonalizing: session.isPersonalizing,
+        account: session.accountID,
+        hasCompleted: preferences.hasCompletedOnboarding
+      )
     ) {
     case .splash:
       ZStack {
@@ -117,6 +90,8 @@ struct RootView: View {
       }
     case .allSet:
       AllSetScreen()
+    case .personalization:
+      PersonalizationRoot(session: session, preferences: preferences)
     case .signedIn:
       SignedInRoot()
     case .updateRequired:
@@ -264,6 +239,7 @@ struct Stores {
   let categorySearch: CategorySearch
   let profileEdit: ProfileEditStore
   let profileImages: ProfileImageStore
+  let preferences: PreferencesStore
 }
 
 @MainActor
@@ -323,7 +299,8 @@ enum Composition {
       myChannel: Self.myChannel(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, channels: channels),
       categorySearch: CategorySearch(catalog: CategoryCatalogClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
       profileEdit: Self.profileEdit(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
-      profileImages: Self.profileImages(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now)
+      profileImages: Self.profileImages(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
+      preferences: PersonalizationRoot.preferences()
     )
   }
 

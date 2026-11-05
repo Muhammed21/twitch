@@ -33,6 +33,9 @@ public enum TextRole: Sendable {
   case bioText
   case bioCounter
   case editSectionFooter
+  case journeyTitle
+  case journeyMessage
+  case journeyControl
 
   public var font: Font {
     switch self {
@@ -67,6 +70,9 @@ public enum TextRole: Sendable {
     case .bioText: .supportingText
     case .bioCounter: .viewerCount
     case .editSectionFooter: .metaText
+    case .journeyTitle: .titleText
+    case .journeyMessage: .supportingText
+    case .journeyControl: .actionLabel
     }
   }
 }
@@ -182,6 +188,13 @@ public enum LayoutRole: Sendable {
   case brandAvatarRing
   case brandAvatarGlyphInset
   case editRowIconSize
+  case journeyHeaderHeight
+  case journeyHeaderGap
+  case journeyControlSize
+  case journeyProgressHeight
+  case journeyMessageGap
+  case journeyContentGap
+  case journeyHeroWidth
 
   public var points: CGFloat {
     switch self {
@@ -295,6 +308,13 @@ public enum LayoutRole: Sendable {
     case .brandAvatarRing: Spacing.x4
     case .brandAvatarGlyphInset: Spacing.x14
     case .editRowIconSize: Spacing.x20
+    case .journeyHeaderHeight: Spacing.x44
+    case .journeyHeaderGap: Spacing.x16
+    case .journeyControlSize: Spacing.x24
+    case .journeyProgressHeight: Spacing.x4
+    case .journeyMessageGap: Spacing.x8
+    case .journeyContentGap: Spacing.x24
+    case .journeyHeroWidth: Spacing.x88
     }
   }
 }

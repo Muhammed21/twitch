@@ -47,6 +47,44 @@ struct RootScreenTests {
     #expect(RootScreen(isSplashVisible: false, phase: phase, isGreetingNewAccount: true, isUpdateRequired: false) == .allSet)
   }
 
+  @Test(
+    "après « You're All Set! », une inscription mène au parcours de personnalisation",
+    arguments: [SessionPhase.signedIn(viewer), .signedIn(nil)]
+  )
+  func personalization(phase: SessionPhase) {
+    let screen = RootScreen(
+      isSplashVisible: false, phase: phase, isGreetingNewAccount: false, isUpdateRequired: false, isPersonalizationDue: true
+    )
+    #expect(screen == .personalization)
+  }
+
+  @Test("« You're All Set! » passe avant le parcours, et le splash avant tout")
+  func personalizationOrder() {
+    #expect(RootScreen(
+      isSplashVisible: false, phase: .signedIn(viewer), isGreetingNewAccount: true, isUpdateRequired: false, isPersonalizationDue: true
+    ) == .allSet)
+    #expect(RootScreen(
+      isSplashVisible: true, phase: .signedIn(viewer), isGreetingNewAccount: false, isUpdateRequired: false, isPersonalizationDue: true
+    ) == .splash)
+  }
+
+  @Test("le parcours est dû après une inscription, sauf si ce compte l'a déjà terminé sur l'appareil")
+  func personalizationDue() {
+    let finished = UUID()
+    let completed: (UUID) -> Bool = { $0 == finished }
+
+    #expect(RootScreen.isPersonalizationDue(isPersonalizing: true, account: viewer.id, hasCompleted: completed))
+    #expect(RootScreen.isPersonalizationDue(isPersonalizing: true, account: nil, hasCompleted: completed))
+    #expect(!RootScreen.isPersonalizationDue(isPersonalizing: true, account: finished, hasCompleted: completed))
+    #expect(!RootScreen.isPersonalizationDue(isPersonalizing: false, account: viewer.id, hasCompleted: completed))
+  }
+
+  @Test("le parcours s'ouvre sur l'intro et se termine sur le récap")
+  func personalizationSteps() {
+    #expect(PersonalizationRoot.steps.first == .intro)
+    #expect(PersonalizationRoot.steps.last == .summary)
+  }
+
   @Test("le splash passe avant « You're All Set! »")
   func splashBeforeAllSet() {
     #expect(RootScreen(isSplashVisible: true, phase: .signedIn(viewer), isGreetingNewAccount: true, isUpdateRequired: false) == .splash)

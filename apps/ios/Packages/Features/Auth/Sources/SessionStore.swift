@@ -22,6 +22,7 @@ public final class SessionStore {
   public private(set) var hasSignInFailure = false
   public private(set) var hasLogOutFailure = false
   public private(set) var isGreetingNewAccount = false
+  public private(set) var isPersonalizing = false
 
   public var accountID: UUID? {
     guard case let .signedIn(account) = phase else {
@@ -79,6 +80,7 @@ public final class SessionStore {
     }
     phase = .signedIn(nil)
     isGreetingNewAccount = intent == .signUp
+    isPersonalizing = intent == .signUp
     await loadAccount()
   }
 
@@ -93,6 +95,10 @@ public final class SessionStore {
 
   public func finishGreeting() {
     isGreetingNewAccount = false
+  }
+
+  public func finishPersonalization() {
+    isPersonalizing = false
   }
 
   public func dismissSignInFailure() {
@@ -112,6 +118,7 @@ public final class SessionStore {
     for await status in session.statusUpdates where status == .signedOut {
       phase = .signedOut
       isGreetingNewAccount = false
+      isPersonalizing = false
     }
   }
 
