@@ -9,10 +9,12 @@ private func categoryJSON(
   slug: String = "just-chatting",
   imageURL: String? = nil,
   liveCount: Int = 3,
-  viewerCount: Int = 0
+  viewerCount: Int = 0,
+  tags: [String] = []
 ) -> String {
   let image = imageURL.map { #","imageUrl":"\#($0)""# } ?? ""
-  return #"{"slug":"\#(slug)","name":"Just Chatting","liveCount":\#(liveCount),"viewerCount":\#(viewerCount)\#(image)}"#
+  let tagList = tags.map { #""\#($0)""# }.joined(separator: ",")
+  return #"{"slug":"\#(slug)","name":"Just Chatting","liveCount":\#(liveCount),"viewerCount":\#(viewerCount),"tags":[\#(tagList)]\#(image)}"#
 }
 
 private func makeClient(_ transport: FakeTransport) -> CategoryDirectoryClient {
@@ -23,7 +25,7 @@ private func makeClient(_ transport: FakeTransport) -> CategoryDirectoryClient {
 struct CategoryDirectoryClientTests {
   @Test("demande la première page sans curseur ni authentification, et décode catégories et curseur suivant")
   func firstPage() async throws {
-    let items = "\(categoryJSON(viewerCount: 184_000)),\(categoryJSON(slug: "fortnite", liveCount: 1, viewerCount: 22000))"
+    let items = "\(categoryJSON(viewerCount: 184_000, tags: ["IRL", "Discussion"])),\(categoryJSON(slug: "fortnite", liveCount: 1, viewerCount: 22000))"
     let transport = FakeTransport(json: #"{"items":[\#(items)],"nextCursor":"c2"}"#)
 
     let page = try await makeClient(transport).categories(after: nil)
@@ -85,7 +87,7 @@ struct CategoryDirectoryClientTests {
 
   @Test("tolère un champ ajouté à la catégorie et à la page (ADR 0024, §8)")
   func toleratesAddedFields() async throws {
-    let transport = FakeTransport(json: #"{"items":[\#(categoryJSON().dropLast()),"tags":["IRL"]}],"total":1}"#)
+    let transport = FakeTransport(json: #"{"items":[\#(categoryJSON().dropLast()),"followerCount":12}],"total":1}"#)
 
     let page = try await makeClient(transport).categories(after: nil)
 
