@@ -44,6 +44,22 @@ public struct BrowseCategory: Equatable, Sendable {
   }
 }
 
+public struct CategoryHeading: Hashable, Sendable {
+  public let slug: CategorySlug
+  public let name: String
+  public let imageURL: URL?
+  public let viewers: ViewerCount?
+  public let tags: [String]
+
+  public init(_ tile: BrowseCategory) {
+    slug = tile.slug
+    name = tile.name
+    imageURL = tile.imageURL
+    viewers = tile.viewers
+    tags = []
+  }
+}
+
 public struct CategoryCursor: Hashable, Sendable {
   public let rawValue: String
 

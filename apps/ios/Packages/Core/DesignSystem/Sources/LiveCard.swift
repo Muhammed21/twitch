@@ -10,19 +10,31 @@ public enum LiveCardStyle {
   public static let placeholder = ColorRole.surfaceSecondary
 }
 
+public struct LivePreview: Hashable, Sendable {
+  public let url: URL?
+  public let generation: Int
+
+  public init(url: URL?, generation: Int) {
+    self.url = url
+    self.generation = generation
+  }
+}
+
 public struct LiveCard: View {
   private let badge: String
   private let viewers: String?
   private let name: String
   private let title: String
   private let category: String?
+  private let preview: LivePreview
 
-  public init(badge: String, viewers: String?, name: String, title: String, category: String?) {
+  public init(badge: String, viewers: String?, name: String, title: String, category: String?, preview: LivePreview) {
     self.badge = badge
     self.viewers = viewers
     self.name = name
     self.title = title
     self.category = category
+    self.preview = preview
   }
 
   public var body: some View {
@@ -42,6 +54,8 @@ public struct LiveCard: View {
     Rectangle()
       .fill(LiveCardStyle.placeholder.color)
       .aspectRatio(16 / 9, contentMode: .fit)
+      .overlay { LivePreviewImage(preview: preview) }
+      .clipped()
       .overlay(alignment: .topLeading) {
         MediaLabel(text: badge, font: .liveBadge, foreground: LiveCardStyle.badgeForeground, background: LiveCardStyle.badgeBackground)
       }
