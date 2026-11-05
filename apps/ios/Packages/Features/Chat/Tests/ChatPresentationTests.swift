@@ -69,10 +69,11 @@ struct ChatLineTests {
   @Test("un message supprimé garde son heure et son auteur, et dit « message deleted » en texte secondaire")
   func deletedMessage() {
     let text = ChatLine(sent(at: "2026-11-03T04:13:00Z").deleted(), locale: english, timeZone: utc).styled(timestamped.line)
+    let deleted = shown(english: "message deleted", french: "message supprimé")
 
-    #expect(String(text.characters) == "04:13 yahway_810: message deleted")
-    #expect(segments(of: text) { $0.foregroundColor == ColorRole.textSecondary.color } == ["04:13", "message deleted"])
-    #expect(segments(of: text) { $0.font == TextRole.chatMessage.font }.contains("message deleted"))
+    #expect(String(text.characters) == "04:13 yahway_810: \(deleted)")
+    #expect(segments(of: text) { $0.foregroundColor == ColorRole.textSecondary.color } == ["04:13", deleted])
+    #expect(segments(of: text) { $0.font == TextRole.chatMessage.font }.contains(deleted))
   }
 
   @Test("sans horodatage, la ligne commence par l'auteur")
@@ -193,11 +194,11 @@ struct ComposerFeedbackTests {
   @Test(
     "un message refusé garde le brouillon et dit pourquoi",
     arguments: [
-      (ChatRejectionReason.timedOut, "You're timed out in this chat."),
-      (.banned, "You're banned from this chat."),
-      (.rateLimited, "You're sending messages too quickly."),
-      (.notJoined, "You're not in this chat room yet."),
-      (.unknown("slow_mode"), "Your message wasn't sent."),
+      (ChatRejectionReason.timedOut, shown(english: "You're timed out in this chat.", french: "Vous êtes exclu temporairement de ce chat.")),
+      (.banned, shown(english: "You're banned from this chat.", french: "Vous êtes banni de ce chat.")),
+      (.rateLimited, shown(english: "You're sending messages too quickly.", french: "Vous envoyez des messages trop rapidement.")),
+      (.notJoined, shown(english: "You're not in this chat room yet.", french: "Vous n'avez pas encore rejoint ce chat.")),
+      (.unknown("slow_mode"), shown(english: "Your message wasn't sent.", french: "Votre message n'a pas été envoyé.")),
     ]
   )
   func rejected(reason: ChatRejectionReason, notice: String) {
@@ -219,7 +220,7 @@ struct ComposerFeedbackTests {
 
   @Test("un envoi sans verdict garde le brouillon et dit que le message n'est pas parti")
   func unsent() {
-    #expect(ComposerFeedback(nil) == ComposerFeedback(clearsDraft: false, notice: "Your message wasn't sent."))
+    #expect(ComposerFeedback(nil) == ComposerFeedback(clearsDraft: false, notice: shown(english: "Your message wasn't sent.", french: "Votre message n'a pas été envoyé.")))
   }
 }
 
@@ -228,11 +229,11 @@ struct ChatNoticeTests {
   @Test(
     "hors du direct, la liste dit où en est la session",
     arguments: [
-      (ChatSession.Status.connecting, "Connecting to chat…"),
-      (.reconnecting, "Reconnecting to chat…"),
-      (.denied, "You can't access this chat."),
-      (.halted, "Chat stopped."),
-      (.signedOut, "Log in to chat."),
+      (ChatSession.Status.connecting, shown(english: "Connecting to chat…", french: "Connexion au chat…")),
+      (.reconnecting, shown(english: "Reconnecting to chat…", french: "Reconnexion au chat…")),
+      (.denied, shown(english: "You can't access this chat.", french: "Vous n'avez pas accès à ce chat.")),
+      (.halted, shown(english: "Chat stopped.", french: "Chat interrompu.")),
+      (.signedOut, shown(english: "Log in to chat.", french: "Connectez-vous pour chatter.")),
     ]
   )
   func notice(status: ChatSession.Status, expected: String) {
@@ -253,9 +254,9 @@ struct ModerationNoticeTests {
   @Test(
     "le chat confirme un timeout ou dit pourquoi il a échoué",
     arguments: [
-      (ChatSession.ModerationNotice.timedOut("yahway_810"), "yahway_810 is timed out for 10 minutes."),
-      (.forbidden, "You can't time out users in this chat."),
-      (.failed("yahway_810"), "Couldn't time out yahway_810."),
+      (ChatSession.ModerationNotice.timedOut("yahway_810"), shown(english: "yahway_810 is timed out for 10 minutes.", french: "yahway_810 est exclu pendant 10 minutes.")),
+      (.forbidden, shown(english: "You can't time out users in this chat.", french: "Vous ne pouvez pas exclure temporairement d'utilisateurs de ce chat.")),
+      (.failed("yahway_810"), shown(english: "Couldn't time out yahway_810.", french: "Impossible d'exclure yahway_810 temporairement.")),
     ]
   )
   func notice(notice: ChatSession.ModerationNotice, expected: String) {
@@ -264,6 +265,6 @@ struct ModerationNoticeTests {
 
   @Test("l'action du menu dit la durée du timeout")
   func action() {
-    #expect(ChatText.timeOutAction == "Timeout for 10 minutes")
+    #expect(ChatText.timeOutAction == shown(english: "Timeout for 10 minutes", french: "Exclure pendant 10 minutes"))
   }
 }
