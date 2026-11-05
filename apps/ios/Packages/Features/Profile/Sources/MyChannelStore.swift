@@ -51,28 +51,39 @@ public final class MyChannelStore {
     self.copy = copy
     self.log = log
     self.deviceLanguage = deviceLanguage
-    info = Self.emptyInfo(language: deviceLanguage)
+    info = Self.emptyInfo
   }
 
   public var title: String { info.title }
 
   public var category: ChannelCategory? { info.category }
 
+  public var proposedInfo: StreamInfo {
+    var draft = info
+    draft.language = info.language ?? deviceLanguage
+    return draft
+  }
+
   public var shareURL: URL? {
     guard case let .ready(owned) = phase else { return nil }
     return owned.slug.appLink
   }
 
-  private static func emptyInfo(language: LiveLanguage) -> StreamInfo {
-    StreamInfo(title: "", category: nil, tags: [], language: language, contentLabels: [], isBrandedContent: false)
-  }
+  private static let emptyInfo = StreamInfo(
+    title: "",
+    category: nil,
+    tags: [],
+    language: nil,
+    contentLabels: [],
+    isBrandedContent: false
+  )
 
-  private func streamInfo(of channel: Channel, language fallback: LiveLanguage?) -> StreamInfo {
+  private static func streamInfo(of channel: Channel) -> StreamInfo {
     StreamInfo(
       title: channel.title,
       category: channel.category,
       tags: channel.tags,
-      language: channel.language ?? fallback,
+      language: channel.language,
       contentLabels: channel.contentLabels,
       isBrandedContent: channel.isBrandedContent
     )
@@ -102,7 +113,7 @@ public final class MyChannelStore {
   public func reset() {
     hasStartedLoading = false
     phase = .loading
-    info = Self.emptyInfo(language: deviceLanguage)
+    info = Self.emptyInfo
     bannerURL = nil
     leave()
   }
@@ -118,7 +129,7 @@ public final class MyChannelStore {
         return
       }
       let channel = try await channels.channel(withSlug: owned.slug)
-      info = streamInfo(of: channel, language: deviceLanguage)
+      info = Self.streamInfo(of: channel)
       bannerURL = channel.bannerURL
       phase = .ready(owned)
     } catch {
@@ -199,7 +210,7 @@ public final class MyChannelStore {
     }
     do {
       let channel = try await repository.update(owned.id, change: StreamInfoChange.from(info, to: draft))
-      info = streamInfo(of: channel, language: draft.language)
+      info = Self.streamInfo(of: channel)
       notice = .titleSaved
       return true
     } catch {
