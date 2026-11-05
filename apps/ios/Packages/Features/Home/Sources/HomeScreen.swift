@@ -80,7 +80,8 @@ private struct LiveRow: View {
       name: live.slug.rawValue,
       title: live.title,
       category: nil,
-      preview: LivePreview(url: live.thumbnailURL, generation: generation)
+      preview: LivePreview(url: live.thumbnailURL, generation: generation),
+      avatarURL: live.avatarURL
     )
     .accessibilityElement(children: .combine)
     .accessibilityIdentifier("home.live.\(live.slug.rawValue)")

@@ -7,12 +7,14 @@ import {
 } from "./live-channel-view.ts";
 
 const CHANNEL_ID = "6f1c2d3e-4a5b-4c6d-8e7f-9a0b1c2d3e4f";
+const OWNER_ID = "4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b";
 
 const at = (minute: number): Date => new Date(Date.UTC(2026, 10, 2, 20, minute));
 
 const makeView = (overrides: Partial<LiveChannelView> = {}): LiveChannelView => ({
   channelId: CHANNEL_ID,
   slug: "chaine",
+  ownerId: null,
   title: "",
   titleChangedAt: null,
   categoryId: null,
@@ -24,6 +26,7 @@ const makeView = (overrides: Partial<LiveChannelView> = {}): LiveChannelView => 
 const channelCreated = (slug = "chaine"): LiveChannelEvent => ({
   kind: "channel-created",
   channelId: CHANNEL_ID,
+  ownerId: OWNER_ID,
   slug,
 });
 
@@ -75,9 +78,9 @@ const permutations = <T>(items: readonly T[]): readonly (readonly T[])[] =>
       );
 
 describe("vue d'une chaîne dans discovery", () => {
-  it("connaît une chaîne créée, hors live et sans titre", () => {
+  it("connaît une chaîne créée et son propriétaire, hors live et sans titre", () => {
     expect(applyDiscoveryEvent(null, channelCreated("ma_chaine"))).toEqual(
-      makeView({ slug: "ma_chaine" }),
+      makeView({ slug: "ma_chaine", ownerId: OWNER_ID }),
     );
   });
 
@@ -87,6 +90,7 @@ describe("vue d'une chaîne dans discovery", () => {
     expect(applyDiscoveryEvent(view, channelCreated("ma_chaine"))).toEqual({
       ...view,
       slug: "ma_chaine",
+      ownerId: OWNER_ID,
     });
   });
 
@@ -234,6 +238,7 @@ describe("vue d'une chaîne dans discovery", () => {
     expect(views[0]).toEqual(
       makeView({
         slug: "ma_chaine",
+        ownerId: OWNER_ID,
         title: "Second titre",
         titleChangedAt: at(2),
         live: { sessionId: "session-2", startedAt: at(30) },
