@@ -29,12 +29,12 @@ private func manifest() throws -> Manifest {
 
 @Suite("Glyphes d'interface extraits des captures (ADR 0046)")
 struct GlyphTests {
-  @Test("chaque glyphe a son entrée dans le manifeste, qui cite une capture de docs/reference-ui/")
+  @Test("chaque glyphe a son entrée dans le manifeste, qui cite une capture de docs/reference-ui/ ou docs/new-reference-ui/")
   func manifestCoversEveryGlyph() throws {
     let entries = try manifest().glyphs
 
     #expect(Set(entries.map(\.name)) == Set(Glyph.allCases.map(\.rawValue)))
-    #expect(entries.allSatisfy { $0.source.hasPrefix("docs/reference-ui/") })
+    #expect(entries.allSatisfy { $0.source.hasPrefix("docs/reference-ui/") || $0.source.hasPrefix("docs/new-reference-ui/") })
   }
 
   @Test("chaque masque du catalogue a son entrée dans le manifeste, et l'inverse")

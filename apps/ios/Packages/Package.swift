@@ -9,7 +9,7 @@ let package = Package(
     .library(name: "DesignSystem", targets: ["DesignSystem"]),
     .library(
       name: "Onboarding",
-      targets: ["Onboarding", "Preferences", "Home", "Navigation", "Player", "Channel", "ChatTransport", "Chat", "Profile", "Purchases", "Paywall"]
+      targets: ["Onboarding", "Preferences", "Home", "Navigation", "Player", "Channel", "ChatTransport", "Chat", "Profile", "Purchases", "Paywall", "Dashboard"]
     ),
     .library(name: "Auth", targets: ["Auth"]),
     .library(name: "Domain", targets: ["Domain"]),
@@ -239,6 +239,19 @@ let package = Package(
       name: "PurchasesTests",
       dependencies: ["Purchases", "PurchasesTesting", "Domain", .product(name: "RevenueCat", package: "purchases-ios-spm")],
       path: "Core/Purchases/Tests",
+      swiftSettings: [.swiftLanguageMode(.v6)]
+    ),
+    .target(
+      name: "Dashboard",
+      dependencies: ["Navigation", "DesignSystem"],
+      path: "Features/Dashboard/Sources",
+      resources: [.process("Localizable.xcstrings")],
+      swiftSettings: [.swiftLanguageMode(.v6)]
+    ),
+    .testTarget(
+      name: "DashboardTests",
+      dependencies: ["Dashboard", "Navigation", "DesignSystem"],
+      path: "Features/Dashboard/Tests",
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
     .target(

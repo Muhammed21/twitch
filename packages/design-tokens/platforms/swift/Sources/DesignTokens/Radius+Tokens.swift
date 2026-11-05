@@ -14,6 +14,8 @@ public enum Radius {
     public static let xl: CGFloat = 8
     /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : rayon des modales, 36 px à @3x (parametres/menu-parametres--modale-deconnexion).
     public static let xxl: CGFloat = 12
+    /// Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9611) : coins supérieurs de la feuille d'actions du bouton « + », 30 px à @3x.
+    public static let sheet: CGFloat = 10
     /// Charte relevée : rayon pill, avatars et pastilles de catégorie.
     public static let pill: CGFloat = 9999
 }

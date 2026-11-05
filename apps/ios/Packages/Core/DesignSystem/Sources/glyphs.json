@@ -119,6 +119,36 @@
         "transparentAtOrBelow": 4,
         "opaqueAtOrAbove": 293
       }
+    },
+    {
+      "name": "broadcast",
+      "source": "docs/new-reference-ui/IMG_9611.PNG",
+      "rect": {
+        "x": 241,
+        "y": 1457,
+        "width": 126,
+        "height": 126
+      },
+      "background": "#9147ff",
+      "opacity": {
+        "transparentAtOrBelow": 0,
+        "opaqueAtOrAbove": 294
+      }
+    },
+    {
+      "name": "leaveDashboard",
+      "source": "docs/new-reference-ui/IMG_9627.PNG",
+      "rect": {
+        "x": 104,
+        "y": 2082,
+        "width": 66,
+        "height": 66
+      },
+      "background": "#ffffff",
+      "opacity": {
+        "transparentAtOrBelow": 0,
+        "opaqueAtOrAbove": 721
+      }
     }
   ]
 }

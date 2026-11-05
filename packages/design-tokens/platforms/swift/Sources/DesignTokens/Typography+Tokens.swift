@@ -46,4 +46,8 @@ public extension Font {
     static let hintText = Font.caption.weight(.regular)
     /// Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/parcourir/liste-categories--defaut) : tag « IRL » sous une catégorie, capitales de 8,3 pt de haut et fût de 1,5 pt, soit 12 pt semibold, text style iOS caption.
     static let tagText = Font.caption.weight(.semibold)
+    /// Titre « Streaming » de la feuille d'actions du bouton « + ». Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9611) : du haut de la capitale au bas du jambage 103 px à @3x, soit 34 pt, text style iOS largeTitle.
+    static let sheetHeroText = Font.largeTitle.weight(.medium)
+    /// Titre d'une ligne de la feuille d'actions (« Tableau de bord des créateurs »). Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9611) : hauteur de capitale 36 px à @3x, soit 17 pt, text style iOS headline.
+    static let sheetRowTitle = Font.headline.weight(.medium)
 }
