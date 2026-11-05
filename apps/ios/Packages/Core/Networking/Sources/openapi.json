@@ -2174,11 +2174,31 @@
           "avatarUrl": {
             "type": "string",
             "format": "uri"
+          },
+          "badges": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "turbo"
+                  ]
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "color": {
+            "$ref": "#/components/schemas/ChatColor"
           }
         },
         "required": [
           "id",
-          "displayName"
+          "displayName",
+          "badges"
         ],
         "additionalProperties": {}
       },

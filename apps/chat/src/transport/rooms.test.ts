@@ -132,7 +132,7 @@ describe("salons et diffusion", () => {
     expect(message).toEqual({
       id: expect.any(String),
       channelId: room.channelId,
-      author: { id: ALICE, displayName: "Alice" },
+      author: { id: ALICE, displayName: "Alice", badges: [] },
       body: "Bonjour le chat",
       sentAt: expect.any(String),
     });
@@ -155,6 +155,7 @@ describe("salons et diffusion", () => {
     expect(realtime.RealtimeChatMessage.parse(await received).author).toStrictEqual({
       id: ALICE,
       displayName: "Alice",
+      badges: [],
       avatarUrl: imageUrlOf(AVATAR_KEY),
     });
   });
@@ -174,6 +175,7 @@ describe("salons et diffusion", () => {
     expect(realtime.RealtimeChatMessage.parse(await received).author).toStrictEqual({
       id: ALICE,
       displayName: "Alice",
+      badges: [],
     });
   });
 
@@ -193,6 +195,7 @@ describe("salons et diffusion", () => {
     expect(realtime.RealtimeChatMessage.parse(await received).author).toStrictEqual({
       id: BOB,
       displayName: "Bob",
+      badges: [],
     });
   });
 

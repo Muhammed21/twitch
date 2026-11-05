@@ -211,7 +211,7 @@ describe("jalon C1, contre le Redis de Compose", () => {
     expect(realtime.RealtimeChatMessage.parse(await offline)).toEqual({
       id: expect.any(String),
       channelId,
-      author: { id: alice, displayName: "Alice" },
+      author: { id: alice, displayName: "Alice", badges: [] },
       body: "Bonjour Bob",
       sentAt: expect.any(String),
     });
