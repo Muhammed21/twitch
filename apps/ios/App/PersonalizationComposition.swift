@@ -16,10 +16,7 @@ struct PersonalizationRoot: View {
       now: { Date.now },
       record: { _ in },
       onFinish: {
-        if let account = session.accountID {
-          preferences.completeOnboarding(account)
-        }
-        session.finishPersonalization()
+        Self.finish(account: session.accountID, preferences: preferences, close: session.finishPersonalization)
       }
     ))
   }
@@ -27,6 +24,14 @@ struct PersonalizationRoot: View {
   var body: some View {
     PersonalizationScreen()
       .environment(journey)
+  }
+
+  @MainActor
+  static func finish(account: UUID?, preferences: PreferencesStore, close: () -> Void) {
+    if let account {
+      preferences.completeOnboarding(account)
+    }
+    close()
   }
 
   @MainActor

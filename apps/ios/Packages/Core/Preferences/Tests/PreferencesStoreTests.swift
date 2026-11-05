@@ -3,10 +3,6 @@ import Foundation
 import Preferences
 import Testing
 
-private func makeSuite() -> String {
-  "preferences.tests.\(UUID().uuidString)"
-}
-
 @MainActor
 private final class ChangeRecorder {
   private(set) var changes: [PreferenceChanged] = []
@@ -30,17 +26,22 @@ private func makeStore(
 
 @MainActor
 @Suite("Préférences de l'appareil sur UserDefaults (ADR 0051, §4)")
-struct PreferencesStoreTests {
+final class PreferencesStoreTests {
+  private let suite = "preferences.tests.\(UUID().uuidString)"
+
+  deinit {
+    UserDefaults(suiteName: suite)?.removePersistentDomain(forName: suite)
+  }
+
   @Test("une valeur absente rend le défaut de la référence")
   func absentGivesDefaults() {
-    let store = makeStore(suite: makeSuite(), language: .french)
+    let store = makeStore(suite: suite, language: .french)
 
     #expect(store.current == DevicePreferences.defaults(language: .french))
   }
 
   @Test("une valeur écrite se relit après recréation du store")
   func persists() {
-    let suite = makeSuite()
     let store = makeStore(suite: suite)
     let content = ContentPreferences(hidden: [.gambling, .profanity], blursSexualThemes: false)
 
@@ -64,7 +65,6 @@ struct PreferencesStoreTests {
 
   @Test("une valeur inconnue sur le disque rend le défaut, sans planter")
   func unknownStoredValue() {
-    let suite = makeSuite()
     let disk = UserDefaults(suiteName: suite)
     disk?.set("sepia", forKey: "preferences.appearance")
     disk?.set("tlh", forKey: "preferences.liveLanguage")
@@ -78,7 +78,7 @@ struct PreferencesStoreTests {
   @Test("un changement émet un seul preference:changed avec sa source")
   func emitsOnce() {
     let recorder = ChangeRecorder()
-    let store = makeStore(suite: makeSuite(), recorder: recorder)
+    let store = makeStore(suite: suite, recorder: recorder)
 
     store.update(.appearance(.light), source: .settings)
 
@@ -88,7 +88,7 @@ struct PreferencesStoreTests {
   @Test("une valeur identique n'émet rien")
   func identicalIsSilent() {
     let recorder = ChangeRecorder()
-    let store = makeStore(suite: makeSuite(), recorder: recorder)
+    let store = makeStore(suite: suite, recorder: recorder)
 
     store.update(.appearance(.system), source: .onboarding)
     store.update(.chatTimestamps(true), source: .onboarding)
@@ -97,9 +97,20 @@ struct PreferencesStoreTests {
     #expect(recorder.changes == [PreferenceChanged(preference: .chatTimestamps, value: "true", source: .onboarding)])
   }
 
+  @Test("le floutage grisé ne s'annonce pas : le changer sous les thèmes sexuels masqués est gardé sans émettre")
+  func silentBlurWhenHidden() {
+    let recorder = ChangeRecorder()
+    let store = makeStore(suite: suite, recorder: recorder)
+    store.update(.content(ContentPreferences(hidden: [.sexualThemes], blursSexualThemes: true)), source: .onboarding)
+
+    store.update(.content(ContentPreferences(hidden: [.sexualThemes], blursSexualThemes: false)), source: .onboarding)
+
+    #expect(recorder.changes == [PreferenceChanged(preference: .contentFilters, value: "sexual_themes", source: .onboarding)])
+    #expect(!store.current.content.blursSexualThemes)
+  }
+
   @Test("« parcours terminé » est propre à un ID de compte, et survit à la recréation du store")
   func onboardingPerAccount() {
-    let suite = makeSuite()
     let finished = UUID()
     let other = UUID()
     let store = makeStore(suite: suite)
@@ -115,7 +126,7 @@ struct PreferencesStoreTests {
   @Test("terminer le parcours n'émet aucun preference:changed")
   func onboardingIsNotAPreference() {
     let recorder = ChangeRecorder()
-    let store = makeStore(suite: makeSuite(), recorder: recorder)
+    let store = makeStore(suite: suite, recorder: recorder)
 
     store.completeOnboarding(UUID())
 
