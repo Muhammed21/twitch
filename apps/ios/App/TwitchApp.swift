@@ -269,13 +269,8 @@ enum Composition {
     let player = PlayerController(player: AVMediaPlayer(), startupRetry: .every(.seconds(2), attempts: 15))
     let channels = ChannelClient(apiBaseURL: configuration.apiBaseURL, transport: transport)
     let preferences = PersonalizationRoot.preferences()
-    let network = NetworkCost()
-    let channelPlayback = ChannelPlayback(
-      channels: channels,
-      playback: PlaybackClient(apiBaseURL: configuration.apiBaseURL, transport: transport),
-      controller: player,
-      allowsAutoplay: { preferences.current.videoAutoplay.allowsPlayback(onExpensiveNetwork: network.isExpensive) }
-    )
+    let playback = PlaybackClient(apiBaseURL: configuration.apiBaseURL, transport: transport)
+    let channelPlayback = Self.channelPlayback(playback: playback, channels: channels, player: player, preferences: preferences)
     let sessionStore = Self.sessionStore(configuration: configuration, session: session, transport: transport, analytics: analytics, now: now)
     return Stores(
       analytics: analytics,
@@ -293,7 +288,13 @@ enum Composition {
       channelPlayback: channelPlayback,
       liveStatus: Self.liveStatus(apiBaseURL: configuration.apiBaseURL, channels: channels, player: player, playback: channelPlayback),
       presence: Self.presence(configuration: configuration, channels: channels, session: session, transport: transport, now: now),
-      chat: Self.chat(chatBaseURL: chatBaseURL, apiBaseURL: configuration.apiBaseURL, transport: transport, session: session, channels: channels, sessionStore: sessionStore, now: now),
+      chat: ChatSession(
+        connector: ChatSocketConnector(chatBaseURL: chatBaseURL),
+        tokens: session,
+        channels: channels,
+        moderation: ModerationClient(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
+        viewer: { sessionStore.accountID }
+      ),
       myChannel: Self.myChannel(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, channels: channels),
       categorySearch: CategorySearch(catalog: CategoryCatalogClient(apiBaseURL: configuration.apiBaseURL, transport: transport)),
       profileEdit: Self.profileEdit(apiBaseURL: configuration.apiBaseURL, transport: transport, tokens: session, now: now),
@@ -311,6 +312,21 @@ enum Composition {
     } catch {
       fatalError("Info.plist : configuration OAuth invalide (\(error)).")
     }
+  }
+
+  private static func channelPlayback(
+    playback: PlaybackClient,
+    channels: ChannelClient,
+    player: PlayerController,
+    preferences: PreferencesStore
+  ) -> ChannelPlayback {
+    let network = NetworkCost()
+    return ChannelPlayback(
+      channels: channels,
+      playback: playback,
+      controller: player,
+      allowsAutoplay: { preferences.current.videoAutoplay.allowsPlayback(onExpensiveNetwork: network.isExpensive) }
+    )
   }
 
   private static func liveStatus(
@@ -340,23 +356,6 @@ enum Composition {
     )
   }
 
-  private static func chat(
-    chatBaseURL: URL,
-    apiBaseURL: URL,
-    transport: ClientVersionTransport,
-    session: OAuthSession,
-    channels: ChannelClient,
-    sessionStore: SessionStore,
-    now: @escaping @Sendable () -> Date
-  ) -> ChatSession {
-    ChatSession(
-      connector: ChatSocketConnector(chatBaseURL: chatBaseURL),
-      tokens: session,
-      channels: channels,
-      moderation: ModerationClient(apiBaseURL: apiBaseURL, transport: transport, tokens: session, now: now),
-      viewer: { sessionStore.accountID }
-    )
-  }
 
   private static func sessionStore(
     configuration: OAuthConfiguration,
