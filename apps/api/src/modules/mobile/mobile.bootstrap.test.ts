@@ -251,6 +251,43 @@ describe("GET /v1/mobile/bootstrap (ADR 0009, ADR 0012)", () => {
     });
   });
 
+  it("rend la variante du paywall évaluée par PostHog pour l'utilisateur du jeton (ADR 0016)", async () => {
+    await withBootstrap(
+      { featureFlags: flagsEvaluatedAs({ exp_paywall_variant: "variant_b" }) },
+      async (get) => {
+        const body = responses.MobileBootstrap.parse(await (await get(authenticated)).json());
+
+        expect(body.flags).toEqual({ session_replay: false, exp_paywall_variant: "variant_b" });
+      },
+    );
+  });
+
+  it.each([
+    ["absente de l'évaluation", {}],
+    ["désactivée pour l'utilisateur", { exp_paywall_variant: false }],
+    ["vide", { exp_paywall_variant: "" }],
+  ])(
+    "ne rend aucune variante du paywall %s : le client n'émet alors aucune exposition",
+    async (_, evaluated) => {
+      await withBootstrap({ featureFlags: flagsEvaluatedAs(evaluated) }, async (get) => {
+        const body = responses.MobileBootstrap.parse(await (await get(authenticated)).json());
+
+        expect(body.flags).toEqual({ session_replay: false });
+      });
+    },
+  );
+
+  it("ne rend aucune variante du paywall à un client anonyme", async () => {
+    await withBootstrap(
+      { featureFlags: flagsEvaluatedAs({ exp_paywall_variant: "variant_b" }) },
+      async (get) => {
+        const body = responses.MobileBootstrap.parse(await (await get()).json());
+
+        expect(body.flags).toEqual({ session_replay: false });
+      },
+    );
+  });
+
   it("ne renvoie pas un flag que le registre ne connaît pas", async () => {
     await withBootstrap(
       { featureFlags: flagsEvaluatedAs({ session_replay: true, flag_inconnu: true }) },

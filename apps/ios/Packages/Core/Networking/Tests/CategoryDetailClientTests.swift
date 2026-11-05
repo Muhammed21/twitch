@@ -34,7 +34,7 @@ struct CategoryDetailClientTests {
   func signedOut() async throws {
     let transport = FakeTransport(json: headerJSON())
 
-    let detail = try await makeClient(transport, tokens: FakeTokenProvider(failure: .signedOut)).detail(of: CategorySlug("just-chatting"))
+    let detail = try await makeClient(transport, tokens: FakeTokenProvider(failure: SessionError.signedOut)).detail(of: CategorySlug("just-chatting"))
 
     #expect(detail == CategoryDetail(tags: ["IRL", "English"], followers: 41, isFollowing: nil))
     let request = try #require(await transport.requests.first)
@@ -77,7 +77,7 @@ struct CategoryDetailClientTests {
         : HTTPResponse(status: 401, body: Data(#"{"type":"about:blank","title":"Unauthorized","status":401}"#.utf8))
     }
 
-    let detail = try await makeClient(transport, tokens: FakeTokenProvider(renewalFailure: .signedOut))
+    let detail = try await makeClient(transport, tokens: FakeTokenProvider(renewalFailure: SessionError.signedOut))
       .detail(of: CategorySlug("just-chatting"))
 
     #expect(detail.isFollowing == nil)

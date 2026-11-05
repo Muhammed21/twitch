@@ -23,6 +23,7 @@ const makeLive = (overrides: Partial<ListedLive> = {}): ListedLive => ({
   title: "Speedrun",
   startedAt: STARTED_AT,
   categoryId: null,
+  avatarKey: null,
   ...overrides,
 });
 
@@ -95,6 +96,18 @@ describe("GET /v1/lives", () => {
         ],
       });
       expect(requests).toEqual([{ after: undefined, limit: 3 }]);
+    });
+  });
+
+  it("donne à un live l'avatar du propriétaire de sa chaîne quand il en a un", async () => {
+    const withAvatar = makeLive({ avatarKey: "images/avatar/streamer.webp" });
+    await withLives([withAvatar, makeLive()], async (base) => {
+      const body = await (await fetch(`${base}?limit=2`)).json();
+
+      expect(body.items.map((live: { avatarUrl?: string }) => live.avatarUrl)).toEqual([
+        "https://images.test/images/avatar/streamer.webp",
+        undefined,
+      ]);
     });
   });
 

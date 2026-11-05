@@ -27,9 +27,13 @@ export interface FeatureFlags {
 
 export type Flags = {
   readonly session_replay: boolean;
+  readonly exp_paywall_variant?: string;
 };
 
 const SAFE_FLAGS: Flags = { session_replay: false };
+
+const variantOf = (value: unknown): { readonly exp_paywall_variant?: string } =>
+  typeof value === "string" && value.length > 0 ? { exp_paywall_variant: value } : {};
 
 export type Bootstrap = {
   readonly minSupportedVersion: string;
@@ -42,6 +46,7 @@ const booleanOr = (value: unknown, fallback: boolean): boolean =>
 
 const resolveFlags = (evaluated: Readonly<Record<string, unknown>>): Flags => ({
   session_replay: booleanOr(evaluated["session_replay"], SAFE_FLAGS.session_replay),
+  ...variantOf(evaluated["exp_paywall_variant"]),
 });
 
 const NO_EVALUATION: Readonly<Record<string, unknown>> = {};

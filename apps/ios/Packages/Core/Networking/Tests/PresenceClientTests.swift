@@ -41,7 +41,7 @@ struct PresenceClientTests {
     let transport = FakeTransport(status: 204, json: "")
 
     await #expect(throws: SessionError.signedOut) {
-      try await makeClient(transport: transport, tokens: FakeTokenProvider(failure: .signedOut)).reportPresence(in: channel)
+      try await makeClient(transport: transport, tokens: FakeTokenProvider(failure: SessionError.signedOut)).reportPresence(in: channel)
     }
     #expect(await transport.requests.isEmpty)
   }
