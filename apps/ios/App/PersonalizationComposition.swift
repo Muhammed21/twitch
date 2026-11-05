@@ -1,6 +1,7 @@
 import Auth
 import Domain
 import Foundation
+import Navigation
 import Networking
 import Onboarding
 import Paywall
@@ -28,17 +29,24 @@ struct PersonalizationRoot: View {
   private let links: PaywallLinks
   private let onClose: () -> Void
 
-  init(session: SessionStore, preferences: PreferencesStore, sources: PersonalizationSources, paywall: PersonalizationPaywall) {
+  init(
+    session: SessionStore,
+    preferences: PreferencesStore,
+    sources: PersonalizationSources,
+    paywall: PersonalizationPaywall,
+    router: Router
+  ) {
     let choices = sources.choices(preferences: preferences)
     _categories = State(initialValue: choices.categories)
     _interests = State(initialValue: choices.interests)
     _notifications = State(initialValue: choices.notifications)
     let presentation = PaywallPresentation()
     let purchases = paywall.purchases
+    let ending = Self.ending(account: { session.accountID }, preferences: preferences, router: router, finish: session.finishPersonalization)
     _presentation = State(initialValue: presentation)
-    _paywall = State(initialValue: PaywallStore(purchases: purchases, offeringID: nil, variant: paywall.variant))
+    _paywall = State(initialValue: Self.paywallStore(paywall, onSubscribed: ending))
     links = paywall.links
-    onClose = { Self.complete(account: session.accountID, preferences: preferences, close: session.finishPersonalization) }
+    onClose = ending
     _journey = State(initialValue: PersonalizationJourney(
       steps: Self.steps,
       now: { Date.now },
@@ -50,7 +58,7 @@ struct PersonalizationRoot: View {
             preferences: preferences,
             purchases: purchases,
             showPaywall: { presentation.isShown = true },
-            close: { Self.complete(account: session.accountID, preferences: preferences, close: session.finishPersonalization) }
+            close: ending
           )
         }
       }
@@ -92,6 +100,26 @@ struct PersonalizationRoot: View {
   }
 
   @MainActor
+  static func ending(
+    account: @escaping @MainActor () -> UUID?,
+    preferences: PreferencesStore,
+    router: Router,
+    finish: @escaping @MainActor () -> Void
+  ) -> @MainActor () -> Void {
+    {
+      complete(account: account(), preferences: preferences) {
+        router.selectedTab = .home
+        finish()
+      }
+    }
+  }
+
+  @MainActor
+  static func paywallStore(_ paywall: PersonalizationPaywall, onSubscribed: @escaping @MainActor () -> Void) -> PaywallStore {
+    PaywallStore(purchases: paywall.purchases, offeringID: nil, variant: paywall.variant, onSubscribed: onSubscribed)
+  }
+
+  @MainActor
   static func preferences() -> PreferencesStore {
     PreferencesStore(
       repository: UserDefaultsPreferences(suiteName: nil, language: LiveLanguage(localeIdentifier: Locale.current.identifier)),
@@ -102,8 +130,14 @@ struct PersonalizationRoot: View {
 
 struct PersonalizationPaywall {
   let purchases: any Purchases
-  let variant: String?
+  let variant: @MainActor () -> String?
   let links: PaywallLinks
+
+  init(purchases: any Purchases, launch: LaunchStore, links: PaywallLinks) {
+    self.purchases = purchases
+    variant = { launch.flags.paywallVariant }
+    self.links = links
+  }
 }
 
 struct PersonalizationSources {

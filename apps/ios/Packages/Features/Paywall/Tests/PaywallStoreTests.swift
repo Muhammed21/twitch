@@ -8,8 +8,29 @@ private let annual = SubscriptionPackage(id: "$rc_annual", offeringID: "default"
 private let defaultOffering = SubscriptionOffering(id: "default", packages: [monthly, annual])
 
 @MainActor
-private func makeStore(_ purchases: FakePurchases, offeringID: String? = nil, variant: String? = nil) -> PaywallStore {
-  PaywallStore(purchases: purchases, offeringID: offeringID, variant: variant)
+private final class Subscriptions {
+  private(set) var count = 0
+  var variant: String?
+
+  func record() {
+    count += 1
+  }
+}
+
+@MainActor
+private func makeStore(
+  _ purchases: FakePurchases,
+  offeringID: String? = nil,
+  variant: String? = nil,
+  subscriptions: Subscriptions = Subscriptions()
+) -> PaywallStore {
+  subscriptions.variant = variant
+  return PaywallStore(
+    purchases: purchases,
+    offeringID: offeringID,
+    variant: { subscriptions.variant },
+    onSubscribed: subscriptions.record
+  )
 }
 
 @MainActor
@@ -225,5 +246,71 @@ struct PaywallStoreTests {
     await store.subscribe(monthly)
 
     #expect(purchases.calls == [.isTurboActive, .offering(nil), .purchase(monthly)])
+  }
+
+  @Test("une variante arrivée après la création du paywall est celle envoyée à l'achat")
+  func lateVariant() async {
+    let purchases = FakePurchases(offering: defaultOffering)
+    let subscriptions = Subscriptions()
+    let store = makeStore(purchases, subscriptions: subscriptions)
+    await store.load()
+    subscriptions.variant = "variant_b"
+
+    await store.subscribe(monthly)
+
+    #expect(purchases.calls.suffix(2) == [.attribute(key: "ph_paywall_variant", value: "variant_b"), .purchase(monthly)])
+  }
+
+  @Test("un achat réussi signale l'abonnement, une seule fois")
+  func purchaseSignalsSubscription() async {
+    let purchases = FakePurchases(offering: defaultOffering)
+    let subscriptions = Subscriptions()
+    let store = makeStore(purchases, subscriptions: subscriptions)
+    await store.load()
+
+    await store.subscribe(annual)
+
+    #expect(subscriptions.count == 1)
+  }
+
+  @Test("un achat annulé ou en échec ne signale aucun abonnement", arguments: [
+    Result<PurchaseOutcome, PurchasesFailure>.success(.cancelled),
+    .failure(.failed(code: "payment_pending")),
+  ])
+  func noSignalWithoutPurchase(reply: Result<PurchaseOutcome, PurchasesFailure>) async {
+    let purchases = FakePurchases(offering: defaultOffering)
+    purchases.purchaseReply = reply
+    let subscriptions = Subscriptions()
+    let store = makeStore(purchases, subscriptions: subscriptions)
+    await store.load()
+
+    await store.subscribe(monthly)
+
+    #expect(subscriptions.count == 0)
+  }
+
+  @Test("une restauration qui retrouve Turbo signale l'abonnement")
+  func restoreSignalsSubscription() async {
+    let purchases = FakePurchases(offering: defaultOffering)
+    let subscriptions = Subscriptions()
+    let store = makeStore(purchases, subscriptions: subscriptions)
+    await store.load()
+    purchases.turboActive = .success(true)
+
+    await store.restore()
+
+    #expect(subscriptions.count == 1)
+  }
+
+  @Test("une restauration sans abonnement ne signale rien")
+  func emptyRestoreSignalsNothing() async {
+    let purchases = FakePurchases(offering: defaultOffering)
+    let subscriptions = Subscriptions()
+    let store = makeStore(purchases, subscriptions: subscriptions)
+    await store.load()
+
+    await store.restore()
+
+    #expect(subscriptions.count == 0)
   }
 }
