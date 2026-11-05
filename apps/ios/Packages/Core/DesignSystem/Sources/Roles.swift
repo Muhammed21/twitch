@@ -55,6 +55,13 @@ public enum TextRole: Sendable {
   case dashboardTitle
   case dashboardEmpty
   case dashboardAction
+  case dashboardStatValue
+  case dashboardStatLabel
+  case dashboardPreviewLabel
+  case dashboardStreamButton
+  case dashboardHint
+  case dashboardActivityEmpty
+  case dashboardLink
 
   public var font: Font {
     switch self {
@@ -111,6 +118,13 @@ public enum TextRole: Sendable {
     case .dashboardTitle: .displayText
     case .dashboardEmpty: .displayText
     case .dashboardAction: .supportingText
+    case .dashboardStatValue: .displayText
+    case .dashboardStatLabel: .hintText
+    case .dashboardPreviewLabel: .tagText
+    case .dashboardStreamButton: .cardAction
+    case .dashboardHint: .hintText
+    case .dashboardActivityEmpty: .viewerCount
+    case .dashboardLink: .cardAction
     }
   }
 }
@@ -267,6 +281,21 @@ public enum LayoutRole: Sendable {
   case dashboardPillHeight
   case dashboardPillLeading
   case dashboardPillTrailing
+  case dashboardCardRadius
+  case dashboardCardsTop
+  case dashboardCardGap
+  case dashboardStatsHeight
+  case dashboardStatsInset
+  case dashboardStatGap
+  case dashboardPreviewRadius
+  case dashboardPreviewLabelLeading
+  case dashboardPreviewLabelTop
+  case dashboardStreamPadding
+  case dashboardStreamButtonHeight
+  case dashboardStreamGap
+  case dashboardHintInset
+  case dashboardHintTop
+  case dashboardActivityHeight
 }
 
 public enum ActionButtonKind: Sendable {

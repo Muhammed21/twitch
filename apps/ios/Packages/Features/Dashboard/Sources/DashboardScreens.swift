@@ -43,9 +43,27 @@ public enum DashboardTabs {
 
 public struct DashboardHomeScreen: View {
   private let onWatch: () -> Void
+  private let onStreamManager: () -> Void
+  private let onEditStreamInfo: () -> Void
 
-  public init(onWatch: @escaping () -> Void) {
+  public nonisolated static var statItems: [DashboardStatItem] {
+    DashboardStat.allCases.map { stat in
+      DashboardStatItem(
+        id: "\(stat)",
+        value: String(localized: DashboardText.unavailableStat),
+        label: String(localized: DashboardText.label(of: stat))
+      )
+    }
+  }
+
+  public init(
+    onWatch: @escaping () -> Void,
+    onStreamManager: @escaping () -> Void,
+    onEditStreamInfo: @escaping () -> Void
+  ) {
     self.onWatch = onWatch
+    self.onStreamManager = onStreamManager
+    self.onEditStreamInfo = onEditStreamInfo
   }
 
   public var body: some View {
@@ -54,7 +72,29 @@ public struct DashboardHomeScreen: View {
         DashboardPillButton(glyph: DashboardStyle.watchGlyph, label: String(localized: DashboardText.watch), action: onWatch)
           .accessibilityIdentifier("dashboard.watch")
       }
-      Spacer(minLength: 0)
+      ScrollView {
+        VStack(spacing: 0) {
+          DashboardStatsCard(items: Self.statItems)
+            .padding(.horizontal, LayoutRole.screenInset.points)
+          DashboardStreamCard(
+            offlineLabel: String(localized: DashboardText.offline),
+            primaryLabel: String(localized: DashboardText.streamManager),
+            secondaryLabel: String(localized: DashboardText.editStreamInfo),
+            onPrimary: onStreamManager,
+            onSecondary: onEditStreamInfo
+          )
+          .padding(.horizontal, LayoutRole.screenInset.points)
+          .padding(.top, LayoutRole.dashboardCardGap.points)
+          DashboardHint(text: String(localized: DashboardText.streamManagerHint))
+          DashboardActivityCard(
+            message: String(localized: DashboardText.noRecentActivity),
+            linkLabel: String(localized: DashboardText.seeAllActivity)
+          )
+          .padding(.horizontal, LayoutRole.screenInset.points)
+          .padding(.top, LayoutRole.dashboardCardGap.points)
+        }
+        .padding(.top, LayoutRole.dashboardCardsTop.points)
+      }
     }
     .background(ColorRole.background.color.ignoresSafeArea())
   }

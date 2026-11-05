@@ -155,6 +155,21 @@ public extension LayoutRole {
     case .dashboardPillHeight: Spacing.x40
     case .dashboardPillLeading: Spacing.x10
     case .dashboardPillTrailing: Spacing.x12
+    case .dashboardCardRadius: Radius.sheet
+    case .dashboardCardsTop: Spacing.x22
+    case .dashboardCardGap: Spacing.x16
+    case .dashboardStatsHeight: Spacing.x78
+    case .dashboardStatsInset: Spacing.x12
+    case .dashboardStatGap: Spacing.x4
+    case .dashboardPreviewRadius: Radius.lg
+    case .dashboardPreviewLabelLeading: Spacing.x12
+    case .dashboardPreviewLabelTop: Spacing.x12
+    case .dashboardStreamPadding: Spacing.x16
+    case .dashboardStreamButtonHeight: Spacing.x36
+    case .dashboardStreamGap: Spacing.x8
+    case .dashboardHintInset: Spacing.x22
+    case .dashboardHintTop: Spacing.x8
+    case .dashboardActivityHeight: Spacing.x132
     }
   }
 }

@@ -178,7 +178,7 @@ public struct StreamManagerScreen: View {
   }
 }
 
-struct EditStreamInfoSheet: View {
+public struct EditStreamInfoSheet: View {
   @Environment(MyChannelStore.self) private var store
   @Environment(\.dismiss) private var dismiss
   @State private var draft: String
@@ -186,12 +186,12 @@ struct EditStreamInfoSheet: View {
   @State private var isSaving = false
   @State private var saveFailed = false
 
-  init(initialTitle: String, initialCategory: ChannelCategory?) {
+  public init(initialTitle: String, initialCategory: ChannelCategory?) {
     _draft = State(initialValue: initialTitle)
     _chosen = State(initialValue: initialCategory)
   }
 
-  var body: some View {
+  public var body: some View {
     NavigationStack {
       VStack(alignment: .leading, spacing: LayoutRole.chatInset.points) {
         HStack {

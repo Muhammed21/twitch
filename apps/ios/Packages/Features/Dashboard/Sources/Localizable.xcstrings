@@ -193,6 +193,166 @@
         }
       }
     },
+    "dashboard.home.activity.empty" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No recent activity"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas d'activité récente"
+          }
+        }
+      }
+    },
+    "dashboard.home.activity.seeAll" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See all activity"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voir toutes les activités"
+          }
+        }
+      }
+    },
+    "dashboard.home.editStreamInfo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Stream Info"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modifier les infos du stream"
+          }
+        }
+      }
+    },
+    "dashboard.home.offline" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OFFLINE"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HORS LIGNE"
+          }
+        }
+      }
+    },
+    "dashboard.home.stat.followers" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Followers"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Followers"
+          }
+        }
+      }
+    },
+    "dashboard.home.stat.streamTime" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stream time"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Temps de stream"
+          }
+        }
+      }
+    },
+    "dashboard.home.stat.unavailable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "--"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "--"
+          }
+        }
+      }
+    },
+    "dashboard.home.stat.viewers" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Viewers"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spectateurs"
+          }
+        }
+      }
+    },
+    "dashboard.home.streamManager" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stream Manager"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gestionnaire de stream"
+          }
+        }
+      }
+    },
+    "dashboard.home.streamManager.hint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use the stream manager to manage your chat, your stream status and more."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utilisez le gestionnaire de stream pour gérer votre chat, l'état de votre stream et plus encore."
+          }
+        }
+      }
+    },
     "dashboard.home.watch" : {
       "localizations" : {
         "en" : {
