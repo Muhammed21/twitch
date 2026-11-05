@@ -598,6 +598,101 @@ describe("pochette d'une catégorie", () => {
     ).rejects.toBe(failure);
     expect(steps).toEqual([`supprime ${IMAGE_KEY}`]);
   });
+
+  it("garde la nouvelle pochette quand l'enregistrement lève alors que la catégorie la référence déjà", async () => {
+    const { catalog, steps } = memoryCatalog({
+      categories: [makeCategory({ imageKey: OLD_IMAGE_KEY })],
+    });
+    const failure = new Error("connexion perdue après le COMMIT");
+    const committed = { imageKey: OLD_IMAGE_KEY };
+    const committedThenLost: CategoryCatalog = {
+      ...catalog,
+      findBySlug: async () => makeCategory(committed),
+      changeImage: async (change) => {
+        await catalog.changeImage(change);
+        committed.imageKey = change.imageKey;
+        throw failure;
+      },
+    };
+
+    await expect(
+      imageChanger(
+        committedThenLost,
+        recordingFinalizer(FINALIZED).finalizeImage,
+        recordingDiscard({ steps }),
+      )({
+        actorId: ADMIN,
+        slug: "just-chatting",
+        uploadId: UPLOAD_ID,
+      }),
+    ).rejects.toBe(failure);
+    expect(steps).toEqual([`enregistre ${IMAGE_KEY}`]);
+  });
+
+  it("supprime la nouvelle pochette quand la catégorie a disparu après l'erreur", async () => {
+    const { catalog, steps } = memoryCatalog();
+    const failure = new Error("postgres injoignable");
+    const lookups = { count: 0 };
+    const vanished: CategoryCatalog = {
+      ...catalog,
+      findBySlug: async (slug) => {
+        lookups.count += 1;
+        return lookups.count === 1 ? catalog.findBySlug(slug) : null;
+      },
+      changeImage: async () => {
+        throw failure;
+      },
+    };
+
+    await expect(
+      imageChanger(
+        vanished,
+        recordingFinalizer(FINALIZED).finalizeImage,
+        recordingDiscard({ steps }),
+      )({
+        actorId: ADMIN,
+        slug: "just-chatting",
+        uploadId: UPLOAD_ID,
+      }),
+    ).rejects.toBe(failure);
+    expect(steps).toEqual([`supprime ${IMAGE_KEY}`]);
+  });
+
+  it("garde la nouvelle pochette quand la catégorie ne peut pas être relue après l'erreur", async () => {
+    const { catalog } = memoryCatalog();
+    const steps: string[] = [];
+    const failure = new Error("postgres injoignable");
+    const unreachable: CategoryCatalog = {
+      ...catalog,
+      changeImage: async () => {
+        throw failure;
+      },
+    };
+    const reads = { count: 0 };
+    const unreadableAfterFailure: CategoryCatalog = {
+      ...unreachable,
+      findBySlug: async (slug) => {
+        reads.count += 1;
+        if (reads.count > 1) {
+          throw failure;
+        }
+        return catalog.findBySlug(slug);
+      },
+    };
+
+    await expect(
+      imageChanger(
+        unreadableAfterFailure,
+        recordingFinalizer(FINALIZED).finalizeImage,
+        recordingDiscard({ steps }),
+      )({
+        actorId: ADMIN,
+        slug: "just-chatting",
+        uploadId: UPLOAD_ID,
+      }),
+    ).rejects.toBe(failure);
+    expect(steps).toEqual([]);
+  });
 });
 
 describe("tags d'une catégorie (ADR 0050)", () => {

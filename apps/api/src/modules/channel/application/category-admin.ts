@@ -227,7 +227,10 @@ export const changeCategoryImage =
         occurredAt: now(),
       })
       .catch(async (error: unknown) => {
-        await discard(image.value.key);
+        const stored = await catalog.findBySlug(slug).catch(() => undefined);
+        if (stored !== undefined && stored?.imageKey !== image.value.key) {
+          await discard(image.value.key);
+        }
         throw error;
       });
     if (!changed.ok) {
