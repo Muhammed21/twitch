@@ -50,6 +50,8 @@ public enum Spacing {
     public static let x72: CGFloat = 72
     /// Largeur de la pochette d'une catégorie dans la recherche, relevée sur l'app iOS Twitch (75 pt).
     public static let x75: CGFloat = 75
+    /// Bouton gris d'une chaîne ou d'une catégorie suivie, relevé sur l'app iOS Twitch (84 pt).
+    public static let x84: CGFloat = 84
     /// Avatar de l'en-tête du profil, relevé sur l'app iOS Twitch (88 pt).
     public static let x88: CGFloat = 88
     /// Largeur des modales de confirmation, relevée sur l'app iOS Twitch (300 pt).
