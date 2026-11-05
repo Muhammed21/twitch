@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { formatCssVariables } from "../src/formats/css.ts";
 import {
   formatDimensions,
+  formatDurations,
   formatTextStyles,
   formatThemedColors,
   type DesignToken,
@@ -25,6 +26,9 @@ const files: Readonly<Record<string, string>> = {
   }),
   "Radius+Tokens.swift": formatDimensions(inCategory("radius"), {
     namespace: "Radius",
+  }),
+  "Motion+Tokens.swift": formatDurations(inCategory("motion"), {
+    namespace: "Motion",
   }),
 };
 

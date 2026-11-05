@@ -44,6 +44,7 @@ public struct JourneyProgressBar: View {
         }
     }
     .frame(height: LayoutRole.journeyProgressHeight.points)
+    .animation(MotionRole.journeyPage, value: progress)
     .accessibilityElement()
     .accessibilityValue(Text(Self.filledFraction(progress), format: .percent.precision(.fractionLength(0))))
   }

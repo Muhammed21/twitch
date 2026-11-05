@@ -1,8 +1,10 @@
 import { readFile } from "node:fs/promises";
 
+import type { TransformedToken } from "style-dictionary/types";
 import { describe, expect, it } from "vitest";
 
 import { checkContrast, parseContrastPairs } from "./contrast/contrast.ts";
+import { toDesignToken } from "./formats/style-dictionary.ts";
 import { resolveColorThemes, resolveSharedTokens } from "./resolve-themes.ts";
 
 const paths = (tokens: readonly { readonly path: readonly string[] }[]) =>
@@ -91,11 +93,12 @@ describe("chat name palette, on the real token files", () => {
 });
 
 describe("resolveSharedTokens, on the real token files", () => {
-  it("resolves typography, spacing and radius, without any colour", async () => {
+  it("resolves motion, typography, spacing and radius, without any colour", async () => {
     const tokens = await resolveSharedTokens();
     const categories = new Set(tokens.flatMap(({ path }) => path.slice(0, 1)));
 
     expect([...categories].toSorted((first, second) => first.localeCompare(second))).toEqual([
+      "motion",
       "radius",
       "spacing",
       "typography",
@@ -115,9 +118,56 @@ describe("resolveSharedTokens, on the real token files", () => {
     expect(x8).toEqual(expect.objectContaining({ $type: "dimension", value: "8px" }));
   });
 
+  it("resolves motion durations, the page slide and the fade that replaces it", async () => {
+    const tokens = await resolveSharedTokens();
+    const motion = tokens.filter(({ path }) => path[0] === "motion");
+
+    expect(motion.map(({ path, $type, value }) => [path.join("."), $type, value])).toEqual([
+      ["motion.journeyPage", "duration", "350ms"],
+      ["motion.fade", "duration", "200ms"],
+    ]);
+  });
+
+  it("carries the reduced-motion variant of the page slide: the short fade", async () => {
+    const tokens = await resolveSharedTokens();
+    const motion = tokens.filter(({ path }) => path[0] === "motion");
+
+    expect(motion.map(({ path, reducedMotion }) => [path.join("."), reducedMotion])).toEqual([
+      ["motion.journeyPage", "200ms"],
+      ["motion.fade", undefined],
+    ]);
+  });
+
   it("gives every shared token a description", async () => {
     const tokens = await resolveSharedTokens();
 
     expect(tokens.filter(({ comment }) => comment === undefined || comment === "")).toEqual([]);
+  });
+});
+
+describe("toDesignToken, on a Style Dictionary token", () => {
+  const makeTransformedToken = (extensions: unknown): TransformedToken => ({
+    name: "motion-page",
+    path: ["motion", "page"],
+    $type: "duration",
+    $value: "350ms",
+    $extensions: extensions,
+    original: { $value: "350ms" },
+    filePath: "tokens/semantic/motion.json",
+    isSource: true,
+  });
+
+  it.each([
+    ["no extensions", undefined],
+    ["null extensions", null],
+    ["other extensions only", { "com.twitch.other": "1" }],
+  ])("reads no reduced-motion variant from %s", (_label, extensions) => {
+    expect(toDesignToken(makeTransformedToken(extensions))).not.toHaveProperty("reducedMotion");
+  });
+
+  it("reads the reduced-motion variant from its extension", () => {
+    expect(toDesignToken(makeTransformedToken({ "com.twitch.reducedMotion": "0ms" }))).toEqual(
+      expect.objectContaining({ reducedMotion: "0ms" }),
+    );
   });
 });
