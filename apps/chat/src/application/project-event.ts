@@ -24,7 +24,7 @@ type EventContract<T> = {
 
 const { channelCreated } = events.channel;
 const { streamStarted, streamEnded } = events.stream;
-const { accountRegistered } = events.identity;
+const { accountRegistered, avatarChanged } = events.identity;
 const { userTimedOut } = events.moderation;
 
 const handlerFor =
@@ -75,6 +75,9 @@ export const chatEventHandlers = ({
     }),
     [accountRegistered.name]: handle(accountRegistered, ({ accountId, displayName }) =>
       views.registerChatter({ userId: accountId, displayName }),
+    ),
+    [avatarChanged.name]: handle(avatarChanged, ({ accountId, avatarKey }) =>
+      views.changeAvatar({ userId: accountId, avatarKey }),
     ),
     [userTimedOut.name]: handle(userTimedOut, (payload) =>
       views.sanctionChatter(sanctionOf(payload)),

@@ -16,6 +16,7 @@ Service de chat temps réel, process Node séparé (ADR 0004, ADR 0022). Découp
 | `CHAT_API_BASE_URL`              | URL de l'API : JWKS `/auth/jwks`, émetteur `/auth`, audience `/v1`             |
 | `CHAT_API_JWKS_URL`              | JWKS lu ailleurs qu'à `CHAT_API_BASE_URL`, émetteur et audience inchangés      |
 | `REDIS_URL`                      | Redis de la liste de révocation et des vues locales, `redis://` ou `rediss://` |
+| `S3_PUBLIC_BASE_URL`             | Base publique des images ; sans elle, l'auteur d'un message n'a pas d'avatar   |
 | `CHAT_SATURATION_MAX_PACKETS`    | Paquets en attente au-delà desquels une socket est saturée, 100 par défaut     |
 | `CHAT_SATURATION_CLOSE_AFTER_MS` | Saturation continue après laquelle la socket est fermée, 10 000 ms par défaut  |
 
@@ -124,7 +125,7 @@ Vues locales dans Redis, lues sans appel à l'API (ADR 0004) :
 | --------------------------------- | ----------------------------------------------------------------------------------- |
 | `chat:room:<channelId>`           | `sessionId` : session du live en cours, vide hors live                              |
 | `chat:room:<channelId>:ended`     | set des sessions terminées, expiré 7 jours après la dernière fin de live            |
-| `chat:chatter:<userId>`           | `displayName` : nom affiché de l'auteur                                             |
+| `chat:chatter:<userId>`           | `displayName` : nom affiché de l'auteur ; `avatarKey` : clé de son avatar           |
 | `chat:chatter:<userId>:sanctions` | par `channelId`, fin du timeout en millisecondes epoch ; expire à la fin du dernier |
 
 Une chaîne sans hash n'a pas de salon. Le groupe de consommateurs `chat` lit `events.channel`, `events.stream`, `events.identity` et `events.moderation`, écrits par le relais d'outbox de l'API :
@@ -135,6 +136,7 @@ Une chaîne sans hash n'a pas de salon. Le groupe de consommateurs `chat` lit `e
 | `stream.started`              | pose `sessionId`, sauf pour une session terminée (script Lua)                                                      |
 | `stream.ended`                | vide `sessionId` s'il porte cette session, puis ajoute la session au set des terminées (script Lua)                |
 | `identity.account.registered` | `HSET displayName`                                                                                                 |
+| `identity.avatar.changed`     | `HSET avatarKey`                                                                                                   |
 | `moderation.user.timed_out`   | garde la fin la plus tardive du timeout sur ce salon (script Lua), puis l'applique aux sockets ouvertes du chatter |
 
 Chaque écriture est idempotente et supporte le désordre : un event rejoué, un début de live repris après sa fin, ou une fin de live arrivée après le live suivant, laisse la vue juste. Un seul `XREADGROUP` bloquant lit les quatre streams, sur une connexion Redis à part ; à chaque tour, `XAUTOCLAIM` reprend les entrées en attente depuis plus de 30 s. Une entrée est acquittée après son traitement, ou si elle est illisible ou sans handler ; un handler en échec la laisse en attente.

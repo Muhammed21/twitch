@@ -31,7 +31,11 @@ describe("révocation de session par le Pub/Sub de Compose", () => {
       port: 0,
       verifier: authority.verifier(),
       log: () => {},
-      chatters: { displayNameOf: async () => "Alice", sanctionsOf: async () => [] },
+      chatters: {
+        displayNameOf: async () => "Alice",
+        avatarKeyOf: async () => null,
+        sanctionsOf: async () => [],
+      },
       rooms: createRoomRegistry({ find: async () => undefined }),
       messages: createMessageSender(createLocalTokenBuckets()),
       saturation: SATURATION_LIMITS,

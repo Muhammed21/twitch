@@ -38,7 +38,11 @@ const startServer = async (
     log: (entry) => {
       logs.push(entry);
     },
-    chatters: { displayNameOf: async () => "Alice", sanctionsOf: async () => [] },
+    chatters: {
+      displayNameOf: async () => "Alice",
+      avatarKeyOf: async () => null,
+      sanctionsOf: async () => [],
+    },
     rooms: createRoomRegistry({ find: async () => undefined }),
     messages: createMessageSender(createLocalTokenBuckets()),
     saturation: SATURATION_LIMITS,

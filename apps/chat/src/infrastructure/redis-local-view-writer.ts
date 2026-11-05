@@ -63,6 +63,9 @@ export const redisLocalViewWriter = (redis: HashWriter): LocalViewWriter => ({
   registerChatter: async ({ userId, displayName }) => {
     await redis.hSet(chatterKey(userId), "displayName", displayName);
   },
+  changeAvatar: async ({ userId, avatarKey }) => {
+    await redis.hSet(chatterKey(userId), "avatarKey", avatarKey);
+  },
   sanctionChatter: async ({ userId, channelId, expiresAt }) => {
     await redis.eval(SANCTION_CHATTER, {
       keys: [sanctionsKey(userId)],

@@ -35,6 +35,7 @@ export const redisRoomDirectory = (redis: HashReader): RoomDirectory => ({
 
 export const redisChatterProfiles = (redis: HashReader): ChatterProfiles => ({
   displayNameOf: (userId) => redis.hGet(chatterKey(userId), "displayName"),
+  avatarKeyOf: (userId) => redis.hGet(chatterKey(userId), "avatarKey"),
   sanctionsOf: async (userId) =>
     Object.entries(await redis.hGetAll(sanctionsKey(userId))).flatMap(([channelId, end]) => {
       const parsed = SanctionEnd.safeParse(end);
