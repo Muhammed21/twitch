@@ -25,16 +25,17 @@ extension ChatLine {
     )
   }
 
-  var styled: AttributedString {
+  func styled(_ display: ChatDisplay) -> AttributedString {
     let separator = AttributedString(" ")
-    return Self.styled(time, color: .textSecondary)
+    let message = display.messageRole.font
+    let stamp = display.showsTimestamps ? Self.styled(time, color: .textSecondary, font: message) + separator : AttributedString()
+    return stamp
+      + Self.styled(author, color: .chatName(authorID), font: display.authorRole.font)
       + separator
-      + Self.styled(author, color: .chatName(authorID), font: TextRole.chatAuthor.font)
-      + separator
-      + Self.styled(body, color: isDeleted ? .textSecondary : .textPrimary)
+      + Self.styled(body, color: isDeleted ? .textSecondary : .textPrimary, font: message)
   }
 
-  private static func styled(_ text: String, color: ColorRole, font: Font = TextRole.chatMessage.font) -> AttributedString {
+  private static func styled(_ text: String, color: ColorRole, font: Font) -> AttributedString {
     AttributedString(text, attributes: AttributeContainer().foregroundColor(color.color).font(font))
   }
 }

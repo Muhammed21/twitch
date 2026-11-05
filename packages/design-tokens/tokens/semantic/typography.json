@@ -120,6 +120,38 @@
       },
       "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/chat/chat-chaine--defaut) : pseudo « skibidisiege22: » large de 86 pt, soit 12 pt medium (85 pt en régulier, 87 pt en medium), text style iOS caption."
     },
+    "chatTextSmall": {
+      "$type": "iosTextStyle",
+      "$value": {
+        "textStyle": "caption2",
+        "fontWeight": 400
+      },
+      "$description": "Réglage « Small » de la taille du texte du chat (ADR 0051 §4), sans capture de référence : un cran de text style iOS sous chatText, caption2."
+    },
+    "chatAuthorTextSmall": {
+      "$type": "iosTextStyle",
+      "$value": {
+        "textStyle": "caption2",
+        "fontWeight": 500
+      },
+      "$description": "Réglage « Small » de la taille du texte du chat (ADR 0051 §4), sans capture de référence : un cran de text style iOS sous chatText, caption2. Auteur en medium, comme chatAuthorText."
+    },
+    "chatTextLarge": {
+      "$type": "iosTextStyle",
+      "$value": {
+        "textStyle": "footnote",
+        "fontWeight": 400
+      },
+      "$description": "Réglage « Large » de la taille du texte du chat (ADR 0051 §4), sans capture de référence : un cran de text style iOS au-dessus de chatText, footnote."
+    },
+    "chatAuthorTextLarge": {
+      "$type": "iosTextStyle",
+      "$value": {
+        "textStyle": "footnote",
+        "fontWeight": 500
+      },
+      "$description": "Réglage « Large » de la taille du texte du chat (ADR 0051 §4), sans capture de référence : un cran de text style iOS au-dessus de chatText, footnote. Auteur en medium, comme chatAuthorText."
+    },
     "hintText": {
       "$type": "iosTextStyle",
       "$value": {

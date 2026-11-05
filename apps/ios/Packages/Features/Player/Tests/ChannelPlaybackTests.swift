@@ -62,10 +62,15 @@ private struct ChannelScreen {
   let controller: PlayerController
   let player: FakeMediaPlayer
 
-  init(channels: FakeChannels = FakeChannels(), playback source: FakePlayback) {
+  init(channels: FakeChannels = FakeChannels(), playback source: FakePlayback, allowsAutoplay: Bool = true) {
     player = FakeMediaPlayer()
     controller = PlayerController(player: player)
-    playback = ChannelPlayback(channels: channels, playback: source, controller: controller)
+    playback = ChannelPlayback(
+      channels: channels,
+      playback: source,
+      controller: controller,
+      allowsAutoplay: { allowsAutoplay }
+    )
   }
 }
 
@@ -146,6 +151,36 @@ struct ChannelPlaybackTests {
     opening.cancel()
     await opening.value
     #expect(screen.player.calls.last == "stop")
+  }
+
+  @Test("lecture auto désactivée, un passage en live charge le flux en pause sans démarrer la lecture")
+  func liveWithoutAutoplay() async throws {
+    let screen = ChannelScreen(playback: FakePlayback(urls: [nil, liveURL]), allowsAutoplay: false)
+    let slug = try jeanDupont()
+    let opening = Task { await screen.playback.open(slug) }
+    try await waitUntil { screen.player.calls == ["stop"] }
+
+    screen.playback.channelWentLive()
+    try await waitUntil { screen.player.calls.count == 2 }
+
+    #expect(screen.player.calls == ["stop", "load \(liveURL.absoluteString)"])
+    #expect(screen.controller.state == .paused)
+    screen.controller.resume()
+    #expect(screen.player.calls.last == "play")
+    opening.cancel()
+    await opening.value
+  }
+
+  @Test("lecture auto désactivée, ouvrir une chaîne d'un toucher lance quand même la lecture")
+  func openingIsAGesture() async throws {
+    let screen = ChannelScreen(playback: FakePlayback(url: liveURL), allowsAutoplay: false)
+    let slug = try jeanDupont()
+    let opening = Task { await screen.playback.open(slug) }
+    try await waitUntil { screen.player.calls.count == 2 }
+
+    #expect(screen.player.calls == ["load \(liveURL.absoluteString)", "play"])
+    opening.cancel()
+    await opening.value
   }
 
   @Test("un passage en live reçu pendant la demande de l'URL n'est pas perdu")

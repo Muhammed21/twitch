@@ -75,6 +75,14 @@ public final class PlayerController {
     start(url)
   }
 
+  public func prepare(_ url: URL) {
+    self.url = url
+    retriesLeft = 0
+    generation += 1
+    state = .paused
+    player.load(url)
+  }
+
   private func start(_ url: URL) {
     generation += 1
     state = .loading

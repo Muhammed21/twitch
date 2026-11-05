@@ -202,6 +202,7 @@ struct ChannelScreen: View {
   @Environment(LiveStatusChannel.self) private var liveStatus
   @Environment(ChannelPresence.self) private var presence
   @Environment(ChatSession.self) private var chat
+  @Environment(PreferencesStore.self) private var preferences
   @Environment(\.scenePhase) private var scenePhase
 
   private var watching: ChannelPresence.Watching {
@@ -215,6 +216,7 @@ struct ChannelScreen: View {
       ChatList()
       ChatComposer()
     }
+    .environment(\.chatDisplay, ChatDisplay(preferences.current))
     .navigationTitle(slug.rawValue)
     .navigationBarTitleDisplayMode(.inline)
     .task(id: slug) { await channelPlayback.open(slug) }
@@ -274,12 +276,14 @@ enum Composition {
     let now: @Sendable () -> Date = { Date.now }
     let player = PlayerController(player: AVMediaPlayer(), startupRetry: .every(.seconds(2), attempts: 15))
     let channels = ChannelClient(apiBaseURL: configuration.apiBaseURL, transport: transport)
+    let preferences = PersonalizationRoot.preferences()
+    let network = NetworkCost()
     let channelPlayback = ChannelPlayback(
       channels: channels,
       playback: PlaybackClient(apiBaseURL: configuration.apiBaseURL, transport: transport),
-      controller: player
+      controller: player,
+      allowsAutoplay: { preferences.current.videoAutoplay.allowsPlayback(onExpensiveNetwork: network.isExpensive) }
     )
-    let preferences = PersonalizationRoot.preferences()
     let sessionStore = Self.sessionStore(configuration: configuration, session: session, transport: transport, now: now)
     return Stores(
       session: sessionStore,
