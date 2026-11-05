@@ -71,18 +71,19 @@ struct PersonalizationRoot: View {
     ZStack {
       if presentation.isShown {
         PaywallScreen(store: paywall, links: links, onClose: onClose)
-          .transition(JourneyMotion.pageTransition(direction: .forward, reduceMotion: reduceMotion))
+          .transition(PaywallStepTransition(reduceMotion: reduceMotion))
       } else {
         PersonalizationScreen()
           .environment(journey)
           .environment(categories)
           .environment(interests)
           .environment(notifications)
-          .transition(JourneyMotion.pageTransition(direction: .forward, reduceMotion: reduceMotion))
+          .transition(PaywallStepTransition(reduceMotion: reduceMotion))
       }
     }
+    .clipped()
     .background(ColorRole.background.color.ignoresSafeArea())
-    .animation(JourneyMotion.page(reduceMotion: reduceMotion), value: presentation.isShown)
+    .animation(MotionRole.journeyPage, value: presentation.isShown)
   }
 
   @MainActor
@@ -134,6 +135,19 @@ struct PersonalizationRoot: View {
       repository: UserDefaultsPreferences(suiteName: nil, language: LiveLanguage(localeIdentifier: Locale.current.identifier)),
       onChange: { _ in }
     )
+  }
+}
+
+struct PaywallStepTransition: Transition {
+  let reduceMotion: Bool
+
+  func body(content: Content, phase: TransitionPhase) -> some View {
+    let shift = JourneyMotion.pageShift(phase: phase, direction: .forward, reduceMotion: reduceMotion)
+    content
+      .visualEffect { effect, proxy in
+        effect.offset(x: shift * proxy.size.width)
+      }
+      .opacity(JourneyMotion.pageOpacity(phase: phase, reduceMotion: reduceMotion))
   }
 }
 
