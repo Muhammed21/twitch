@@ -42,6 +42,7 @@ const makeStore = (banners: ReadonlyMap<string, string | null>) => {
       }
       return ok({ channel: makeChannel(change.bannerKey), replacedKey: replaced ?? undefined });
     },
+    readBannerKey: async (ownerId) => banners.get(ownerId) ?? null,
   };
   return { store, saved };
 };
@@ -134,6 +135,7 @@ describe("changement de bannière", () => {
       saveBanner: async () => {
         throw failure;
       },
+      readBannerKey: async () => OLD_KEY,
     };
     const discard = makeDiscard();
 
@@ -141,6 +143,42 @@ describe("changement de bannière", () => {
       changeBanner({ store, finalizeImage, ...discard })({ userId: OWNER_ID, uploadId: UPLOAD_ID }),
     ).rejects.toBe(failure);
     expect(discard.discarded).toEqual([NEW_KEY]);
+  });
+
+  it("garde la nouvelle image quand l'enregistrement lève alors que la chaîne la référence déjà", async () => {
+    const failure = new Error("connexion perdue après le COMMIT");
+    const { finalizeImage } = makeFinalizer(ok(finalized(NEW_KEY)));
+    const store: BannerStore = {
+      saveBanner: async () => {
+        throw failure;
+      },
+      readBannerKey: async () => NEW_KEY,
+    };
+    const discard = makeDiscard();
+
+    await expect(
+      changeBanner({ store, finalizeImage, ...discard })({ userId: OWNER_ID, uploadId: UPLOAD_ID }),
+    ).rejects.toBe(failure);
+    expect(discard.discarded).toEqual([]);
+  });
+
+  it("garde la nouvelle image quand la chaîne ne peut pas être relue après l'erreur", async () => {
+    const failure = new Error("postgres injoignable");
+    const { finalizeImage } = makeFinalizer(ok(finalized(NEW_KEY)));
+    const store: BannerStore = {
+      saveBanner: async () => {
+        throw failure;
+      },
+      readBannerKey: async () => {
+        throw failure;
+      },
+    };
+    const discard = makeDiscard();
+
+    await expect(
+      changeBanner({ store, finalizeImage, ...discard })({ userId: OWNER_ID, uploadId: UPLOAD_ID }),
+    ).rejects.toBe(failure);
+    expect(discard.discarded).toEqual([]);
   });
 
   it("supprime la nouvelle image quand l'utilisateur n'a pas de chaîne", async () => {

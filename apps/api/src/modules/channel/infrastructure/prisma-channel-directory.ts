@@ -82,4 +82,11 @@ export const prismaBannerStore = (prisma: ChannelPrisma): BannerStore => ({
       });
       return ok({ channel, replacedKey: locked.bannerKey ?? undefined });
     }),
+  readBannerKey: async (ownerId) => {
+    const channel = await prisma.channel.findUnique({
+      where: { ownerId },
+      select: { bannerKey: true },
+    });
+    return channel?.bannerKey ?? null;
+  },
 });

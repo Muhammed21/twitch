@@ -7,6 +7,7 @@ export interface AvatarStore {
     userId: string;
     avatarKey: string;
   }): Promise<Result<{ replacedKey: string | undefined }, "account_not_found">>;
+  readAvatarKey(userId: string): Promise<string | null>;
 }
 
 export type AvatarChangeError = "account_not_found" | ImageRejection;
@@ -41,7 +42,10 @@ export const changeAvatar =
     const saved = await store
       .saveAvatar({ userId, avatarKey: image.value.key })
       .catch(async (error: unknown) => {
-        await discard(image.value.key);
+        const referenced = await store.readAvatarKey(userId).catch(() => image.value.key);
+        if (referenced !== image.value.key) {
+          await discard(image.value.key);
+        }
         throw error;
       });
     if (!saved.ok) {
