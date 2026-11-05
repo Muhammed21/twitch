@@ -11,22 +11,24 @@ API NestJS 11 (ADR 0002, 0009). Architecture et découpage : [plan de l'API](../
 | `pnpm test:integration` | Sondes contre la base locale migrée (`pnpm infra:up` puis `pnpm migrate`). S3 vise `http://s3.integration.invalid` et ses tests sont sautés, sauf avec `INTEGRATION_S3_ENDPOINT` dans le shell (la CI y met le S3 de sa propre pile)                                                                                                                              |
 | `pnpm seed:dev`         | Enregistre les clients OAuth et les comptes de dev listés dans `.env.example` (viewer, et administrateur de la plateforme), les dix catégories de Browse, et donne Just Chatting aux chaînes sans catégorie de ces comptes ; idempotent, refusé si `BETTER_AUTH_URL` ne vise pas la machine locale (loopback, ou son adresse réseau pour tester depuis un iPhone) |
 
-| Variable                  | Rôle                                                                                                                                                             |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `API_PORT`                | Port d'écoute, 3000 par défaut                                                                                                                                   |
-| `API_TRUSTED_PROXY_COUNT` | Nombre de reverse proxys de confiance devant l'API, de 0 à 10, requis : à 0, l'IP du client est celle de la connexion et `X-Forwarded-For` est ignoré (ADR 0042) |
-| `DATABASE_URL_HEALTH`     | Rôle `app_health`, lecture de la version du schéma, requis                                                                                                       |
-| `DATABASE_URL_IDENTITY`   | Rôle `app_identity`, tables de better-auth, requis                                                                                                               |
-| `DATABASE_URL_CHANNEL`    | Rôle `app_channel`, chaînes et attributions, requis                                                                                                              |
-| `DATABASE_URL_STREAM`     | Rôle `app_stream`, sessions de diffusion, requis                                                                                                                 |
-| `DATABASE_URL_MODERATION` | Rôle `app_moderation`, sanctions, requis                                                                                                                         |
-| `BETTER_AUTH_SECRET`      | Secret de better-auth, au moins 32 caractères, requis                                                                                                            |
-| `BETTER_AUTH_URL`         | URL publique de l'API, origine de confiance de better-auth, requis                                                                                               |
-| `REDIS_URL`               | Redis (`redis://` ou `rediss://`) : liste de révocation des sessions et Pub/Sub, requis                                                                          |
-| `VIDEO_WEBHOOK_SECRET`    | Secret partagé des webhooks du provider vidéo (ADR 0031), au moins 32 caractères, requis                                                                         |
-| `VIDEO_PLAYBACK_BASE_URL` | Base publique (`http` ou `https`) des playlists HLS d'`apps/video`, requis                                                                                       |
-| `SMTP_HOST`, `SMTP_PORT`  | Serveur SMTP des e-mails (codes de vérification), sans authentification ni TLS : Mailpit en local ; un relais authentifié arrive avec l'hébergement. Requis      |
-| `SMTP_FROM`               | Expéditeur des e-mails, `Twitch <no-reply@twitch.local>` par défaut                                                                                              |
+| Variable                           | Rôle                                                                                                                                                             |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `API_PORT`                         | Port d'écoute, 3000 par défaut                                                                                                                                   |
+| `API_TRUSTED_PROXY_COUNT`          | Nombre de reverse proxys de confiance devant l'API, de 0 à 10, requis : à 0, l'IP du client est celle de la connexion et `X-Forwarded-For` est ignoré (ADR 0042) |
+| `DATABASE_URL_HEALTH`              | Rôle `app_health`, lecture de la version du schéma, requis                                                                                                       |
+| `DATABASE_URL_IDENTITY`            | Rôle `app_identity`, tables de better-auth, requis                                                                                                               |
+| `DATABASE_URL_CHANNEL`             | Rôle `app_channel`, chaînes et attributions, requis                                                                                                              |
+| `DATABASE_URL_STREAM`              | Rôle `app_stream`, sessions de diffusion, requis                                                                                                                 |
+| `DATABASE_URL_MODERATION`          | Rôle `app_moderation`, sanctions, requis                                                                                                                         |
+| `DATABASE_URL_MONETIZATION`        | Rôle `app_monetization`, entitlements et webhooks reçus, requis                                                                                                  |
+| `REVENUECAT_WEBHOOK_AUTHORIZATION` | Valeur exacte de l'en-tête `Authorization` du webhook RevenueCat ; absente ou vide, `POST /v1/webhooks/revenuecat` répond 503                                    |
+| `BETTER_AUTH_SECRET`               | Secret de better-auth, au moins 32 caractères, requis                                                                                                            |
+| `BETTER_AUTH_URL`                  | URL publique de l'API, origine de confiance de better-auth, requis                                                                                               |
+| `REDIS_URL`                        | Redis (`redis://` ou `rediss://`) : liste de révocation des sessions et Pub/Sub, requis                                                                          |
+| `VIDEO_WEBHOOK_SECRET`             | Secret partagé des webhooks du provider vidéo (ADR 0031), au moins 32 caractères, requis                                                                         |
+| `VIDEO_PLAYBACK_BASE_URL`          | Base publique (`http` ou `https`) des playlists HLS d'`apps/video`, requis                                                                                       |
+| `SMTP_HOST`, `SMTP_PORT`           | Serveur SMTP des e-mails (codes de vérification), sans authentification ni TLS : Mailpit en local ; un relais authentifié arrive avec l'hébergement. Requis      |
+| `SMTP_FROM`                        | Expéditeur des e-mails, `Twitch <no-reply@twitch.local>` par défaut                                                                                              |
 
 Une variable invalide arrête le démarrage avec le nom de la variable, jamais sa valeur.
 
@@ -178,6 +180,14 @@ Le limiteur de `platform/rate-limit.ts` compte dans Redis par fenêtre fixe, sou
 - `timeoutUser` écrit, dans une transaction du client `moderation` : l'attribution `banned` de la cible sur la chaîne avec `expiresAt` (`grantedBy` l'acteur), l'entrée `moderation.user.timed_out` de `audit.AuditEntry` (`actorId` l'humain du jeton) et `moderation.user.timed_out` (`{ channelId, userId, expiresAt }`) dans `ModerationOutbox`, relayé sur `events.moderation` pour le chat ;
 - après le commit, les attributions de la cible sont invalidées ; un échec est rendu dans le résultat (`cacheInvalidated: false`) sans annuler le timeout ;
 - le timeout expire seul : l'attribution n'est ni révoquée ni supprimée, elle cesse de compter à `expiresAt`. Un nouveau timeout ajoute une attribution ; la plus longue restriction en cours s'applique.
+
+## Monétisation (ADR 0014, ADR 0051)
+
+`modules/monetization` tient l'entitlement Turbo. RevenueCat appelle `POST /v1/webhooks/revenuecat`, hors contrat OpenAPI :
+
+- l'en-tête `Authorization` est comparé en temps constant à `REVENUECAT_WEBHOOK_AUTHORIZATION` ; sans cette variable, la route répond 503 sans rien écrire ;
+- un en-tête absent ou faux répond 401 ; un corps hors contrat (JSON sans `api_version`, ni `event.id`, `event.type` et `event.event_timestamp_ms` entier) répond 400. Les deux sont archivés dans `MonetizationRejectedWebhook` et journalisés en erreur, jamais interprétés ;
+- un événement valide est inséré dans `MonetizationProcessedWebhookEvent`, clé `(provider, eventId)`, avec son payload brut et `processedAt` nul, puis la route répond 200 sans aucun traitement métier. Un doublon répond 200 sans seconde ligne.
 
 ## Autorisation (ADR 0006)
 

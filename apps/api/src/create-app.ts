@@ -99,6 +99,10 @@ export const createApp = async ({
         trustedProxyCount: config.trustedProxyCount,
       },
       moderation: { prisma: createContextClient({ context: "moderation", env }) },
+      monetization: {
+        prisma: createContextClient({ context: "monetization", env }),
+        webhookAuthorization: config.revenueCat.webhookAuthorization,
+      },
       discovery: {
         prisma: createContextClient({ context: "discovery", env }),
         channelConsumerRedis: connectedConsumerRedis(),
