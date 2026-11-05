@@ -15,6 +15,7 @@ public enum EditProfileText {
   public static let bannerHint = LocalizedStringResource("editProfile.banner.hint", bundle: .module)
   public static let brandFooter = LocalizedStringResource("editProfile.brand.footer", bundle: .module)
   public static let chooseExisting = LocalizedStringResource("editProfile.photo.choose", bundle: .module)
+  public static let takePhoto = LocalizedStringResource("editProfile.photo.take", bundle: .module)
   public static let close = LocalizedStringResource("editProfile.photo.close", bundle: .module)
 
   public static func remaining(_ count: Int) -> LocalizedStringResource {
@@ -31,6 +32,8 @@ public enum EditProfileText {
     case (.banner, .tooSmall): LocalizedStringResource("editProfile.banner.tooSmall", bundle: .module)
     case (.avatar, .notSaved): LocalizedStringResource("editProfile.picture.failed", bundle: .module)
     case (.banner, .notSaved): LocalizedStringResource("editProfile.banner.failed", bundle: .module)
+    case (_, .cameraMissing): LocalizedStringResource("editProfile.camera.missing", bundle: .module)
+    case (_, .cameraRefused): LocalizedStringResource("editProfile.camera.refused", bundle: .module)
     }
   }
 }

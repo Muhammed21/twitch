@@ -48,4 +48,9 @@ struct AppConfigurationTests {
 
     #expect(ats == ["NSAllowsLocalNetworking": true])
   }
+
+  @Test("explique l'accès à l'appareil photo, sans quoi Take photo ferme l'app")
+  func cameraUsage() {
+    #expect(info["NSCameraUsageDescription"] as? String == "Take a photo for your profile picture or banner.")
+  }
 }
