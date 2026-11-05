@@ -550,7 +550,7 @@ describe("pochette d'une catégorie", () => {
     expect(steps).toEqual([]);
   });
 
-  it("rend le refus d'une catégorie retirée entre-temps, sans rien supprimer", async () => {
+  it("rend le refus d'une catégorie retirée entre-temps, en supprimant la nouvelle pochette et en gardant l'ancienne", async () => {
     const { catalog } = memoryCatalog({
       categories: [makeCategory({ imageKey: OLD_IMAGE_KEY })],
     });
@@ -571,7 +571,32 @@ describe("pochette d'une catégorie", () => {
     });
 
     expect(outcome).toEqual(err("category_inactive"));
-    expect(steps).toEqual([]);
+    expect(steps).toEqual([`supprime ${IMAGE_KEY}`]);
+  });
+
+  it("supprime la nouvelle pochette et relance l'erreur quand l'enregistrement lève", async () => {
+    const { catalog } = memoryCatalog();
+    const steps: string[] = [];
+    const failure = new Error("postgres injoignable");
+    const failingCatalog: CategoryCatalog = {
+      ...catalog,
+      changeImage: async () => {
+        throw failure;
+      },
+    };
+
+    await expect(
+      imageChanger(
+        failingCatalog,
+        recordingFinalizer(FINALIZED).finalizeImage,
+        recordingDiscard({ steps }),
+      )({
+        actorId: ADMIN,
+        slug: "just-chatting",
+        uploadId: UPLOAD_ID,
+      }),
+    ).rejects.toBe(failure);
+    expect(steps).toEqual([`supprime ${IMAGE_KEY}`]);
   });
 });
 

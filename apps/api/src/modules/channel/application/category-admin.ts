@@ -213,24 +213,30 @@ export const changeCategoryImage =
     if (category.status !== "active") {
       return err("category_inactive");
     }
+    const discard = (imageKey: string) =>
+      discardImage(imageKey).catch((error: unknown) => onDiscardFailure({ imageKey, error }));
     const image = await finalizeImage({ uploadId, purpose: "category", userId: actorId });
     if (!image.ok) {
       return image;
     }
-    const changed = await catalog.changeImage({
-      categoryId: category.id,
-      imageKey: image.value.key,
-      outboxEventId: newId(),
-      occurredAt: now(),
-    });
+    const changed = await catalog
+      .changeImage({
+        categoryId: category.id,
+        imageKey: image.value.key,
+        outboxEventId: newId(),
+        occurredAt: now(),
+      })
+      .catch(async (error: unknown) => {
+        await discard(image.value.key);
+        throw error;
+      });
     if (!changed.ok) {
+      await discard(image.value.key);
       return changed;
     }
     const { replacedImageKey } = changed.value;
     if (replacedImageKey !== null) {
-      await discardImage(replacedImageKey).catch((error: unknown) =>
-        onDiscardFailure({ imageKey: replacedImageKey, error }),
-      );
+      await discard(replacedImageKey);
     }
     return ok(changed.value.category);
   };
