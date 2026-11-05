@@ -5,6 +5,8 @@ import { afterAll, describe, expect, it } from "vitest";
 import { createContextClient } from "./index.ts";
 
 const UNIQUE_VIOLATION = "P2002";
+const SCOPE_CHANNEL_CHECK =
+  /violates check constraint "MonetizationEntitlement_scope_channelId_check"/;
 
 const db = createContextClient({ context: "monetization" });
 
@@ -88,18 +90,116 @@ describe("entitlement de portée plateforme", () => {
     ).toBe("ok");
   });
 
-  it("garde plusieurs entitlements actifs de chaîne pour un même utilisateur", async () => {
+  it("refuse un entitlement de plateforme qui porte une chaîne", async () => {
+    await expect(
+      db.monetizationEntitlement.create({
+        data: { ...makePlatformEntitlement(newUser(), "ACTIVE"), channelId: randomUUID() },
+      }),
+    ).rejects.toThrow(SCOPE_CHANNEL_CHECK);
+  });
+});
+
+describe("entitlement de portée chaîne", () => {
+  const makeChannelEntitlement = ({
+    userId,
+    channelId,
+    status,
+  }: {
+    userId: string;
+    channelId: string | null;
+    status: "ACTIVE" | "GRACE" | "EXPIRED" | "REVOKED";
+  }) => ({
+    ...makePlatformEntitlement(userId, status),
+    scope: "CHANNEL" as const,
+    channelId,
+  });
+
+  it("refuse un entitlement de chaîne sans chaîne", async () => {
+    await expect(
+      db.monetizationEntitlement.create({
+        data: makeChannelEntitlement({ userId: newUser(), channelId: null, status: "ACTIVE" }),
+      }),
+    ).rejects.toThrow(SCOPE_CHANNEL_CHECK);
+  });
+
+  it.each([
+    ["ACTIVE", "ACTIVE"],
+    ["ACTIVE", "GRACE"],
+    ["GRACE", "ACTIVE"],
+  ] as const)(
+    "refuse un second entitlement actif (%s puis %s) sur la même chaîne pour le même utilisateur",
+    async (first, second) => {
+      const userId = newUser();
+      const channelId = randomUUID();
+      await db.monetizationEntitlement.create({
+        data: makeChannelEntitlement({ userId, channelId, status: first }),
+      });
+
+      expect(
+        await errorCodeOf(
+          db.monetizationEntitlement.create({
+            data: makeChannelEntitlement({ userId, channelId, status: second }),
+          }),
+        ),
+      ).toBe(UNIQUE_VIOLATION);
+    },
+  );
+
+  it.each(["EXPIRED", "REVOKED"] as const)(
+    "accepte un nouvel entitlement actif sur la chaîne après un entitlement %s",
+    async (ended) => {
+      const userId = newUser();
+      const channelId = randomUUID();
+      await db.monetizationEntitlement.create({
+        data: makeChannelEntitlement({ userId, channelId, status: ended }),
+      });
+
+      expect(
+        await errorCodeOf(
+          db.monetizationEntitlement.create({
+            data: makeChannelEntitlement({ userId, channelId, status: "ACTIVE" }),
+          }),
+        ),
+      ).toBe("ok");
+    },
+  );
+
+  it("garde des entitlements actifs sur plusieurs chaînes pour un même utilisateur", async () => {
     const userId = newUser();
-    const makeChannelEntitlement = () => ({
-      ...makePlatformEntitlement(userId, "ACTIVE"),
-      scope: "CHANNEL" as const,
-      channelId: randomUUID(),
+    await db.monetizationEntitlement.create({
+      data: makeChannelEntitlement({ userId, channelId: randomUUID(), status: "ACTIVE" }),
     });
-    await db.monetizationEntitlement.create({ data: makeChannelEntitlement() });
 
     expect(
-      await errorCodeOf(db.monetizationEntitlement.create({ data: makeChannelEntitlement() })),
+      await errorCodeOf(
+        db.monetizationEntitlement.create({
+          data: makeChannelEntitlement({ userId, channelId: randomUUID(), status: "ACTIVE" }),
+        }),
+      ),
     ).toBe("ok");
+  });
+
+  it("garde un entitlement de chaîne actif à côté de l'entitlement de plateforme", async () => {
+    const userId = newUser();
+    await db.monetizationEntitlement.create({ data: makePlatformEntitlement(userId, "ACTIVE") });
+
+    expect(
+      await errorCodeOf(
+        db.monetizationEntitlement.create({
+          data: makeChannelEntitlement({ userId, channelId: randomUUID(), status: "ACTIVE" }),
+        }),
+      ),
+    ).toBe("ok");
+  });
+
+  it("indexe les entitlements par chaîne et statut pour les vérifications du chat", async () => {
+    const indexes = await db.$queryRaw<{ indexdef: string }[]>`
+      SELECT indexdef FROM pg_indexes
+       WHERE schemaname = 'monetization' AND tablename = 'MonetizationEntitlement'`;
+
+    expect(indexes.map(({ indexdef }) => indexdef)).toContainEqual(
+      expect.stringMatching(/\("channelId", status\)$/),
+    );
   });
 });
 
