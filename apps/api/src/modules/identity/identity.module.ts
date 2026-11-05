@@ -4,6 +4,7 @@ import type { ImageBrick } from "../../platform/images/images.module.ts";
 import { errorDetails, type LogSink, writeLog } from "../../platform/logging.ts";
 import { changeAvatar } from "./application/change-avatar.ts";
 import { changeBio } from "./application/change-bio.ts";
+import { changeChatColor } from "./application/change-chat-color.ts";
 import {
   type BannerUrlOf,
   getCurrentAccount,
@@ -14,11 +15,13 @@ import {
   prismaAccountDirectory,
   prismaAvatarStore,
   prismaBioStore,
+  prismaChatColorStore,
 } from "./infrastructure/prisma-account-directory.ts";
 import type { IdentityRedis } from "./infrastructure/redis-session-revocation.ts";
 import {
   CHANGE_AVATAR,
   CHANGE_BIO,
+  CHANGE_CHAT_COLOR,
   GET_CURRENT_ACCOUNT,
   MeController,
 } from "./presentation/me.controller.ts";
@@ -95,6 +98,7 @@ export class IdentityModule implements OnModuleDestroy {
           }),
         },
         { provide: CHANGE_BIO, useValue: changeBio(prismaBioStore(prisma)) },
+        { provide: CHANGE_CHAT_COLOR, useValue: changeChatColor(prismaChatColorStore(prisma)) },
         {
           provide: CHANGE_AVATAR,
           useValue: changeAvatar({

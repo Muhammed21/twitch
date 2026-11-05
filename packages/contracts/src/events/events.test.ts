@@ -91,6 +91,44 @@ describe("identity.avatar.changed", () => {
   });
 });
 
+const makeChatColorChange = (overrides: Record<string, unknown> = {}) => ({
+  accountId: ACCOUNT_ID,
+  chatColor: "#9146FF",
+  ...overrides,
+});
+
+describe("identity.chat_color.changed", () => {
+  it("porte son nom et sa version", () => {
+    expect(events.identity.chatColorChanged).toMatchObject({
+      name: "identity.chat_color.changed",
+      version: 1,
+    });
+  });
+
+  it("décode le compte et sa nouvelle couleur de pseudo", () => {
+    expect(events.identity.chatColorChanged.payload.parse(makeChatColorChange())).toEqual({
+      accountId: ACCOUNT_ID,
+      chatColor: "#9146FF",
+    });
+  });
+
+  it("décode le retour à la couleur par défaut", () => {
+    expect(
+      events.identity.chatColorChanged.payload.parse(makeChatColorChange({ chatColor: null })),
+    ).toEqual({ accountId: ACCOUNT_ID, chatColor: null });
+  });
+
+  it.each([
+    ["sans compte", makeChatColorChange({ accountId: undefined })],
+    ["sans couleur", makeChatColorChange({ chatColor: undefined })],
+    ["avec une couleur en minuscules", makeChatColorChange({ chatColor: "#9146ff" })],
+    ["avec une couleur sans dièse", makeChatColorChange({ chatColor: "9146FF" })],
+    ["avec une couleur courte", makeChatColorChange({ chatColor: "#FFF" })],
+  ])("refuse un event %s", (_name, payload) => {
+    expect(events.identity.chatColorChanged.payload.safeParse(payload).success).toBe(false);
+  });
+});
+
 describe("channel.created", () => {
   it("porte son nom et sa version", () => {
     expect(events.channel.channelCreated).toMatchObject({ name: "channel.created", version: 1 });
