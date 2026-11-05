@@ -38,8 +38,10 @@ private struct CategoryLiveDirectory: LiveDirectory {
 
 public struct CategoryLivesScreen: View {
   @Environment(CategoryLivesCatalog.self) private var catalog
+  @Environment(CategoryHeaderCatalog.self) private var headers
   @Environment(\.locale) private var locale
   @State private var page: CategoryLivesPage?
+  @State private var header: CategoryHeaderStore?
   private let heading: CategoryHeading
 
   public init(heading: CategoryHeading) {
@@ -54,7 +56,9 @@ public struct CategoryLivesScreen: View {
             name: heading.name,
             viewers: BrowseText.viewers(heading.viewers, locale: locale),
             coverURL: heading.imageURL,
-            tags: heading.tags
+            tags: header?.shownTags(over: heading.tags) ?? heading.tags,
+            followers: header?.followers.map { BrowseText.followers($0, locale: locale) },
+            follow: header.flatMap(followAction)
           )
           .padding(LayoutRole.screenInset.points)
         }
@@ -66,6 +70,21 @@ public struct CategoryLivesScreen: View {
     .navigationBarTitleDisplayMode(.inline)
     .task(id: heading.slug) {
       page = catalog.page(for: heading.slug, keeping: page)
+      let current = header?.category == heading.slug ? header : headers.store(for: heading.slug)
+      header = current
+      await current?.load()
+    }
+  }
+
+  private func followAction(_ header: CategoryHeaderStore) -> CategoryFollowAction? {
+    header.follow.state.map { state in
+      CategoryFollowAction(
+        isFollowing: state.isFollowing,
+        label: BrowseText.followLabel(isFollowing: state.isFollowing),
+        isEnabled: !header.follow.isPending
+      ) {
+        Task { await header.follow.toggle() }
+      }
     }
   }
 }

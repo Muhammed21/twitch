@@ -7,11 +7,13 @@ actor FakeTokenProvider: AccessTokenProvider {
   private let current: String
   private let renewed: String
   private let failure: SessionError?
+  private let renewalFailure: SessionError?
 
-  init(current: String = "access-1", renewed: String = "access-2", failure: SessionError? = nil) {
+  init(current: String = "access-1", renewed: String = "access-2", failure: SessionError? = nil, renewalFailure: SessionError? = nil) {
     self.current = current
     self.renewed = renewed
     self.failure = failure
+    self.renewalFailure = renewalFailure
   }
 
   func accessToken(at now: Date) throws -> String {
@@ -23,6 +25,7 @@ actor FakeTokenProvider: AccessTokenProvider {
   func accessTokenRejected(_ token: String, at now: Date) throws -> String {
     instants.append(now)
     rejected.append(token)
+    if let renewalFailure { throw renewalFailure }
     return renewed
   }
 }
