@@ -80,7 +80,7 @@ public extension LayoutRole {
     case .profileActionHeight: Spacing.x50
     case .profileActionGap: Spacing.x8
     case .profileActionRowGap: Spacing.x16
-    case .profileActionGlyph: Spacing.x20
+    case .profileActionGlyph: Spacing.x24
     case .profileActionGlyphGap: Spacing.x12
     case .categoryCardCoverWidth: Spacing.x72
     case .categoryCardRadius: Radius.xl

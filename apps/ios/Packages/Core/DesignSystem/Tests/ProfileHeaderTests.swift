@@ -19,7 +19,7 @@ private let headerMeasures: [(LayoutRole, CGFloat)] = [
   (.profileActionHeight, 50),
   (.profileActionGap, 8),
   (.profileActionRowGap, 16),
-  (.profileActionGlyph, 20),
+  (.profileActionGlyph, 24),
   (.profileActionGlyphGap, 12),
 ]
 

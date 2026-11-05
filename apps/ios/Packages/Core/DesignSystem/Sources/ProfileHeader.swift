@@ -34,12 +34,7 @@ public struct ProfileHeader: View {
 
   public var body: some View {
     VStack(alignment: .leading, spacing: 0) {
-      ProfileHeaderStyle.banner.color
-        .frame(height: LayoutRole.profileBannerHeight.points)
-        .background(alignment: .bottom) {
-          ProfileHeaderStyle.banner.color.containerRelativeFrame(.vertical)
-        }
-        .overlay(alignment: .top) { bannerControls }
+      ProfileBanner(settings: settings, edit: edit)
       HStack(alignment: .top, spacing: LayoutRole.profileAvatarGap.points) {
         DefaultAvatar(
           diameter: LayoutRole.profileAvatarSize.points,
@@ -71,6 +66,25 @@ public struct ProfileHeader: View {
     }
     .padding(.bottom, LayoutRole.profileHeaderBottom.points)
     .frame(maxWidth: .infinity, alignment: .leading)
+  }
+}
+
+public struct ProfileBanner: View {
+  private let settings: ProfileHeaderAction?
+  private let edit: ProfileHeaderAction?
+
+  public init(settings: ProfileHeaderAction?, edit: ProfileHeaderAction? = nil) {
+    self.settings = settings
+    self.edit = edit
+  }
+
+  public var body: some View {
+    ProfileHeaderStyle.banner.color
+      .frame(height: LayoutRole.profileBannerHeight.points)
+      .background(alignment: .bottom) {
+        ProfileHeaderStyle.banner.color.containerRelativeFrame(.vertical)
+      }
+      .overlay(alignment: .top) { bannerControls }
   }
 
   private var bannerControls: some View {

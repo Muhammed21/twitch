@@ -26,13 +26,15 @@ public struct ProfileScreen<Settings: View>: View {
             name: account.name,
             lastLive: account.lastLiveAt.map { ProfileText.lastLive(at: $0, now: context.date, locale: locale) },
             bio: account.bio,
-            settings: ProfileHeaderAction(label: String(localized: ProfileText.settings)) { isShowingSettings = true },
+            settings: settingsAction,
             edit: ProfileHeaderAction(label: String(localized: EditProfileText.edit)) { isEditing = true }
           )
         }
         .sheet(isPresented: $isEditing) {
           EditProfileSheet(account: account, onSaved: actions.onAccountSaved)
         }
+      } else {
+        ProfileBanner(settings: settingsAction)
       }
       VStack(alignment: .leading, spacing: LayoutRole.profileActionRowGap.points) {
         HStack(spacing: LayoutRole.profileActionGap.points) {
@@ -57,6 +59,10 @@ public struct ProfileScreen<Settings: View>: View {
     .toolbar(.hidden, for: .navigationBar)
     .navigationDestination(isPresented: $isShowingSettings, destination: settings)
     .task { await store.load() }
+  }
+
+  private var settingsAction: ProfileHeaderAction {
+    ProfileHeaderAction(label: String(localized: ProfileText.settings)) { isShowingSettings = true }
   }
 }
 
