@@ -25,6 +25,7 @@ filter:
     - FollowedCategoriesController_follow
     - FollowedCategoriesController_unfollow
     - ImagesController_prepareUpload
+    - TagsController_list
 additionalImports:
   - Foundation
 typeOverrides:

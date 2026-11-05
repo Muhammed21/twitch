@@ -91,6 +91,11 @@
         "$value": "44px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : hauteur des boutons de l'accueil."
       },
+      "47": {
+        "$type": "dimension",
+        "$value": "47px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : largeur de la pochette d'une catégorie dans une liste de réglages, 140 px à @3x (parametres/recommandations-categories--defaut)."
+      },
       "49": {
         "$type": "dimension",
         "$value": "49px",

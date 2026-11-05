@@ -36,6 +36,8 @@ public enum TextRole: Sendable {
   case journeyTitle
   case journeyMessage
   case journeyControl
+  case journeyChoiceName
+  case journeyChoiceDetail
 
   public var font: Font {
     switch self {
@@ -73,6 +75,8 @@ public enum TextRole: Sendable {
     case .journeyTitle: .titleText
     case .journeyMessage: .supportingText
     case .journeyControl: .actionLabel
+    case .journeyChoiceName: .actionLabel
+    case .journeyChoiceDetail: .supportingText
     }
   }
 }
@@ -195,6 +199,11 @@ public enum LayoutRole: Sendable {
   case journeyMessageGap
   case journeyContentGap
   case journeyHeroWidth
+  case journeyChoiceCoverWidth
+  case journeyChoicePadding
+  case journeyChipPaddingH
+  case journeyChipPaddingV
+  case journeyChipGap
 
   public var points: CGFloat {
     switch self {
@@ -315,6 +324,11 @@ public enum LayoutRole: Sendable {
     case .journeyMessageGap: Spacing.x8
     case .journeyContentGap: Spacing.x24
     case .journeyHeroWidth: Spacing.x88
+    case .journeyChoiceCoverWidth: Spacing.x47
+    case .journeyChoicePadding: Spacing.x10
+    case .journeyChipPaddingH: Spacing.x16
+    case .journeyChipPaddingV: Spacing.x8
+    case .journeyChipGap: Spacing.x8
     }
   }
 }

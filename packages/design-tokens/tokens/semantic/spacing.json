@@ -90,6 +90,11 @@
       "$value": "{core.dimension.44}",
       "$description": "Hauteur des boutons d'action, relevée sur l'app iOS Twitch (44 pt), cible tactile minimale d'iOS."
     },
+    "x47": {
+      "$type": "dimension",
+      "$value": "{core.dimension.47}",
+      "$description": "Largeur de la pochette d'une catégorie dans une liste de réglages, relevée sur l'app iOS Twitch (47 pt, parametres/recommandations-categories--defaut)."
+    },
     "x49": {
       "$type": "dimension",
       "$value": "{core.dimension.49}",

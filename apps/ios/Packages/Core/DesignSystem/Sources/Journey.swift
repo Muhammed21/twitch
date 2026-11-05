@@ -8,6 +8,16 @@ public enum JourneyStyle {
   public static let progressTrack = ColorRole.surfaceSecondary
   public static let progressFill = ColorRole.accent
   public static let mark = ColorRole.accent
+  public static let card = ColorRole.surface
+  public static let choiceName = ColorRole.textPrimary
+  public static let choiceDetail = ColorRole.textSecondary
+  public static let choiceDivider = ColorRole.border
+  public static let selected = ColorRole.accent
+  public static let unselected = ColorRole.textSecondary
+  public static let chip = ColorRole.surface
+  public static let chipLabel = ColorRole.textPrimary
+  public static let chipSelected = ColorRole.accent
+  public static let chipSelectedLabel = ColorRole.onAccent
 }
 
 public struct JourneyProgressBar: View {
