@@ -7,6 +7,8 @@ filter:
   operations:
     - MeController_read
     - MeController_update
+    - MeController_avatar
+    - MeBannerController_banner
     - MobileBootstrapController_read
     - LivesController_list
     - ChannelsController_read
