@@ -1,6 +1,6 @@
 # 0021 — Périmètre fonctionnel et cartographie des entités
 
-- Statut : Accepté — filtrage des blocages dans la diffusion (§4) amendé par [0027](0027-backpressure-et-dimensionnement-du-chat.md) — enregistrement de la VOD amendé par [0031](0031-service-video-maison-a-la-maniere-d-ivs.md) — message épinglé amendé par [0032](0032-salon-de-chat-permanent-par-chaine.md) — Turbo et préférences de visionnage ajoutés par [0051](0051-parcours-de-personnalisation-apres-inscription-et-paywall-turbo-natif-en-tranche-1.md)
+- Statut : Accepté — filtrage des blocages dans la diffusion (§4) amendé par [0027](0027-backpressure-et-dimensionnement-du-chat.md) — enregistrement de la VOD amendé par [0031](0031-service-video-maison-a-la-maniere-d-ivs.md) — message épinglé amendé par [0032](0032-salon-de-chat-permanent-par-chaine.md) — Turbo, badge Turbo, couleur de pseudo et préférences de visionnage ajoutés par [0051](0051-parcours-de-personnalisation-apres-inscription-et-paywall-turbo-natif-en-tranche-1.md)
 - Date : 2026-09-24
 - Décideurs : Muhammed Cavus
 - Complète : ADR 0003 (contextes futurs, propriétaires des entités non couvertes)
