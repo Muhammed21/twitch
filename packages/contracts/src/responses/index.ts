@@ -7,7 +7,7 @@ export { Timeout } from "./timeout.ts";
 export { Live, LiveCategory, LivePage } from "./live-page.ts";
 export { BrowseCategory, BrowseCategoryList, CategoryHeader } from "./browse-category.ts";
 export { CategoryTag, CategoryTagList } from "./category-tag.ts";
-export { Entitlement, MobileBootstrap, Profile } from "./mobile-bootstrap.ts";
+export { Entitlement, EntitlementList, MobileBootstrap, Profile } from "./mobile-bootstrap.ts";
 export { LiveStatus } from "./live-status.ts";
 export { Playback } from "./playback.ts";
 export { ImageUpload } from "./image-upload.ts";

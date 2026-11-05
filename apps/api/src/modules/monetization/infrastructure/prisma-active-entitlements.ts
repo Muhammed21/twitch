@@ -1,7 +1,4 @@
-export type ActiveEntitlement = {
-  readonly scope: "platform";
-  readonly expiresAt: Date;
-};
+import type { ReadActiveEntitlements } from "../application/sync-turbo-entitlement.ts";
 
 const PLATFORM_ENTITLEMENTS_PER_ACCOUNT = 1;
 
@@ -24,8 +21,14 @@ export type EntitlementRows = {
 };
 
 export const prismaActiveEntitlements =
-  ({ prisma, now = () => new Date() }: { prisma: EntitlementRows; now?: () => Date }) =>
-  async (userId: string): Promise<readonly ActiveEntitlement[]> => {
+  ({
+    prisma,
+    now = () => new Date(),
+  }: {
+    prisma: EntitlementRows;
+    now?: () => Date;
+  }): ReadActiveEntitlements =>
+  async (userId) => {
     const rows = await prisma.monetizationEntitlement.findMany({
       where: {
         userId,

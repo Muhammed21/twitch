@@ -527,6 +527,18 @@ const makeProfile = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
+describe("EntitlementList", () => {
+  it("décode la liste des entitlements actifs du compte", () => {
+    const list = { entitlements: [{ scope: "platform", expiresAt: "2026-12-08T09:00:00.000Z" }] };
+
+    expect(responses.EntitlementList.parse(list)).toEqual(list);
+  });
+
+  it("refuse une réponse sans liste", () => {
+    expect(responses.EntitlementList.safeParse({}).success).toBe(false);
+  });
+});
+
 describe("MobileBootstrap", () => {
   const makeBootstrap = (overrides: Record<string, unknown> = {}) => ({
     minSupportedVersion: "1.4.0",
