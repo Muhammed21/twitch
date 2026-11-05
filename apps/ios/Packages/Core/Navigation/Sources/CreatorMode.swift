@@ -13,6 +13,16 @@ public enum AppMode: String, Sendable {
   }
 }
 
+public enum DashboardTab: Hashable, Sendable {
+  case home
+  case content
+  case stats
+  case channel
+
+  public static let leading: [DashboardTab] = [.home, .content]
+  public static let trailing: [DashboardTab] = [.stats, .channel]
+}
+
 public enum ModeSwitchAction: Sendable {
   case enterDashboard
   case leaveDashboard
@@ -30,6 +40,7 @@ public final class CreatorMode {
   public private(set) var mode: AppMode
   public private(set) var transition: AppMode?
   public var isShowingActions = false
+  public var dashboardTab = DashboardTab.home
 
   private let storage: any AppModeStorage
   private let hold: Duration
@@ -68,6 +79,7 @@ public final class CreatorMode {
     transition = target
     await sleep(hold)
     guard transition == target else { return }
+    dashboardTab = .home
     mode = target
     storage.save(target)
     transition = nil

@@ -76,6 +76,25 @@ struct CreatorModeTests {
     #expect(storage.saved == [.creator])
   }
 
+  @Test("le tableau de bord s'ouvre sur l'onglet Accueil, même si un autre onglet était actif à la sortie (IMG_9623 puis IMG_9624)")
+  func entersOnHomeTab() async {
+    let (mode, _) = makeSwitch(.creator)
+    mode.dashboardTab = .stats
+
+    await mode.switchMode()
+    #expect(mode.mode == .viewer)
+    await mode.switchMode()
+
+    #expect(mode.mode == .creator)
+    #expect(mode.dashboardTab == .home)
+  }
+
+  @Test("le tableau de bord a quatre onglets : Accueil et Contenu à gauche du « + », Statistiques et Chaîne à droite")
+  func dashboardTabs() {
+    #expect(DashboardTab.leading == [.home, .content])
+    #expect(DashboardTab.trailing == [.stats, .channel])
+  }
+
   @Test("pendant le passage, l'écran annonce le mode visé")
   func transitionNamesTarget() async {
     let storage = MemoryModeStorage(.creator)

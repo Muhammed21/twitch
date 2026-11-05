@@ -113,7 +113,7 @@ struct RootView: View {
         paywall: PersonalizationPaywall(purchases: purchases, variant: launch.flags.paywallVariant, links: paywallLinks)
       )
     case .signedIn:
-      SignedInRoot()
+      SignedInModes()
     case .updateRequired:
       UpdateRequiredScreen()
     }
@@ -175,11 +175,6 @@ struct SignedInRoot: View {
       .toolbar(.hidden, for: .tabBar)
       .tag(AppTab.profile)
     }
-    .fullScreenCover(isPresented: $router.isShowingStreamManager) {
-      NavigationStack {
-        StreamManagerScreen { router.isShowingStreamManager = false }
-      }
-    }
     .safeAreaInset(edge: .bottom, spacing: 0) {
       if router.isTabBarVisible {
         TabBar(
@@ -193,7 +188,6 @@ struct SignedInRoot: View {
         )
       }
     }
-    .creatorModePresentation { router.create() }
   }
 
   private var account: Account? {
@@ -202,7 +196,7 @@ struct SignedInRoot: View {
   }
 }
 
-private extension View {
+extension View {
   func withRouteDestinations() -> some View {
     navigationDestination(for: Route.self) { route in
       switch route {
