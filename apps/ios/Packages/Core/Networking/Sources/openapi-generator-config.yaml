@@ -19,6 +19,8 @@ filter:
     - CategoryCatalogController_read
     - CategoriesController_browse
     - CategoriesController_lives
+    - FollowedCategoriesController_follow
+    - FollowedCategoriesController_unfollow
     - ImagesController_prepareUpload
 additionalImports:
   - Foundation
