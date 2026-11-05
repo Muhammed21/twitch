@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 
+import type { AccountAvatarView } from "../domain/account-avatar-view.ts";
 import type { CategoryFollowView } from "../domain/category-follow-view.ts";
 import type { CategoryView } from "../domain/category-view.ts";
 import type { LiveChannelView } from "../domain/live-channel-view.ts";
 import {
+  type AccountAvatarProjection,
   type CategoryFollowProjection,
   type CategoryProjection,
   type LiveChannelProjection,
@@ -14,10 +16,12 @@ const CHANNEL_ID = "6f1c2d3e-4a5b-4c6d-8e7f-9a0b1c2d3e4f";
 const CATEGORY_ID = "0b5e4d3c-2a19-4f08-8e7d-6c5b4a392817";
 const EVENT_ID = "0e1d2c3b-4a59-4687-9a1b-2c3d4e5f6a7b";
 const FOLLOWER_ID = "6b4c1e3a-9d5f-4a0c-b132-4e7f8a9b0c1d";
+const OWNER_ID = "4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b";
 
 const UNKNOWN_CHANNEL: LiveChannelView = {
   channelId: CHANNEL_ID,
   slug: null,
+  ownerId: null,
   title: "",
   titleChangedAt: null,
   categoryId: null,
@@ -61,11 +65,22 @@ const inMemoryProjections = ({
       categoryUpdates.push({ eventId, categoryId, result: change(ACTIVE_CATEGORY) });
     },
   };
+  const avatarUpdates: {
+    eventId: string;
+    accountId: string;
+    result: AccountAvatarView;
+  }[] = [];
+  const avatars: AccountAvatarProjection = {
+    update: async ({ eventId, accountId, change }) => {
+      avatarUpdates.push({ eventId, accountId, result: change(null) });
+    },
+  };
   return {
-    project: projectDiscoveryEvent({ channels, categories, follows }),
+    project: projectDiscoveryEvent({ channels, categories, follows, avatars }),
     channelUpdates,
     categoryUpdates,
     followUpdates,
+    avatarUpdates,
   };
 };
 
@@ -75,13 +90,41 @@ describe("projection d'un event de discovery", () => {
 
     await project({
       eventId: EVENT_ID,
-      event: { kind: "channel-created", channelId: CHANNEL_ID, slug: "chaine" },
+      event: { kind: "channel-created", channelId: CHANNEL_ID, ownerId: OWNER_ID, slug: "chaine" },
     });
 
     expect(channelUpdates).toEqual([
-      { eventId: EVENT_ID, channelId: CHANNEL_ID, result: { ...UNKNOWN_CHANNEL, slug: "chaine" } },
+      {
+        eventId: EVENT_ID,
+        channelId: CHANNEL_ID,
+        result: { ...UNKNOWN_CHANNEL, slug: "chaine", ownerId: OWNER_ID },
+      },
     ]);
     expect(categoryUpdates).toEqual([]);
+  });
+
+  it("met à jour l'avatar du compte de l'event, sous l'identifiant de l'event", async () => {
+    const { project, channelUpdates, avatarUpdates } = inMemoryProjections();
+    const changedAt = new Date("2026-11-05T10:00:00.000Z");
+
+    await project({
+      eventId: EVENT_ID,
+      event: {
+        kind: "avatar-changed",
+        accountId: OWNER_ID,
+        avatarKey: "images/avatar/a.webp",
+        changedAt,
+      },
+    });
+
+    expect(avatarUpdates).toEqual([
+      {
+        eventId: EVENT_ID,
+        accountId: OWNER_ID,
+        result: { accountId: OWNER_ID, avatarKey: "images/avatar/a.webp", changedAt },
+      },
+    ]);
+    expect(channelUpdates).toEqual([]);
   });
 
   it("met à jour la vue de la catégorie de l'event, sous l'identifiant de l'event", async () => {

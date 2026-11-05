@@ -16,7 +16,7 @@ private func makeClient(_ transport: FakeTransport) -> MyChannelClient {
 }
 
 private func bootstrapJSON(profile: String) -> String {
-  #"{"minSupportedVersion":"1.0.0","flags":{"session_replay":false},"profile":\#(profile)}"#
+  #"{"minSupportedVersion":"1.0.0","flags":{"session_replay":false},"entitlements":[],"profile":\#(profile)}"#
 }
 
 private func profileJSON(channel: String? = nil) -> String {

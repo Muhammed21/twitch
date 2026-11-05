@@ -1,3 +1,4 @@
+import { type AccountAvatarView, applyAccountAvatarEvent } from "../domain/account-avatar-view.ts";
 import {
   applyCategoryFollowEvent,
   type CategoryFollowView,
@@ -5,6 +6,7 @@ import {
 import { applyCategoryEvent, type CategoryView } from "../domain/category-view.ts";
 import {
   type DiscoveryEvent,
+  isAccountAvatarEvent,
   isCategoryEvent,
   isCategoryFollowEvent,
 } from "../domain/discovery-event.ts";
@@ -35,17 +37,34 @@ export interface CategoryFollowProjection {
   }): Promise<void>;
 }
 
+export interface AccountAvatarProjection {
+  update(input: {
+    eventId: string;
+    accountId: string;
+    change: (view: AccountAvatarView | null) => AccountAvatarView;
+  }): Promise<void>;
+}
+
 export const projectDiscoveryEvent =
   ({
     channels,
     categories,
     follows,
+    avatars,
   }: {
     channels: LiveChannelProjection;
     categories: CategoryProjection;
     follows: CategoryFollowProjection;
+    avatars: AccountAvatarProjection;
   }) =>
   ({ eventId, event }: { eventId: string; event: DiscoveryEvent }): Promise<void> => {
+    if (isAccountAvatarEvent(event)) {
+      return avatars.update({
+        eventId,
+        accountId: event.accountId,
+        change: (view) => applyAccountAvatarEvent(view, event),
+      });
+    }
     if (isCategoryFollowEvent(event)) {
       return follows.update({
         eventId,

@@ -37,9 +37,11 @@ public struct FeatureFlags: Equatable, Sendable {
   public static let safeDefaults = FeatureFlags(sessionReplay: false)
 
   public let sessionReplay: Bool
+  public let paywallVariant: String?
 
-  public init(sessionReplay: Bool) {
+  public init(sessionReplay: Bool, paywallVariant: String? = nil) {
     self.sessionReplay = sessionReplay
+    self.paywallVariant = paywallVariant
   }
 }
 
