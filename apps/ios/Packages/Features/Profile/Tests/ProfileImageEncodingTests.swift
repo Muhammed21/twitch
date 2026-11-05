@@ -4,6 +4,7 @@ import ImageIO
 import Profile
 import Testing
 import UIKit
+import UniformTypeIdentifiers
 
 private func png(width: Int, height: Int) throws -> Data {
   let format = UIGraphicsImageRendererFormat()
@@ -14,6 +15,15 @@ private func png(width: Int, height: Int) throws -> Data {
     UIColor.systemPurple.setFill()
     context.fill(CGRect(origin: .zero, size: size))
   }.pngData())
+}
+
+private func encoded(_ type: UTType, width: Int, height: Int) throws -> Data {
+  let image = try #require(UIImage(data: png(width: width, height: height))?.cgImage)
+  let data = NSMutableData()
+  let destination = try #require(CGImageDestinationCreateWithData(data, type.identifier as CFString, 1, nil))
+  CGImageDestinationAddImage(destination, image, nil)
+  #expect(CGImageDestinationFinalize(destination))
+  return data as Data
 }
 
 private func pixelSize(of prepared: PreparedImage) throws -> PixelSize {
@@ -61,5 +71,12 @@ struct ProfileImageEncodingTests {
   @Test("des octets qui ne sont pas une image ne donnent rien")
   func rejectsNonImage() {
     #expect(ProfileImageEncoding.prepare(Data("pas une image".utf8), for: .avatar) == .unreadable)
+  }
+
+  @Test("les formats annoncés sous Profile Picture, JPEG, PNG et GIF, sont acceptés et convertis en JPEG", arguments: [UTType.jpeg, .png, .gif])
+  func announcedFormats(type: UTType) throws {
+    let size = try pixelSize(of: ProfileImageEncoding.prepare(encoded(type, width: 600, height: 600), for: .avatar))
+
+    #expect(size == PixelSize(width: 512, height: 512))
   }
 }

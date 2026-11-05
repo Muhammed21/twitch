@@ -63,4 +63,10 @@ struct GlyphTests {
     #expect(glyph.mask(isSelected: false) == .homeOutline)
     #expect(TabBarGlyph.avatar.mask(isSelected: true) == nil)
   }
+
+  @Test("le crayon des lignes Profile Picture et Profile Banner est le glyphe au trait de la capture")
+  func editRowPencil() {
+    #expect(EditRowAccessory.edit.glyph == .editPencil)
+    #expect(EditRowAccessory.disclosure.glyph == nil)
+  }
 }
