@@ -22,7 +22,11 @@ const startServer = async (room: RoomState) => {
     port: 0,
     verifier: authority.verifier(),
     log: () => undefined,
-    chatters: { displayNameOf: async () => "Alice", sanctionsOf: async () => [] },
+    chatters: {
+      displayNameOf: async () => "Alice",
+      avatarKeyOf: async () => null,
+      sanctionsOf: async () => [],
+    },
     rooms: createRoomRegistry({ find: async () => room }),
     messages: createMessageSender(createLocalTokenBuckets()),
     saturation: SATURATION_LIMITS,

@@ -11,7 +11,11 @@ import type { AcceptedMessage } from "../domain/decide.ts";
 
 export type ChatSession = {
   readonly chatter: ChatterContext;
-  readonly author: { readonly id: string; readonly displayName: string };
+  readonly author: {
+    readonly id: string;
+    readonly displayName: string;
+    readonly avatarUrl?: string;
+  };
   readonly credentials: { readonly sid: string; readonly token: string };
 };
 

@@ -30,6 +30,9 @@ const makeViews = () => {
     registerChatter: async (chatter) => {
       writes.push({ registerChatter: chatter });
     },
+    changeAvatar: async (avatar) => {
+      writes.push({ changeAvatar: avatar });
+    },
     sanctionChatter: async (sanction) => {
       writes.push({ sanctionChatter: sanction });
     },
@@ -94,7 +97,7 @@ const setup = (rooms: readonly RoomState[] = []) => {
 
 const { channelCreated } = events.channel;
 const { streamStarted, streamEnded } = events.stream;
-const { accountRegistered } = events.identity;
+const { accountRegistered, avatarChanged } = events.identity;
 const { userTimedOut } = events.moderation;
 
 describe("projection des events dans les vues locales du chat", () => {
@@ -102,6 +105,7 @@ describe("projection des events dans les vues locales du chat", () => {
     expect(Object.keys(setup().handlers).toSorted()).toEqual([
       "channel.created",
       "identity.account.registered",
+      "identity.avatar.changed",
       "moderation.user.timed_out",
       "stream.ended",
       "stream.started",
@@ -184,6 +188,29 @@ describe("projection des events dans les vues locales du chat", () => {
     });
 
     expect(writes).toEqual([{ registerChatter: { userId: accountId, displayName: "Alice" } }]);
+  });
+
+  it("enregistre la clé du nouvel avatar d'un compte, datée par l'event", async () => {
+    const { handle, writes } = setup();
+    const accountId = randomUUID();
+    const occurredAt = new Date("2026-11-05T10:00:00.000Z");
+
+    await handle({
+      name: avatarChanged.name,
+      version: 1,
+      occurredAt,
+      payload: { accountId, avatarKey: "images/avatar/a.webp" },
+    });
+
+    expect(writes).toEqual([
+      {
+        changeAvatar: {
+          userId: accountId,
+          avatarKey: "images/avatar/a.webp",
+          changedAt: occurredAt,
+        },
+      },
+    ]);
   });
 
   it("rattache à la session du live le salon chargé d'une chaîne qui démarre un live", async () => {

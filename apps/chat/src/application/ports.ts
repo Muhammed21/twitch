@@ -6,6 +6,7 @@ export type RoomDirectory = { find(channelId: string): Promise<RoomState | undef
 
 export type ChatterProfiles = {
   displayNameOf(userId: string): Promise<string | null>;
+  avatarKeyOf(userId: string): Promise<string | null>;
   sanctionsOf(userId: string): Promise<readonly ChatSanction[]>;
 };
 
@@ -32,6 +33,11 @@ export type LocalViewWriter = {
   registerChatter(chatter: {
     readonly userId: string;
     readonly displayName: string;
+  }): Promise<void>;
+  changeAvatar(avatar: {
+    readonly userId: string;
+    readonly avatarKey: string;
+    readonly changedAt: Date;
   }): Promise<void>;
   sanctionChatter(sanction: ChatterSanction): Promise<void>;
 };
