@@ -62,6 +62,7 @@ Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes
 | [0050](0050-tags-d-une-categorie-poses-par-l-administration-et-lus-par-discovery.md)                      | Les tags d'une catégorie sont posés par l'administration dans `channel`, et lus par `discovery`                                                                                                | Accepté                                                                                                                                                | Channel      |
 | [0051](0051-parcours-de-personnalisation-apres-inscription-et-paywall-turbo-natif-en-tranche-1.md)        | Un parcours de personnalisation suit l'inscription et se termine sur un paywall Turbo natif, Turbo est un droit global tenu par le serveur, et le tout se mesure dans PostHog dès la tranche 1 | Accepté                                                                                                                                                | iOS          |
 | [0052](0052-illustrations-d-etat-vide-du-tableau-de-bord-en-masques-extraits-des-captures.md)             | Les illustrations d'état vide du tableau de bord sont des masques extraits des captures, colorés par tokens                                                                                    | Accepté                                                                                                                                                | Design       |
+| [0053](0053-illustrations-d-etat-vide-de-la-page-activite-en-masques-extraits-des-captures.md)            | Les illustrations d'état vide de la page Activité sont des masques extraits des captures, comme celles du tableau de bord                                                                      | Proposé                                                                                                                                                | Design       |
 
 ## Dépendances principales
 
@@ -106,6 +107,7 @@ Format, numérotation et circuit de remplacement : [`.claude/rules/adr-et-spikes
 0021, 0045, 0047 ── 0050 (tags d'une catégorie posés par l'administration, lus par discovery)
 0003, 0012, 0013, 0014, 0016, 0021, 0034, 0049, 0050 ── 0051 (parcours de personnalisation, paywall Turbo natif, Turbo tenu par monetization, badge et couleur dans le chat ; amende 0003, 0013, 0016, 0021)
 0019, 0036, 0040, 0046 ── 0052 (illustrations d'état vide du tableau de bord en masques par teinte, amende 0036 §6 et 0040 §1)
+0021, 0036, 0052 ── 0053 (illustrations d'état vide de la page Activité, cinq teintes au plus ; amende 0052 §1, §2 et §4)
 ```
 
 ## Points ouverts
