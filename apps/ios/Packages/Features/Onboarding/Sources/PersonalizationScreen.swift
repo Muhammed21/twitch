@@ -100,3 +100,40 @@ struct JourneyPage<Content: View>: View {
     .padding(.top, LayoutRole.journeyContentGap.points)
   }
 }
+
+struct JourneyHeroPage<Hero: View>: View {
+  @Environment(PersonalizationJourney.self) private var journey
+  private let title: String
+  private let message: String
+  private let primary: String
+  private let hero: Hero
+
+  init(title: String, message: String, primary: String, @ViewBuilder hero: () -> Hero) {
+    self.title = title
+    self.message = message
+    self.primary = primary
+    self.hero = hero()
+  }
+
+  var body: some View {
+    VStack(spacing: 0) {
+      Spacer(minLength: 0)
+      hero
+      Text(title)
+        .font(TextRole.journeyTitle.font)
+        .foregroundStyle(JourneyStyle.title.color)
+        .accessibilityAddTraits(.isHeader)
+        .padding(.top, LayoutRole.journeyContentGap.points)
+      Text(message)
+        .font(TextRole.journeyMessage.font)
+        .foregroundStyle(JourneyStyle.message.color)
+        .padding(.top, LayoutRole.journeyMessageGap.points)
+      Spacer(minLength: 0)
+      Button(primary) { journey.complete(selectionCount: 0) }
+        .buttonStyle(ActionButtonStyle(.primary))
+        .accessibilityIdentifier("journey.continue")
+    }
+    .multilineTextAlignment(.center)
+    .padding([.horizontal, .bottom], LayoutRole.screenInset.points)
+  }
+}

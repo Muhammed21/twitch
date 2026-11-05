@@ -3,28 +3,26 @@ import SwiftUI
 
 struct IntroPage: View {
   var body: some View {
-    JourneyPage(
+    JourneyHeroPage(
       title: PersonalizationText.introTitle,
       message: PersonalizationText.introMessage,
       primary: PersonalizationText.getStarted
     ) {
       GlitchMark()
         .frame(width: LayoutRole.journeyHeroWidth.points)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
   }
 }
 
 struct SummaryPage: View {
   var body: some View {
-    JourneyPage(
+    JourneyHeroPage(
       title: PersonalizationText.summaryTitle,
       message: PersonalizationText.summaryMessage,
       primary: PersonalizationText.startWatching
     ) {
       GlitchMark()
         .frame(width: LayoutRole.journeyHeroWidth.points)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
   }
 }
