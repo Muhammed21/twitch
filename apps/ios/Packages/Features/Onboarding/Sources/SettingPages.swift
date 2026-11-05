@@ -107,7 +107,27 @@ struct ChatSettingsPage: View {
           )
           .accessibilityIdentifier("journey.chat.timestamps")
         }
+        EditSection(label: ChatPreview.label()) {
+          ChatPreviewCard(style: choices.chatPreviewStyle)
+        }
       }
     }
+  }
+}
+
+struct ChatPreviewCard: View {
+  let style: ChatLineStyle
+
+  var body: some View {
+    JourneyChoiceCard {
+      VStack(alignment: .leading, spacing: LayoutRole.chatRowGap.points) {
+        ForEach(Array(ChatPreview.lines().enumerated()), id: \.offset) { _, line in
+          ChatLineRow(line: line, style: style)
+        }
+      }
+      .padding(LayoutRole.menuRowPadding.points)
+    }
+    .accessibilityElement(children: .combine)
+    .accessibilityIdentifier("journey.chat.preview")
   }
 }
