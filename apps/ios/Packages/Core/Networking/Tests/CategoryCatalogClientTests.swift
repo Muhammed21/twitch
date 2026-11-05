@@ -34,6 +34,22 @@ struct CategoryCatalogClientTests {
     #expect(components.queryItems == [URLQueryItem(name: "q", value: "mobile legends")])
   }
 
+  @Test(
+    "lit la pochette http(s) d'une catégorie ; absente ou d'un autre schéma, la pochette reste vide",
+    arguments: [
+      (#","imageUrl":"https://cdn.example/categories/mlbb.jpg""#, URL(string: "https://cdn.example/categories/mlbb.jpg")),
+      (#","imageUrl":"file:///etc/passwd""#, nil),
+      ("", nil),
+    ]
+  )
+  func readsCover(field: String, expected: URL?) async throws {
+    let transport = FakeTransport(json: #"{"categories":[\#(categoryJSON().dropLast())\#(field)}]}"#)
+
+    let categories = try await makeClient(transport).categories(matching: "mobile")
+
+    #expect(categories.first?.imageURL == expected)
+  }
+
   @Test("sans texte saisi, demande le début du catalogue sans paramètre q")
   func emptyQuery() async throws {
     let transport = FakeTransport(json: #"{"categories":[]}"#)

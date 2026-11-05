@@ -209,8 +209,8 @@ private extension View {
       switch route {
       case let .channel(slug):
         ChannelScreen(slug: slug)
-      case let .category(slug, name):
-        CategoryLivesScreen(category: slug, name: name)
+      case let .category(heading):
+        CategoryLivesScreen(heading: heading)
       }
     }
   }
