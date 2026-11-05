@@ -1,16 +1,16 @@
+import DesignSystem
 import SwiftUI
 
 public enum JourneyMotion {
   public static let pageResponse: TimeInterval = 0.5
   public static let pageDamping: Double = 0.86
-  public static let fadeDuration: TimeInterval = 0.2
   public static let selectionResponse: TimeInterval = 0.3
   public static let stagger: TimeInterval = 0.06
   public static let entranceDistance: CGFloat = 24
 
   public static func entrance(index: Int, reduceMotion: Bool) -> Animation {
     reduceMotion
-      ? .easeInOut(duration: fadeDuration)
+      ? MotionRole.fade.animation(reduceMotion: true)
       : .spring(response: pageResponse, dampingFraction: pageDamping).delay(Double(index) * stagger)
   }
 
@@ -24,7 +24,7 @@ public enum JourneyMotion {
 
   public static func selection(reduceMotion: Bool) -> Animation {
     reduceMotion
-      ? .easeInOut(duration: fadeDuration)
+      ? MotionRole.fade.animation(reduceMotion: true)
       : .spring(response: selectionResponse, dampingFraction: pageDamping)
   }
 

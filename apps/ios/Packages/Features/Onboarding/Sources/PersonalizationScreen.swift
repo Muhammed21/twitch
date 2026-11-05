@@ -17,7 +17,7 @@ public struct PersonalizationScreen: View {
       }
       .frame(maxWidth: .infinity, maxHeight: .infinity)
       .clipped()
-      .animation(MotionRole.journeyPage.animation(reduceMotion: reduceMotion), value: journey.index)
+      .animation(MotionRole.journeyPage, value: journey.index)
     }
     .background(ColorRole.background.color.ignoresSafeArea())
     .task { journey.start() }

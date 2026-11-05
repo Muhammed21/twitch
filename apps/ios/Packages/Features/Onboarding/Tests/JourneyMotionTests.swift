@@ -1,14 +1,16 @@
+import DesignSystem
 import Onboarding
 import SwiftUI
 import Testing
 
 @Suite("Transitions entre les pages du parcours")
 struct JourneyMotionTests {
-  @Test("les éléments du récap remontent par un ressort de 0,5 s amorti à 0,86 ; avec Réduire les animations, un fondu de 0,2 s")
+  @Test("les éléments du récap remontent par un ressort de 0,5 s amorti à 0,86 ; avec Réduire les animations, le fondu du design system")
   func timings() {
     #expect(JourneyMotion.pageResponse == 0.5)
     #expect(JourneyMotion.pageDamping == 0.86)
-    #expect(JourneyMotion.fadeDuration == 0.2)
+    #expect(JourneyMotion.selection(reduceMotion: true) == MotionRole.fade.animation(reduceMotion: true))
+    #expect(JourneyMotion.entrance(index: 3, reduceMotion: true) == MotionRole.fade.animation(reduceMotion: true))
   }
 
   @Test("une page affichée reste en place, quel que soit le sens", arguments: [JourneyDirection.forward, .backward])

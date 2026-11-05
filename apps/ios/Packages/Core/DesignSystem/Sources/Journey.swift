@@ -23,7 +23,6 @@ public enum JourneyStyle {
 }
 
 public struct JourneyProgressBar: View {
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
   private let progress: Double
 
   public init(progress: Double) {
@@ -45,7 +44,7 @@ public struct JourneyProgressBar: View {
         }
     }
     .frame(height: LayoutRole.journeyProgressHeight.points)
-    .animation(MotionRole.journeyPage.animation(reduceMotion: reduceMotion), value: progress)
+    .animation(MotionRole.journeyPage, value: progress)
     .accessibilityElement()
     .accessibilityValue(Text(Self.filledFraction(progress), format: .percent.precision(.fractionLength(0))))
   }
