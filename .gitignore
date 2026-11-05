@@ -36,6 +36,8 @@ yarn-error.log*
 # Swift Package Manager : dossiers créés par Xcode et par swift build dans chaque package
 .swiftpm/
 .build/
+# DerivedData local, passé à xcodebuild par -derivedDataPath "$PWD/.dd"
+.dd/
 
 # Misc
 .DS_Store
