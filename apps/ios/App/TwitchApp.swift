@@ -70,7 +70,7 @@ struct RootView: View {
       .preferredColorScheme(preferences.current.appearance.colorScheme)
       .signInFailureAlert(session)
       .logOutFailureAlert(session)
-      .onOpenURL { router.open($0) }
+      .onOpenURL { DeepLinkOpening.open($0, router: router, creatorMode: creatorMode) }
       .onChange(of: session.phase) { old, new in
         if RootScreen.resetsNavigation(from: old, to: new) {
           router.reset()
