@@ -28,6 +28,8 @@ public struct PersonalizationScreen: View {
     case .intro: IntroPage()
     case .categories: CategoriesPage()
     case .interests: InterestsPage()
+    case .contentPreferences: ContentPreferencesPage()
+    case .liveLanguage: LiveLanguagePage()
     case .summary: SummaryPage()
     default: EmptyView()
     }

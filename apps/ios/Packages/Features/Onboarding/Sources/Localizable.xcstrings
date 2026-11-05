@@ -71,6 +71,136 @@
         }
       }
     },
+    "journey.content.blur" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blur Sexual Themes"
+          }
+        }
+      }
+    },
+    "journey.content.blurFooter" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blur preview thumbnails for content labeled as including \"Sexual Themes\""
+          }
+        }
+      }
+    },
+    "journey.content.footer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Control how content labeled with Content Classification Labels is displayed across Twitch. Content from channels you follow will still be shown"
+          }
+        }
+      }
+    },
+    "journey.content.hide.drugs" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide Drugs, Intoxication, or Excessive Tobacco Use"
+          }
+        }
+      }
+    },
+    "journey.content.hide.gambling" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide Gambling"
+          }
+        }
+      }
+    },
+    "journey.content.hide.mature" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide Mature-Rated Games"
+          }
+        }
+      }
+    },
+    "journey.content.hide.politics" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide Politics and Sensitive Social Issues"
+          }
+        }
+      }
+    },
+    "journey.content.hide.profanity" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide Significant Profanity or Vulgarity"
+          }
+        }
+      }
+    },
+    "journey.content.hide.sexualThemes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide Sexual Themes"
+          }
+        }
+      }
+    },
+    "journey.content.hide.violent" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide Violent and Graphic Depictions"
+          }
+        }
+      }
+    },
+    "journey.content.message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide content you'd rather not come across. You can change this later in Settings."
+          }
+        }
+      }
+    },
+    "journey.content.section" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Content Display Preferences"
+          }
+        }
+      }
+    },
+    "journey.content.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose what you see"
+          }
+        }
+      }
+    },
     "journey.getStarted" : {
       "localizations" : {
         "en" : {
@@ -137,6 +267,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Make Twitch yours"
+          }
+        }
+      }
+    },
+    "journey.language.message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We'll favor live channels in this language."
+          }
+        }
+      }
+    },
+    "journey.language.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Which language do you watch in?"
           }
         }
       }

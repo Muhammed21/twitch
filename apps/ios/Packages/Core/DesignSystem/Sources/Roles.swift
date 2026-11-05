@@ -38,6 +38,7 @@ public enum TextRole: Sendable {
   case journeyControl
   case journeyChoiceName
   case journeyChoiceDetail
+  case journeyRowTitle
 
   public var font: Font {
     switch self {
@@ -77,6 +78,7 @@ public enum TextRole: Sendable {
     case .journeyControl: .actionLabel
     case .journeyChoiceName: .actionLabel
     case .journeyChoiceDetail: .supportingText
+    case .journeyRowTitle: .actionLabel
     }
   }
 }

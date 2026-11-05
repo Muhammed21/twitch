@@ -51,6 +51,32 @@ public enum PersonalizationText {
   public static var interestsFailed: String { String(localized: "journey.interests.failed", bundle: .module) }
   public static var retry: String { String(localized: "journey.retry", bundle: .module) }
 
+  public static var contentTitle: String { String(localized: "journey.content.title", bundle: .module) }
+  public static var contentMessage: String { String(localized: "journey.content.message", bundle: .module) }
+  public static var contentSection: String { String(localized: "journey.content.section", bundle: .module) }
+  public static var contentFooter: String { String(localized: "journey.content.footer", bundle: .module) }
+  public static var blurTitle: String { String(localized: "journey.content.blur", bundle: .module) }
+  public static var blurFooter: String { String(localized: "journey.content.blurFooter", bundle: .module) }
+  public static var languageTitle: String { String(localized: "journey.language.title", bundle: .module) }
+  public static var languageMessage: String { String(localized: "journey.language.message", bundle: .module) }
+
+  public static func hide(_ label: ContentLabel) -> String {
+    switch label {
+    case .sexualThemes: String(localized: "journey.content.hide.sexualThemes", bundle: .module)
+    case .drugsIntoxicationTobacco: String(localized: "journey.content.hide.drugs", bundle: .module)
+    case .gambling: String(localized: "journey.content.hide.gambling", bundle: .module)
+    case .violentGraphic: String(localized: "journey.content.hide.violent", bundle: .module)
+    case .profanity: String(localized: "journey.content.hide.profanity", bundle: .module)
+    case .matureRatedGames: String(localized: "journey.content.hide.mature", bundle: .module)
+    case .politicsSensitive: String(localized: "journey.content.hide.politics", bundle: .module)
+    }
+  }
+
+  public static func languageName(_ language: LiveLanguage) -> String {
+    let own = Locale(identifier: language.rawValue)
+    return own.localizedString(forLanguageCode: language.rawValue)?.capitalized(with: own) ?? language.rawValue
+  }
+
   public static func viewers(_ count: ViewerCount?, locale: Locale) -> String? {
     count.map {
       String(

@@ -42,4 +42,33 @@ struct PersonalizationTextTests {
     #expect(PersonalizationText.interestsEmpty == "No tags to show yet.")
     #expect(PersonalizationText.interestsFailed == "Couldn't load tags.")
   }
+
+  @Test("la page 4 reprend les libellés et les notes de preferences-contenu--defaut")
+  func content() {
+    #expect(PersonalizationText.contentTitle == "Choose what you see")
+    #expect(PersonalizationText.contentMessage == "Hide content you'd rather not come across. You can change this later in Settings.")
+    #expect(PersonalizationText.contentSection == "Content Display Preferences")
+    #expect(PersonalizationText.contentFooter == "Control how content labeled with Content Classification Labels is displayed across Twitch. Content from channels you follow will still be shown")
+    #expect(PersonalizationText.blurTitle == "Blur Sexual Themes")
+    #expect(PersonalizationText.blurFooter == "Blur preview thumbnails for content labeled as including \"Sexual Themes\"")
+    #expect(ContentLabel.allCases.map(PersonalizationText.hide) == [
+      "Hide Sexual Themes",
+      "Hide Drugs, Intoxication, or Excessive Tobacco Use",
+      "Hide Gambling",
+      "Hide Violent and Graphic Depictions",
+      "Hide Significant Profanity or Vulgarity",
+      "Hide Mature-Rated Games",
+      "Hide Politics and Sensitive Social Issues",
+    ])
+  }
+
+  @Test("la page 5 nomme chaque langue dans sa propre langue, quelle que soit celle de l'appareil")
+  func language() {
+    #expect(PersonalizationText.languageTitle == "Which language do you watch in?")
+    #expect(PersonalizationText.languageMessage == "We'll favor live channels in this language.")
+    #expect(PersonalizationText.languageName(.french) == "Français")
+    #expect(PersonalizationText.languageName(.german) == "Deutsch")
+    #expect(PersonalizationText.languageName(.japanese) == "日本語")
+    #expect(PersonalizationText.languageName(.english) == "English")
+  }
 }
