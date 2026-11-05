@@ -68,7 +68,12 @@ let package = Package(
     ),
     .testTarget(
       name: "AnalyticsTests",
-      dependencies: ["Analytics", "AnalyticsTesting", "Domain"],
+      dependencies: [
+        "Analytics",
+        "AnalyticsTesting",
+        "Domain",
+        .product(name: "PostHog", package: "posthog-ios"),
+      ],
       path: "Core/Analytics/Tests",
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),

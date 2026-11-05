@@ -1,4 +1,4 @@
-import Analytics
+@testable import Analytics
 import Domain
 import Foundation
 import Testing
@@ -42,9 +42,9 @@ struct ProductAnalyticsTests {
     let backend = RecordingBackend()
     let analytics = ProductAnalytics(backend: backend, defaults: makeDefaults())
 
-    analytics.capture(.onboardingStepCompleted(step: "categories", durationMs: 1200))
+    analytics.capture(.onboardingStepSkipped(step: .categories, stepIndex: 1))
 
-    #expect(backend.calls == [.capture("onboarding:step_completed", ["step": .string("categories"), "duration_ms": .int(1200)])])
+    #expect(backend.calls == [.capture("onboarding:step_skipped", ["step": .string("categories"), "step_index": .int(1)])])
   }
 
   @Test("la première connexion identifie l'utilisateur par son ID backend, en minuscules")
@@ -84,6 +84,17 @@ struct ProductAnalyticsTests {
       .reset,
       .identify("6f9619ff-8b86-d011-b42d-00c04fc964ff"),
     ])
+  }
+
+  @Test("désactivée, l'analytics ne retient aucune identité : la première clé PostHog identifiera l'utilisateur")
+  func disabledRemembersNothing() {
+    let defaults = makeDefaults()
+    ProductAnalytics(backend: DisabledBackend(), defaults: defaults).identify(viewerID)
+    let backend = RecordingBackend()
+
+    ProductAnalytics(backend: backend, defaults: defaults).identify(viewerID)
+
+    #expect(backend.calls == [.identify("6f9619ff-8b86-d011-b42d-00c04fc964ff")])
   }
 
   @Test("reset() est envoyé même si l'app ne connaissait aucune identité")
