@@ -1,6 +1,6 @@
 # 0052 — Les illustrations d'état vide du tableau de bord sont des masques extraits des captures, colorés par tokens
 
-- Statut : Proposé
+- Statut : Accepté
 - Date : 2026-11-05
 - Décideurs : Muhammed Cavus
 - Amende : ADR 0036 (§6 marque), ADR 0040 (§1, une seule illustration dans l'app)
