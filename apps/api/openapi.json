@@ -1326,10 +1326,10 @@
         "properties": {
           "chatColor": {
             "description": "Couleur du pseudo dans le chat, #RRGGBB (casse indifférente, enregistrée en majuscules) ; null revient à la couleur par défaut.",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [

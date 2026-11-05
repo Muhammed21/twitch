@@ -6,6 +6,7 @@ import type { AccessTokenIdentity } from "@repo/auth-verifier";
 import { responses, Uuid } from "@repo/contracts";
 import type { Result } from "@repo/result";
 
+import { requestDto } from "../../../openapi/request-dto.ts";
 import { responseDto } from "../../../openapi/response-dto.ts";
 import {
   AccessTokenGuard,
@@ -46,7 +47,7 @@ class Me extends responseDto(responses.Me) {}
 
 class AvatarUploadRequest extends createZodDto(z.strictObject({ uploadId: Uuid })) {}
 
-class ChatColorRequest extends createZodDto(
+class ChatColorRequest extends requestDto(
   z.strictObject({
     chatColor: z.string().nullable().meta({
       description:
