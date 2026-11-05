@@ -29,4 +29,5 @@ export const resolveSharedTokens = (): Promise<readonly DesignToken[]> =>
     "tokens/core/**/*.json",
     "tokens/semantic/typography.json",
     "tokens/semantic/spacing.json",
+    "tokens/semantic/motion.json",
   ]);

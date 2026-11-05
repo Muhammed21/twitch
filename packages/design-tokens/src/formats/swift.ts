@@ -5,6 +5,7 @@ export type DesignToken = {
   readonly $type: string;
   readonly value: unknown;
   readonly comment?: string;
+  readonly reducedMotion?: unknown;
 };
 
 export type ThemedTokens = {
@@ -210,6 +211,44 @@ export const formatThemedColors = (themes: ThemedTokens): string => {
     "}",
     "",
   ].join("\n");
+};
+
+const toSeconds = (value: unknown, path: readonly string[]): string => {
+  assertResolved(value, path);
+
+  const duration = typeof value === "string" ? /^([0-9]+(\.[0-9]+)?)(ms|s)$/.exec(value) : null;
+
+  if (duration === null) {
+    throw new Error(`Token "${tokenId(path)}" is not a duration: ${String(value)}.`);
+  }
+
+  const milliseconds = Number(duration[1]) * (duration[3] === "s" ? 1000 : 1);
+
+  return String(Number((milliseconds / 1000).toFixed(3)));
+};
+
+export const formatDurations = (
+  tokens: readonly DesignToken[],
+  { namespace }: { readonly namespace: string },
+): string => {
+  const members = tokens.flatMap((token) => {
+    const name = swiftMemberName(token.path);
+    const reduced =
+      token.reducedMotion === undefined
+        ? []
+        : [
+            `    /// Variante de ${name} sous Réduire les animations (ADR 0019 §6).`,
+            `    public static let ${name}Reduced: TimeInterval = ${toSeconds(token.reducedMotion, token.path)}`,
+          ];
+
+    return [
+      ...docComment(token.comment),
+      `    public static let ${name}: TimeInterval = ${toSeconds(token.value, token.path)}`,
+      ...reduced,
+    ];
+  });
+
+  return [GENERATED_HEADER, `public enum ${namespace} {`, ...members, "}", ""].join("\n");
 };
 
 const toPoints = (value: unknown, path: readonly string[]): string => {
