@@ -343,6 +343,41 @@ describe("Timeout", () => {
   });
 });
 
+const makeBan = (overrides: Record<string, unknown> = {}) => ({
+  channelId: "9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69",
+  userId: "2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+  expiresAt: "2026-11-06T13:00:00.000Z",
+  reason: "Harcèlement",
+  ...overrides,
+});
+
+describe("Ban", () => {
+  it("décode la chaîne, l'utilisateur banni, la fin et le motif du bannissement", () => {
+    expect(responses.Ban.parse(makeBan())).toEqual(makeBan());
+  });
+
+  it("décode un bannissement définitif, sans fin", () => {
+    const { expiresAt: _end, ...definitive } = makeBan();
+
+    expect(responses.Ban.parse(definitive)).toEqual(definitive);
+  });
+
+  it("garde un champ ajouté plus tard par le serveur", () => {
+    expect(responses.Ban.parse(makeBan({ appealUrl: "x" }))).toMatchObject({ appealUrl: "x" });
+  });
+
+  it.each([
+    ["sans chaîne", { channelId: undefined }],
+    ["avec une chaîne qui n'est pas un UUID", { channelId: "chaine-1" }],
+    ["sans utilisateur", { userId: undefined }],
+    ["avec une fin nulle", { expiresAt: null }],
+    ["avec une fin sans fuseau", { expiresAt: "2026-11-06T13:00:00" }],
+    ["sans motif", { reason: undefined }],
+  ])("refuse une réponse %s", (_name, overrides) => {
+    expect(responses.Ban.safeParse(makeBan(overrides)).success).toBe(false);
+  });
+});
+
 describe("LivePage", () => {
   const makeLive = (overrides: Record<string, unknown> = {}) => ({
     channelId: "4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b",

@@ -89,6 +89,7 @@ const PLATFORM_RULES: Readonly<Record<PlatformRole, (builder: Builder) => void>>
   admin: ({ can }) => {
     can("suspend", "Channel");
     can("administer", "Category");
+    can("ban", "ChannelMember", UNPROTECTED_FOR_OWNER);
   },
   staff: ({ can }) => {
     can("suspend", "Channel");

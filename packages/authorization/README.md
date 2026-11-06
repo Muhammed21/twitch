@@ -17,6 +17,7 @@ Définition unique des droits (ADR 0006), partagée par l'API et le process chat
 - Personne ne sanctionne le owner ; un moderator ne sanctionne ni un moderator ni un editor de la chaîne.
 - `banned` retire tous les droits sur sa chaîne (chat, sanctions, modification, attributions), quels que soient les autres rôles qu'on y tient. Ces rôles ne sont pas retirés : ils reprennent effet à la fin d'un timeout, qui est un `banned` avec `expiresAt`.
 - `admin` et `staff` peuvent `suspend` n'importe quelle `Channel`, et n'héritent d'aucun droit de chaîne. `support` n'a aucun droit.
+- `admin` peut `ban` un membre de n'importe quelle chaîne, sauf son owner (amendement du 2026-11-06 de l'ADR 0006). Il ne met pas en timeout. Un admin banni d'une chaîne n'y bannit plus.
 
 Les tests de `src/ability.test.ts` vérifient chaque case du tableau.
 

@@ -140,6 +140,13 @@ describe("bannissement d'un utilisateur d'une chaîne", () => {
     expect((await ban(makeRequest())).ok).toBe(true);
     expect(records).toHaveLength(1);
   });
+
+  it("laisse l'administrateur de la plateforme bannir sur une chaîne où il n'a aucun rôle", async () => {
+    const { records, ban } = setUp({ assignments: { [MODERATOR]: [onPlatform("admin")] } });
+
+    expect((await ban(makeRequest())).ok).toBe(true);
+    expect(records).toHaveLength(1);
+  });
 });
 
 describe("refus d'un bannissement", () => {
@@ -147,7 +154,7 @@ describe("refus d'un bannissement", () => {
     ["sans aucun rôle", []],
     ["modérateur d'une autre chaîne", [roleOn("moderator", OTHER_CHANNEL_ID)]],
     ["vip de la chaîne", [roleOn("vip")]],
-    ["administrateur de la plateforme seulement", [onPlatform("admin")]],
+    ["staff de la plateforme", [onPlatform("staff")]],
   ] as const)("refuse un humain %s, sans rien enregistrer", async (_name, roles) => {
     const { records, invalidations, ban } = setUp({ assignments: { [MODERATOR]: roles } });
 

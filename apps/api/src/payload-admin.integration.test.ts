@@ -141,3 +141,125 @@ describe("administration depuis Payload sur l'API assemblée (ADR 0007)", () => 
     });
   });
 });
+
+const seedChannelModerator = async (channelId: string): Promise<string> => {
+  const userId = randomUUID();
+  await asMigrator((client) =>
+    client.query(
+      `INSERT INTO "authz"."AuthzRoleAssignment"
+         ("id", "subjectId", "role", "scopeType", "scopeId", "grantedBy")
+       VALUES ($1, $2, 'moderator', 'channel', $3, $4)`,
+      [randomUUID(), userId, channelId, GRANTED_BY],
+    ),
+  );
+  return userId;
+};
+
+const banAuditOf = (targetId: string) =>
+  asMigrator(async (client) => {
+    const { rows } = await client.query(
+      `SELECT "actorId", "onBehalfOf", "source", "reason" FROM "audit"."AuditEntry"
+        WHERE "targetId" = $1 AND "action" = 'moderation.user.banned'`,
+      [targetId],
+    );
+    return rows;
+  });
+
+const withBanApi = async (
+  run: (
+    banUser: (request: {
+      channelId: string;
+      targetId: string;
+      headers: Record<string, string>;
+    }) => Promise<Response>,
+  ) => Promise<void>,
+) => {
+  const { app } = await createApp({
+    env: {
+      ...process.env,
+      PAYLOAD_SERVICE_SECRET: PAYLOAD_SECRET,
+      PAYLOAD_ACTING_USER_PUBLIC_KEY: PUBLIC_JWK,
+    },
+    logSink: () => {},
+  });
+  await app.listen(0, "127.0.0.1");
+  const base = await app.getUrl();
+  try {
+    await run(({ channelId, targetId, headers }) =>
+      fetch(`${base}/v1/admin/channels/${channelId}/bans`, {
+        method: "POST",
+        headers: { "content-type": "application/json", ...headers },
+        body: JSON.stringify({ userId: targetId, durationMinutes: 60, reason: "Harcèlement" }),
+      }),
+    );
+  } finally {
+    await app.close();
+  }
+};
+
+describe("bannissement depuis Payload sur l'API assemblée (jalon P2)", () => {
+  it("bannit au nom d'un modérateur de la chaîne, audité au nom de l'humain", async () => {
+    const channelId = randomUUID();
+    const targetId = randomUUID();
+    const moderatorId = await seedChannelModerator(channelId);
+
+    await withBanApi(async (banUser) => {
+      const response = await banUser({
+        channelId,
+        targetId,
+        headers: await fromPayload({ userId: moderatorId }),
+      });
+
+      expect(response.status).toBe(201);
+      expect(await banAuditOf(targetId)).toEqual([
+        {
+          actorId: moderatorId,
+          onBehalfOf: "svc:payload-admin",
+          source: "payload",
+          reason: "Harcèlement",
+        },
+      ]);
+    });
+  });
+
+  it("bannit au nom de l'administrateur de la plateforme, sur une chaîne où il n'a aucun rôle", async () => {
+    const channelId = randomUUID();
+    const targetId = randomUUID();
+    const adminId = await seedPlatformAdmin();
+
+    await withBanApi(async (banUser) => {
+      const response = await banUser({
+        channelId,
+        targetId,
+        headers: await fromPayload({ userId: adminId }),
+      });
+
+      expect(response.status).toBe(201);
+      expect(await banAuditOf(targetId)).toEqual([
+        {
+          actorId: adminId,
+          onBehalfOf: "svc:payload-admin",
+          source: "payload",
+          reason: "Harcèlement",
+        },
+      ]);
+    });
+  });
+
+  it("refuse en 403 un humain sans droit sur la chaîne, même si le compte de service a le scope", async () => {
+    const channelId = randomUUID();
+    const targetId = randomUUID();
+    await seedChannelModerator(channelId);
+
+    await withBanApi(async (banUser) => {
+      const response = await banUser({
+        channelId,
+        targetId,
+        headers: await fromPayload({ userId: randomUUID() }),
+      });
+
+      expect(response.status).toBe(403);
+      expect(await banAuditOf(targetId)).toEqual([]);
+    });
+  });
+});

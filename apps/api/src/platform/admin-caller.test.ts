@@ -43,9 +43,9 @@ class CategoryAdminProbe {
   }
 }
 
-@Controller("bans-admin")
-@UseGuards(adminCallerGuard("admin:user.ban"))
-class BanAdminProbe {
+@Controller("clips-admin")
+@UseGuards(adminCallerGuard("admin:clip.moderate"))
+class ClipAdminProbe {
   @Get()
   act(@CurrentActor() actor: AdminActor) {
     return actor;
@@ -112,7 +112,7 @@ const withApp = async (
         },
       }),
     ],
-    controllers: [CategoryAdminProbe, BanAdminProbe],
+    controllers: [CategoryAdminProbe, ClipAdminProbe],
   }).compile();
   const app = configureApp(moduleRef.createNestApplication({ logger: false }));
   await app.listen(0, "127.0.0.1");
@@ -193,7 +193,7 @@ describe("appel d'administration par le compte de service de Payload (ADR 0007)"
 
   it("refuse en 403 quand le compte de service n'a pas le scope, même avec un humain", async () => {
     await withApp({}, async (request) => {
-      const response = await request("bans-admin", fromPayload(await actingUser()));
+      const response = await request("clips-admin", fromPayload(await actingUser()));
 
       expect(response.status).toBe(403);
     });
@@ -274,13 +274,13 @@ describe("appel d'administration par le compte de service de Payload (ADR 0007)"
 
   it("journalise le triplet d'un appel refusé faute de scope", async () => {
     await withApp({}, async (request, logs) => {
-      await request("bans-admin", fromPayload(await actingUser({ userId: OTHER_ADMIN_ID })));
+      await request("clips-admin", fromPayload(await actingUser({ userId: OTHER_ADMIN_ID })));
 
       expect(triplets(logs)).toEqual([
         expect.objectContaining({
           actorId: OTHER_ADMIN_ID,
           onBehalfOf: "svc:payload-admin",
-          scope: "admin:user.ban",
+          scope: "admin:clip.moderate",
           status: 403,
           outcome: "refused",
           reason: "missing_scope",
@@ -358,7 +358,7 @@ describe("comptes de service configurés au démarrage", () => {
     expect((await serviceCallersFor(undefined)).accounts).toEqual([]);
   });
 
-  it("déclare svc:payload-admin avec le seul scope admin:category.manage, jamais *", async () => {
+  it("déclare svc:payload-admin avec les scopes admin:category.manage et admin:user.ban, jamais *", async () => {
     const publicJwk = JSON.stringify(
       await exportJWK((await generateKeyPair("EdDSA", { crv: "Ed25519" })).publicKey),
     );
@@ -371,7 +371,11 @@ describe("comptes de service configurés au démarrage", () => {
         })
       ).accounts,
     ).toEqual([
-      { id: "svc:payload-admin", scopes: ["admin:category.manage"], secret: PAYLOAD_SECRET },
+      {
+        id: "svc:payload-admin",
+        scopes: ["admin:category.manage", "admin:user.ban"],
+        secret: PAYLOAD_SECRET,
+      },
     ]);
   });
 

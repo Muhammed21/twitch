@@ -1,6 +1,6 @@
 # 0006 — Modèle d'autorisation scopé par chaîne (RBAC/ABAC)
 
-- Statut : Accepté — portée du garde-fou en base amendée par [0025](0025-un-client-prisma-par-contexte.md)
+- Statut : Accepté — portée du garde-fou en base amendée par [0025](0025-un-client-prisma-par-contexte.md), bannissement par l'admin de la plateforme ajouté par l'amendement du 2026-11-06
 - Date : 2026-09-22
 - Décideurs : Muhammed Cavus
 
@@ -197,3 +197,18 @@ L'écriture de l'audit se fait **dans la même transaction** que l'effet métier
 - Les erreurs d'autorisation sont des valeurs de retour (`Result`), pas des exceptions ; l'adaptateur HTTP les traduit en `403` avec un corps RFC 9457. Ne jamais distinguer dans la réponse « ressource inexistante » et « accès refusé » pour les ressources privées.
 - Tests à écrire en premier : modérateur sur A et banni sur B simultanément ; expiration automatique d'un timeout ; révocation invalidant le cache avant la réponse ; ban propagé au chat ; tentative d'attribution hors portée ; absence totale de rôle dans le JWT (test de régression).
 - Interdiction explicite, à faire respecter en revue : aucune règle métier dans un guard NestJS, aucun `@Roles('moderator')` sans portée.
+
+## Amendement du 2026-11-06 — l'admin de la plateforme bannit sur toutes les chaînes
+
+Décidé par l'utilisateur. Décideurs : Muhammed Cavus. Le statut reste Accepté.
+
+Le rôle de plateforme `admin` gagne la capacité `ban` sur un membre de **n'importe quelle chaîne**. Cela amende le §2 (« Rôles de plateforme ») pour cette seule action : l'admin ne devient ni modérateur ni propriétaire d'une chaîne.
+
+- **Raison.** La console d'administration (ADR 0007) doit pouvoir bannir sur toute chaîne, y compris une chaîne sans modérateur actif. Sans cette capacité, un admin ne pouvait bannir que sur une chaîne où il tient un rôle de chaîne.
+- **Effet.** `can("ban", "ChannelMember", { targetIsOwner: false })` pour `admin`. Le propriétaire et les modérateurs gardent leurs droits sur leur chaîne. Un utilisateur sans rôle reste refusé.
+- **Ce qui ne change pas.**
+  - `staff` et `support` ne bannissent pas.
+  - L'admin ne met pas en timeout, ne nomme pas et ne modifie pas une chaîne.
+  - Le propriétaire d'une chaîne n'est banni de sa propre chaîne par personne, admin compris.
+  - Un admin banni d'une chaîne n'y bannit plus personne.
+  - Depuis Payload, les deux conditions restent cumulatives : le scope `admin:user.ban` du compte de service et la permission de l'humain, évaluée dans le use-case (§4).

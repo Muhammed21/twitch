@@ -8,7 +8,7 @@ export type ServiceAccount = {
 
 export const PAYLOAD_ADMIN_ACCOUNT = {
   id: "svc:payload-admin",
-  scopes: ["admin:category.manage"],
+  scopes: ["admin:category.manage", "admin:user.ban"],
 } as const satisfies Omit<ServiceAccount, "secret">;
 
 const digest = (value: string) => createHash("sha256").update(value).digest();
