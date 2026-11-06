@@ -41,6 +41,94 @@ struct SessionAccountTests {
     #expect(harness.store.phase == .signedOut)
   }
 
+  @Test("un compte qui ne se charge pas (refresh refusé, réseau) est signalé en échec")
+  func accountLoadFailed() async {
+    let harness = Harness(tokens: storedTokens, account: .failure(NetworkDown()))
+    let running = await harness.launch()
+    defer { running.cancel() }
+
+    #expect(await eventually { harness.store.hasAccountLoadFailure })
+    #expect(harness.store.phase == .signedIn(nil))
+  }
+
+  @Test("un nouvel essai après l'échec charge le compte et efface l'échec")
+  func accountReloaded() async {
+    let harness = Harness(tokens: storedTokens, account: .failure(NetworkDown()), thenAccount: .success(viewer))
+    let running = await harness.launch()
+    defer { running.cancel() }
+    _ = await eventually { harness.store.hasAccountLoadFailure }
+
+    await harness.store.reloadAccount()
+
+    #expect(harness.store.phase == .signedIn(viewer))
+    #expect(!harness.store.hasAccountLoadFailure)
+  }
+
+  @Test("un nouvel essai qui échoue encore garde l'échec signalé")
+  func accountReloadFailsAgain() async {
+    let harness = Harness(tokens: storedTokens, account: .failure(NetworkDown()))
+    let running = await harness.launch()
+    defer { running.cancel() }
+    _ = await eventually { harness.store.hasAccountLoadFailure }
+
+    await harness.store.reloadAccount()
+
+    #expect(harness.store.phase == .signedIn(nil))
+    #expect(harness.store.hasAccountLoadFailure)
+  }
+
+  @Test("un compte chargé n'est pas signalé en échec et un nouvel essai ne le recharge pas")
+  func loadedAccountNotReloaded() async {
+    let harness = Harness(tokens: storedTokens, thenAccount: .failure(NetworkDown()))
+    let running = await harness.launch()
+    defer { running.cancel() }
+    _ = await eventually { harness.store.phase == .signedIn(viewer) }
+
+    await harness.store.reloadAccount()
+
+    #expect(harness.store.phase == .signedIn(viewer))
+    #expect(!harness.store.hasAccountLoadFailure)
+  }
+
+  @Test("une déconnexion efface l'échec de chargement du compte")
+  func logOutClearsFailure() async {
+    let harness = Harness(tokens: storedTokens, account: .failure(NetworkDown()))
+    let running = await harness.launch()
+    defer { running.cancel() }
+    _ = await eventually { harness.store.hasAccountLoadFailure }
+
+    await harness.store.resolveLogOut(.logOut)
+
+    #expect(await eventually { harness.store.phase == .signedOut })
+    #expect(!harness.store.hasAccountLoadFailure)
+  }
+
+  @Test("une déconnexion pendant un chargement qui échoue ne signale pas d'échec")
+  func signedOutWhileFailing() async {
+    let gate = Gate()
+    let harness = Harness(tokens: storedTokens, account: .failure(NetworkDown()), accountGate: gate)
+    let running = await harness.launch()
+    defer { running.cancel() }
+
+    await harness.store.resolveLogOut(.logOut)
+    #expect(await eventually { harness.store.phase == .signedOut })
+    await gate.open()
+    try? await Task.sleep(for: .milliseconds(50))
+
+    #expect(!harness.store.hasAccountLoadFailure)
+  }
+
+  @Test("déconnectée, un nouvel essai ne reconnecte pas la session")
+  func reloadWhileSignedOut() async {
+    let harness = Harness(tokens: nil)
+    let running = await harness.launch()
+    defer { running.cancel() }
+
+    await harness.store.reloadAccount()
+
+    #expect(harness.store.phase == .signedOut)
+  }
+
   @Test("déconnectée, la session n'a pas d'identifiant de compte")
   func signedOut() async {
     let harness = Harness(tokens: nil)

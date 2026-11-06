@@ -24,11 +24,11 @@ struct ViewerProfileTab: View {
 
   var body: some View {
     ProfileScreen(account: account, actions: ProfileActions(
-      onOpenChannel: { router.push(.channel($0)) },
       onAccountSaved: { session.accountSaved($0) },
       onStreamManager: { router.create() },
       onAnalytics: { Task { await creatorMode.switchMode(landingOn: .stats) } },
-      onTryAdFree: isTurboOffered ? { isShowingPaywall = true } : nil
+      onTryAdFree: isTurboOffered ? { isShowingPaywall = true } : nil,
+      onRetryAccount: session.hasAccountLoadFailure ? { Task { await session.reloadAccount() } } : nil
     )) {
       SignedInScreen()
     }

@@ -38,14 +38,13 @@ public struct ProfileScreen<Settings: View>: View {
         ProfileBanner(imageURL: store.bannerURL, settings: settingsAction)
       }
       VStack(alignment: .leading, spacing: 0) {
+        accountFailure
         headerActions
         BrowseTabs(selection: $section, items: [
           BrowseTabItem(tab: .about, title: String(localized: ProfileText.title(of: .about)), accessibilityIdentifier: "profile.about"),
         ])
         .padding(.top, LayoutRole.profileTabTop.points)
         about
-        myChannel
-          .padding(.top, LayoutRole.menuCardGap.points)
       }
       .padding(.horizontal, LayoutRole.screenInset.points)
     }
@@ -85,15 +84,17 @@ public struct ProfileScreen<Settings: View>: View {
     }
   }
 
-  private var myChannel: some View {
-    MenuCard {
-      Button {
-        if case let .ready(owned) = store.phase { actions.onOpenChannel(owned.slug) }
-      } label: {
-        MenuRow(systemImage: "person.crop.square", label: ProfileText.myChannel, showsChevron: true)
+  @ViewBuilder private var accountFailure: some View {
+    if account == nil, let onRetryAccount = actions.onRetryAccount {
+      VStack(alignment: .leading, spacing: LayoutRole.menuCardGap.points) {
+        Text(ProfileText.accountFailed)
+          .font(TextRole.body.font)
+          .foregroundStyle(ColorRole.textSecondary.color)
+        Button(ProfileText.retry, action: onRetryAccount)
+          .buttonStyle(ActionButtonStyle(.secondary))
+          .accessibilityIdentifier("profile.retryAccount")
       }
-      .disabled(!store.isReady)
-      .accessibilityIdentifier("profile.myChannel")
+      .padding(.vertical, LayoutRole.menuCardGap.points)
     }
   }
 
@@ -103,70 +104,29 @@ public struct ProfileScreen<Settings: View>: View {
 }
 
 public struct ProfileActions {
-  let onOpenChannel: (ChannelSlug) -> Void
   let onAccountSaved: (Account) -> Void
   let onStreamManager: () -> Void
   let onAnalytics: () -> Void
   let onTryAdFree: (() -> Void)?
+  let onRetryAccount: (() -> Void)?
 
   public init(
-    onOpenChannel: @escaping (ChannelSlug) -> Void,
     onAccountSaved: @escaping (Account) -> Void,
     onStreamManager: @escaping () -> Void,
     onAnalytics: @escaping () -> Void,
-    onTryAdFree: (() -> Void)? = nil
+    onTryAdFree: (() -> Void)? = nil,
+    onRetryAccount: (() -> Void)? = nil
   ) {
-    self.onOpenChannel = onOpenChannel
     self.onAccountSaved = onAccountSaved
     self.onStreamManager = onStreamManager
     self.onAnalytics = onAnalytics
     self.onTryAdFree = onTryAdFree
-  }
-}
-
-struct MenuCard<Content: View>: View {
-  @ViewBuilder let content: () -> Content
-
-  var body: some View {
-    VStack(spacing: 0, content: content)
-      .background(ColorRole.surface.color, in: RoundedRectangle(cornerRadius: LayoutRole.menuCardRadius.points))
-  }
-}
-
-struct MenuRow: View {
-  let systemImage: String
-  let label: LocalizedStringResource
-  let showsChevron: Bool
-
-  var body: some View {
-    HStack(spacing: LayoutRole.menuLabelGap.points) {
-      Image(systemName: systemImage)
-        .frame(width: LayoutRole.menuIconWidth.points)
-        .accessibilityHidden(true)
-      Text(label)
-      Spacer(minLength: 0)
-      if showsChevron {
-        Image(systemName: "chevron.right")
-          .accessibilityHidden(true)
-      }
-    }
-    .font(TextRole.display.font)
-    .foregroundStyle(ColorRole.textPrimary.color)
-    .padding(.horizontal, LayoutRole.menuRowPadding.points)
-    .frame(minHeight: LayoutRole.menuRowHeight.points)
-    .contentShape(Rectangle())
+    self.onRetryAccount = onRetryAccount
   }
 }
 
 public extension MyChannelStore {
   func pictures(of account: Account) -> ProfilePictures {
     ProfilePictures(avatar: account.avatarURL, banner: bannerURL)
-  }
-}
-
-extension MyChannelStore {
-  var isReady: Bool {
-    guard case .ready = phase else { return false }
-    return true
   }
 }
