@@ -60,6 +60,24 @@ struct LiveStatusClientTests {
     #expect(try await statuses(from: transport) == [.live(viewers: ViewerCount(42), startedAt: liveStart), .offline])
   }
 
+  @Test("lit la vignette d'une chaîne en live")
+  func thumbnail() async throws {
+    let json = #"{"channelId":"0f5e2d7a-3c41-4b8e-9a6d-1e2f3a4b5c6d","live":true,"startedAt":"2026-11-03T20:00:00Z","thumbnailUrl":"http://192.168.4.233:3002/hls/channels/c/thumbnail.jpg"}"#
+    let thumbnail = try #require(URL(string: "http://192.168.4.233:3002/hls/channels/c/thumbnail.jpg"))
+
+    #expect(
+      try await statuses(from: FakeLineTransport(lines: statusLines(json)))
+        == [.live(viewers: nil, startedAt: liveStart, thumbnailURL: thumbnail)]
+    )
+  }
+
+  @Test("une vignette qui n'est pas une adresse web est ignorée sans écarter le statut")
+  func unreadableThumbnail() async throws {
+    let json = #"{"channelId":"0f5e2d7a-3c41-4b8e-9a6d-1e2f3a4b5c6d","live":true,"startedAt":"2026-11-03T20:00:00Z","thumbnailUrl":"vignette"}"#
+
+    #expect(try await statuses(from: FakeLineTransport(lines: statusLines(json))) == [.live(viewers: nil, startedAt: liveStart)])
+  }
+
   @Test("lit un début sans fraction de seconde")
   func startWithoutFraction() async throws {
     let json = #"{"channelId":"0f5e2d7a-3c41-4b8e-9a6d-1e2f3a4b5c6d","live":true,"startedAt":"2026-11-03T20:00:00Z","viewerCount":42}"#

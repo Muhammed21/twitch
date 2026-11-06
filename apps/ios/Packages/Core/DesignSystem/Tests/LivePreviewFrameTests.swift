@@ -38,3 +38,19 @@ struct LivePreviewFrameTests {
     #expect(shown.receiving(nil, for: nil).picture == nil)
   }
 }
+
+@Suite("Téléchargement d'une vignette de live")
+struct LivePreviewRequestTests {
+  @Test("chaque génération redemande la vignette au serveur, sans la copie du cache local")
+  func bypassesLocalCache() throws {
+    let request = try #require(LivePreview(url: thumbnail, generation: 2).request)
+
+    #expect(request.url == thumbnail)
+    #expect(request.cachePolicy == .reloadIgnoringLocalCacheData)
+  }
+
+  @Test("sans vignette, rien n'est demandé")
+  func noThumbnail() {
+    #expect(LivePreview(url: nil, generation: 0).request == nil)
+  }
+}

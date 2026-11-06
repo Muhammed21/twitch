@@ -31,14 +31,14 @@ struct LivePreviewImage: View {
       }
     }
     .task(id: preview) {
-      let loaded = await Self.load(preview.url)
+      let loaded = await Self.load(preview.request)
       guard !Task.isCancelled else { return }
       frame = frame.receiving(loaded, for: preview.url)
     }
   }
 
-  private static func load(_ url: URL?) async -> UIImage? {
-    guard let url, let (data, response) = try? await URLSession.shared.data(from: url),
+  private static func load(_ request: URLRequest?) async -> UIImage? {
+    guard let request, let (data, response) = try? await URLSession.shared.data(for: request),
           let status = (response as? HTTPURLResponse)?.statusCode, (200 ..< 300).contains(status)
     else { return nil }
     return UIImage(data: data)

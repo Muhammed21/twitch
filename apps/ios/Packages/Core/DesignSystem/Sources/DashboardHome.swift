@@ -66,6 +66,7 @@ public struct DashboardStatsCard: View {
 
 public struct DashboardStreamCard: View {
   private let offlineLabel: String?
+  private let livePreview: LivePreview?
   private let primaryLabel: String
   private let secondaryLabel: String
   private let onPrimary: () -> Void
@@ -73,12 +74,14 @@ public struct DashboardStreamCard: View {
 
   public init(
     offlineLabel: String?,
+    preview: LivePreview? = nil,
     primaryLabel: String,
     secondaryLabel: String,
     onPrimary: @escaping () -> Void,
     onSecondary: @escaping () -> Void
   ) {
     self.offlineLabel = offlineLabel
+    livePreview = preview
     self.primaryLabel = primaryLabel
     self.secondaryLabel = secondaryLabel
     self.onPrimary = onPrimary
@@ -87,7 +90,7 @@ public struct DashboardStreamCard: View {
 
   public var body: some View {
     VStack(spacing: LayoutRole.dashboardStreamGap.points) {
-      preview
+      previewArea
       DashboardCapsuleButton(
         label: primaryLabel,
         background: DashboardStyle.primaryButton,
@@ -107,9 +110,14 @@ public struct DashboardStreamCard: View {
     .dashboardCard()
   }
 
-  private var preview: some View {
+  private var previewArea: some View {
     DashboardStyle.previewBackground.color
       .aspectRatio(DashboardStyle.previewAspectRatio, contentMode: .fit)
+      .overlay {
+        if let livePreview {
+          LivePreviewImage(preview: livePreview)
+        }
+      }
       .overlay(alignment: .topLeading) {
         if let offlineLabel {
           Text(verbatim: offlineLabel)

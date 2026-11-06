@@ -15,7 +15,7 @@ struct HeaderViewers: Equatable {
 
 extension HeaderLine {
   init(status: LiveStatus?, locale: Locale) {
-    guard case let .live(count, _) = status else {
+    guard case let .live(count, _, _) = status else {
       self.init(isLive: false, viewers: nil)
       return
     }

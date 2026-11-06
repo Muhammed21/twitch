@@ -18,6 +18,10 @@ public struct LivePreview: Hashable, Sendable {
     self.url = url
     self.generation = generation
   }
+
+  public var request: URLRequest? {
+    url.map { URLRequest(url: $0, cachePolicy: .reloadIgnoringLocalCacheData) }
+  }
 }
 
 public struct LiveCard: View {
