@@ -1700,22 +1700,6 @@
           }
         }
       }
-    },
-    "welcome.slogan" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "There's something\nfor you on Twitch"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il y a forcément quelque chose\npour vous sur Twitch"
-          }
-        }
-      }
     }
   },
   "version" : "1.0"
