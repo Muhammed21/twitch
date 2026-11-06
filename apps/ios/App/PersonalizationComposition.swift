@@ -125,11 +125,16 @@ struct PersonalizationRoot: View {
   }
 
   @MainActor
-  static func paywallStore(_ paywall: PersonalizationPaywall, onSubscribed: @escaping @MainActor () -> Void) -> PaywallStore {
+  static func paywallStore(
+    _ paywall: PersonalizationPaywall,
+    placement: AnalyticsPlacement = .onboarding,
+    onSubscribed: @escaping @MainActor () -> Void
+  ) -> PaywallStore {
     PaywallStore(
       purchases: paywall.purchases,
       offeringID: nil,
       variant: paywall.variant,
+      placement: placement,
       analytics: paywall.analytics,
       onSubscribed: onSubscribed
     )

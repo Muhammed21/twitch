@@ -43,6 +43,10 @@ struct ViewerProfileTab: View {
       )
     }
   }
+
+  static func paywallStore(_ paywall: PersonalizationPaywall, onSubscribed: @escaping @MainActor () -> Void) -> PaywallStore {
+    PersonalizationRoot.paywallStore(paywall, placement: .profile, onSubscribed: onSubscribed)
+  }
 }
 
 private struct ProfilePaywall: View {
@@ -50,7 +54,7 @@ private struct ProfilePaywall: View {
   private let links: PaywallLinks
 
   init(paywall: PersonalizationPaywall, onSubscribed: @escaping @MainActor () -> Void) {
-    _store = State(initialValue: PersonalizationRoot.paywallStore(paywall, onSubscribed: onSubscribed))
+    _store = State(initialValue: ViewerProfileTab.paywallStore(paywall, onSubscribed: onSubscribed))
     links = paywall.links
   }
 

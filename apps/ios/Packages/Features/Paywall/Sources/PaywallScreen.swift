@@ -53,6 +53,7 @@ public struct PaywallScreen: View {
     .background(ColorRole.background.color.ignoresSafeArea())
     .modifier(PaywallNavigation(title: presentation.title))
     .task { await store.load() }
+    .onDisappear { store.dismiss() }
   }
 
   private func header(onClose: @escaping () -> Void) -> some View {

@@ -25,7 +25,7 @@ struct PaywallAnalyticsTests {
 
     await store.subscribe(annual)
 
-    #expect(analytics.captured == [.purchaseCompleted(productID: "$rc_annual", variant: "variant_b")])
+    #expect(analytics.captured.last == .purchaseCompleted(productID: "$rc_annual", variant: "variant_b"))
   }
 
   @Test("un achat annulé ou en échec n'émet pas purchase:completed", arguments: [

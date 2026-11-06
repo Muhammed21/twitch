@@ -29,21 +29,20 @@ public final class PaywallStore {
 
   private let purchases: any Purchases
   private let offeringID: String?
-  private let variant: @MainActor () -> String?
-  private let analytics: any Analytics
+  private let funnel: PaywallFunnel
   private let onSubscribed: @MainActor () -> Void
 
   public init(
     purchases: any Purchases,
     offeringID: String?,
     variant: @escaping @MainActor () -> String? = { nil },
+    placement: AnalyticsPlacement = .onboarding,
     analytics: any Analytics,
     onSubscribed: @escaping @MainActor () -> Void = {}
   ) {
     self.purchases = purchases
     self.offeringID = offeringID
-    self.variant = variant
-    self.analytics = analytics
+    funnel = PaywallFunnel(variant: variant, placement: placement, analytics: analytics)
     self.onSubscribed = onSubscribed
   }
 
@@ -60,6 +59,7 @@ public final class PaywallStore {
       let offering = try await purchases.offering(offeringID)
       selected = PaywallOffer.preferred(in: offering)
       phase = .ready(offering)
+      funnel.viewed(offering)
     } catch {
       phase = .unavailable
     }
@@ -75,18 +75,22 @@ public final class PaywallStore {
     notice = nil
     purchasing = package
     defer { purchasing = nil }
-    let variant = variant()
+    let variant = funnel.currentVariant
     if let variant {
       purchases.setAttribute(variant, for: "ph_paywall_variant")
     }
-    do {
-      if try await purchases.purchase(package) == .subscribed {
-        completed(package, variant: variant)
-        subscribed()
-      }
-    } catch {
-      notice = .purchaseFailed
+    funnel.started(package, variant: variant)
+    let outcome = await outcome(of: package)
+    funnel.ended(package, variant: variant, outcome: outcome)
+    switch outcome {
+    case .success(.subscribed): subscribed()
+    case .success(.cancelled): break
+    case .failure: notice = .purchaseFailed
     }
+  }
+
+  public func dismiss() {
+    funnel.dismissed()
   }
 
   public func restore() async {
@@ -95,7 +99,9 @@ public final class PaywallStore {
     isRestoring = true
     defer { isRestoring = false }
     do {
-      if try await purchases.restore() {
+      let isActive = try await purchases.restore()
+      funnel.restored(hasActiveEntitlement: isActive)
+      if isActive {
         subscribed()
       } else {
         notice = .nothingToRestore
@@ -105,12 +111,16 @@ public final class PaywallStore {
     }
   }
 
-  private func completed(_ package: SubscriptionPackage, variant: String?) {
-    guard let variant else { return }
-    analytics.capture(.purchaseCompleted(productID: package.id, variant: variant))
+  private func outcome(of package: SubscriptionPackage) async -> Result<PurchaseOutcome, PurchasesFailure> {
+    do {
+      return try await .success(purchases.purchase(package))
+    } catch {
+      return .failure(error)
+    }
   }
 
   private func subscribed() {
+    funnel.subscribed()
     phase = .subscribed
     onSubscribed()
   }

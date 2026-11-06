@@ -150,7 +150,16 @@ describe("taxonomie des événements analytics (ADR 0012)", () => {
     ).toBe(false);
   });
 
-  it("place le paywall dans l'onboarding seulement, pour la tranche 1", () => {
+  it("place le paywall dans l'onboarding ou le profil, pour la tranche 1", () => {
+    expect(
+      ["onboarding", "profile"].map(
+        (placement) =>
+          AnalyticsEvents["paywall:dismissed"].properties.safeParse({
+            variant: "control",
+            placement,
+          }).success,
+      ),
+    ).toEqual([true, true]);
     expect(
       AnalyticsEvents["paywall:dismissed"].properties.safeParse({
         variant: "control",
