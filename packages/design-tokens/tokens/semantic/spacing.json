@@ -60,6 +60,11 @@
       "$value": "{core.dimension.16}",
       "$description": "Marge latérale des écrans, relevée sur l'app iOS Twitch (16 pt)."
     },
+    "x19": {
+      "$type": "dimension",
+      "$value": "{core.dimension.19}",
+      "$description": "Page Activité, onglet Chuchotements vide : écart entre le personnage et le titre, relevé sur l'app iOS Twitch (19 pt)."
+    },
     "x20": {
       "$type": "dimension",
       "$value": "{core.dimension.20}",

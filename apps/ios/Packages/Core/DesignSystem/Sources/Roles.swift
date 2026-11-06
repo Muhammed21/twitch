@@ -356,4 +356,6 @@ public enum LayoutRole: Sendable {
   case activityEmptyGap
   case activityActionHeight
   case activityActionPadding
+  case activityNotificationsIllustrationGap
+  case activityWhispersIllustrationGap
 }

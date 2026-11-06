@@ -12,6 +12,7 @@ struct Rect: Decodable {
 
 struct Separation: Decodable {
   let pureWithin: Double
+  let minimumRegion: Int?
   let neighbourhood: Int
 }
 
@@ -94,6 +95,36 @@ func pureLabels(_ pixels: [RGB], palette: [RGB], within: Double) -> [Int?] {
   }
 }
 
+func region(from start: Int, labels: [Int?], width: Int) -> [Int] {
+  let label = labels[start]
+  var seen: Set<Int> = [start]
+  var pending = [start]
+  while let index = pending.popLast() {
+    let (row, column) = (index / width, index % width)
+    let neighbours = [
+      column > 0 ? index - 1 : nil,
+      column < width - 1 ? index + 1 : nil,
+      row > 0 ? index - width : nil,
+      index + width < labels.count ? index + width : nil,
+    ].compactMap(\.self).filter { labels[$0] == label && !seen.contains($0) }
+    seen.formUnion(neighbours)
+    pending.append(contentsOf: neighbours)
+  }
+  return Array(seen)
+}
+
+func withoutSpeckles(_ labels: [Int?], width: Int, minimumRegion: Int) -> [Int?] {
+  guard minimumRegion > 1 else { return labels }
+  var visited = Set<Int>()
+  var speckles = Set<Int>()
+  for index in labels.indices where labels[index] != nil && !visited.contains(index) {
+    let members = region(from: index, labels: labels, width: width)
+    visited.formUnion(members)
+    if members.count < minimumRegion { speckles.formUnion(members) }
+  }
+  return labels.indices.map { speckles.contains($0) ? nil : labels[$0] }
+}
+
 func neighbourCounts(at index: Int, labels: [Int?], width: Int, radius: Int) -> [Int: Int] {
   let height = labels.count / width
   let (row, column) = (index / width, index % width)
@@ -155,7 +186,11 @@ func junction(_ pixel: RGB, counts: [Int: Int], palette: [RGB]) -> Split? {
 
 func splits(of entry: Entry, palette: [RGB]) throws -> [Split] {
   let pixels = try crop(entry)
-  let labels = pureLabels(pixels, palette: palette, within: entry.separation.pureWithin)
+  let labels = withoutSpeckles(
+    pureLabels(pixels, palette: palette, within: entry.separation.pureWithin),
+    width: entry.rect.width,
+    minimumRegion: entry.separation.minimumRegion ?? 1
+  )
   return pixels.indices.map { index in
     if let label = labels[index] {
       return Split(lower: 0, upper: label, share: 1, error: 0)

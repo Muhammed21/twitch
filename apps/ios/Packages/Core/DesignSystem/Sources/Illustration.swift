@@ -4,6 +4,8 @@ public enum Illustration: String, CaseIterable, Sendable {
   case clapperboard
   case barChart
   case characterOnPurple
+  case character
+  case glasses
 
   var layers: [IllustrationLayer] {
     tints.map { IllustrationLayer(illustration: self, tint: $0) }
@@ -12,7 +14,8 @@ public enum Illustration: String, CaseIterable, Sendable {
   private var tints: [IllustrationTint] {
     switch self {
     case .clapperboard, .barChart: [.fill, .outline, .ink]
-    case .characterOnPurple: [.accent, .fill, .outline, .highlight, .ink]
+    case .characterOnPurple, .glasses: [.accent, .fill, .outline, .highlight, .ink]
+    case .character: [.backdrop, .fill, .outline, .highlight, .ink]
     }
   }
 
@@ -21,6 +24,8 @@ public enum Illustration: String, CaseIterable, Sendable {
     case .clapperboard: CGSize(width: 140, height: 128)
     case .barChart: CGSize(width: 137, height: 138)
     case .characterOnPurple: CGSize(width: 162, height: 178)
+    case .character: CGSize(width: 170, height: 177)
+    case .glasses: CGSize(width: 186, height: 164)
     }
   }
 }
@@ -31,6 +36,7 @@ enum IllustrationTint: String, CaseIterable, Sendable {
   case outline
   case highlight
   case ink
+  case backdrop
 
   var maskSuffix: String {
     rawValue.prefix(1).uppercased() + rawValue.dropFirst()
@@ -43,6 +49,7 @@ enum IllustrationTint: String, CaseIterable, Sendable {
     case .outline: .illustrationOutline
     case .highlight: .illustrationHighlight
     case .ink: .illustrationInk
+    case .backdrop: .illustrationBackdrop
     }
   }
 }
