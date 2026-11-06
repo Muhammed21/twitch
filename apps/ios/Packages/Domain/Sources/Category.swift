@@ -34,13 +34,15 @@ public struct BrowseCategory: Equatable, Sendable {
   public let imageURL: URL?
   public let liveCount: Int
   public let viewers: ViewerCount?
+  public let tags: [String]
 
-  public init(slug: CategorySlug, name: String, imageURL: URL?, liveCount: Int, viewers: ViewerCount?) {
+  public init(slug: CategorySlug, name: String, imageURL: URL?, liveCount: Int, viewers: ViewerCount?, tags: [String] = []) {
     self.slug = slug
     self.name = name
     self.imageURL = imageURL
     self.liveCount = liveCount
     self.viewers = viewers
+    self.tags = tags
   }
 }
 

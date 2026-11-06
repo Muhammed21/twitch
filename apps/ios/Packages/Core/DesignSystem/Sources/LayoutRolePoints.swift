@@ -53,6 +53,8 @@ public extension LayoutRole {
     case .categoryNameTop: Spacing.x4
     case .liveDotSize: Spacing.x8
     case .liveDotGap: Spacing.x6
+    case .categoryTileDotGap: Spacing.x8
+    case .categoryTileTagTop: Spacing.x4
     case .categoryTagPaddingH: Spacing.x8
     case .categoryTagPaddingV: Spacing.x3
     case .categoryTagGap: Spacing.x4
@@ -165,6 +167,8 @@ public extension LayoutRole {
     case .dashboardFieldGlyphGap: Spacing.x6
     case .dashboardEmptyTop: Spacing.x256
     case .dashboardEmptyWidth: Spacing.x256
+    case .dashboardEmptyClapperboardGap: Spacing.x12
+    case .dashboardEmptyBarChartGap: Spacing.x8
     case .dashboardPillHeight: Spacing.x40
     case .dashboardPillLeading: Spacing.x10
     case .dashboardPillTrailing: Spacing.x12
