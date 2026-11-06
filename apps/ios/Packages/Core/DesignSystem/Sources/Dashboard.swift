@@ -44,7 +44,7 @@ public struct DashboardHeader<Trailing: View>: View {
       }
     }
     .padding(.horizontal, LayoutRole.screenInset.points)
-    .frame(height: LayoutRole.dashboardHeaderHeight.points)
+    .frame(minHeight: LayoutRole.dashboardHeaderHeight.points)
   }
 }
 
@@ -96,7 +96,7 @@ public struct DashboardPillButton: View {
       .foregroundStyle(ColorRole.textPrimary.color)
       .padding(.leading, LayoutRole.dashboardPillLeading.points)
       .padding(.trailing, LayoutRole.dashboardPillTrailing.points)
-      .frame(height: LayoutRole.dashboardPillHeight.points)
+      .frame(minHeight: LayoutRole.dashboardPillHeight.points)
       .background(DashboardStyle.pillBackground.color, in: Capsule())
       .contentShape(Capsule())
     }
@@ -123,7 +123,7 @@ public struct DashboardSearchField: View {
         .foregroundStyle(ColorRole.textPrimary.color)
     }
     .padding(.horizontal, LayoutRole.composerPadding.points)
-    .frame(height: LayoutRole.dashboardFieldHeight.points)
+    .frame(minHeight: LayoutRole.dashboardFieldHeight.points)
     .background(
       DashboardStyle.fieldBackground.color,
       in: RoundedRectangle(cornerRadius: LayoutRole.dashboardFieldRadius.points)

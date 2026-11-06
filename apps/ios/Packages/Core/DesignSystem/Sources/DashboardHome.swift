@@ -52,7 +52,7 @@ public struct DashboardStatsCard: View {
       }
     }
     .padding(.horizontal, LayoutRole.dashboardStatsInset.points)
-    .frame(height: LayoutRole.dashboardStatsHeight.points)
+    .frame(minHeight: LayoutRole.dashboardStatsHeight.points)
     .dashboardCard()
   }
 }
@@ -146,7 +146,7 @@ public struct DashboardActivityCard: View {
         .font(TextRole.dashboardActivityEmpty.font)
         .foregroundStyle(DashboardStyle.activityEmpty.color)
         .frame(maxWidth: .infinity)
-        .frame(height: LayoutRole.dashboardActivityHeight.points)
+        .frame(minHeight: LayoutRole.dashboardActivityHeight.points)
         .dashboardCard()
       Text(verbatim: linkLabel)
         .font(TextRole.dashboardLink.font)
@@ -168,7 +168,7 @@ private struct DashboardCapsuleButton: View {
         .foregroundStyle(foreground.color)
         .lineLimit(1)
         .frame(maxWidth: .infinity)
-        .frame(height: LayoutRole.dashboardStreamButtonHeight.points)
+        .frame(minHeight: LayoutRole.dashboardStreamButtonHeight.points)
         .background(background.color, in: Capsule())
         .contentShape(Capsule())
     }
