@@ -1,4 +1,3 @@
-import Chat
 import DesignSystem
 import Domain
 import SwiftUI
@@ -9,6 +8,7 @@ public struct StreamManagerScreen: View {
   @State private var isConfirmingReset = false
   @State private var widget = StreamManagerWidget.initial
   @Environment(\.dismiss) private var dismiss
+  @Environment(\.streamManagerChat) private var chat
   private let status: LiveStatus?
   private let onClose: (() -> Void)?
 
@@ -99,7 +99,7 @@ public struct StreamManagerScreen: View {
 
   @ViewBuilder private func widgetContent(_ widget: StreamManagerWidget, owned: OwnedChannel) -> some View {
     switch widget {
-    case .chat: StreamManagerChat(slug: owned.slug)
+    case .chat: chat.view(for: owned.slug)
     case .streamInfo: titleCard
     case .streamKey: keyCard
     case .obs: obsCard
@@ -244,19 +244,5 @@ public struct EditStreamInfoSheet: View {
       isSaving = false
       if saved { dismiss() }
     }
-  }
-}
-
-struct StreamManagerChat: View {
-  let slug: ChannelSlug
-  @Environment(ChatSession.self) private var chat
-
-  var body: some View {
-    VStack(spacing: 0) {
-      ChatList(welcome: .channel(slug.rawValue), style: .widget)
-        .padding(.horizontal, LayoutRole.chatInset.points)
-      ChatComposer(style: .widget)
-    }
-    .task(id: slug) { await chat.run(slug) }
   }
 }

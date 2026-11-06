@@ -1,6 +1,7 @@
 import DesignSystem
 import Domain
 import Profile
+import SwiftUI
 import Testing
 
 @Suite("Widgets du gestionnaire de stream (IMG_9618)")
@@ -40,5 +41,19 @@ struct StreamManagerWidgetTests {
     #expect(french(StreamManagerHeaderText.title) == "Gestionnaire de stream")
     #expect(french(StreamManagerHeaderText.widgetMenu) == "Plus d'options")
     #expect(english(StreamManagerHeaderText.widgetMenu) == "More options")
+  }
+}
+
+@MainActor
+@Suite("Chat du widget, fourni par l'app (ADR 0010, une feature n'importe pas une autre)")
+struct StreamManagerChatSlotTests {
+  @Test("sans chat fourni par l'app, le widget n'en affiche aucun")
+  func emptyByDefault() {
+    #expect(!EnvironmentValues().streamManagerChat.isProvided)
+  }
+
+  @Test("l'app fournit le chat de la chaîne du créateur")
+  func provided() {
+    #expect(StreamManagerChatSlot { _ in AnyView(EmptyView()) }.isProvided)
   }
 }

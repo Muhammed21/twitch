@@ -1,6 +1,7 @@
 import DesignSystem
 import Domain
 import Foundation
+import SwiftUI
 
 public enum StreamManagerWidget: String, CaseIterable, Hashable, Sendable {
   case chat
@@ -41,4 +42,27 @@ public enum StreamManagerHeaderText {
     }
     return nil
   }
+}
+
+public struct StreamManagerChatSlot: Sendable {
+  private let make: (@MainActor @Sendable (ChannelSlug) -> AnyView)?
+
+  public init(_ make: @escaping @MainActor @Sendable (ChannelSlug) -> AnyView) {
+    self.make = make
+  }
+
+  init() {
+    make = nil
+  }
+
+  public var isProvided: Bool { make != nil }
+
+  @MainActor
+  func view(for slug: ChannelSlug) -> AnyView {
+    make?(slug) ?? AnyView(EmptyView())
+  }
+}
+
+public extension EnvironmentValues {
+  @Entry var streamManagerChat = StreamManagerChatSlot()
 }

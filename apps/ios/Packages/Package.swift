@@ -212,7 +212,7 @@ let package = Package(
     ),
     .target(
       name: "Profile",
-      dependencies: ["Domain", "DesignSystem", "Chat"],
+      dependencies: ["Domain", "DesignSystem"],
       path: "Features/Profile/Sources",
       resources: [.process("Localizable.xcstrings")],
       swiftSettings: [.swiftLanguageMode(.v6)]

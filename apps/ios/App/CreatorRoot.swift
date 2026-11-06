@@ -1,4 +1,5 @@
 import Auth
+import Chat
 import Dashboard
 import DesignSystem
 import Domain
@@ -25,6 +26,21 @@ struct SignedInModes: View {
       }
     }
     .creatorModePresentation { router.create() }
+    .environment(\.streamManagerChat, StreamManagerChatSlot { AnyView(StreamManagerChat(slug: $0)) })
+  }
+}
+
+struct StreamManagerChat: View {
+  let slug: ChannelSlug
+  @Environment(ChatSession.self) private var chat
+
+  var body: some View {
+    VStack(spacing: 0) {
+      ChatList(welcome: .channel(slug.rawValue), style: .widget)
+        .padding(.horizontal, LayoutRole.chatInset.points)
+      ChatComposer(style: .widget)
+    }
+    .task(id: slug) { await chat.run(slug) }
   }
 }
 
