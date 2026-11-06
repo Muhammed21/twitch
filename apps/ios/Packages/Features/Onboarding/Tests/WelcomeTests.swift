@@ -38,8 +38,8 @@ struct WelcomeTests {
   @Test("Log In, à gauche sur violet clair, demande la connexion ; Sign Up, à droite sur blanc, l'inscription")
   func actions() {
     #expect(WelcomeContent.actions == [
-      WelcomeAction(title: "Log In", kind: .secondaryOnAccent, intent: .logIn),
-      WelcomeAction(title: "Sign Up", kind: .primaryOnAccent, intent: .signUp),
+      WelcomeAction(title: shown(english: "Log In", french: "Se connecter"), kind: .secondaryOnAccent, intent: .logIn),
+      WelcomeAction(title: shown(english: "Sign Up", french: "S'inscrire"), kind: .primaryOnAccent, intent: .signUp),
     ])
   }
 
@@ -48,11 +48,11 @@ struct WelcomeTests {
     #expect(WelcomeContent.actions.map(\.accessibilityIdentifier) == ["welcome.logIn", "welcome.signUp"])
   }
 
-  @Test("le slogan et les boutons reprennent les textes anglais de la capture")
+  @Test("le slogan et les boutons reprennent les textes de la capture, en anglais et en français")
   func texts() {
-    #expect(WelcomeText.slogan == "There's something\nfor you on Twitch")
-    #expect(WelcomeText.logIn == "Log In")
-    #expect(WelcomeText.signUp == "Sign Up")
+    #expect(WelcomeText.slogan == shown(english: "There's something\nfor you on Twitch", french: "Il y a forcément quelque chose\npour vous sur Twitch"))
+    #expect(WelcomeText.logIn == shown(english: "Log In", french: "Se connecter"))
+    #expect(WelcomeText.signUp == shown(english: "Sign Up", french: "S'inscrire"))
   }
 }
 
