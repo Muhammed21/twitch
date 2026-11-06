@@ -33,11 +33,13 @@ private struct PlayerStatus: View {
         .accessibilityIdentifier("player.playing")
     case .loading, .buffering:
       ProgressView().tint(.white)
+        .accessibilityLabel(PlayerText.status(of: controller.state) ?? "")
     case .failed:
       VStack(spacing: LayoutRole.dialogTitleGap.points) {
         Text(PlayerText.failed)
           .font(TextRole.body.font)
           .foregroundStyle(.white)
+          .multilineTextAlignment(.center)
         Button(PlayerText.retry) { controller.retry() }
           .buttonStyle(ActionButtonStyle(.secondary))
           .fixedSize()
@@ -49,6 +51,7 @@ private struct PlayerStatus: View {
           .foregroundStyle(.white)
       }
       .accessibilityLabel(PlayerText.play)
+      .accessibilityValue(PlayerText.status(of: .paused) ?? "")
     case .ended:
       Text(PlayerText.ended)
         .font(TextRole.body.font)
@@ -81,4 +84,17 @@ enum PlayerText {
   static var playing: String { String(localized: "player.playing", bundle: .module) }
   static var play: String { String(localized: "player.play", bundle: .module) }
   static var ended: String { String(localized: "player.ended", bundle: .module) }
+  static var paused: String { String(localized: "player.paused", bundle: .module) }
+  static var loading: String { String(localized: "player.loading", bundle: .module) }
+
+  static func status(of state: PlayerState) -> String? {
+    switch state {
+    case .idle: nil
+    case .loading, .buffering: loading
+    case .playing: playing
+    case .paused: paused
+    case .failed: failed
+    case .ended: ended
+    }
+  }
 }
