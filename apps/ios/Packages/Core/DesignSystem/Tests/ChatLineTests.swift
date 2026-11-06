@@ -62,6 +62,16 @@ struct ChatLineTests {
     #expect(segments(of: text) { $0.foregroundColor == ChatNameColor.teal.color } == ["yahway_810:"])
   }
 
+  @Test("VoiceOver lit une ligne « pseudo : message », sans les badges")
+  func spokenLine() {
+    #expect(makeLine().spoken(.standard) == "yahway_810: valid")
+  }
+
+  @Test("avec l'horodatage, VoiceOver lit l'heure après le message, pour entendre d'abord qui parle")
+  func spokenWithTime() {
+    #expect(makeLine().spoken(timestamped) == "yahway_810: valid, 04:13")
+  }
+
   private func segments(of text: AttributedString, where matches: (AttributedString.Runs.Run) -> Bool) -> [String] {
     text.runs.filter(matches).map { String(text[$0.range].characters) }
   }
