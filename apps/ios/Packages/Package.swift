@@ -219,7 +219,7 @@ let package = Package(
     ),
     .testTarget(
       name: "ProfileTests",
-      dependencies: ["Profile", "Domain"],
+      dependencies: ["Profile", "Domain", "DesignSystem"],
       path: "Features/Profile/Tests",
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),

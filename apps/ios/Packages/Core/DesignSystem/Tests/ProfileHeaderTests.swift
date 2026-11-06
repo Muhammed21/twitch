@@ -1,4 +1,5 @@
-import DesignSystem
+@testable import DesignSystem
+import Foundation
 import SwiftUI
 import Testing
 
@@ -51,5 +52,18 @@ struct ProfileHeaderTests {
     #expect(ProfileHeaderStyle.action == .surfaceSecondary)
     #expect(ProfileHeaderStyle.onAction == .textPrimary)
     #expect(TextRole.profileAction.font == Font.subheadline.weight(.semibold))
+  }
+
+  @Test("la bannière et l'avatar montrent l'image de l'utilisateur une fois chargée (IMG_9615)")
+  func loadedPicture() {
+    let image = Image(systemName: "person")
+
+    #expect(ProfilePicture.loaded(.success(image)) == image)
+  }
+
+  @Test("pendant le chargement, sans image ou en échec, la bannière noire et l'avatar par défaut restent")
+  func fallbackPicture() {
+    #expect(ProfilePicture.loaded(.empty) == nil)
+    #expect(ProfilePicture.loaded(.failure(URLError(.badServerResponse))) == nil)
   }
 }

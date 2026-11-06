@@ -1,3 +1,4 @@
+import DesignSystem
 import Domain
 import Foundation
 import Profile
@@ -35,5 +36,16 @@ struct MyChannelBannerTests {
     try store.bannerSaved(Channel(id: channelID, slug: ChannelSlug("viewer_de_test"), title: "Speedrun", ownerID: ownerID, bannerURL: bannerURL))
 
     #expect(store.bannerURL == bannerURL)
+  }
+
+  @Test("l'en-tête du profil montre l'avatar du compte et la bannière de sa chaîne (IMG_9615)")
+  func headerPictures() async {
+    let store = makeStore(banner: bannerURL)
+    let avatarURL = URL(string: "https://cdn.twitch.local/avatars/viewer.jpg")
+    let account = Account(id: ownerID, name: "viewer_de_test", email: "viewer@twitch.local", avatarURL: avatarURL)
+
+    await store.load()
+
+    #expect(store.pictures(of: account) == ProfilePictures(avatar: avatarURL, banner: bannerURL))
   }
 }
