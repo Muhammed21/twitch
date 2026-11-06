@@ -30,6 +30,14 @@ struct RouteTests {
 
     #expect(Route(deepLink: url) == nil)
   }
+
+  @Test("le lien partagé d'une chaîne se rouvre sur cette chaîne")
+  func sharedChannelLink() throws {
+    let slug = try ChannelSlug("jean_dupont")
+
+    #expect(slug.appLink == URL(string: "twitch://channel/jean_dupont"))
+    #expect(Route(deepLink: slug.appLink) == .channel(slug))
+  }
 }
 
 @MainActor
@@ -111,6 +119,26 @@ struct RouterTabTests {
 
     #expect(router.selectedTab == .home)
     #expect(router.browsePath.isEmpty)
+  }
+
+  @Test("l'onglet Activité a sa propre pile, distincte des autres, et reset la vide")
+  func activityStack() throws {
+    let router = Router()
+    router.selectedTab = .activity
+
+    #expect(router.isTabBarVisible)
+
+    try router.push(.channel(ChannelSlug("ada_lovelace")))
+
+    #expect(try router.activityPath == [.channel(ChannelSlug("ada_lovelace"))])
+    #expect(router.path.isEmpty)
+    #expect(router.browsePath.isEmpty)
+    #expect(router.profilePath.isEmpty)
+    #expect(!router.isTabBarVisible)
+
+    router.reset()
+
+    #expect(router.activityPath.isEmpty)
   }
 
   @Test("la barre d'onglets se masque quand une page de chaîne couvre l'onglet sélectionné")

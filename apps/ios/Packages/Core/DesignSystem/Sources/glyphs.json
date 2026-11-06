@@ -359,6 +359,36 @@
         "transparentAtOrBelow": 0,
         "opaqueAtOrAbove": 669
       }
+    },
+    {
+      "name": "bellOutline",
+      "source": "docs/new-reference-ui/IMG_9607.PNG",
+      "rect": {
+        "x": 788,
+        "y": 2328,
+        "width": 72,
+        "height": 72
+      },
+      "background": "#f7f7f8",
+      "opacity": {
+        "transparentAtOrBelow": 0,
+        "opaqueAtOrAbove": 698
+      }
+    },
+    {
+      "name": "bellFilled",
+      "source": "docs/new-reference-ui/IMG_9612.PNG",
+      "rect": {
+        "x": 788,
+        "y": 2328,
+        "width": 72,
+        "height": 72
+      },
+      "background": "#f7f7f8",
+      "opacity": {
+        "transparentAtOrBelow": 0,
+        "opaqueAtOrAbove": 347
+      }
     }
   ]
 }

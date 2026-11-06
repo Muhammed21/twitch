@@ -42,6 +42,34 @@ struct ChannelClientTests {
     #expect(channel.bannerURL == URL(string: "https://cdn.twitch.local/banners/jean.jpg"))
   }
 
+  @Test("lit les tags, la langue, la classification et le contenu promotionnel")
+  func readsStreamInfo() async throws {
+    let json = channelJSON().replacingOccurrences(
+      of: #""tags":[],"contentLabels":[],"isBrandedContent":false"#,
+      with: #""tags":["francais"],"language":"fr","contentLabels":["profanity","gambling"],"isBrandedContent":true"#
+    )
+
+    let channel = try await makeClient(FakeTransport(json: json)).channel(withSlug: ChannelSlug("jean_dupont"))
+
+    #expect(channel.tags == ["francais"])
+    #expect(channel.language == .french)
+    #expect(channel.contentLabels == [.gambling, .profanity])
+    #expect(channel.isBrandedContent)
+  }
+
+  @Test("ignore une langue et un descripteur que l'app ne connaît pas encore")
+  func ignoresUnknownStreamInfo() async throws {
+    let json = channelJSON().replacingOccurrences(
+      of: #""contentLabels":[]"#,
+      with: #""language":"nl","contentLabels":["horror","gambling"]"#
+    )
+
+    let channel = try await makeClient(FakeTransport(json: json)).channel(withSlug: ChannelSlug("jean_dupont"))
+
+    #expect(channel.language == nil)
+    #expect(channel.contentLabels == [.gambling])
+  }
+
   @Test("sans bannière, l'adresse reste absente")
   func noBanner() async throws {
     let channel = try await makeClient(FakeTransport(json: channelJSON())).channel(withSlug: ChannelSlug("jean_dupont"))

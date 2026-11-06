@@ -239,7 +239,10 @@ public struct EditStreamInfoSheet: View {
     isSaving = true
     saveFailed = false
     Task {
-      let saved = await store.save(title: draft, category: chosen)
+      var info = store.info
+      info.title = draft
+      info.category = chosen
+      let saved = await store.save(info)
       saveFailed = !saved
       isSaving = false
       if saved { dismiss() }

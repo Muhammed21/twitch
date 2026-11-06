@@ -121,6 +121,11 @@
         "$value": "49px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : hauteur de la barre d'onglets, du filet au bas de la zone sûre (profil/menu-compte--defaut)."
       },
+      "50": {
+        "$type": "dimension",
+        "$value": "50px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9614) : hauteur des pilules « Gestionnaire de stream », « Statistiques » et « Essayer sans publicité » du profil (150 px à @3x)."
+      },
       "56": {
         "$type": "dimension",
         "$value": "56px",

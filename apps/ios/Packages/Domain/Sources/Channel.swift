@@ -15,6 +15,10 @@ public struct Channel: Equatable, Sendable {
   public let ownerID: UUID
   public let category: ChannelCategory?
   public let bannerURL: URL?
+  public let tags: [String]
+  public let language: LiveLanguage?
+  public let contentLabels: Set<ContentLabel>
+  public let isBrandedContent: Bool
 
   public init(
     id: ChannelID,
@@ -22,7 +26,11 @@ public struct Channel: Equatable, Sendable {
     title: String,
     ownerID: UUID,
     category: ChannelCategory? = nil,
-    bannerURL: URL? = nil
+    bannerURL: URL? = nil,
+    tags: [String] = [],
+    language: LiveLanguage? = nil,
+    contentLabels: Set<ContentLabel> = [],
+    isBrandedContent: Bool = false
   ) {
     self.id = id
     self.slug = slug
@@ -30,6 +38,10 @@ public struct Channel: Equatable, Sendable {
     self.ownerID = ownerID
     self.category = category
     self.bannerURL = bannerURL
+    self.tags = tags
+    self.language = language
+    self.contentLabels = contentLabels
+    self.isBrandedContent = isBrandedContent
   }
 }
 

@@ -81,11 +81,12 @@ struct CreatorRoot: View {
         .toolbar(.hidden, for: .tabBar)
         .tag(DashboardTab.stats)
       NavigationStack(path: $channelPath) {
-        ProfileScreen(account: account) { slug in
-          channelPath.append(.channel(slug))
-        } onAccountSaved: { saved in
-          session.accountSaved(saved)
-        } settings: {
+        ProfileScreen(account: account, actions: ProfileActions(
+          onOpenChannel: { channelPath.append(.channel($0)) },
+          onAccountSaved: { session.accountSaved($0) },
+          onStreamManager: { router.create() },
+          onAnalytics: { creatorMode.dashboardTab = .stats }
+        )) {
           SignedInScreen()
         }
         .withRouteDestinations()

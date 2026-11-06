@@ -32,6 +32,7 @@ public enum TextRole: Sendable {
   case fieldHint
   case fieldText
   case profileEdit
+  case profileAction
   case editSectionLabel
   case editRowTitle
   case editRowValue
@@ -64,6 +65,10 @@ public enum TextRole: Sendable {
   case dashboardActivityEmpty
   case dashboardLink
   case streamManagerTitle
+  case activityTitle
+  case activityEmptyTitle
+  case activityEmptyMessage
+  case activityEmptyAction
 
   public var font: Font {
     switch self {
@@ -97,6 +102,7 @@ public enum TextRole: Sendable {
     case .fieldHint: .hintText
     case .fieldText: .supportingText
     case .profileEdit: .chatAuthorText
+    case .profileAction: .headingText
     case .editSectionLabel: .viewerCount
     case .editRowTitle: .actionLabel
     case .editRowValue: .viewerCount
@@ -129,6 +135,10 @@ public enum TextRole: Sendable {
     case .dashboardActivityEmpty: .viewerCount
     case .dashboardLink: .cardAction
     case .streamManagerTitle: .actionLabel
+    case .activityTitle: .displayText
+    case .activityEmptyTitle: .actionLabel
+    case .activityEmptyMessage: .supportingText
+    case .activityEmptyAction: .actionLabel
     }
   }
 }
@@ -204,6 +214,16 @@ public enum LayoutRole: Sendable {
   case profileNameTop
   case profileBioTop
   case profileHeaderBottom
+  case profileBannerControlSize
+  case profileBannerControlCenter
+  case profileBannerGlyph
+  case profileEditHeight
+  case profileEditPadding
+  case profileActionHeight
+  case profileActionGap
+  case profileActionRowGap
+  case profileActionGlyph
+  case profileActionGlyphGap
   case categoryCardCoverWidth
   case categoryCardRadius
   case categoryCardBorderWidth
@@ -246,8 +266,6 @@ public enum LayoutRole: Sendable {
   case cardAvatarGlyphInset
   case cardAvatarGap
   case cardLineGap
-  case profileEditTop
-  case profileEditTrailing
   case editSectionLabelGap
   case editRowPadding
   case editRowLineGap
@@ -317,6 +335,11 @@ public enum LayoutRole: Sendable {
   case dashboardHintInset
   case dashboardHintTop
   case dashboardActivityHeight
+  case activityHeaderHeight
+  case activityEmptyInset
+  case activityEmptyGap
+  case activityActionHeight
+  case activityActionPadding
 }
 
 public enum ActionButtonKind: Sendable {

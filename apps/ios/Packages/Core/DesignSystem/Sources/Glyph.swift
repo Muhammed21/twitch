@@ -26,6 +26,8 @@ public enum Glyph: String, CaseIterable, Sendable {
   case widgetMenu
   case emote
   case widgetChat
+  case bellOutline
+  case bellFilled
 
   public var image: Image {
     Image(rawValue, bundle: .module).renderingMode(.template)

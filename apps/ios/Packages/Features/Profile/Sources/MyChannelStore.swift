@@ -25,8 +25,7 @@ public final class MyChannelStore {
   public static let maxTitleLength = 140
 
   public private(set) var phase: Phase = .loading
-  public private(set) var title = ""
-  public private(set) var category: ChannelCategory?
+  public private(set) var info: StreamInfo
   public private(set) var bannerURL: URL?
   public private(set) var streamKey: StreamKey?
   public private(set) var notice: Notice?
@@ -38,17 +37,56 @@ public final class MyChannelStore {
   @ObservationIgnored private let channels: any ChannelRepository
   @ObservationIgnored private let copy: @MainActor (String) -> Void
   @ObservationIgnored private let log: @Sendable (String) -> Void
+  @ObservationIgnored private let deviceLanguage: LiveLanguage
 
   public init(
     repository: any MyChannelRepository,
     channels: any ChannelRepository,
     copy: @escaping @MainActor (String) -> Void,
-    log: @escaping @Sendable (String) -> Void = { Logger(subsystem: "Profile", category: "MyChannelStore").error("\($0, privacy: .public)") }
+    log: @escaping @Sendable (String) -> Void = { Logger(subsystem: "Profile", category: "MyChannelStore").error("\($0, privacy: .public)") },
+    deviceLanguage: LiveLanguage = LiveLanguage(localeIdentifier: Locale.current.identifier)
   ) {
     self.repository = repository
     self.channels = channels
     self.copy = copy
     self.log = log
+    self.deviceLanguage = deviceLanguage
+    info = Self.emptyInfo
+  }
+
+  public var title: String { info.title }
+
+  public var category: ChannelCategory? { info.category }
+
+  public var proposedInfo: StreamInfo {
+    var draft = info
+    draft.language = info.language ?? deviceLanguage
+    return draft
+  }
+
+  public var shareURL: URL? {
+    guard case let .ready(owned) = phase else { return nil }
+    return owned.slug.appLink
+  }
+
+  private static let emptyInfo = StreamInfo(
+    title: "",
+    category: nil,
+    tags: [],
+    language: nil,
+    contentLabels: [],
+    isBrandedContent: false
+  )
+
+  private static func streamInfo(of channel: Channel) -> StreamInfo {
+    StreamInfo(
+      title: channel.title,
+      category: channel.category,
+      tags: channel.tags,
+      language: channel.language,
+      contentLabels: channel.contentLabels,
+      isBrandedContent: channel.isBrandedContent
+    )
   }
 
   public static func remaining(in draft: String) -> Int {
@@ -75,8 +113,7 @@ public final class MyChannelStore {
   public func reset() {
     hasStartedLoading = false
     phase = .loading
-    title = ""
-    category = nil
+    info = Self.emptyInfo
     bannerURL = nil
     leave()
   }
@@ -92,8 +129,7 @@ public final class MyChannelStore {
         return
       }
       let channel = try await channels.channel(withSlug: owned.slug)
-      title = channel.title
-      category = channel.category
+      info = Self.streamInfo(of: channel)
       bannerURL = channel.bannerURL
       phase = .ready(owned)
     } catch {
@@ -168,14 +204,13 @@ public final class MyChannelStore {
   }
 
   @discardableResult
-  public func save(title draft: String, category chosen: ChannelCategory?) async -> Bool {
-    guard case let .ready(owned) = phase, Self.remaining(in: draft) >= 0 else {
+  public func save(_ draft: StreamInfo) async -> Bool {
+    guard case let .ready(owned) = phase, Self.remaining(in: draft.title) >= 0 else {
       return false
     }
     do {
-      let channel = try await repository.update(owned.id, title: draft, category: CategoryChange.from(category, to: chosen))
-      title = channel.title
-      category = channel.category
+      let channel = try await repository.update(owned.id, change: StreamInfoChange.from(info, to: draft))
+      info = Self.streamInfo(of: channel)
       notice = .titleSaved
       return true
     } catch {
