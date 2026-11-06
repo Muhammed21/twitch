@@ -15,7 +15,14 @@
     "test:integration": {
       "dependsOn": ["^generate"],
       "cache": false,
-      "passThroughEnv": ["INTEGRATION_S3_ENDPOINT"]
+      "passThroughEnv": [
+        "INTEGRATION_*",
+        "DATABASE_URL_*",
+        "DATABASE_POOL_MAX_*",
+        "PAYLOAD_DATABASE_URL",
+        "REDIS_URL",
+        "S3_*"
+      ]
     },
     "generate": {
       "dependsOn": ["^generate"],
