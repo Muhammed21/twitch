@@ -115,6 +115,7 @@ public struct WelcomeScreen: View {
         Text(WelcomeText.slogan)
           .font(TextRole.hero.font)
           .foregroundStyle(ColorRole.onAccentStrong.color)
+          .accessibilityAddTraits(.isHeader)
           .padding(.top, LayoutRole.sloganGap.points)
           .padding(.bottom, LayoutRole.sloganBottom.points)
           .padding(.leading, LayoutRole.heroInset.points)

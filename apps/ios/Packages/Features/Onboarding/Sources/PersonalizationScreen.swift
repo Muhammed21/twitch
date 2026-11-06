@@ -56,6 +56,7 @@ struct JourneyHeader: View {
       .accessibilityIdentifier("journey.back")
       .opacity(journey.canGoBack ? 1 : 0)
       .disabled(!journey.canGoBack)
+      .accessibilityHidden(!journey.canGoBack)
       JourneyProgressBar(progress: journey.progress)
         .accessibilityLabel(PersonalizationText.progress(page: journey.index + 1, of: journey.steps.count))
       Button(PersonalizationText.skip) { journey.skip() }
@@ -64,6 +65,7 @@ struct JourneyHeader: View {
         .accessibilityIdentifier("journey.skip")
         .opacity(journey.step.isSkippable ? 1 : 0)
         .disabled(!journey.step.isSkippable)
+        .accessibilityHidden(!journey.step.isSkippable)
     }
     .padding(.horizontal, LayoutRole.screenInset.points)
     .frame(height: LayoutRole.journeyHeaderHeight.points)
@@ -101,6 +103,7 @@ struct JourneyPage<Content: View>: View {
         .font(TextRole.journeyTitle.font)
         .foregroundStyle(JourneyStyle.title.color)
         .accessibilityAddTraits(.isHeader)
+        .accessibilityFocusOnAppear()
       Text(message)
         .font(TextRole.journeyMessage.font)
         .foregroundStyle(JourneyStyle.message.color)
@@ -143,6 +146,7 @@ struct JourneyHeroPage<Hero: View>: View {
         .font(TextRole.journeyTitle.font)
         .foregroundStyle(JourneyStyle.title.color)
         .accessibilityAddTraits(.isHeader)
+        .accessibilityFocusOnAppear()
         .padding(.top, LayoutRole.journeyContentGap.points)
       Text(message)
         .font(TextRole.journeyMessage.font)

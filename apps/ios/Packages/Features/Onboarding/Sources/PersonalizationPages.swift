@@ -37,6 +37,7 @@ struct SummaryPage: View {
         .font(TextRole.journeyTitle.font)
         .foregroundStyle(JourneyStyle.title.color)
         .accessibilityAddTraits(.isHeader)
+        .accessibilityFocusOnAppear()
         .padding(.top, LayoutRole.journeyContentGap.points)
         .journeyEntrance(1, isFinalOnReducedMotion: true)
       Text(PersonalizationText.summaryMessage)

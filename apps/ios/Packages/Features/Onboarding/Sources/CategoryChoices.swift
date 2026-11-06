@@ -9,6 +9,12 @@ public enum ChoicesState<Item: Equatable & Sendable>: Equatable, Sendable {
   case failed
 }
 
+extension ChoicesState {
+  func announcement(failed message: String) -> String? {
+    self == .failed ? message : nil
+  }
+}
+
 @MainActor
 @Observable
 public final class CategoryChoices {

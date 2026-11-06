@@ -115,6 +115,11 @@ struct ChoicesContent<Item: Equatable & Sendable, Loaded: View>: View {
   @ViewBuilder let loaded: ([Item]) -> Loaded
 
   var body: some View {
+    content
+      .announcing(state.announcement(failed: failed))
+  }
+
+  @ViewBuilder private var content: some View {
     switch state {
     case .loading:
       ProgressView()
