@@ -1,9 +1,9 @@
 # 0053 — Les illustrations d'état vide de la page Activité et du Profil sont des masques extraits des captures, comme celles du tableau de bord
 
-- Statut : Proposé
+- Statut : Accepté
 - Date : 2026-11-06
 - Décideurs : Muhammed Cavus
-- Amende : ADR 0052 (§1, liste fermée des illustrations ; §2 et §4, trois teintes par illustration)
+- Amende : ADR 0052 (§1, liste fermée des illustrations ; §2 et §4, trois teintes par illustration ; §6, ordre d'empilement)
 
 ## Contexte et problématique
 
@@ -78,7 +78,7 @@ La liste reste fermée : toute autre illustration demande un nouvel ADR.
 
 ### 2. Teintes
 
-Une illustration a autant de masques que de teintes relevées sur sa capture, au lieu de trois. Le manifeste de l'ADR 0052 §3 donne, pour chaque illustration, ses teintes et leur ordre d'empilement, du fond vers le premier plan. La règle de séparation des bords de l'ADR 0052 §2 s'applique entre deux teintes voisines, quel que soit leur nombre.
+Une illustration a autant de masques que de teintes relevées sur sa capture, au lieu de trois. Le manifeste de l'ADR 0052 §3 donne, pour chaque illustration, ses teintes et leur ordre d'empilement, du fond vers le premier plan. La règle de séparation des bords de l'ADR 0052 §2 s'applique entre deux teintes voisines, quel que soit leur nombre. Un pixel où se rencontrent trois teintes, et qu'aucun couple n'explique, se répartit de la même façon entre leurs trois masques : relevé sur `IMG_9615`, où le jaune, le contour et le violet ou le blanc se touchent au cou et à l'oreille.
 
 ### 3. Couleurs et thèmes
 
@@ -88,7 +88,7 @@ En thème sombre, chaque rôle garde sa valeur claire, comme l'ADR 0052 §4 : la
 
 ### 4. Reste inchangé
 
-Extraction, rangement, manifeste, test de recomposition, accessibilité et point d'entrée unique (`IllustrationImage` dans `Core/DesignSystem`) suivent l'ADR 0052.
+Extraction, rangement, manifeste, test de recomposition, accessibilité et point d'entrée unique (`IllustrationImage` dans `Core/DesignSystem`) suivent l'ADR 0052. Le point d'entrée empile les masques dans l'ordre que donne le manifeste (§2), et non plus dans l'ordre fixe « remplissage, contour, encre » de l'ADR 0052 §6.
 
 ## Conséquences
 
@@ -115,14 +115,14 @@ Extraction, rangement, manifeste, test de recomposition, accessibilité et point
 ## Notes d'implémentation
 
 1. Tant que l'ADR est `Proposé`, les états vides restent le texte seul (PR de la page Activité, onglet « À propos » du Profil).
-2. Après acceptation : passer la ligne de statut de l'ADR 0052 à « Accepté — §1, §2 et §4 amendés par 0053 », et mettre à jour son statut dans `docs/adr/README.md`.
+2. Après acceptation : passer la ligne de statut de l'ADR 0052 à « Accepté — §1, §2, §4 et §6 amendés par 0053 », et mettre à jour son statut dans `docs/adr/README.md`.
 3. Une PR étend le script d'extraction et le manifeste à un nombre variable de teintes, ajoute les masques, le token jaune et les rôles de couleur.
 4. Une seconde PR branche `IllustrationImage` dans `ActivityEmptyState`, en citant `IMG_9613` et les captures de `docs/reference-ui/`.
 5. L'illustration de l'onglet « À propos » suit les points 3 et 4 : ses masques entrent avec l'extraction, puis `IllustrationImage` est branché dans `ProfileAboutEmpty`, en citant `IMG_9615`.
 
 ## Liens
 
-- [ADR 0052](0052-illustrations-d-etat-vide-du-tableau-de-bord-en-masques-extraits-des-captures.md) — méthode des illustrations d'état vide ; cet ADR amende sa liste (§1) et son nombre de teintes (§2, §4).
+- [ADR 0052](0052-illustrations-d-etat-vide-du-tableau-de-bord-en-masques-extraits-des-captures.md) — méthode des illustrations d'état vide ; cet ADR amende sa liste (§1), son nombre de teintes (§2, §4) et son ordre d'empilement (§6).
 - [ADR 0046](0046-glyphes-d-interface-extraits-des-captures-en-masques.md) — glyphes extraits des captures en masques, méthode d'origine.
 - [ADR 0036](0036-valeurs-visuelles-relevees-sur-l-app-ios-twitch.md) — valeurs visuelles relevées sur l'app iOS Twitch.
 - [ADR 0021](0021-perimetre-fonctionnel-et-cartographie-des-entites.md) — périmètre : notifications en T2, chuchotements hors périmètre.

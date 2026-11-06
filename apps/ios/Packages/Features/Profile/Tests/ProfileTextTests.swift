@@ -32,6 +32,14 @@ struct ProfileTextTests {
     #expect(ProfileText.lastLive(at: now.addingTimeInterval(120), now: now, locale: Locale(identifier: "en_US")) == lastLiveLine("0m"))
   }
 
+  @Test("l'en-tête du profil propose « Gestionnaire de stream » et « Statistiques » (IMG_9614)")
+  func headerActions() {
+    #expect(english(ProfileText.streamManager) == "Stream Manager")
+    #expect(french(ProfileText.streamManager) == "Gestionnaire de stream")
+    #expect(english(ProfileText.analytics) == "Analytics")
+    #expect(french(ProfileText.analytics) == "Statistiques")
+  }
+
   @Test("les réglages OBS recommandés : H.264, AAC, image clé toutes les 2 s, 6 000 kb/s au plus")
   func obsSettings() {
     let rows = ProfileText.obsSettings.map { "\(english($0.label)): \(english($0.value))" }

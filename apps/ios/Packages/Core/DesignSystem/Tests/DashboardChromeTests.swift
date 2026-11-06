@@ -1,4 +1,4 @@
-import DesignSystem
+@testable import DesignSystem
 import DesignTokens
 import Testing
 
@@ -45,6 +45,16 @@ struct DashboardChromeTests {
     #expect(TextRole.dashboardEmpty.font == TextRole.display.font)
     #expect(LayoutRole.dashboardEmptyTop.points == 256)
     #expect(LayoutRole.dashboardEmptyWidth.points == 256)
+  }
+
+  @Test("l'illustration d'un écran vide se pose au-dessus du message, sans le déplacer (IMG_9625, IMG_9626)")
+  func emptyStateIllustration() {
+    #expect(DashboardEmptyIllustration.content.illustration == .clapperboard)
+    #expect(DashboardEmptyIllustration.stats.illustration == .barChart)
+    #expect(DashboardEmptyIllustration.content.gap.points == 12)
+    #expect(DashboardEmptyIllustration.stats.gap.points == 8)
+    #expect(DashboardEmptyIllustration.content.top == 116)
+    #expect(DashboardEmptyIllustration.stats.top == 110)
   }
 
   @Test("Contenu et Statistiques prennent leur glyphe au trait, plein quand l'onglet est actif ; Chaîne la silhouette")

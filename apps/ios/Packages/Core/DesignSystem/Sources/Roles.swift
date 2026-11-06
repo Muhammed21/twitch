@@ -28,9 +28,11 @@ public enum TextRole: Sendable {
   case followerCount
   case followLabel
   case categoryName
+  case categoryViewers
   case fieldHint
   case fieldText
   case profileEdit
+  case profileAction
   case editSectionLabel
   case editRowTitle
   case editRowValue
@@ -91,9 +93,11 @@ public enum TextRole: Sendable {
     case .followerCount: .viewerCount
     case .followLabel: .displayText
     case .categoryName: .actionLabel
+    case .categoryViewers: .viewerCount
     case .fieldHint: .hintText
     case .fieldText: .supportingText
     case .profileEdit: .chatAuthorText
+    case .profileAction: .headingText
     case .editSectionLabel: .viewerCount
     case .editRowTitle: .actionLabel
     case .editRowValue: .viewerCount
@@ -179,6 +183,8 @@ public enum LayoutRole: Sendable {
   case categoryNameTop
   case liveDotSize
   case liveDotGap
+  case categoryTileDotGap
+  case categoryTileTagTop
   case categoryTagPaddingH
   case categoryTagPaddingV
   case categoryTagGap
@@ -198,6 +204,16 @@ public enum LayoutRole: Sendable {
   case profileNameTop
   case profileBioTop
   case profileHeaderBottom
+  case profileBannerControlSize
+  case profileBannerControlCenter
+  case profileBannerGlyph
+  case profileEditHeight
+  case profileEditPadding
+  case profileActionHeight
+  case profileActionGap
+  case profileActionRowGap
+  case profileActionGlyph
+  case profileActionGlyphGap
   case categoryCardCoverWidth
   case categoryCardRadius
   case categoryCardBorderWidth
@@ -227,8 +243,6 @@ public enum LayoutRole: Sendable {
   case cardAvatarGlyphInset
   case cardAvatarGap
   case cardLineGap
-  case profileEditTop
-  case profileEditTrailing
   case editSectionLabelGap
   case editRowPadding
   case editRowLineGap
@@ -278,6 +292,8 @@ public enum LayoutRole: Sendable {
   case dashboardFieldGlyphGap
   case dashboardEmptyTop
   case dashboardEmptyWidth
+  case dashboardEmptyClapperboardGap
+  case dashboardEmptyBarChartGap
   case dashboardPillHeight
   case dashboardPillLeading
   case dashboardPillTrailing
