@@ -22,8 +22,8 @@ actor FlakyMyChannel: MyChannelRepository {
     StreamKey(secret, ingestURL: ingestURL)
   }
 
-  func update(_ channel: ChannelID, title: String, category _: CategoryChange) throws -> Channel {
-    try Channel(id: channel, slug: ChannelSlug("viewer_de_test"), title: title, ownerID: ownerID)
+  func update(_ channel: ChannelID, change: StreamInfoChange) throws -> Channel {
+    try Channel(id: channel, slug: ChannelSlug("viewer_de_test"), title: change.title, ownerID: ownerID)
   }
 
   func rotateStreamKey(of _: ChannelID) -> StreamKey {
