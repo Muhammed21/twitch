@@ -234,11 +234,11 @@ struct PersonalizationFinishTests {
     )
     let preferences = makePreferences()
     let fortnite = try CategorySlug("fortnite")
-    let first = sources.choices(preferences: preferences)
+    let first = sources.choices(preferences: preferences, analytics: SilentAnalytics())
     await first.categories.load()
     await first.categories.toggle(fortnite)
 
-    let next = sources.choices(preferences: preferences)
+    let next = sources.choices(preferences: preferences, analytics: SilentAnalytics())
 
     #expect(first.categories.isFollowing(fortnite))
     #expect(!next.categories.isFollowing(fortnite))

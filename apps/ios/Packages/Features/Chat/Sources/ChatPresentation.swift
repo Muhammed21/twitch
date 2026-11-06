@@ -74,13 +74,26 @@ enum ChatNotice {
   }
 }
 
+public enum ChatWelcome: Equatable, Sendable {
+  case room
+  case channel(String)
+}
+
 enum ChatText {
   static var placeholder: String { localized("chat.composer.placeholder") }
   static var send: String { localized("chat.composer.send") }
   static var unsent: String { localized("chat.rejection.unsent") }
   static var timeOutAction: String { localized("chat.moderation.timeOut") }
   static var messageDeleted: String { localized("chat.message.deleted") }
-  static var welcome: String { localized("chat.feed.welcome") }
+  static var emotes: String { localized("chat.composer.emotes") }
+
+  static func welcome(_ welcome: ChatWelcome) -> String {
+    switch welcome {
+    case .room: localized("chat.feed.welcome")
+    case let .channel(name): String(format: localized("chat.feed.welcome.channel"), name)
+    }
+  }
+
   static var unread: String { localized("chat.feed.unread") }
 
   static func moderation(_ notice: ChatSession.ModerationNotice) -> String {

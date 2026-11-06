@@ -38,7 +38,7 @@ struct PersonalizationRoot: View {
     paywall: PersonalizationPaywall,
     router: Router
   ) {
-    let choices = sources.choices(preferences: preferences)
+    let choices = sources.choices(preferences: preferences, analytics: paywall.analytics)
     _categories = State(initialValue: choices.categories)
     _interests = State(initialValue: choices.interests)
     _notifications = State(initialValue: choices.notifications)
@@ -52,7 +52,7 @@ struct PersonalizationRoot: View {
     _journey = State(initialValue: PersonalizationJourney(
       steps: Self.steps,
       now: { Date.now },
-      record: { _ in },
+      analytics: paywall.analytics,
       onFinish: {
         Task {
           await Self.finish(
@@ -70,7 +70,7 @@ struct PersonalizationRoot: View {
   var body: some View {
     ZStack {
       if presentation.isShown {
-        PaywallScreen(store: paywall, links: links, onClose: onClose)
+        PaywallScreen(store: paywall, links: links, presentation: .journey(onClose: onClose))
           .transition(PaywallStepTransition(reduceMotion: reduceMotion))
       } else {
         PersonalizationScreen()
@@ -141,10 +141,10 @@ struct PersonalizationRoot: View {
   }
 
   @MainActor
-  static func preferences() -> PreferencesStore {
+  static func preferences(analytics: any Analytics) -> PreferencesStore {
     PreferencesStore(
       repository: UserDefaultsPreferences(suiteName: nil, language: LiveLanguage(localeIdentifier: Locale.current.identifier)),
-      onChange: { _ in }
+      analytics: analytics
     )
   }
 }
@@ -183,11 +183,11 @@ struct PersonalizationSources {
   let notifications: any NotificationPermission
 
   @MainActor
-  func choices(preferences: PreferencesStore) -> PersonalizationChoices {
+  func choices(preferences: PreferencesStore, analytics: any Analytics) -> PersonalizationChoices {
     PersonalizationChoices(
       categories: CategoryChoices(directory: categories, following: following),
       interests: InterestChoices(tags: tags, preferences: preferences),
-      notifications: NotificationChoices(permission: notifications, onAnswer: { _ in })
+      notifications: NotificationChoices(permission: notifications, analytics: analytics)
     )
   }
 }

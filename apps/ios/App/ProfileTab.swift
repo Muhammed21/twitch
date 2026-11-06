@@ -33,10 +33,9 @@ struct ViewerProfileTab: View {
       SignedInScreen()
     }
     .task { isTurboOffered = await TurboOffer.isOffered(by: paywall.purchases) }
-    .fullScreenCover(isPresented: $isShowingPaywall) {
+    .navigationDestination(isPresented: $isShowingPaywall) {
       ProfilePaywall(
         paywall: paywall,
-        onClose: { isShowingPaywall = false },
         onSubscribed: {
           isTurboOffered = false
           isShowingPaywall = false
@@ -53,15 +52,13 @@ struct ViewerProfileTab: View {
 private struct ProfilePaywall: View {
   @State private var store: PaywallStore
   private let links: PaywallLinks
-  private let onClose: () -> Void
 
-  init(paywall: PersonalizationPaywall, onClose: @escaping () -> Void, onSubscribed: @escaping @MainActor () -> Void) {
+  init(paywall: PersonalizationPaywall, onSubscribed: @escaping @MainActor () -> Void) {
     _store = State(initialValue: ViewerProfileTab.paywallStore(paywall, onSubscribed: onSubscribed))
     links = paywall.links
-    self.onClose = onClose
   }
 
   var body: some View {
-    PaywallScreen(store: store, links: links, onClose: onClose)
+    PaywallScreen(store: store, links: links, presentation: .pushed)
   }
 }

@@ -36,10 +36,14 @@ public enum Spacing {
     public static let x22: CGFloat = 22
     /// Avatar de l'onglet Profile, relevé sur l'app iOS Twitch (24 pt).
     public static let x24: CGFloat = 24
+    /// Avatar de l'en-tête du gestionnaire de stream, relevé sur l'app iOS Twitch (26 pt).
+    public static let x26: CGFloat = 26
     /// Avatar de l'en-tête du tableau de bord des créateurs, relevé sur l'app iOS Twitch (30 pt).
     public static let x30: CGFloat = 30
     /// Écart entre les onglets Categories et Live Channels de Browse, relevé sur l'app iOS Twitch (32 pt).
     public static let x32: CGFloat = 32
+    /// En-tête d'une carte de widget, relevé sur l'app iOS Twitch (35 pt).
+    public static let x35: CGFloat = 35
     /// Hauteur du champ de recherche de catégorie, relevée sur l'app iOS Twitch (36 pt).
     public static let x36: CGFloat = 36
     /// Retrait du contenu de l'accueil, relevé sur l'app iOS Twitch (40 pt).
@@ -56,6 +60,8 @@ public enum Spacing {
     public static let x55: CGFloat = 55
     /// Hauteur des lignes du menu du compte, relevée sur l'app iOS Twitch (56 pt, profil/menu-compte--defaut).
     public static let x56: CGFloat = 56
+    /// Pilule du widget affiché dans le dock, relevé sur l'app iOS Twitch (57 pt).
+    public static let x57: CGFloat = 57
     /// Largeur du filet entre deux lives du flux de l'accueil, relevée sur l'app iOS Twitch (63 pt, docs/new-reference-ui/IMG_9607).
     public static let x63: CGFloat = 63
     /// Hauteur de la bannière du profil, relevée sur l'app iOS Twitch (70 pt).
