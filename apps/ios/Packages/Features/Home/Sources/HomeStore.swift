@@ -1,4 +1,5 @@
 import Domain
+import Foundation
 import Observation
 
 public enum HomePhase: Equatable, Sendable {
@@ -51,6 +52,7 @@ public final class HomeStore {
 
   private func load(_ request: PageRequest) async {
     guard phase != .loading else { return }
+    let previous = phase
     phase = .loading
     do {
       let page = try await directory.lives(after: request.cursor)
@@ -59,10 +61,16 @@ public final class HomeStore {
       failedRequest = nil
       if request.cursor == nil { thumbnailGeneration += 1 }
       phase = .loaded(hasMore: page.nextCursor != nil)
+    } catch where Self.isCancellation(error) {
+      phase = previous
     } catch {
       failedRequest = request
       phase = .failed
     }
+  }
+
+  private static func isCancellation(_ error: any Error) -> Bool {
+    error is CancellationError || (error as? URLError)?.code == .cancelled
   }
 
   private static func appending(_ page: [LiveChannel], to current: [LiveChannel]) -> [LiveChannel] {

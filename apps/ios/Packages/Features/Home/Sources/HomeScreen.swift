@@ -5,18 +5,49 @@ import SwiftUI
 
 public struct HomeScreen: View {
   @Environment(HomeStore.self) private var store
+  @Environment(BrowseStore.self) private var browse
+  @Environment(CategoryLivesCatalog.self) private var catalog
+  @State private var filter = HomeFilter.initial
+  @State private var page: CategoryLivesPage?
 
   public init() {}
 
   public var body: some View {
-    LiveList(store: store) { EmptyView() }
-      .toolbar(.hidden, for: .navigationBar)
+    LiveList(store: page?.store ?? store) {
+      FilterChips(selection: $filter, items: HomeFilter.chips(for: browse.categories))
+        .padding(.top, LayoutRole.filterChipsTop.points)
+        .padding(.bottom, LayoutRole.filterChipsBottom.points)
+    } row: { live, generation in
+      FeedRow(live: live, generation: generation)
+    }
+    .toolbar(.hidden, for: .navigationBar)
+    .task { await browse.loadIfNeeded() }
+    .onChange(of: filter) { _, current in
+      page = current.category.map { catalog.page(for: $0, keeping: page) }
+    }
   }
 }
 
-struct LiveList<Header: View>: View {
+struct LiveChannelList: View {
+  @Environment(HomeStore.self) private var store
+
+  var body: some View {
+    LiveList(store: store) { EmptyView() }
+  }
+}
+
+extension LiveList where Row == LiveRow {
+  init(store: HomeStore, @ViewBuilder header: () -> Header) {
+    self.init(store: store, header: header) { live, generation in
+      LiveRow(live: live, generation: generation)
+    }
+  }
+}
+
+struct LiveList<Header: View, Row: View>: View {
   let store: HomeStore
   @ViewBuilder let header: Header
+  @ViewBuilder let row: (LiveChannel, Int) -> Row
 
   var body: some View {
     ScrollView {
@@ -24,7 +55,7 @@ struct LiveList<Header: View>: View {
         header
         ForEach(store.lives, id: \.session.channelID) { live in
           NavigationLink(value: Route.channel(live.slug)) {
-            LiveRow(live: live, generation: store.thumbnailGeneration)
+            row(live, store.thumbnailGeneration)
           }
           .buttonStyle(.plain)
         }
@@ -34,7 +65,7 @@ struct LiveList<Header: View>: View {
     }
     .background(ColorRole.background.color.ignoresSafeArea())
     .refreshable { await store.loadFirstPage() }
-    .task {
+    .task(id: ObjectIdentifier(store)) {
       if store.phase == .idle { await store.loadFirstPage() }
     }
   }
@@ -68,7 +99,29 @@ struct LiveList<Header: View>: View {
   }
 }
 
-private struct LiveRow: View {
+private struct FeedRow: View {
+  let live: LiveChannel
+  let generation: Int
+  @Environment(\.locale) private var locale
+
+  var body: some View {
+    VStack(spacing: 0) {
+      FeedLiveCard(
+        badge: HomeCardText.feedBadge,
+        viewers: HomeCardText.viewers(live.viewers, locale: locale),
+        name: live.slug.rawValue,
+        title: live.title,
+        preview: LivePreview(url: live.thumbnailURL, generation: generation),
+        avatarURL: live.avatarURL
+      )
+      .accessibilityElement(children: .combine)
+      .accessibilityIdentifier("home.live.\(live.slug.rawValue)")
+      FeedDivider()
+    }
+  }
+}
+
+struct LiveRow: View {
   let live: LiveChannel
   let generation: Int
   @Environment(\.locale) private var locale
@@ -90,6 +143,7 @@ private struct LiveRow: View {
 
 public enum HomeCardText {
   public static var liveBadge: String { String(localized: "home.live.badge", bundle: .module) }
+  public static var feedBadge: String { String(localized: "home.feed.badge", bundle: .module) }
 
   public static func viewers(_ count: ViewerCount?, locale: Locale) -> String? {
     count.map {
@@ -106,4 +160,5 @@ enum HomeText {
   static var empty: String { String(localized: "home.empty", bundle: .module) }
   static var failed: String { String(localized: "home.failed", bundle: .module) }
   static var retry: String { String(localized: "home.retry", bundle: .module) }
+  static var allFilter: String { String(localized: "home.filter.all", bundle: .module) }
 }
