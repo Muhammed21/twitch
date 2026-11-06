@@ -26,6 +26,7 @@ public struct ProfileScreen<Settings: View>: View {
           ProfileHeader(
             name: account.name,
             lastLive: account.lastLiveAt.map { ProfileText.lastLive(at: $0, now: context.date, locale: locale) },
+            pictures: store.pictures(of: account),
             settings: settingsAction,
             edit: ProfileHeaderAction(label: String(localized: EditProfileText.edit)) { isEditing = true }
           )
@@ -34,7 +35,7 @@ public struct ProfileScreen<Settings: View>: View {
           EditProfileSheet(account: account, onSaved: actions.onAccountSaved)
         }
       } else {
-        ProfileBanner(settings: settingsAction)
+        ProfileBanner(imageURL: store.bannerURL, settings: settingsAction)
       }
       VStack(alignment: .leading, spacing: 0) {
         headerActions
@@ -152,6 +153,12 @@ struct MenuRow: View {
     .padding(.horizontal, LayoutRole.menuRowPadding.points)
     .frame(minHeight: LayoutRole.menuRowHeight.points)
     .contentShape(Rectangle())
+  }
+}
+
+public extension MyChannelStore {
+  func pictures(of account: Account) -> ProfilePictures {
+    ProfilePictures(avatar: account.avatarURL, banner: bannerURL)
   }
 }
 
