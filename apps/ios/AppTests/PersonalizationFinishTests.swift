@@ -186,6 +186,21 @@ struct PersonalizationFinishTests {
     #expect(recorder.endings == ["home"])
   }
 
+  @Test(
+    "la pilule « Essayer sans publicité » du profil suit la même règle que le paywall du parcours (IMG_9614)",
+    arguments: [
+      (true, Result<Bool, PurchasesFailure>.success(false), true),
+      (true, .success(true), false),
+      (true, .failure(.failed(code: "networkError")), true),
+      (false, .success(false), false),
+    ]
+  )
+  func turboOffered(isAvailable: Bool, turbo: Result<Bool, PurchasesFailure>, expected: Bool) async {
+    let purchases = StubPurchases(isAvailable: isAvailable, turbo: turbo)
+
+    #expect(await TurboOffer.isOffered(by: purchases) == expected)
+  }
+
   @Test("un état Turbo illisible n'empêche pas d'ouvrir le paywall")
   func unknownTurboShowsPaywall() async {
     let recorder = EndingRecorder()

@@ -135,6 +135,11 @@
       "$value": "{core.dimension.57}",
       "$description": "Pilule du widget affiché dans le dock, relevé sur l'app iOS Twitch (57 pt)."
     },
+    "x63": {
+      "$type": "dimension",
+      "$value": "{core.dimension.63}",
+      "$description": "Largeur du filet entre deux lives du flux de l'accueil, relevée sur l'app iOS Twitch (63 pt, docs/new-reference-ui/IMG_9607)."
+    },
     "x70": {
       "$type": "dimension",
       "$value": "{core.dimension.70}",

@@ -94,6 +94,10 @@ struct ColorRoleTests {
       (ColorRole.streamManagerCamera, ColorScheme.dark, "E91916"),
       (ColorRole.streamManagerDivider, ColorScheme.light, "B2B2B2"),
       (ColorRole.streamManagerDivider, ColorScheme.dark, "2D2D2F"),
+      (ColorRole.chipSelected, ColorScheme.light, "000000"),
+      (ColorRole.chipSelected, ColorScheme.dark, "EFEFF1"),
+      (ColorRole.onChipSelected, ColorScheme.light, "FFFFFF"),
+      (ColorRole.onChipSelected, ColorScheme.dark, "000000"),
     ]
   )
   func resolvesToken(role: ColorRole, scheme: ColorScheme, expected: String) {

@@ -45,6 +45,8 @@ public enum ColorRole: Equatable, Sendable {
   case widgetFieldBorder
   case streamManagerCamera
   case streamManagerDivider
+  case chipSelected
+  case onChipSelected
 
   public var color: Color {
     switch self {
@@ -90,6 +92,8 @@ public enum ColorRole: Equatable, Sendable {
     case .widgetFieldBorder: .widgetFieldBorder
     case .streamManagerCamera: .streamManagerCamera
     case .streamManagerDivider: .streamManagerDivider
+    case .chipSelected: .chipSelected
+    case .onChipSelected: .chipOnSelected
     }
   }
 
