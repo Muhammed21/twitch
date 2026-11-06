@@ -30,6 +30,14 @@ struct RouteTests {
 
     #expect(Route(deepLink: url) == nil)
   }
+
+  @Test("le lien partagé d'une chaîne se rouvre sur cette chaîne")
+  func sharedChannelLink() throws {
+    let slug = try ChannelSlug("jean_dupont")
+
+    #expect(slug.appLink == URL(string: "twitch://channel/jean_dupont"))
+    #expect(Route(deepLink: slug.appLink) == .channel(slug))
+  }
 }
 
 @MainActor
