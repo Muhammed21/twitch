@@ -9,6 +9,7 @@ import SwiftUI
 struct SignedInModes: View {
   @Environment(CreatorMode.self) private var creatorMode
   @Environment(Router.self) private var router
+  @Environment(DashboardLiveFigures.self) private var liveFigures
 
   var body: some View {
     @Bindable var router = router
@@ -20,7 +21,7 @@ struct SignedInModes: View {
     }
     .fullScreenCover(isPresented: $router.isShowingStreamManager) {
       NavigationStack {
-        StreamManagerScreen { router.isShowingStreamManager = false }
+        StreamManagerScreen(status: liveFigures.status) { router.isShowingStreamManager = false }
       }
     }
     .creatorModePresentation { router.create() }

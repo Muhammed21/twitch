@@ -212,14 +212,14 @@ let package = Package(
     ),
     .target(
       name: "Profile",
-      dependencies: ["Domain", "DesignSystem"],
+      dependencies: ["Domain", "DesignSystem", "Chat"],
       path: "Features/Profile/Sources",
       resources: [.process("Localizable.xcstrings")],
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
     .testTarget(
       name: "ProfileTests",
-      dependencies: ["Profile", "Domain"],
+      dependencies: ["Profile", "Domain", "DesignSystem"],
       path: "Features/Profile/Tests",
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
