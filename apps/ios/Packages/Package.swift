@@ -276,7 +276,7 @@ let package = Package(
     ),
     .testTarget(
       name: "PaywallTests",
-      dependencies: ["Paywall", "PurchasesTesting", "Domain", "DesignSystem"],
+      dependencies: ["Paywall", "AnalyticsTesting", "PurchasesTesting", "Domain", "DesignSystem"],
       path: "Features/Paywall/Tests",
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
