@@ -16,6 +16,7 @@ struct NotificationsPage: View {
         .font(TextRole.journeyTitle.font)
         .foregroundStyle(JourneyStyle.title.color)
         .accessibilityAddTraits(.isHeader)
+        .accessibilityFocusOnAppear()
         .padding(.top, LayoutRole.journeyContentGap.points)
       Spacer(minLength: 0)
       Button(PersonalizationText.turnOnNotifications) {

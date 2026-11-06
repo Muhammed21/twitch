@@ -19,6 +19,8 @@ public struct AllSetScreen: View {
         .padding(.top, LayoutRole.heroInset.points)
       Text(AuthText.allSetTitle)
         .font(TextRole.dialogTitle.font)
+        .accessibilityAddTraits(.isHeader)
+        .accessibilityFocusOnAppear()
         .padding(.top, LayoutRole.actionInset.points)
       Text(AuthText.allSetMessage)
         .font(TextRole.dialogMessage.font)
