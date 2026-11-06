@@ -22,21 +22,33 @@ private struct PlayerStatus: View {
   @Environment(PlayerController.self) private var controller
 
   var body: some View {
-    switch controller.state {
+    if let status = PlayerText.status(of: controller.state) {
+      PlayerStatusContent(state: controller.state, status: status)
+    }
+  }
+}
+
+private struct PlayerStatusContent: View {
+  @Environment(PlayerController.self) private var controller
+  let state: PlayerState
+  let status: String
+
+  var body: some View {
+    switch state {
     case .idle:
       EmptyView()
     case .playing:
       Color.clear
         .allowsHitTesting(false)
         .accessibilityElement()
-        .accessibilityLabel(PlayerText.playing)
+        .accessibilityLabel(status)
         .accessibilityIdentifier("player.playing")
     case .loading, .buffering:
       ProgressView().tint(.white)
-        .accessibilityLabel(PlayerText.status(of: controller.state) ?? "")
+        .accessibilityLabel(status)
     case .failed:
       VStack(spacing: LayoutRole.dialogTitleGap.points) {
-        Text(PlayerText.failed)
+        Text(status)
           .font(TextRole.body.font)
           .foregroundStyle(.white)
           .multilineTextAlignment(.center)
@@ -51,9 +63,9 @@ private struct PlayerStatus: View {
           .foregroundStyle(.white)
       }
       .accessibilityLabel(PlayerText.play)
-      .accessibilityValue(PlayerText.status(of: .paused) ?? "")
+      .accessibilityValue(status)
     case .ended:
-      Text(PlayerText.ended)
+      Text(status)
         .font(TextRole.body.font)
         .foregroundStyle(.white)
     }
