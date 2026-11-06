@@ -266,7 +266,7 @@ enum Composition {
     let analytics = ProductAnalytics.live(info: info, defaults: .standard)
     let player = PlayerController(player: AVMediaPlayer(), startupRetry: .every(.seconds(2), attempts: 15))
     let channels = ChannelClient(apiBaseURL: configuration.apiBaseURL, transport: transport)
-    let preferences = PersonalizationRoot.preferences()
+    let preferences = PersonalizationRoot.preferences(analytics: analytics)
     let playback = PlaybackClient(apiBaseURL: configuration.apiBaseURL, transport: transport)
     let channelPlayback = Self.channelPlayback(playback: playback, channels: channels, player: player, preferences: preferences)
     let sessionStore = Self.sessionStore(configuration: configuration, session: session, transport: transport, analytics: analytics, now: now)
