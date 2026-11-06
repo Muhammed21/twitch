@@ -1,0 +1,12 @@
+html,
+html[data-theme="light"],
+html[data-theme="dark"] {
+  --theme-bg: var(--color-background-primary);
+  --theme-input-bg: var(--color-surface-primary);
+  --theme-text: var(--color-text-primary);
+  --theme-error-500: var(--color-danger-default);
+}
+
+a {
+  color: var(--color-text-link);
+}

@@ -110,7 +110,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/install
+      # Payload se construit sans base joignable (ADR 0028 §7) : l'URL pointe vers un port fermé.
       - run: pnpm build
+        env:
+          PAYLOAD_DATABASE_URL: postgresql://payload:payload@127.0.0.1:1/payload
 
   contract:
     name: Contract (OpenAPI)
