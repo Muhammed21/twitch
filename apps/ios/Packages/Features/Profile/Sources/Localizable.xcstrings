@@ -1641,6 +1641,22 @@
         }
       }
     },
+    "streamManager.streamKey.hidden" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hidden"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquée"
+          }
+        }
+      }
+    },
     "streamManager.title" : {
       "localizations" : {
         "en" : {
@@ -1653,6 +1669,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Titre"
+          }
+        }
+      }
+    },
+    "streamManager.title.empty" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No title"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun titre"
           }
         }
       }

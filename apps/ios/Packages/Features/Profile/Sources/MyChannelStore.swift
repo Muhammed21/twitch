@@ -29,6 +29,7 @@ public final class MyChannelStore {
   public private(set) var bannerURL: URL?
   public private(set) var streamKey: StreamKey?
   public private(set) var notice: Notice?
+  public private(set) var noticeCount = 0
 
   @ObservationIgnored private var keyReads = 0
   @ObservationIgnored private var hasStartedLoading = false
@@ -155,7 +156,7 @@ public final class MyChannelStore {
       guard read == keyReads else {
         return
       }
-      notice = .keyUnavailable
+      emit(.keyUnavailable)
     }
   }
 
@@ -171,13 +172,13 @@ public final class MyChannelStore {
         return
       }
       streamKey = key
-      notice = .keyRotated
+      emit(.keyRotated)
     } catch {
       log("my channel: stream key not rotated (\(Self.kind(of: error)))")
       guard read == keyReads else {
         return
       }
-      notice = .keyRotationFailed
+      emit(.keyRotationFailed)
     }
   }
 
@@ -191,12 +192,17 @@ public final class MyChannelStore {
     notice = nil
   }
 
+  private func emit(_ emitted: Notice) {
+    notice = emitted
+    noticeCount += 1
+  }
+
   public func copyKey() {
     guard let streamKey else {
       return
     }
     copy(streamKey.revealed)
-    notice = .keyCopied
+    emit(.keyCopied)
   }
 
   public func bannerSaved(_ channel: Channel) {
@@ -211,11 +217,11 @@ public final class MyChannelStore {
     do {
       let channel = try await repository.update(owned.id, change: StreamInfoChange.from(info, to: draft))
       info = Self.streamInfo(of: channel)
-      notice = .titleSaved
+      emit(.titleSaved)
       return true
     } catch {
       log("my channel: title not saved (\(Self.kind(of: error)))")
-      notice = .titleFailed
+      emit(.titleFailed)
       return false
     }
   }

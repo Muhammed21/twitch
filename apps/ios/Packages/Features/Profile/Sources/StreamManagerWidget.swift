@@ -44,6 +44,20 @@ public enum StreamManagerHeaderText {
   }
 }
 
+public enum StreamManagerSpoken {
+  public static func key(_ revealed: String?) -> String {
+    revealed ?? String(localized: "streamManager.streamKey.hidden", bundle: .module)
+  }
+
+  public static func title(_ title: String) -> String {
+    title.isEmpty ? String(localized: "streamManager.title.empty", bundle: .module) : title
+  }
+
+  public static func announcement(for notice: MyChannelStore.Notice?) -> String? {
+    notice.map { String(localized: ProfileText.notice($0)) }
+  }
+}
+
 public struct StreamManagerChatSlot: Sendable {
   private let make: (@MainActor @Sendable (ChannelSlug) -> AnyView)?
 
