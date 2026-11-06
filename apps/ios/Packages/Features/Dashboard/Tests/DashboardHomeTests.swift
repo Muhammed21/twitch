@@ -1,5 +1,6 @@
 import Dashboard
 import DesignSystem
+import Domain
 import Foundation
 import Testing
 
@@ -38,8 +39,8 @@ struct DashboardHomeTests {
 
   @Test("la carte de stream hors ligne propose le Gestionnaire de stream et la modification des infos")
   func streamCard() {
-    #expect(english(DashboardText.offline) == "OFFLINE")
-    #expect(french(DashboardText.offline) == "HORS LIGNE")
+    #expect(DashboardText.offline(status: .offline).map(english) == "OFFLINE")
+    #expect(DashboardText.offline(status: .offline).map(french) == "HORS LIGNE")
     #expect(french(DashboardText.streamManager) == "Gestionnaire de stream")
     #expect(french(DashboardText.editStreamInfo) == "Modifier les infos du stream")
     #expect(
@@ -53,5 +54,15 @@ struct DashboardHomeTests {
     #expect(french(DashboardText.noRecentActivity) == "Pas d'activité récente")
     #expect(french(DashboardText.seeAllActivity) == "Voir toutes les activités")
     #expect(english(DashboardText.seeAllActivity) == "See all activity")
+  }
+
+  @Test("l'aperçu dit HORS LIGNE tant que le statut du live n'est pas connu")
+  func offlineBadgeWithoutStatus() {
+    #expect(DashboardText.offline(status: nil).map(french) == "HORS LIGNE")
+  }
+
+  @Test("l'aperçu ne dit plus HORS LIGNE pendant le live")
+  func noOfflineBadgeWhileLive() {
+    #expect(DashboardText.offline(status: .live(viewers: nil, startedAt: .now)) == nil)
   }
 }

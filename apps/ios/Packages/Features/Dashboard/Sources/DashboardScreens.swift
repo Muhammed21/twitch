@@ -109,7 +109,7 @@ public struct DashboardHomeScreen: View {
           }
           .padding(.horizontal, LayoutRole.screenInset.points)
           DashboardStreamCard(
-            offlineLabel: String(localized: DashboardText.offline),
+            offlineLabel: DashboardText.offline(status: status).map { String(localized: $0) },
             primaryLabel: String(localized: DashboardText.streamManager),
             secondaryLabel: String(localized: DashboardText.editStreamInfo),
             onPrimary: onStreamManager,
