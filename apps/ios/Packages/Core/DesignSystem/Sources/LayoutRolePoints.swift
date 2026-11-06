@@ -214,6 +214,8 @@ public extension LayoutRole {
     case .activityEmptyGap: Spacing.x16
     case .activityActionHeight: Spacing.x36
     case .activityActionPadding: Spacing.x12
+    case .activityNotificationsIllustrationGap: Spacing.x20
+    case .activityWhispersIllustrationGap: Spacing.x19
     }
   }
 }

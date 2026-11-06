@@ -47,6 +47,7 @@
   --color-illustration-fill: #ffffff;
   --color-illustration-accent: #9147ff;
   --color-illustration-highlight: #f5f500;
+  --color-illustration-backdrop: #efeff1;
   --color-chip-selected: #000000;
   --color-chip-on-selected: #ffffff;
   --typography-display-text-font: -apple-system-headline;
@@ -109,6 +110,7 @@
   --spacing-x14: 14px;
   --spacing-x15: 15px;
   --spacing-x16: 16px;
+  --spacing-x19: 19px;
   --spacing-x20: 20px;
   --spacing-x22: 22px;
   --spacing-x24: 24px;
@@ -190,6 +192,7 @@
     --color-illustration-fill: #ffffff;
     --color-illustration-accent: #9147ff;
     --color-illustration-highlight: #f5f500;
+    --color-illustration-backdrop: #efeff1;
     --color-chip-selected: #efeff1;
     --color-chip-on-selected: #000000;
   }

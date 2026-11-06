@@ -61,6 +61,11 @@
         "$value": "16px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : marge latérale des écrans."
       },
+      "19": {
+        "$type": "dimension",
+        "$value": "19px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9613) : écart entre le bas du personnage de l'onglet Chuchotements vide et le cadre du titre, 65 px à @3x jusqu'à la capitale, moins les 7 px qui séparent le haut du cadre de la capitale."
+      },
       "20": {
         "$type": "dimension",
         "$value": "20px",

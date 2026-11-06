@@ -319,6 +319,13 @@ public extension Color {
             ? UIColor(red: 0.961, green: 0.961, blue: 0, alpha: 1)
             : UIColor(red: 0.961, green: 0.961, blue: 0, alpha: 1)
     })
+    /// Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9613) : losange gris derrière le personnage de l'onglet Chuchotements vide, mesuré #efeff1. Aucune capture en thème sombre (ADR 0053 §3) : valeur claire gardée.
+    /// clair #EFEFF1 · sombre #EFEFF1
+    static let illustrationBackdrop = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.937, green: 0.937, blue: 0.945, alpha: 1)
+            : UIColor(red: 0.937, green: 0.937, blue: 0.945, alpha: 1)
+    })
     /// Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9607) : fond de la puce de filtre active (« Tout ») du flux de l'accueil, mesuré #000000.
     /// clair #000000 · sombre #EFEFF1
     static let chipSelected = Color(uiColor: UIColor { trait in
@@ -426,6 +433,8 @@ public extension Color {
         public static let illustrationAccentDark = Color(.sRGB, red: 0.569, green: 0.278, blue: 1, opacity: 1)
         public static let illustrationHighlightLight = Color(.sRGB, red: 0.961, green: 0.961, blue: 0, opacity: 1)
         public static let illustrationHighlightDark = Color(.sRGB, red: 0.961, green: 0.961, blue: 0, opacity: 1)
+        public static let illustrationBackdropLight = Color(.sRGB, red: 0.937, green: 0.937, blue: 0.945, opacity: 1)
+        public static let illustrationBackdropDark = Color(.sRGB, red: 0.937, green: 0.937, blue: 0.945, opacity: 1)
         public static let chipSelectedLight = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 1)
         public static let chipSelectedDark = Color(.sRGB, red: 0.937, green: 0.937, blue: 0.945, opacity: 1)
         public static let chipOnSelectedLight = Color(.sRGB, red: 1, green: 1, blue: 1, opacity: 1)
