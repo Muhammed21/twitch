@@ -77,7 +77,8 @@ describe("environnement des tests d'intégration", () => {
 
     expect(() => integrationEnv({ dotenv, shell: {} })).toThrow(
       "DATABASE_URL_STREAM vise la pile locale (127.0.0.1:5432) : les tests d'intégration y " +
-        "écriraient. Visez une pile isolée en surchargeant DATABASE_URL_* dans le shell, " +
+        "écriraient. Visez une pile isolée en surchargeant DATABASE_URL_*, PAYLOAD_DATABASE_URL " +
+        "et REDIS_URL dans le shell, " +
         "ou acceptez-le avec INTEGRATION_ALLOW_LOCAL_STACK=1.",
     );
   });
@@ -91,6 +92,34 @@ describe("environnement des tests d'intégration", () => {
     expect(() => integrationEnv({ dotenv, shell: {} })).toThrow(
       "PAYLOAD_DATABASE_URL vise la pile locale",
     );
+  });
+
+  it("refuse le Redis de la pile locale, sur 127.0.0.1:6379, sans accord explicite", () => {
+    const dotenv = { ...ISOLATED_STACK, REDIS_URL: "redis://127.0.0.1:6379" };
+
+    expect(() => integrationEnv({ dotenv, shell: {} })).toThrow(
+      "REDIS_URL vise la pile locale (127.0.0.1:6379)",
+    );
+  });
+
+  it.each(["redis://localhost", "rediss://[::1]:6379/0"])(
+    "reconnaît le Redis de la pile locale derrière %s",
+    (url) => {
+      expect(() =>
+        integrationEnv({ dotenv: { ...ISOLATED_STACK, REDIS_URL: url }, shell: {} }),
+      ).toThrow("REDIS_URL vise la pile locale (127.0.0.1:6379)");
+    },
+  );
+
+  it("laisse passer un Redis isolé, et ne confond pas les ports de Postgres et de Redis", () => {
+    const dotenv = {
+      ...ISOLATED_STACK,
+      REDIS_URL: "redis://127.0.0.1:56379",
+      CROSSED_REDIS: "redis://127.0.0.1:5432",
+      CROSSED_POSTGRES: "postgresql://app@127.0.0.1:6379/app",
+    };
+
+    expect(integrationEnv({ dotenv, shell: {} })).toMatchObject({ REDIS_URL: dotenv.REDIS_URL });
   });
 
   it("laisse passer un service local qui n'est pas Postgres, ou une valeur qui n'est pas une URL", () => {
@@ -119,10 +148,11 @@ describe("environnement des tests d'intégration", () => {
     "postgresql://app@localhost:5432/app",
     "postgresql://app@[::1]:5432/app",
     "postgres://app@127.0.0.1/app",
+    "postgres://app@127.0.0.1:5432/app",
   ])("reconnaît la pile locale derrière %s", (url) => {
     expect(() =>
       integrationEnv({ dotenv: { ...ISOLATED_STACK, DATABASE_URL_MIGRATOR: url }, shell: {} }),
-    ).toThrow("DATABASE_URL_MIGRATOR vise la pile locale");
+    ).toThrow("DATABASE_URL_MIGRATOR vise la pile locale (127.0.0.1:5432)");
   });
 
   it("refuse aussi la pile locale venue du shell", () => {

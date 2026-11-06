@@ -16,10 +16,12 @@
       "dependsOn": ["^generate"],
       "cache": false,
       "passThroughEnv": [
-        "INTEGRATION_S3_ENDPOINT",
-        "INTEGRATION_ALLOW_LOCAL_STACK",
+        "INTEGRATION_*",
         "DATABASE_URL_*",
-        "REDIS_URL"
+        "DATABASE_POOL_MAX_*",
+        "PAYLOAD_DATABASE_URL",
+        "REDIS_URL",
+        "S3_*"
       ]
     },
     "generate": {

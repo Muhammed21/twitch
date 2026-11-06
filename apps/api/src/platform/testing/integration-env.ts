@@ -3,25 +3,30 @@ type Env = Readonly<Record<string, string | undefined>>;
 const UNREACHABLE_S3 = "http://s3.integration.invalid";
 
 const LOOPBACK_HOSTS: ReadonlySet<string> = new Set(["127.0.0.1", "localhost", "[::1]"]);
-const POSTGRES_PROTOCOLS: ReadonlySet<string> = new Set(["postgres:", "postgresql:"]);
-const LOCAL_STACK_PORT = "5432";
+const LOCAL_STACK_PORTS: Readonly<Record<string, string>> = {
+  "postgres:": "5432",
+  "postgresql:": "5432",
+  "redis:": "6379",
+  "rediss:": "6379",
+};
 
-const targetsLocalStack = (value: string): boolean => {
+const localStackPortOf = (value: string): string | undefined => {
   const parsed = URL.parse(value);
-  return (
-    parsed !== null &&
-    POSTGRES_PROTOCOLS.has(parsed.protocol) &&
-    LOOPBACK_HOSTS.has(parsed.hostname) &&
-    (parsed.port === "" ? LOCAL_STACK_PORT : parsed.port) === LOCAL_STACK_PORT
-  );
+  if (parsed === null || !LOOPBACK_HOSTS.has(parsed.hostname)) {
+    return undefined;
+  }
+  const port = LOCAL_STACK_PORTS[parsed.protocol];
+  return (parsed.port === "" ? port : parsed.port) === port ? port : undefined;
 };
 
 const refuseLocalStack = (env: Readonly<Record<string, string>>): void => {
-  const local = Object.entries(env).find(([, value]) => targetsLocalStack(value));
+  const local = Object.entries(env)
+    .map(([name, value]) => ({ name, port: localStackPortOf(value) }))
+    .find(({ port }) => port !== undefined);
   if (local !== undefined) {
     throw new Error(
-      `${local[0]} vise la pile locale (127.0.0.1:5432) : les tests d'intégration y écriraient. ` +
-        "Visez une pile isolée en surchargeant DATABASE_URL_* dans le shell, " +
+      `${local.name} vise la pile locale (127.0.0.1:${local.port}) : les tests d'intégration y écriraient. ` +
+        "Visez une pile isolée en surchargeant DATABASE_URL_*, PAYLOAD_DATABASE_URL et REDIS_URL dans le shell, " +
         "ou acceptez-le avec INTEGRATION_ALLOW_LOCAL_STACK=1.",
     );
   }
