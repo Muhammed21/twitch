@@ -171,10 +171,8 @@ public enum PersonalizationText {
 
   public static func viewers(_ count: ViewerCount?, locale: Locale) -> String? {
     count.map {
-      String(
-        format: String(localized: "journey.categories.viewers", bundle: .module),
-        $0.value.formatted(.number.notation(.compactName).locale(locale))
-      )
+      let shown = $0.value.formatted(.number.notation(.compactName).locale(locale))
+      return String(localized: "journey.categories.viewers \($0.value) \(shown)", bundle: .module)
     }
   }
 
