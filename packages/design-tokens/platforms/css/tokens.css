@@ -45,6 +45,11 @@
   --color-illustration-ink: #000000;
   --color-illustration-outline: #323338;
   --color-illustration-fill: #ffffff;
+  --color-widget-header: #efeff1;
+  --color-widget-border: #e2e2e6;
+  --color-widget-field-border: #808084;
+  --color-stream-manager-camera: #e91916;
+  --color-stream-manager-divider: #b2b2b2;
   --typography-display-text-font: -apple-system-headline;
   --typography-display-text-weight: 600;
   --typography-heading-text-font: -apple-system-subheadline;
@@ -108,14 +113,17 @@
   --spacing-x20: 20px;
   --spacing-x22: 22px;
   --spacing-x24: 24px;
+  --spacing-x26: 26px;
   --spacing-x30: 30px;
   --spacing-x32: 32px;
+  --spacing-x35: 35px;
   --spacing-x36: 36px;
   --spacing-x40: 40px;
   --spacing-x44: 44px;
   --spacing-x47: 47px;
   --spacing-x49: 49px;
   --spacing-x56: 56px;
+  --spacing-x57: 57px;
   --spacing-x70: 70px;
   --spacing-x72: 72px;
   --spacing-x75: 75px;
@@ -181,5 +189,10 @@
     --color-illustration-ink: #000000;
     --color-illustration-outline: #323338;
     --color-illustration-fill: #ffffff;
+    --color-widget-header: #29282f;
+    --color-widget-border: #2d2d2f;
+    --color-widget-field-border: #adadb8;
+    --color-stream-manager-camera: #e91916;
+    --color-stream-manager-divider: #2d2d2f;
   }
 }

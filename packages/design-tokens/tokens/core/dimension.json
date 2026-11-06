@@ -76,6 +76,11 @@
         "$value": "24px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : avatar de l'onglet Profile (profil/menu-compte--defaut)."
       },
+      "26": {
+        "$type": "dimension",
+        "$value": "26px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9618) : avatar de l'en-tête du gestionnaire de stream."
+      },
       "30": {
         "$type": "dimension",
         "$value": "30px",
@@ -85,6 +90,11 @@
         "$type": "dimension",
         "$value": "32px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : écart entre les onglets Categories et Live Channels de Browse (parcourir/liste-categories--defaut)."
+      },
+      "35": {
+        "$type": "dimension",
+        "$value": "35px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9618) : en-tête d'une carte de widget."
       },
       "36": {
         "$type": "dimension",
@@ -115,6 +125,11 @@
         "$type": "dimension",
         "$value": "56px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : hauteur des lignes du menu du compte."
+      },
+      "57": {
+        "$type": "dimension",
+        "$value": "57px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9618) : pilule du widget affiché dans le dock du gestionnaire de stream."
       },
       "70": {
         "$type": "dimension",

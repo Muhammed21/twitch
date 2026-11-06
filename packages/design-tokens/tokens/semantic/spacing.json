@@ -75,6 +75,11 @@
       "$value": "{core.dimension.24}",
       "$description": "Avatar de l'onglet Profile, relevé sur l'app iOS Twitch (24 pt)."
     },
+    "x26": {
+      "$type": "dimension",
+      "$value": "{core.dimension.26}",
+      "$description": "Avatar de l'en-tête du gestionnaire de stream, relevé sur l'app iOS Twitch (26 pt)."
+    },
     "x30": {
       "$type": "dimension",
       "$value": "{core.dimension.30}",
@@ -84,6 +89,11 @@
       "$type": "dimension",
       "$value": "{core.dimension.32}",
       "$description": "Écart entre les onglets Categories et Live Channels de Browse, relevé sur l'app iOS Twitch (32 pt)."
+    },
+    "x35": {
+      "$type": "dimension",
+      "$value": "{core.dimension.35}",
+      "$description": "En-tête d'une carte de widget, relevé sur l'app iOS Twitch (35 pt)."
     },
     "x36": {
       "$type": "dimension",
@@ -114,6 +124,11 @@
       "$type": "dimension",
       "$value": "{core.dimension.56}",
       "$description": "Hauteur des lignes du menu du compte, relevée sur l'app iOS Twitch (56 pt, profil/menu-compte--defaut)."
+    },
+    "x57": {
+      "$type": "dimension",
+      "$value": "{core.dimension.57}",
+      "$description": "Pilule du widget affiché dans le dock, relevé sur l'app iOS Twitch (57 pt)."
     },
     "x70": {
       "$type": "dimension",

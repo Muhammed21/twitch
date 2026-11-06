@@ -250,6 +250,35 @@
         "$value": "{core.color.neutral.100}",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9625, IMG_9626) : remplissage des illustrations d'état vide du tableau de bord, mesuré #ffffff. Aucune capture en thème sombre (ADR 0052 §4) : valeur claire gardée."
       }
+    },
+    "widget": {
+      "header": {
+        "$type": "color",
+        "$value": "{core.color.neutral.16}",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9618) : en-tête d'une carte de widget. Aucune capture en thème sombre : valeur de surface secondaire."
+      },
+      "border": {
+        "$type": "color",
+        "$value": "{core.color.neutral.18}",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9618) : filet d'une carte de widget. Aucune capture en thème sombre : valeur du filet décoratif."
+      },
+      "fieldBorder": {
+        "$type": "color",
+        "$value": "{core.color.neutral.70}",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9618) : filet du champ du widget Chat. Aucune capture en thème sombre : valeur du texte secondaire."
+      }
+    },
+    "streamManager": {
+      "camera": {
+        "$type": "color",
+        "$value": "{core.color.red.48}",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9618) : caméra de l'en-tête du gestionnaire de stream. Aucune capture en thème sombre : valeur claire gardée."
+      },
+      "divider": {
+        "$type": "color",
+        "$value": "{core.color.neutral.18}",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9618) : filet sous l'en-tête du gestionnaire de stream. Aucune capture en thème sombre : valeur du filet décoratif."
+      }
     }
   }
 }
