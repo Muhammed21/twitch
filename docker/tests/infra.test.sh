@@ -215,6 +215,32 @@ check "SIGTERM arrête le chat dans le délai de grâce" full stop chat
 check "le chat s'est arrêté de lui-même, sans SIGKILL" stopped_by_itself chat
 full rm -sf chat >/dev/null 2>&1
 
+echo "Payload (profil full)"
+PAYLOAD_HTTP="http://127.0.0.1:${PAYLOAD_PORT}"
+in_payload() { full exec -T payload "$@"; }
+started_after_payload_migrate() { test "$(comparable_time "$(state_of payload StartedAt)")" \> "$(comparable_time "$(state_of payload-migrate FinishedAt)")"; }
+up_payload_with_failing_migrate() {
+  compose -f "$ROOT/compose.yaml" -f "$ROOT/docker/tests/compose.failing-payload-migrate.yaml" \
+    --profile full up -d --build --wait --wait-timeout 600 payload
+}
+payload_migrations() { psql_as payload "$PG_PASSWORD_PAYLOAD" payload "SELECT count(*) FROM payload_migrations WHERE batch > 0"; }
+check_not "payload ne démarre pas si payload-migrate échoue" up_payload_with_failing_migrate
+check "payload a été créé mais jamais démarré" test "$(state_of payload Status)" = "created"
+check "aucune migration de Payload n'est appliquée" test "$(psql_as payload "$PG_PASSWORD_PAYLOAD" payload "SELECT to_regclass('public.payload_migrations') IS NULL")" = "t"
+full rm -sf payload payload-migrate >/dev/null 2>&1
+check "payload démarre après payload-migrate et une API saine, et devient sain" full up -d --build --wait --wait-timeout 600 payload
+if [ "$(state_of payload Running 2>/dev/null)" != "true" ]; then full logs --no-color --tail 80 payload-migrate payload; fi
+check "/health/ready de Payload répond 200 depuis l'hôte" curl -sf "$PAYLOAD_HTTP/health/ready"
+check "/health/live de Payload répond 200 depuis l'hôte" curl -sf "$PAYLOAD_HTTP/health/live"
+check "l'admin de Payload répond depuis l'hôte" curl -sf -o /dev/null "$PAYLOAD_HTTP/admin/login"
+check "payload démarre après la fin de payload-migrate" started_after_payload_migrate
+check "payload-migrate a appliqué les migrations de Payload" test "$(payload_migrations)" -ge 1
+check "payload tourne sous l'utilisateur node" test "$(in_payload id -un)" = "node"
+check "l'image de payload ne contient pas les migrations" in_payload sh -c '! test -e /repo/apps/payload/src/migrations'
+check "SIGTERM arrête payload dans le délai de grâce" full stop payload
+check "payload s'est arrêté de lui-même, sans SIGKILL" stopped_by_itself payload
+full rm -sf payload payload-migrate >/dev/null 2>&1
+
 echo "Exposition sur le réseau local (compose.lan.yaml)"
 host_ips() {
   local service="$1"
@@ -230,6 +256,8 @@ check "compose.lan.yaml republie RTMP et HLS de video sur toutes les interfaces"
 check "sans compose.lan.yaml, le chat publie sur 127.0.0.1" test "$(host_ips chat)" = "127.0.0.1:${CHAT_HTTP_PORT} "
 check "compose.lan.yaml republie le chat sur toutes les interfaces" test "$(lan_host_ips chat)" = "*:${CHAT_HTTP_PORT} "
 check "compose.lan.yaml laisse PostgreSQL sur 127.0.0.1" test "$(lan_host_ips postgres)" = "127.0.0.1:${POSTGRES_PORT} "
+check "sans compose.lan.yaml, payload publie sur 127.0.0.1" test "$(host_ips payload)" = "127.0.0.1:${PAYLOAD_PORT} "
+check "compose.lan.yaml laisse payload sur 127.0.0.1" test "$(lan_host_ips payload)" = "127.0.0.1:${PAYLOAD_PORT} "
 
 echo "Ports publiés sur 127.0.0.1 uniquement"
 published="$(docker ps --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME" --format '{{.Ports}}' | tr ',' '\n' | grep -- '->' || true)"

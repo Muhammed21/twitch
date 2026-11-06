@@ -19,6 +19,7 @@
     "@payloadcms/next": "3.93.0",
     "@payloadcms/ui": "3.93.0",
     "@repo/design-tokens": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
     "graphql": "16.15.0",
     "next": "16.4.5",
     "payload": "3.93.0",
@@ -27,7 +28,6 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
-    "@repo/typescript-config": "workspace:*",
     "@types/node": "^26.6.2",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.7",

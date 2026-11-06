@@ -2,7 +2,8 @@ name: twitch
 
 # Environnement local (ADR 0028). Profil par défaut : infrastructure seulement,
 # les applications tournent sur l'hôte avec `pnpm dev`. Le profil `full` ajoute
-# les images des applications : migrate, puis video et outbox-relay, puis api, puis chat (§5).
+# les images des applications : migrate, puis video et outbox-relay, puis api, puis chat ;
+# payload-migrate, puis payload, qui attend aussi une API saine (§5).
 
 x-postgres-client-env: &postgres-client-env
   PGHOST: postgres
@@ -174,6 +175,47 @@ services:
       interval: 2s
       timeout: 3s
       retries: 30
+
+  payload-migrate:
+    profiles: [full]
+    build:
+      context: .
+      dockerfile: apps/payload/Dockerfile
+      target: migrate
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    environment:
+      PAYLOAD_DATABASE_URL: postgresql://payload:${PG_PASSWORD_PAYLOAD}@postgres:5432/payload
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET}
+    restart: "no"
+
+  payload:
+    profiles: [full]
+    build:
+      context: .
+      dockerfile: apps/payload/Dockerfile
+      target: payload
+    stop_grace_period: 45s
+    depends_on:
+      payload-migrate:
+        condition: service_completed_successfully
+      api:
+        condition: service_healthy
+    environment:
+      PAYLOAD_DATABASE_URL: postgresql://payload:${PG_PASSWORD_PAYLOAD}@postgres:5432/payload
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET}
+    ports:
+      - "127.0.0.1:${PAYLOAD_PORT:-3200}:3200"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3200/health/ready').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 2s
+      timeout: 3s
+      retries: 60
 
   video:
     profiles: [full]
