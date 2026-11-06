@@ -65,6 +65,7 @@ struct LiveList<Header: View, Row: View>: View {
     }
     .background(ColorRole.background.color.ignoresSafeArea())
     .refreshable { await store.loadFirstPage() }
+    .announcing(HomeText.announcement(for: store.phase))
     .task(id: ObjectIdentifier(store)) {
       if store.phase == .idle { await store.loadFirstPage() }
     }
@@ -114,7 +115,7 @@ private struct FeedRow: View {
         preview: LivePreview(url: live.thumbnailURL, generation: generation),
         avatarURL: live.avatarURL
       )
-      .accessibilityElement(children: .combine)
+      .accessibleCard(HomeCardText.card(for: live, locale: locale))
       .accessibilityIdentifier("home.live.\(live.slug.rawValue)")
       FeedDivider()
     }
@@ -136,7 +137,7 @@ struct LiveRow: View {
       preview: LivePreview(url: live.thumbnailURL, generation: generation),
       avatarURL: live.avatarURL
     )
-    .accessibilityElement(children: .combine)
+    .accessibleCard(HomeCardText.card(for: live, locale: locale))
     .accessibilityIdentifier("home.live.\(live.slug.rawValue)")
   }
 }
@@ -150,6 +151,13 @@ public enum HomeCardText {
       String(format: String(localized: "home.live.viewers", bundle: .module), $0.value.formatted(.number.notation(.compactName).locale(locale)))
     }
   }
+
+  public static func card(for live: LiveChannel, locale: Locale) -> AccessibleCard {
+    AccessibleCard(
+      parts: [live.slug.rawValue, String(localized: "home.live.spoken", bundle: .module), live.title, viewers(live.viewers, locale: locale)],
+      hint: String(localized: "home.live.hint", bundle: .module)
+    )
+  }
 }
 
 public enum HomeTab {
@@ -161,4 +169,8 @@ enum HomeText {
   static var failed: String { String(localized: "home.failed", bundle: .module) }
   static var retry: String { String(localized: "home.retry", bundle: .module) }
   static var allFilter: String { String(localized: "home.filter.all", bundle: .module) }
+
+  static func announcement(for phase: HomePhase) -> String? {
+    phase == .failed ? failed : nil
+  }
 }

@@ -46,12 +46,12 @@ public struct FeedLiveCard: View {
         Text(verbatim: name)
           .font(TextRole.feedChannelName.font)
           .foregroundStyle(FeedLiveCardStyle.name.color)
-          .lineLimit(1)
+          .readableLineLimit(1)
       }
       Text(verbatim: title)
         .font(TextRole.feedTitle.font)
         .foregroundStyle(FeedLiveCardStyle.title.color)
-        .lineLimit(FeedLiveCardStyle.titleLineLimit)
+        .readableLineLimit(FeedLiveCardStyle.titleLineLimit)
         .multilineTextAlignment(.leading)
     }
   }
