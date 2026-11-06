@@ -37,10 +37,20 @@
           "$value": "#53535f",
           "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : texte secondaire, thème clair. Valeur de la charte twitch.tv, mesurée #55545b sur le texte lissé."
         },
+        "51": {
+          "$type": "color",
+          "$value": "#808084",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9618) : filet du champ « Envoyer un message » du widget Chat."
+        },
         "70": {
           "$type": "color",
           "$value": "#adadb8",
           "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : texte secondaire, thème sombre. Valeur de la charte twitch.tv, mesurée #adadb2 sur le texte lissé."
+        },
+        "72": {
+          "$type": "color",
+          "$value": "#b2b2b2",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9618) : filet sous l'en-tête du gestionnaire de stream."
         },
         "75": {
           "$type": "color",
@@ -56,6 +66,11 @@
           "$type": "color",
           "$value": "#e0e0e4",
           "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9624) : bouton gris Modifier les infos du stream, mesuré #e0e0e4 sur la carte #efeff1."
+        },
+        "89": {
+          "$type": "color",
+          "$value": "#e2e2e6",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9618) : filet d'une carte de widget."
         },
         "90": {
           "$type": "color",
@@ -146,6 +161,11 @@
           "$value": "#c92309",
           "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : pseudo NecroAamon (chat/chat-lecteur--toast-abonne), thème clair."
         },
+        "48": {
+          "$type": "color",
+          "$value": "#e91916",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9618) : caméra rouge de l'en-tête du gestionnaire de stream."
+        },
         "50": {
           "$type": "color",
           "$value": "#eb0400",
@@ -234,6 +254,13 @@
           "$type": "color",
           "$value": "#ff2f8e",
           "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : rose de la vague de la bande en dégradé de la page Turbo, mesuré #ff2f8e (abonnement/turbo--defaut)."
+        }
+      },
+      "yellow": {
+        "90": {
+          "$type": "color",
+          "$value": "#f5f500",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9613, IMG_9615) : surlignage jaune du personnage des illustrations d'état vide, mesuré #f5f500 sur le fond #f6f6f7."
         }
       }
     }

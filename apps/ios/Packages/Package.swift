@@ -219,7 +219,7 @@ let package = Package(
     ),
     .testTarget(
       name: "ProfileTests",
-      dependencies: ["Profile", "Domain"],
+      dependencies: ["Profile", "Domain", "DesignSystem"],
       path: "Features/Profile/Tests",
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
@@ -263,7 +263,7 @@ let package = Package(
     ),
     .testTarget(
       name: "ActivityTests",
-      dependencies: ["Activity"],
+      dependencies: ["Activity", "DesignSystem"],
       path: "Features/Activity/Tests",
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
@@ -276,7 +276,7 @@ let package = Package(
     ),
     .testTarget(
       name: "PaywallTests",
-      dependencies: ["Paywall", "PurchasesTesting", "Domain", "DesignSystem"],
+      dependencies: ["Paywall", "AnalyticsTesting", "PurchasesTesting", "Domain", "DesignSystem"],
       path: "Features/Paywall/Tests",
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),

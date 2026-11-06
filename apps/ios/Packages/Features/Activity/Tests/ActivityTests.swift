@@ -1,4 +1,5 @@
 import Activity
+import DesignSystem
 import Testing
 
 @Suite("Page Activité, mode spectateur (IMG_9612, IMG_9613)")
@@ -29,6 +30,7 @@ struct ActivityTests {
     #expect(french(empty.title) == "Vous êtes à jour. Quel pro !")
     #expect(french(empty.message) == "Vous n'avez aucun message.")
     #expect(empty.action == nil)
+    #expect(empty.illustration == .notifications)
   }
 
   @Test("Chuchotements, vide : le texte de IMG_9613 et « Commencer une conversation », désactivé hors périmètre")
@@ -43,5 +45,6 @@ struct ActivityTests {
     #expect(english(empty.message) == "See something cool in a stream? Tell someone about it!")
     #expect(english(action) == "Start a conversation")
     #expect(!ActivityEmpty.isActionEnabled)
+    #expect(empty.illustration == .whispers)
   }
 }

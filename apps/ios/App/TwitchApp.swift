@@ -30,7 +30,8 @@ struct TwitchApp: App {
       RootView(
         personalization: stores.personalization,
         purchases: stores.purchases,
-        paywallLinks: PaywallLinks(info: Bundle.main.infoDictionary ?? [:])
+        paywallLinks: PaywallLinks(info: Bundle.main.infoDictionary ?? [:]),
+        analytics: stores.analytics
       )
       .environment(stores.session)
       .environment(stores.launch)
@@ -60,6 +61,7 @@ struct RootView: View {
   let personalization: PersonalizationSources
   let purchases: any Purchases
   let paywallLinks: PaywallLinks
+  let analytics: any Analytics
   @Environment(SessionStore.self) private var session
   @Environment(LaunchStore.self) private var launch
   @Environment(Router.self) private var router
@@ -83,6 +85,10 @@ struct RootView: View {
       }
       .task(id: session.accountID) { await launch.run(accountID: session.accountID) }
       .task { await session.run() }
+  }
+
+  private var paywall: PersonalizationPaywall {
+    PersonalizationPaywall(purchases: purchases, launch: launch, links: paywallLinks, analytics: analytics)
   }
 
   @ViewBuilder private var screen: some View {
@@ -113,11 +119,11 @@ struct RootView: View {
         session: session,
         preferences: preferences,
         sources: personalization,
-        paywall: PersonalizationPaywall(purchases: purchases, launch: launch, links: paywallLinks),
+        paywall: paywall,
         router: router
       )
     case .signedIn:
-      SignedInModes()
+      SignedInModes(paywall: paywall)
     case .updateRequired:
       UpdateRequiredScreen()
     }
@@ -125,6 +131,7 @@ struct RootView: View {
 }
 
 struct SignedInRoot: View {
+  let paywall: PersonalizationPaywall
   @Environment(Router.self) private var router
   @Environment(CreatorMode.self) private var creatorMode
   @Environment(SessionStore.self) private var session
@@ -178,15 +185,8 @@ struct SignedInRoot: View {
       .toolbar(.hidden, for: .tabBar)
       .tag(AppTab.activity)
       NavigationStack(path: $router.profilePath) {
-        ProfileScreen(account: account, actions: ProfileActions(
-          onOpenChannel: { router.push(.channel($0)) },
-          onAccountSaved: { session.accountSaved($0) },
-          onStreamManager: { router.create() },
-          onAnalytics: { Task { await creatorMode.switchMode(landingOn: .stats) } }
-        )) {
-          SignedInScreen()
-        }
-        .withRouteDestinations()
+        ViewerProfileTab(account: account, paywall: paywall)
+          .withRouteDestinations()
       }
       .toolbar(.hidden, for: .tabBar)
       .tag(AppTab.profile)
