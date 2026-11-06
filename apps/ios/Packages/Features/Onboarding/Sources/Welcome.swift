@@ -5,19 +5,27 @@ public struct WelcomeRow: Sendable, Equatable {
   public let leading: String
   public let main: String
   public let trailing: String
+
+  init(_ name: String) {
+    leading = Self.text(name, "leading")
+    main = Self.text(name, "main")
+    trailing = Self.text(name, "trailing")
+  }
+
+  private static func text(_ name: String, _ part: String) -> String {
+    let key = "welcome.row.\(name).\(part)"
+    return String(localized: String.LocalizationValue(key), bundle: .module)
+  }
 }
 
 public enum WelcomeContent {
-  public static let rows = [
-    WelcomeRow(leading: "Fortnite VALORANT", main: "Games", trailing: "Call of Duty: Modern Warfare III"),
-    WelcomeRow(leading: "Art Creative", main: "Music", trailing: "Electronic Punk Ambient"),
-    WelcomeRow(leading: "Podcasts Interviews", main: "Talk Shows", trailing: "History Education Science"),
-    WelcomeRow(leading: "Basketball Football", main: "Sports", trailing: "Baseball Soccer Tennis"),
-    WelcomeRow(leading: "Kids Family Friendly", main: "Travel & Outdoors", trailing: "Animals Aquariums"),
-    WelcomeRow(leading: "ASMR Co-working", main: "Just Chatting", trailing: "News Media Politics"),
-    WelcomeRow(leading: "Baking Cooking", main: "Food & Drink", trailing: "Social Eating Wine"),
-    WelcomeRow(leading: "Esports Festivals", main: "Special Events", trailing: "Sports Cards Charity"),
+  private static let rowNames = [
+    "games", "music", "talkShows", "sports", "travel", "justChatting", "food", "specialEvents",
   ]
+
+  public static var rows: [WelcomeRow] {
+    rowNames.map(WelcomeRow.init)
+  }
 }
 
 public struct WelcomeAction: Sendable, Equatable {

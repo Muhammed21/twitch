@@ -70,6 +70,11 @@ public struct StreamInfo: Equatable, Sendable {
     return info
   }
 
+  public func committing(tagEntry entry: String) -> StreamInfo? {
+    guard !entry.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return self }
+    return adding(tag: entry)
+  }
+
   public func removing(tag: String) -> StreamInfo {
     var info = self
     info.tags.removeAll { $0 == tag }

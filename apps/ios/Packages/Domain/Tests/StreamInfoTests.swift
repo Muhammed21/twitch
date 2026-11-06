@@ -67,6 +67,26 @@ struct StreamInfoTests {
     #expect(makeInfo().adding(tag: "speed run") == nil)
   }
 
+  @Test("un tag saisi sans « Terminé » est ajouté au brouillon à l'enregistrement")
+  func commitsPendingEntry() {
+    #expect(makeInfo(tags: ["irl"]).committing(tagEntry: "SpeedRun") == makeInfo(tags: ["irl", "speedrun"]))
+  }
+
+  @Test("une saisie vide ou blanche laisse le brouillon tel quel", arguments: ["", "   ", "\n"])
+  func keepsDraftWithoutEntry(entry: String) {
+    #expect(makeInfo(tags: ["irl"]).committing(tagEntry: entry) == makeInfo(tags: ["irl"]))
+  }
+
+  @Test("une saisie refusée bloque l'enregistrement", arguments: ["speed run", "irl", "fps!"])
+  func refusesInvalidEntry(entry: String) {
+    #expect(makeInfo(tags: ["irl"]).committing(tagEntry: entry) == nil)
+  }
+
+  @Test("une saisie de trop au-delà de 10 tags bloque l'enregistrement")
+  func refusesEleventhEntry() {
+    #expect(makeInfo(tags: (0 ..< 10).map { "tag\($0)" }).committing(tagEntry: "encore") == nil)
+  }
+
   @Test("retirer un tag garde les autres dans l'ordre")
   func removesTag() {
     #expect(makeInfo(tags: ["irl", "cafe", "fps"]).removing(tag: "cafe") == makeInfo(tags: ["irl", "fps"]))
