@@ -21,6 +21,11 @@ public enum Glyph: String, CaseIterable, Sendable {
   case info
   case watchEye
   case searchField
+  case closeCross
+  case streamCamera
+  case widgetMenu
+  case emote
+  case widgetChat
 
   public var image: Image {
     Image(rawValue, bundle: .module).renderingMode(.template)

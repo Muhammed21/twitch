@@ -62,6 +62,7 @@ public enum TextRole: Sendable {
   case dashboardHint
   case dashboardActivityEmpty
   case dashboardLink
+  case streamManagerTitle
 
   public var font: Font {
     switch self {
@@ -82,7 +83,7 @@ public enum TextRole: Sendable {
     case .tabLabel: .tabLabel
     case .meta: .metaText
     case .profileDetail: .supportingText
-    case .widgetTitle: .actionLabel
+    case .widgetTitle: .liveBadge
     case .channelName: .displayText
     case .cardDetail: .supportingText
     case .liveBadge: .liveBadge
@@ -125,6 +126,7 @@ public enum TextRole: Sendable {
     case .dashboardHint: .hintText
     case .dashboardActivityEmpty: .viewerCount
     case .dashboardLink: .cardAction
+    case .streamManagerTitle: .actionLabel
     }
   }
 }
@@ -212,7 +214,20 @@ public enum LayoutRole: Sendable {
   case widgetHeaderHeight
   case widgetHeaderPadding
   case widgetRadius
-  case dockButtonSize
+  case widgetBorderWidth
+  case widgetFieldHeight
+  case widgetFieldRadius
+  case widgetFieldBorderWidth
+  case widgetFieldInset
+  case streamManagerHeaderHeight
+  case streamManagerHeaderBottom
+  case streamManagerTitleGap
+  case streamManagerItemGap
+  case streamManagerAvatarSize
+  case dockButtonWidth
+  case dockButtonHeight
+  case dockInset
+  case dockTop
   case dockGap
   case dockRingWidth
   case dockRingGap

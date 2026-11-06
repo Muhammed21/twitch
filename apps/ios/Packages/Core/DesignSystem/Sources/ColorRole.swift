@@ -40,6 +40,11 @@ public enum ColorRole: Equatable, Sendable {
   case illustrationInk
   case illustrationOutline
   case illustrationFill
+  case widgetHeader
+  case widgetBorder
+  case widgetFieldBorder
+  case streamManagerCamera
+  case streamManagerDivider
 
   public var color: Color {
     switch self {
@@ -80,6 +85,11 @@ public enum ColorRole: Equatable, Sendable {
     case .illustrationInk: .illustrationInk
     case .illustrationOutline: .illustrationOutline
     case .illustrationFill: .illustrationFill
+    case .widgetHeader: .widgetHeader
+    case .widgetBorder: .widgetBorder
+    case .widgetFieldBorder: .widgetFieldBorder
+    case .streamManagerCamera: .streamManagerCamera
+    case .streamManagerDivider: .streamManagerDivider
     }
   }
 
