@@ -27,7 +27,6 @@ public enum ProfileText {
   public static let searchCategories = LocalizedStringResource("categorySearch.prompt", bundle: .module)
   public static let noCategoryFound = LocalizedStringResource("categorySearch.empty", bundle: .module)
   public static let categorySearchFailed = LocalizedStringResource("categorySearch.failed", bundle: .module)
-  public static var streamManagerTitle: String { String(localized: "profile.streamManager", bundle: .module) }
   public static var tabTitle: String { String(localized: "profile.tab", bundle: .module) }
   static let masked = "••••••••••••••••"
 

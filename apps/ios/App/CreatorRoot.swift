@@ -100,9 +100,7 @@ struct CreatorRoot: View {
         TabBar(
           selection: $creatorMode.dashboardTab,
           leading: DashboardTabs.leading,
-          create: TabBarCreate(
-            label: String(localized: DashboardText.createButton),
-            hint: String(localized: DashboardText.createButtonHint),
+          create: CreateButton.tabBarCreate(
             accessibilityIdentifier: "dashboard.create",
             style: DashboardTabs.createStyle
           ) { creatorMode.showActions() },
