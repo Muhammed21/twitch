@@ -78,7 +78,7 @@ La liste reste fermée : toute autre illustration demande un nouvel ADR.
 
 ### 2. Teintes
 
-Une illustration a autant de masques que de teintes relevées sur sa capture, au lieu de trois. Le manifeste de l'ADR 0052 §3 donne, pour chaque illustration, ses teintes et leur ordre d'empilement, du fond vers le premier plan. La règle de séparation des bords de l'ADR 0052 §2 s'applique entre deux teintes voisines, quel que soit leur nombre.
+Une illustration a autant de masques que de teintes relevées sur sa capture, au lieu de trois. Le manifeste de l'ADR 0052 §3 donne, pour chaque illustration, ses teintes et leur ordre d'empilement, du fond vers le premier plan. La règle de séparation des bords de l'ADR 0052 §2 s'applique entre deux teintes voisines, quel que soit leur nombre. Un pixel où se rencontrent trois teintes, et qu'aucun couple n'explique, se répartit de la même façon entre leurs trois masques : relevé sur `IMG_9615`, où le jaune, le contour et le violet ou le blanc se touchent au cou et à l'oreille.
 
 ### 3. Couleurs et thèmes
 
