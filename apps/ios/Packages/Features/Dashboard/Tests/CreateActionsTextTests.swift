@@ -6,6 +6,27 @@ import Testing
 
 @Suite("Textes de la feuille d'actions du bouton « + » (IMG_9611, IMG_9627)")
 struct CreateActionsTextTests {
+  @Test("le bouton « + » se lit « Créer » et dit qu'il ouvre les actions de création, pas « Gestionnaire de stream »")
+  func createButton() {
+    #expect(english(DashboardText.createButton) == "Create")
+    #expect(french(DashboardText.createButton) == "Créer")
+    #expect(english(DashboardText.createButtonHint) == "Opens the actions to stream or manage your channel.")
+    #expect(french(DashboardText.createButtonHint) == "Ouvre les actions pour streamer ou gérer votre chaîne.")
+  }
+
+  @Test("le bouton « + » des deux barres d'onglets porte ce libellé et cet indice, avec son style", arguments: [
+    TabBarCreateStyle.neutral,
+    .accent,
+  ])
+  func createButtonInTabBar(style: TabBarCreateStyle) {
+    let create = CreateButton.tabBarCreate(accessibilityIdentifier: "root.create", style: style) {}
+
+    #expect(create.label == String(localized: DashboardText.createButton))
+    #expect(create.hint == String(localized: DashboardText.createButtonHint))
+    #expect(create.accessibilityIdentifier == "root.create")
+    #expect(create.style == style)
+  }
+
   @Test("le bouton violet propose de streamer depuis cet appareil")
   func streaming() {
     #expect(english(DashboardText.streaming) == "Streaming")

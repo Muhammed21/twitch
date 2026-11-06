@@ -12,6 +12,8 @@ public enum DashboardText {
   public static let recapClips = LocalizedStringResource("createActions.recapClips", bundle: .module)
   public static let recapClipsUnavailable = LocalizedStringResource("createActions.recapClips.unavailable", bundle: .module)
   public static let cancel = LocalizedStringResource("createActions.cancel", bundle: .module)
+  public static let createButton = LocalizedStringResource("createActions.button", bundle: .module)
+  public static let createButtonHint = LocalizedStringResource("createActions.button.hint", bundle: .module)
   public static let watch = LocalizedStringResource("dashboard.home.watch", bundle: .module)
   public static let statsEmpty = LocalizedStringResource("dashboard.stats.empty", bundle: .module)
   public static let calendar = LocalizedStringResource("dashboard.stats.calendar", bundle: .module)

@@ -196,10 +196,7 @@ struct SignedInRoot: View {
         TabBar(
           selection: $router.selectedTab,
           leading: Self.leadingTabs,
-          create: TabBarCreate(
-            label: ProfileText.streamManagerTitle,
-            accessibilityIdentifier: "root.create"
-          ) { creatorMode.showActions() },
+          create: CreateButton.tabBarCreate(accessibilityIdentifier: "root.create") { creatorMode.showActions() },
           trailing: Self.trailingTabs
         )
       }

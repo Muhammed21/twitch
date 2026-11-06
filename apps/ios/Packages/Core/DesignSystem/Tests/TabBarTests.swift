@@ -3,6 +3,12 @@ import Testing
 
 @Suite("Barre d'onglets, relevée sur profil/menu-compte--defaut et accueil/flux-suivis--aucun-live")
 struct TabBarTests {
+  @Test("le bouton « + » garde l'indice lu par VoiceOver, absent par défaut")
+  func createHint() {
+    #expect(TabBarCreate(label: "Créer", hint: "Ouvre les actions", accessibilityIdentifier: "create") {}.hint == "Ouvre les actions")
+    #expect(TabBarCreate(label: "Créer", accessibilityIdentifier: "create") {}.hint == nil)
+  }
+
   @Test("un onglet actif est violet, un onglet inactif prend la couleur du texte")
   func foregroundFollowsSelection() {
     #expect(TabBarGlyph.foreground(isSelected: true) == .navigationActive)
