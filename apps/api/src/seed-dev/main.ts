@@ -5,6 +5,7 @@ import {
   DEV_ACCOUNT,
   DEV_CLIENT_ID,
   DEV_REDIRECT_URI,
+  seedCategoryCovers,
   seedDevelopment,
 } from "./seed-dev.ts";
 
@@ -17,6 +18,8 @@ if (!result.ok) {
   process.exit(1);
 }
 
+const covers = await seedCategoryCovers(process.env);
+
 process.stdout.write(
   [
     `Client OAuth ${DEV_CLIENT_ID} (${DEV_REDIRECT_URI}) : ${result.value.client}.`,
@@ -24,6 +27,7 @@ process.stdout.write(
     `Client OAuth ${ADMIN_CLIENT_ID} (${ADMIN_REDIRECT_URI}) : ${result.value.adminClient}.`,
     `Compte d'administration ${ADMIN_ACCOUNT.username} (${ADMIN_ACCOUNT.email}) / ${ADMIN_ACCOUNT.password} : ${result.value.adminAccount}.`,
     `Catégories créées : ${result.value.categories}. Chaînes de démo classées : ${result.value.channels}.`,
+    `Pochettes de catégorie posées : ${covers}.`,
     "",
   ].join("\n"),
 );

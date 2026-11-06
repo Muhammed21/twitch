@@ -14,6 +14,7 @@ import {
   DEV_CATEGORIES,
   DEV_CLIENT_ID,
   DEV_REDIRECT_URI,
+  seedCategoryCovers,
   seedDevelopment,
 } from "./seed-dev.ts";
 
@@ -236,7 +237,7 @@ describe("seed de développement (ADR 0039, §6)", () => {
     });
   });
 
-  it("crée les dix catégories de Browse, actives, avec leurs tags, chacune annoncée une seule fois", async () => {
+  it("crée les catégories de Browse, actives, avec leurs noms et tags, chacune annoncée une seule fois", async () => {
     const slugs = DEV_CATEGORIES.map(({ slug }) => slug);
     const taggedEvents = () =>
       asMigrator(
@@ -274,8 +275,8 @@ describe("seed de développement (ADR 0039, §6)", () => {
       ).rows,
     }));
 
-    expect(slugs).toHaveLength(10);
-    expect(categories).toEqual(
+    expect(slugs.length).toBeGreaterThanOrEqual(30);
+    expect(categories.toSorted((left, right) => left.slug.localeCompare(right.slug))).toEqual(
       DEV_CATEGORIES.map(({ slug, name, tags }) => ({
         slug,
         name,
@@ -283,9 +284,9 @@ describe("seed de développement (ADR 0039, §6)", () => {
         tags,
       })).toSorted((left, right) => left.slug.localeCompare(right.slug)),
     );
-    expect(announced).toHaveLength(10);
+    expect(announced).toHaveLength(slugs.length);
     expect(DEV_CATEGORIES.every(({ tags }) => tags.length > 0)).toBe(true);
-    expect(taggedOnce).toHaveLength(10);
+    expect(taggedOnce).toHaveLength(slugs.length);
     expect(await taggedEvents()).toEqual(taggedOnce);
   });
 
@@ -469,4 +470,48 @@ describe("seed de développement (ADR 0039, §6)", () => {
       (await seedDevelopment({ ...process.env, BETTER_AUTH_URL: `http://${lanAddress}:3000` })).ok,
     ).toBe(true);
   });
+});
+
+const imageKeys = () =>
+  asMigrator(
+    async (client) =>
+      (
+        await client.query<{ slug: string; imageKey: string | null }>(
+          `SELECT "slug", "imageKey" FROM "channel"."ChannelCategory" WHERE "slug" = ANY($1)`,
+          [DEV_CATEGORIES.map(({ slug }) => slug)],
+        )
+      ).rows,
+  );
+
+describe("pochettes des catégories du seed (S3)", () => {
+  it.skipIf(process.env.INTEGRATION_S3 !== "1")(
+    "pose une pochette servie en webp sur chaque catégorie qui n'en a pas, une seule fois",
+    async () => {
+      await seedDevelopment(process.env);
+      await asMigrator((client) =>
+        client.query(
+          `UPDATE "channel"."ChannelCategory" SET "imageKey" = NULL WHERE "slug" = ANY($1)`,
+          [DEV_CATEGORIES.map(({ slug }) => slug)],
+        ),
+      );
+
+      const posed = await seedCategoryCovers(process.env);
+      const keys = await imageKeys();
+      const again = await seedCategoryCovers(process.env);
+      const served = await Promise.all(
+        keys.slice(0, 3).map(async ({ imageKey }) => {
+          const response = await fetch(`${urlOf("S3_PUBLIC_BASE_URL")}/${imageKey}`);
+          return { status: response.status, type: response.headers.get("content-type") };
+        }),
+      );
+
+      expect(posed).toBe(DEV_CATEGORIES.length);
+      expect(keys.filter(({ imageKey }) => imageKey === null)).toEqual([]);
+      expect(keys.every(({ imageKey }) => imageKey?.startsWith("images/category/"))).toBe(true);
+      expect(again).toBe(0);
+      expect(served).toEqual(
+        Array.from({ length: 3 }, () => ({ status: 200, type: "image/webp" })),
+      );
+    },
+  );
 });

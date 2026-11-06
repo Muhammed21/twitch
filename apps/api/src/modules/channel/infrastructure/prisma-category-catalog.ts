@@ -2,6 +2,7 @@ import type { z } from "zod";
 
 import { events } from "@repo/contracts";
 import { appendToOutbox } from "@repo/db";
+import type { Result } from "@repo/result";
 
 import type {
   CategoryCatalog,
@@ -9,6 +10,7 @@ import type {
   CategoryView,
 } from "../application/category-admin.ts";
 import type { CategorySearch } from "../application/category-search.ts";
+import type { CategoryName } from "../domain/category.ts";
 import { closeFollows, transferFollows } from "./category-follow-transfer.ts";
 import type { ChannelPrisma } from "./prisma-channel-registry.ts";
 
@@ -198,6 +200,33 @@ export const prismaCategoryCatalog = (prisma: ChannelPrisma): CategoryCatalog =>
       return { ok: true, value: updated } as const;
     }),
 });
+
+export const renameCategory =
+  (prisma: ChannelPrisma) =>
+  ({
+    categoryId,
+    name,
+    outboxEventId,
+    occurredAt,
+  }: {
+    readonly categoryId: string;
+    readonly name: CategoryName;
+    readonly outboxEventId: string;
+    readonly occurredAt: Date;
+  }): Promise<Result<CategoryView, "category_inactive">> =>
+    prisma.$transaction(async (tx) => {
+      const locked = await lockCategories(tx, [categoryId]);
+      if (!isActive(locked, categoryId)) {
+        return { ok: false, error: "category_inactive" } as const;
+      }
+      const updated = await tx.channelCategory.update({
+        where: { id: categoryId },
+        data: { name },
+        select: VIEW,
+      });
+      await publishUpdated(tx, { category: updated, outboxEventId, occurredAt });
+      return { ok: true, value: updated } as const;
+    });
 
 export const prismaCategorySearch = (prisma: ChannelPrisma): CategorySearch => ({
   search: ({ nameContains, limit }) =>

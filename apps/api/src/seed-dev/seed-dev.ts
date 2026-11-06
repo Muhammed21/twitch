@@ -13,7 +13,10 @@ import {
   parseCategorySlug,
   parseCategoryTags,
 } from "../modules/channel/domain/category.ts";
-import { prismaCategoryCatalog } from "../modules/channel/infrastructure/prisma-category-catalog.ts";
+import {
+  prismaCategoryCatalog,
+  renameCategory,
+} from "../modules/channel/infrastructure/prisma-category-catalog.ts";
 import {
   apiResourceOf,
   createIdentityAuth,
@@ -21,6 +24,13 @@ import {
 import { createIdentityRedis } from "../modules/identity/infrastructure/redis-session-revocation.ts";
 import { createSmtpMailer } from "../modules/identity/infrastructure/smtp-mailer.ts";
 import { loadEnv } from "../platform/config/env.ts";
+import { finalizeImage } from "../platform/images/finalize-image.ts";
+import { MAX_INPUT_PIXELS } from "../platform/images/image-purposes.ts";
+import { incomingKey } from "../platform/images/image-storage.ts";
+import { createS3ImageStorage } from "../platform/images/infrastructure/s3-image-storage.ts";
+import { sharpReencoder } from "../platform/images/sharp-reencoder.ts";
+import { renderCover } from "./category-covers.ts";
+import { DEV_CATEGORIES, type DevCategory } from "./dev-categories.ts";
 import { isLocalApi } from "./local-host.ts";
 
 export const DEV_CLIENT_ID = "twitch-ios-dev";
@@ -43,18 +53,7 @@ export const ADMIN_ACCOUNT = {
   birthDate: new Date("2000-01-01T00:00:00.000Z"),
 } as const;
 
-export const DEV_CATEGORIES = [
-  { slug: "just-chatting", name: "Just Chatting", tags: ["IRL"] },
-  { slug: "league-of-legends", name: "League of Legends", tags: ["MOBA", "Strategy"] },
-  { slug: "valorant", name: "Valorant", tags: ["FPS", "Shooter"] },
-  { slug: "minecraft", name: "Minecraft", tags: ["Simulation", "Adventure"] },
-  { slug: "fortnite", name: "Fortnite", tags: ["Shooter", "RPG"] },
-  { slug: "gta-v", name: "GTA V", tags: ["Action", "Adventure"] },
-  { slug: "counter-strike", name: "Counter-Strike", tags: ["FPS", "Shooter"] },
-  { slug: "music", name: "Music", tags: ["Creative", "Music"] },
-  { slug: "art", name: "Art", tags: ["Creative"] },
-  { slug: "irl", name: "IRL", tags: ["IRL"] },
-] as const;
+export { DEV_CATEGORIES } from "./dev-categories.ts";
 
 const DEMO_CATEGORY = "just-chatting";
 
@@ -206,7 +205,7 @@ const grantPlatformAdmin = async (env: Env, client: Client, userId: string): Pro
   }
 };
 
-const devCategory = ({ slug, name, tags }: (typeof DEV_CATEGORIES)[number]) => {
+const devCategory = ({ slug, name, tags }: DevCategory) => {
   const parsedSlug = parseCategorySlug(slug);
   const parsedName = parseCategoryName(name);
   const parsedTags = parseCategoryTags(tags);
@@ -234,6 +233,17 @@ const seedCategories = (env: Env): Promise<number> =>
           occurredAt: new Date(),
         });
         const current = await catalog.findBySlug(slug);
+        if (current !== null && current.name !== name) {
+          const renamed = await renameCategory(prisma)({
+            categoryId: current.id,
+            name,
+            outboxEventId: randomUUID(),
+            occurredAt: new Date(),
+          });
+          if (!renamed.ok) {
+            throw new Error(`nom de la catégorie ${slug} inchangé : ${renamed.error}`);
+          }
+        }
         if (current !== null && !sameTags(current.tags, tags)) {
           const tagged = await catalog.changeTags({
             categoryId: current.id,
@@ -319,4 +329,56 @@ export const seedDevelopment = async (env: Env): Promise<Result<SeedReport, "not
   } finally {
     await client.end();
   }
+};
+
+const coverOf = ({ name, cover }: DevCategory) =>
+  renderCover(cover.kind === "capture" ? cover : { ...cover, name });
+
+export const seedCategoryCovers = async (env: Env): Promise<number> => {
+  const { images, authBaseUrl } = loadEnv(env);
+  if (!isLocalApi(authBaseUrl)) {
+    throw new Error("les pochettes de seed ne se posent que sur une API locale");
+  }
+  const storage = createS3ImageStorage(images);
+  const finalize = finalizeImage({
+    storage,
+    reencode: sharpReencoder({ maxInputPixels: MAX_INPUT_PIXELS }),
+    newImageId: randomUUID,
+    publicBaseUrl: images.publicBaseUrl,
+  });
+  const [admin] = await userIdsOf(env, [ADMIN_ACCOUNT.email]);
+  if (admin === undefined) {
+    throw new Error(`compte ${ADMIN_ACCOUNT.email} absent : lancer seed:dev d'abord`);
+  }
+  return withContext(env, "channel", (prisma) => {
+    const catalog = prismaCategoryCatalog(prisma);
+    return DEV_CATEGORIES.reduce<Promise<number>>(async (previous, category) => {
+      const done = await previous;
+      const current = await catalog.findBySlug(category.slug);
+      if (current === null || current.imageKey !== null) {
+        return done;
+      }
+      const uploadId = randomUUID();
+      await storage.write({
+        key: incomingKey({ userId: admin.id, purpose: "category", uploadId }),
+        bytes: await coverOf(category),
+        contentType: "image/png",
+        cacheControl: "no-store",
+      });
+      const image = await finalize({ uploadId, purpose: "category", userId: admin.id });
+      if (!image.ok) {
+        throw new Error(`pochette de la catégorie ${category.slug} refusée : ${image.error}`);
+      }
+      const changed = await catalog.changeImage({
+        categoryId: current.id,
+        imageKey: image.value.key,
+        outboxEventId: randomUUID(),
+        occurredAt: new Date(),
+      });
+      if (!changed.ok) {
+        throw new Error(`pochette de la catégorie ${category.slug} non posée : ${changed.error}`);
+      }
+      return done + 1;
+    }, Promise.resolve(0));
+  });
 };
