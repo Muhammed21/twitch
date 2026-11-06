@@ -65,4 +65,27 @@ struct DashboardHomeTests {
   func noOfflineBadgeWhileLive() {
     #expect(DashboardText.offline(status: .live(viewers: nil, startedAt: .now)) == nil)
   }
+
+  @Test("pendant le live, l'aperçu montre la vignette du live, renouvelée toutes les 10 s")
+  func livePreview() throws {
+    let thumbnail = try #require(URL(string: "http://192.168.4.233:3002/hls/channels/c/thumbnail.jpg"))
+    let status = LiveStatus.live(viewers: nil, startedAt: nil, thumbnailURL: thumbnail)
+    let start = Date(timeIntervalSince1970: 1_800_000_000)
+
+    let first = DashboardHomeScreen.preview(status: status, now: start)
+    let sameWindow = DashboardHomeScreen.preview(status: status, now: start.addingTimeInterval(9))
+    let nextWindow = DashboardHomeScreen.preview(status: status, now: start.addingTimeInterval(10))
+
+    #expect(first?.url == thumbnail)
+    #expect(sameWindow == first)
+    #expect(nextWindow?.url == thumbnail)
+    #expect(nextWindow != first)
+  }
+
+  @Test("hors live, ou sans vignette, l'aperçu garde son fond")
+  func noPreview() {
+    #expect(DashboardHomeScreen.preview(status: nil, now: .now) == nil)
+    #expect(DashboardHomeScreen.preview(status: .offline, now: .now) == nil)
+    #expect(DashboardHomeScreen.preview(status: .live(viewers: nil, startedAt: .now), now: .now) == nil)
+  }
 }

@@ -50,6 +50,13 @@ public struct DashboardHomeScreen: View {
   private let onStreamManager: () -> Void
   private let onEditStreamInfo: () -> Void
 
+  private nonisolated static let previewRefresh: TimeInterval = 10
+
+  public nonisolated static func preview(status: LiveStatus?, now: Date) -> LivePreview? {
+    guard case let .live(_, _, thumbnailURL) = status, let thumbnailURL else { return nil }
+    return LivePreview(url: thumbnailURL, generation: Int(now.timeIntervalSince1970 / previewRefresh))
+  }
+
   public nonisolated static func statItems(status: LiveStatus?, now: Date, locale: Locale) -> [DashboardStatItem] {
     DashboardStat.allCases.map { stat in
       DashboardStatItem(
@@ -64,13 +71,13 @@ public struct DashboardHomeScreen: View {
 
   private nonisolated static func spoken(_ stat: DashboardStat, status: LiveStatus?, now: Date, locale: Locale) -> String? {
     guard stat == .streamTime else { return value(of: stat, status: status, now: now, locale: locale) }
-    guard case let .live(_, startedAt) = status, let start = startedAt else { return nil }
+    guard case let .live(_, startedAt, _) = status, let start = startedAt else { return nil }
     return Duration.seconds(max(0, Int(now.timeIntervalSince(start))))
       .formatted(.units(allowed: [.hours, .minutes, .seconds], width: .wide).locale(locale))
   }
 
   private nonisolated static func value(of stat: DashboardStat, status: LiveStatus?, now: Date, locale: Locale) -> String? {
-    guard case let .live(viewers, startedAt) = status else { return nil }
+    guard case let .live(viewers, startedAt, _) = status else { return nil }
     switch stat {
     case .streamTime:
       return startedAt.map { start in
@@ -108,15 +115,9 @@ public struct DashboardHomeScreen: View {
             DashboardStatsCard(items: Self.statItems(status: status, now: context.date, locale: locale))
           }
           .padding(.horizontal, LayoutRole.screenInset.points)
-          DashboardStreamCard(
-            offlineLabel: DashboardText.offline(status: status).map { String(localized: $0) },
-            primaryLabel: String(localized: DashboardText.streamManager),
-            secondaryLabel: String(localized: DashboardText.editStreamInfo),
-            onPrimary: onStreamManager,
-            onSecondary: onEditStreamInfo
-          )
-          .padding(.horizontal, LayoutRole.screenInset.points)
-          .padding(.top, LayoutRole.dashboardCardGap.points)
+          streamCard
+            .padding(.horizontal, LayoutRole.screenInset.points)
+            .padding(.top, LayoutRole.dashboardCardGap.points)
           DashboardHint(text: String(localized: DashboardText.streamManagerHint))
           DashboardActivityCard(
             message: String(localized: DashboardText.noRecentActivity),
@@ -129,6 +130,19 @@ public struct DashboardHomeScreen: View {
       }
     }
     .background(ColorRole.background.color.ignoresSafeArea())
+  }
+
+  private var streamCard: some View {
+    TimelineView(.periodic(from: .now, by: Self.previewRefresh)) { context in
+      DashboardStreamCard(
+        offlineLabel: DashboardText.offline(status: status).map { String(localized: $0) },
+        preview: Self.preview(status: status, now: context.date),
+        primaryLabel: String(localized: DashboardText.streamManager),
+        secondaryLabel: String(localized: DashboardText.editStreamInfo),
+        onPrimary: onStreamManager,
+        onSecondary: onEditStreamInfo
+      )
+    }
   }
 }
 

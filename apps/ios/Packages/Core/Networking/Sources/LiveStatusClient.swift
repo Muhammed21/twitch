@@ -9,6 +9,7 @@ public struct LiveStatusClient: LiveStatusSource {
     let live: Bool
     let viewerCount: Int?
     let startedAt: String?
+    let thumbnailUrl: String?
   }
 
   private let apiBaseURL: URL
@@ -52,7 +53,8 @@ public struct LiveStatusClient: LiveStatusSource {
     guard let payload = try? JSONDecoder().decode(Payload.self, from: Data(data.utf8)) else { return nil }
     guard payload.live else { return .offline }
     let startedAt = payload.startedAt.flatMap { try? TolerantISO8601DateTranscoder().decode($0) }
-    guard let count = payload.viewerCount else { return .live(viewers: nil, startedAt: startedAt) }
-    return (try? ViewerCount(count)).map { .live(viewers: $0, startedAt: startedAt) }
+    let thumbnailURL = payload.thumbnailUrl.flatMap { URL(webAddress: $0) }
+    guard let count = payload.viewerCount else { return .live(viewers: nil, startedAt: startedAt, thumbnailURL: thumbnailURL) }
+    return (try? ViewerCount(count)).map { .live(viewers: $0, startedAt: startedAt, thumbnailURL: thumbnailURL) }
   }
 }
