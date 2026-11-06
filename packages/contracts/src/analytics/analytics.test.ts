@@ -36,6 +36,7 @@ describe("taxonomie des événements analytics (ADR 0012)", () => {
       "paywall:viewed",
       "paywall:dismissed",
       "purchase:started",
+      "purchase:completed",
       "purchase:cancelled",
       "purchase:failed",
       "purchase:restored",
@@ -125,6 +126,10 @@ describe("taxonomie des événements analytics (ADR 0012)", () => {
         product_id: "turbo_monthly",
         variant: "control",
       }),
+      AnalyticsEvents["purchase:completed"].properties.safeParse({
+        product_id: "turbo_monthly",
+        variant: "control",
+      }),
       AnalyticsEvents["purchase:cancelled"].properties.safeParse({
         product_id: "turbo_monthly",
         variant: "control",
@@ -136,7 +141,7 @@ describe("taxonomie des événements analytics (ADR 0012)", () => {
       }),
     ];
 
-    expect(withVariant.map(({ success }) => success)).toEqual([true, true, true, true, true]);
+    expect(withVariant.map(({ success }) => success)).toEqual([true, true, true, true, true, true]);
     expect(
       AnalyticsEvents["paywall:viewed"].properties.safeParse({
         offering_id: "turbo",
@@ -150,6 +155,17 @@ describe("taxonomie des événements analytics (ADR 0012)", () => {
       AnalyticsEvents["paywall:dismissed"].properties.safeParse({
         variant: "control",
         placement: "settings",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("marque un achat réussi sans montant : le revenu ne part jamais du client (ADR 0012, §3)", () => {
+    expect(
+      AnalyticsEvents["purchase:completed"].properties.safeParse({
+        product_id: "turbo_monthly",
+        variant: "control",
+        amount_cents: 499,
+        currency: "EUR",
       }).success,
     ).toBe(false);
   });
