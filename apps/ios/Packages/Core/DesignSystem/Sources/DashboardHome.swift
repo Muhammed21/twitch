@@ -65,14 +65,14 @@ public struct DashboardStatsCard: View {
 }
 
 public struct DashboardStreamCard: View {
-  private let offlineLabel: String
+  private let offlineLabel: String?
   private let primaryLabel: String
   private let secondaryLabel: String
   private let onPrimary: () -> Void
   private let onSecondary: () -> Void
 
   public init(
-    offlineLabel: String,
+    offlineLabel: String?,
     primaryLabel: String,
     secondaryLabel: String,
     onPrimary: @escaping () -> Void,
@@ -111,11 +111,13 @@ public struct DashboardStreamCard: View {
     DashboardStyle.previewBackground.color
       .aspectRatio(DashboardStyle.previewAspectRatio, contentMode: .fit)
       .overlay(alignment: .topLeading) {
-        Text(verbatim: offlineLabel)
-          .font(TextRole.dashboardPreviewLabel.font)
-          .foregroundStyle(DashboardStyle.previewLabel.color)
-          .padding(.leading, LayoutRole.dashboardPreviewLabelLeading.points)
-          .padding(.top, LayoutRole.dashboardPreviewLabelTop.points)
+        if let offlineLabel {
+          Text(verbatim: offlineLabel)
+            .font(TextRole.dashboardPreviewLabel.font)
+            .foregroundStyle(DashboardStyle.previewLabel.color)
+            .padding(.leading, LayoutRole.dashboardPreviewLabelLeading.points)
+            .padding(.top, LayoutRole.dashboardPreviewLabelTop.points)
+        }
       }
       .clipShape(RoundedRectangle(cornerRadius: LayoutRole.dashboardPreviewRadius.points))
   }

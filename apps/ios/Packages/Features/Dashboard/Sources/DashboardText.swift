@@ -1,4 +1,5 @@
 import DesignSystem
+import Domain
 import Foundation
 import Navigation
 
@@ -23,12 +24,18 @@ public enum DashboardText {
   public static let search = LocalizedStringResource("dashboard.content.search", bundle: .module)
   public static let unavailableStat = LocalizedStringResource("dashboard.home.stat.unavailable", bundle: .module)
   public static let unavailableStatSpoken = LocalizedStringResource("dashboard.home.stat.unavailable.spoken", bundle: .module)
-  public static let offline = LocalizedStringResource("dashboard.home.offline", bundle: .module)
   public static let streamManager = LocalizedStringResource("dashboard.home.streamManager", bundle: .module)
   public static let editStreamInfo = LocalizedStringResource("dashboard.home.editStreamInfo", bundle: .module)
   public static let streamManagerHint = LocalizedStringResource("dashboard.home.streamManager.hint", bundle: .module)
   public static let noRecentActivity = LocalizedStringResource("dashboard.home.activity.empty", bundle: .module)
   public static let seeAllActivity = LocalizedStringResource("dashboard.home.activity.seeAll", bundle: .module)
+
+  public static func offline(status: LiveStatus?) -> LocalizedStringResource? {
+    guard case .live = status else {
+      return LocalizedStringResource("dashboard.home.offline", bundle: .module)
+    }
+    return nil
+  }
 
   public static func label(of stat: DashboardStat) -> LocalizedStringResource {
     switch stat {
