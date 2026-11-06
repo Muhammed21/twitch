@@ -1,4 +1,4 @@
-# 0053 — Les illustrations d'état vide de la page Activité sont des masques extraits des captures, comme celles du tableau de bord
+# 0053 — Les illustrations d'état vide de la page Activité et du Profil sont des masques extraits des captures, comme celles du tableau de bord
 
 - Statut : Proposé
 - Date : 2026-11-06
@@ -12,18 +12,21 @@ La page Activité du mode spectateur a deux onglets, chacun construit sur son é
 - **Chuchotements** (`docs/new-reference-ui/IMG_9613.PNG`) : un personnage inquiet, au-dessus de « Aucun chuchotement disponible ». La même illustration figure dans `docs/reference-ui/messages/liste-whispers--vide.png`.
 - **Notifications** : aucune capture de `docs/new-reference-ui/` ne montre cet état. `docs/reference-ui/creer/notifications-createur--vide.png` (thème clair) et `docs/reference-ui/activite/notifications--vide-theme-sombre.png` (thème sombre) montrent un personnage à lunettes de soleil sur un carré violet, au-dessus de « You're all caught up. What a pro! ».
 
+L'onglet « À propos » du Profil, vide (`docs/new-reference-ui/IMG_9615.PNG`), montre le personnage des chuchotements sur un losange violet, au-dessus de « Dites-nous-en plus ! ». Le dessin est le même que dans `IMG_9613`, pixel pour pixel, au losange près : mêmes nombres de pixels d'encre, de contour, de remplissage et de jaune dans la découpe.
+
 L'ADR 0052 §1 ferme la liste des illustrations au clap et au graphique du tableau de bord : « Toute autre illustration demande un nouvel ADR. » Son §2 sépare chaque dessin en trois teintes (encre, contour, remplissage).
 
 Relevé sur les captures, à @3x :
 
-| Illustration | Capture source                                             | Rectangle (px)              | Fond      | Teintes                                                                                                          |
-| ------------ | ---------------------------------------------------------- | --------------------------- | --------- | ---------------------------------------------------------------------------------------------------------------- |
-| Personnage   | `docs/new-reference-ui/IMG_9613.PNG`                       | environ 362, 883, 481 × 531 | `#f7f7f8` | encre `#000000`, contour `#323239`, remplissage `#ffffff`, surlignage jaune `#f5f500`, losange de fond `#efeff1` |
-| Lunettes     | `docs/reference-ui/creer/notifications-createur--vide.png` | environ 344, 943, 513 × 471 | `#f7f7f7` | encre `#000000`, contour `#323337`, remplissage `#ffffff`, surlignage jaune, carré violet `#9047ff`              |
+| Illustration                  | Capture source                                             | Rectangle (px)               | Fond      | Teintes                                                                                                          |
+| ----------------------------- | ---------------------------------------------------------- | ---------------------------- | --------- | ---------------------------------------------------------------------------------------------------------------- |
+| Personnage                    | `docs/new-reference-ui/IMG_9613.PNG`                       | environ 362, 883, 481 × 531  | `#f7f7f8` | encre `#000000`, contour `#323239`, remplissage `#ffffff`, surlignage jaune `#f5f500`, losange de fond `#efeff1` |
+| Lunettes                      | `docs/reference-ui/creer/notifications-createur--vide.png` | environ 344, 943, 513 × 471  | `#f7f7f7` | encre `#000000`, contour `#323337`, remplissage `#ffffff`, surlignage jaune, carré violet `#9047ff`              |
+| Personnage sur losange violet | `docs/new-reference-ui/IMG_9615.PNG`                       | environ 362, 1332, 482 × 531 | `#f6f6f7` | encre `#000000`, contour `#323239`, remplissage `#ffffff`, surlignage jaune `#f5f500`, losange de fond `#9147ff` |
 
 Chaque dessin tient en cinq teintes, pas trois. Le jaune n'a pas de token aujourd'hui ; le gris `#efeff1` (`core.color.neutral.90`), le violet (`core.color.purple.60`, `#9147ff`) et le contour (`core.color.neutral.20`, `#323338`) en ont un. La capture sombre des notifications montre le même dessin, aux mêmes couleurs, posé sur le fond sombre : c'est la première valeur sombre relevée pour une illustration.
 
-Problématique : les états vides de la page Activité montrent-ils l'illustration de Twitch, extraite comme celles du tableau de bord, et avec combien de teintes ?
+Problématique : les états vides de la page Activité et de l'onglet « À propos » du Profil montrent-ils l'illustration de Twitch, extraite comme celles du tableau de bord, et avec combien de teintes ?
 
 ## Facteurs de décision
 
@@ -63,12 +66,13 @@ Problématique : les états vides de la page Activité montrent-ils l'illustrati
 
 ### 1. Écrans concernés
 
-Deux illustrations s'ajoutent à la liste de l'ADR 0052 §1 :
+Trois illustrations s'ajoutent à la liste de l'ADR 0052 §1 :
 
-| Illustration | Écran                                | Capture source                                                                                                                              |
-| ------------ | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Personnage   | Activité, onglet Chuchotements, vide | `docs/new-reference-ui/IMG_9613.PNG`                                                                                                        |
-| Lunettes     | Activité, onglet Notifications, vide | `docs/reference-ui/creer/notifications-createur--vide.png`, contrôlée sur `docs/reference-ui/activite/notifications--vide-theme-sombre.png` |
+| Illustration                  | Écran                                | Capture source                                                                                                                              |
+| ----------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Personnage                    | Activité, onglet Chuchotements, vide | `docs/new-reference-ui/IMG_9613.PNG`                                                                                                        |
+| Lunettes                      | Activité, onglet Notifications, vide | `docs/reference-ui/creer/notifications-createur--vide.png`, contrôlée sur `docs/reference-ui/activite/notifications--vide-theme-sombre.png` |
+| Personnage sur losange violet | Profil, onglet « À propos », vide    | `docs/new-reference-ui/IMG_9615.PNG`                                                                                                        |
 
 La liste reste fermée : toute autre illustration demande un nouvel ADR.
 
@@ -78,9 +82,9 @@ Une illustration a autant de masques que de teintes relevées sur sa capture, au
 
 ### 3. Couleurs et thèmes
 
-Chaque teinte suit un `ColorRole`. Les teintes déjà portées par un token le réutilisent ; le jaune entre dans `packages/design-tokens/tokens/` avec la provenance « Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9613) ».
+Chaque teinte suit un `ColorRole`. Les teintes déjà portées par un token le réutilisent ; le jaune entre dans `packages/design-tokens/tokens/` avec la provenance « Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9613, IMG_9615) ».
 
-En thème sombre, chaque rôle garde sa valeur claire, comme l'ADR 0052 §4 : la capture sombre des notifications le confirme pour les lunettes. Le losange gris du personnage, relevé seulement en clair, suit la même règle jusqu'à une capture sombre.
+En thème sombre, chaque rôle garde sa valeur claire, comme l'ADR 0052 §4 : la capture sombre des notifications le confirme pour les lunettes. Le losange gris du personnage et le losange violet de l'onglet « À propos », relevés seulement en clair, suivent la même règle jusqu'à une capture sombre.
 
 ### 4. Reste inchangé
 
@@ -90,14 +94,15 @@ Extraction, rangement, manifeste, test de recomposition, accessibilité et point
 
 ### Positives
 
-- Les deux états vides de la page Activité ressemblent à l'app Twitch.
+- Les deux états vides de la page Activité et l'onglet « À propos » vide du Profil ressemblent à l'app Twitch.
 - Une seule méthode pour toutes les illustrations d'état vide.
 - Première valeur sombre relevée pour une illustration, qui conforte le choix de l'ADR 0052 §4.
 
 ### Négatives
 
-- **Dépôt public** : deux éléments graphiques de Twitch de plus.
+- **Dépôt public** : trois éléments graphiques de Twitch de plus.
 - **Cinq masques par illustration**, et une séparation des bords plus délicate.
+- **Même dessin versionné deux fois** : le personnage de `IMG_9613` et celui de `IMG_9615` ne diffèrent que par le losange, mais chacun a ses cinq masques, extraits de sa propre capture.
 - **Source ancienne pour les lunettes** : la capture vient de `docs/reference-ui/`, en 1179 × 2676, d'une autre version de l'app ; le dessin peut avoir changé depuis.
 - **Losange gris non relevé en sombre** : `#efeff1` sur un fond sombre est un choix par défaut, pas une valeur de Twitch.
 
@@ -109,10 +114,11 @@ Extraction, rangement, manifeste, test de recomposition, accessibilité et point
 
 ## Notes d'implémentation
 
-1. Tant que l'ADR est `Proposé`, les deux états vides restent le texte seul (PR de la page Activité).
+1. Tant que l'ADR est `Proposé`, les états vides restent le texte seul (PR de la page Activité, onglet « À propos » du Profil).
 2. Après acceptation : passer la ligne de statut de l'ADR 0052 à « Accepté — §1, §2 et §4 amendés par 0053 », et mettre à jour son statut dans `docs/adr/README.md`.
 3. Une PR étend le script d'extraction et le manifeste à un nombre variable de teintes, ajoute les masques, le token jaune et les rôles de couleur.
 4. Une seconde PR branche `IllustrationImage` dans `ActivityEmptyState`, en citant `IMG_9613` et les captures de `docs/reference-ui/`.
+5. L'illustration de l'onglet « À propos » suit les points 3 et 4 : ses masques entrent avec l'extraction, puis `IllustrationImage` est branché dans `ProfileAboutEmpty`, en citant `IMG_9615`.
 
 ## Liens
 
