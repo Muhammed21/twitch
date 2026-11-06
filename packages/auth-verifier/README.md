@@ -15,3 +15,7 @@ La révocation de sessions se publie en `{ userId, sids }` sur le canal Pub/Sub 
 Si la liste de révocation est injoignable, le jeton est accepté avec `revocation: "unavailable"` : un use-case sensible refuse sur cette valeur, le reste continue (ADR 0005, « Panne Redis »).
 
 Le JWKS est gardé en cache 10 minutes ; un `kid` inconnu le recharge, au plus une fois par minute (`jose`). `fetchJwks` remplace `fetch`, par exemple pour lire le JWKS en interne.
+
+## En-tête `X-Acting-User` (ADR 0007)
+
+L'humain qui agit depuis Payload, signé par Payload et vérifié par l'API. `signActingUser({ userId, privateKey, now })` rend un JWT `EdDSA` de type `acting-user+jwt`, émetteur `payload`, audience `twitch-api:admin`, valable 60 s. `createActingUserVerifier({ publicKey })` rend `verify(header, now)` : `ok({ userId })`, `err("expired")`, ou `err("invalid")` pour une signature, un émetteur, une audience, un type, un `sub` qui n'est pas un UUID, une durée de plus de 60 s ou un `iat` dans le futur. `importActingUserPublicKey` et `importActingUserPrivateKey` lisent une clé Ed25519 en JWK.
