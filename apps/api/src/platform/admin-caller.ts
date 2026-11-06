@@ -16,6 +16,7 @@ import {
 } from "@repo/auth-verifier";
 import { err } from "@repo/result";
 
+import type { AuditActor } from "./audit-actor.ts";
 import {
   ACCESS_TOKEN_VERIFIER,
   AccessTokenGuard,
@@ -31,11 +32,7 @@ import {
   type ServiceAccount,
 } from "./service-accounts.ts";
 
-export type AdminActor = {
-  readonly actorId: string;
-  readonly onBehalfOf: string | null;
-  readonly source: "api" | "payload";
-};
+export type AdminActor = AuditActor;
 
 export type ServiceCallers = {
   readonly accounts: readonly ServiceAccount[];

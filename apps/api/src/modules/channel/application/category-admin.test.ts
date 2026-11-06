@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { inMemoryAuthzContext, type RoleAssignment } from "@repo/authorization";
 import { err, ok } from "@repo/result";
 
+import type { AuditActor } from "../../../platform/audit-actor.ts";
 import type { FinalizeImage } from "../../../platform/images/finalize-image.ts";
 import {
   type CategoryCatalog,
@@ -25,6 +26,14 @@ const STAFF = "5a3b0d2f-8c4e-4f9b-a021-3d6e7f8a9b0c";
 const VIEWER = "6b4c1e3a-9d5f-4a0c-b132-4e7f8a9b0c1d";
 const NEW_ID = "1e2d3c4b-5a69-4b8a-9f10-7f6e5d4c3b2a";
 const EVENT_ID = "2f3e4d5c-6b7a-4c9b-8a01-8a7f6e5d4c3b";
+
+const PAYLOAD_ADMIN: AuditActor = {
+  actorId: ADMIN,
+  onBehalfOf: "svc:payload-admin",
+  source: "payload",
+};
+
+const viaApi = (actorId: string): AuditActor => ({ actorId, onBehalfOf: null, source: "api" });
 
 const onPlatform = (role: "admin" | "staff"): RoleAssignment => ({
   role,
@@ -140,7 +149,7 @@ describe("création d'une catégorie", () => {
     const { catalog, created } = memoryCatalog();
 
     const outcome = await createCategory(dependencies(catalog))({
-      actorId: ADMIN,
+      actor: PAYLOAD_ADMIN,
       slug: "league-of-legends",
       name: " League of Legends ",
     });
@@ -158,6 +167,7 @@ describe("création d'une catégorie", () => {
     });
     expect(created).toEqual([
       {
+        actor: PAYLOAD_ADMIN,
         categoryId: NEW_ID,
         slug: "league-of-legends",
         name: "League of Legends",
@@ -174,7 +184,7 @@ describe("création d'une catégorie", () => {
     const { catalog, created } = memoryCatalog();
 
     const outcome = await createCategory(dependencies(catalog))({
-      actorId,
+      actor: viaApi(actorId),
       slug: "league-of-legends",
       name: "League of Legends",
     });
@@ -189,7 +199,10 @@ describe("création d'une catégorie", () => {
   ] as const)("répond %s pour une catégorie mal formée", async (error, request) => {
     const { catalog, created } = memoryCatalog();
 
-    const outcome = await createCategory(dependencies(catalog))({ actorId: ADMIN, ...request });
+    const outcome = await createCategory(dependencies(catalog))({
+      actor: viaApi(ADMIN),
+      ...request,
+    });
 
     expect(outcome).toEqual({ ok: false, error });
     expect(created).toEqual([]);
@@ -199,7 +212,7 @@ describe("création d'une catégorie", () => {
     const { catalog } = memoryCatalog();
 
     const outcome = await createCategory(dependencies(catalog))({
-      actorId: ADMIN,
+      actor: viaApi(ADMIN),
       slug: "valorant",
       name: "Valorant 2",
     });
@@ -211,7 +224,7 @@ describe("création d'une catégorie", () => {
     const { catalog } = memoryCatalog();
 
     const outcome = await createCategory(dependencies(catalog))({
-      actorId: VIEWER,
+      actor: viaApi(VIEWER),
       slug: "Mal Formé",
       name: "",
     });
@@ -225,7 +238,7 @@ describe("fusion d'une catégorie dans une autre", () => {
     const { catalog, merges } = memoryCatalog();
 
     const outcome = await mergeCategory(dependencies(catalog))({
-      actorId: ADMIN,
+      actor: PAYLOAD_ADMIN,
       sourceSlug: "just-chatting",
       targetSlug: "valorant",
     });
@@ -233,6 +246,7 @@ describe("fusion d'une catégorie dans une autre", () => {
     expect(outcome).toEqual({ ok: true, value: VALORANT });
     expect(merges).toEqual([
       {
+        actor: PAYLOAD_ADMIN,
         sourceId: makeCategory().id,
         targetId: VALORANT.id,
         outboxEventId: NEW_ID,
@@ -245,7 +259,7 @@ describe("fusion d'une catégorie dans une autre", () => {
     const { catalog, merges } = memoryCatalog();
 
     const outcome = await mergeCategory(dependencies(catalog))({
-      actorId: STAFF,
+      actor: viaApi(STAFF),
       sourceSlug: "just-chatting",
       targetSlug: "valorant",
     });
@@ -260,7 +274,10 @@ describe("fusion d'une catégorie dans une autre", () => {
   ])("dit que la catégorie n'existe pas pour %s", async (_name, request) => {
     const { catalog, merges } = memoryCatalog();
 
-    const outcome = await mergeCategory(dependencies(catalog))({ actorId: ADMIN, ...request });
+    const outcome = await mergeCategory(dependencies(catalog))({
+      actor: viaApi(ADMIN),
+      ...request,
+    });
 
     expect(outcome).toEqual({ ok: false, error: "category_not_found" });
     expect(merges).toEqual([]);
@@ -270,7 +287,7 @@ describe("fusion d'une catégorie dans une autre", () => {
     const { catalog, merges } = memoryCatalog();
 
     const outcome = await mergeCategory(dependencies(catalog))({
-      actorId: ADMIN,
+      actor: viaApi(ADMIN),
       sourceSlug: "valorant",
       targetSlug: "valorant",
     });
@@ -288,7 +305,7 @@ describe("fusion d'une catégorie dans une autre", () => {
     });
 
     const outcome = await mergeCategory(dependencies(catalog))({
-      actorId: ADMIN,
+      actor: viaApi(ADMIN),
       sourceSlug: "just-chatting",
       targetSlug: "valorant",
     });
@@ -303,13 +320,13 @@ describe("retrait d'une catégorie", () => {
     const { catalog, retirements } = memoryCatalog();
 
     const outcome = await retireCategory(dependencies(catalog))({
-      actorId: ADMIN,
+      actor: PAYLOAD_ADMIN,
       slug: "valorant",
     });
 
     expect(outcome).toEqual({ ok: true, value: { ...VALORANT, status: "retired" } });
     expect(retirements).toEqual([
-      { categoryId: VALORANT.id, outboxEventId: NEW_ID, occurredAt: NOW },
+      { actor: PAYLOAD_ADMIN, categoryId: VALORANT.id, outboxEventId: NEW_ID, occurredAt: NOW },
     ]);
   });
 
@@ -317,7 +334,7 @@ describe("retrait d'une catégorie", () => {
     const { catalog, retirements } = memoryCatalog({ channelsIn: { [VALORANT.id]: 1 } });
 
     const outcome = await retireCategory(dependencies(catalog))({
-      actorId: ADMIN,
+      actor: viaApi(ADMIN),
       slug: "valorant",
     });
 
@@ -329,7 +346,7 @@ describe("retrait d'une catégorie", () => {
     const { catalog } = memoryCatalog({ categories: [{ ...VALORANT, status: "merged" }] });
 
     const outcome = await retireCategory(dependencies(catalog))({
-      actorId: ADMIN,
+      actor: viaApi(ADMIN),
       slug: "valorant",
     });
 
@@ -340,7 +357,7 @@ describe("retrait d'une catégorie", () => {
     const { catalog } = memoryCatalog();
 
     const outcome = await retireCategory(dependencies(catalog))({
-      actorId: ADMIN,
+      actor: viaApi(ADMIN),
       slug: "inconnue",
     });
 
@@ -351,7 +368,7 @@ describe("retrait d'une catégorie", () => {
     const { catalog, retirements } = memoryCatalog();
 
     const outcome = await retireCategory(dependencies(catalog))({
-      actorId: VIEWER,
+      actor: viaApi(VIEWER),
       slug: "valorant",
     });
 
@@ -413,7 +430,7 @@ describe("pochette d'une catégorie", () => {
       catalog,
       finalizeImage,
     )({
-      actorId: ADMIN,
+      actor: PAYLOAD_ADMIN,
       slug: "just-chatting",
       uploadId: UPLOAD_ID,
     });
@@ -422,6 +439,7 @@ describe("pochette d'une catégorie", () => {
     expect(requests).toEqual([{ uploadId: UPLOAD_ID, purpose: "category", userId: ADMIN }]);
     expect(imageChanges).toEqual([
       {
+        actor: PAYLOAD_ADMIN,
         categoryId: makeCategory().id,
         imageKey: IMAGE_KEY,
         outboxEventId: NEW_ID,
@@ -447,7 +465,7 @@ describe("pochette d'une catégorie", () => {
       catalog,
       finalizeImage,
     )({
-      actorId,
+      actor: viaApi(actorId),
       slug,
       uploadId: UPLOAD_ID,
     });
@@ -465,7 +483,7 @@ describe("pochette d'une catégorie", () => {
       catalog,
       finalizeImage,
     )({
-      actorId: ADMIN,
+      actor: viaApi(ADMIN),
       slug: "just-chatting",
       uploadId: UPLOAD_ID,
     });
@@ -485,7 +503,7 @@ describe("pochette d'une catégorie", () => {
       recordingFinalizer(FINALIZED).finalizeImage,
       discard,
     )({
-      actorId: ADMIN,
+      actor: viaApi(ADMIN),
       slug: "just-chatting",
       uploadId: UPLOAD_ID,
     });
@@ -503,7 +521,7 @@ describe("pochette d'une catégorie", () => {
       recordingFinalizer(FINALIZED).finalizeImage,
       recordingDiscard({ steps }),
     )({
-      actorId: ADMIN,
+      actor: viaApi(ADMIN),
       slug: "just-chatting",
       uploadId: UPLOAD_ID,
     });
@@ -523,7 +541,7 @@ describe("pochette d'une catégorie", () => {
       recordingFinalizer(FINALIZED).finalizeImage,
       discard,
     )({
-      actorId: ADMIN,
+      actor: viaApi(ADMIN),
       slug: "just-chatting",
       uploadId: UPLOAD_ID,
     });
@@ -542,7 +560,7 @@ describe("pochette d'une catégorie", () => {
       recordingFinalizer(err("too_small")).finalizeImage,
       recordingDiscard({ steps }),
     )({
-      actorId: ADMIN,
+      actor: viaApi(ADMIN),
       slug: "just-chatting",
       uploadId: UPLOAD_ID,
     });
@@ -565,7 +583,7 @@ describe("pochette d'une catégorie", () => {
       recordingFinalizer(FINALIZED).finalizeImage,
       recordingDiscard({ steps }),
     )({
-      actorId: ADMIN,
+      actor: viaApi(ADMIN),
       slug: "just-chatting",
       uploadId: UPLOAD_ID,
     });
@@ -591,7 +609,7 @@ describe("pochette d'une catégorie", () => {
         recordingFinalizer(FINALIZED).finalizeImage,
         recordingDiscard({ steps }),
       )({
-        actorId: ADMIN,
+        actor: viaApi(ADMIN),
         slug: "just-chatting",
         uploadId: UPLOAD_ID,
       }),
@@ -621,7 +639,7 @@ describe("pochette d'une catégorie", () => {
         recordingFinalizer(FINALIZED).finalizeImage,
         recordingDiscard({ steps }),
       )({
-        actorId: ADMIN,
+        actor: viaApi(ADMIN),
         slug: "just-chatting",
         uploadId: UPLOAD_ID,
       }),
@@ -650,7 +668,7 @@ describe("pochette d'une catégorie", () => {
         recordingFinalizer(FINALIZED).finalizeImage,
         recordingDiscard({ steps }),
       )({
-        actorId: ADMIN,
+        actor: viaApi(ADMIN),
         slug: "just-chatting",
         uploadId: UPLOAD_ID,
       }),
@@ -686,7 +704,7 @@ describe("pochette d'une catégorie", () => {
         recordingFinalizer(FINALIZED).finalizeImage,
         recordingDiscard({ steps }),
       )({
-        actorId: ADMIN,
+        actor: viaApi(ADMIN),
         slug: "just-chatting",
         uploadId: UPLOAD_ID,
       }),
@@ -700,7 +718,7 @@ describe("tags d'une catégorie (ADR 0050)", () => {
     const { catalog, tagChanges } = memoryCatalog();
 
     const outcome = await changeCategoryTags(dependencies(catalog))({
-      actorId: ADMIN,
+      actor: PAYLOAD_ADMIN,
       slug: "just-chatting",
       tags: [" IRL ", "Discussion"],
     });
@@ -708,6 +726,7 @@ describe("tags d'une catégorie (ADR 0050)", () => {
     expect(outcome).toEqual(ok(makeCategory({ tags: ["IRL", "Discussion"] })));
     expect(tagChanges).toEqual([
       {
+        actor: PAYLOAD_ADMIN,
         categoryId: makeCategory().id,
         tags: ["IRL", "Discussion"],
         outboxEventId: NEW_ID,
@@ -735,7 +754,11 @@ describe("tags d'une catégorie (ADR 0050)", () => {
       ],
     });
 
-    const outcome = await changeCategoryTags(dependencies(catalog))({ actorId, slug, tags });
+    const outcome = await changeCategoryTags(dependencies(catalog))({
+      actor: viaApi(actorId),
+      slug,
+      tags,
+    });
 
     expect(outcome).toEqual(err(error));
     expect(tagChanges).toEqual([]);

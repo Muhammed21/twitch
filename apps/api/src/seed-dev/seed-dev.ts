@@ -23,6 +23,7 @@ import {
 } from "../modules/identity/infrastructure/better-auth.ts";
 import { createIdentityRedis } from "../modules/identity/infrastructure/redis-session-revocation.ts";
 import { createSmtpMailer } from "../modules/identity/infrastructure/smtp-mailer.ts";
+import type { AuditActor } from "../platform/audit-actor.ts";
 import { loadEnv } from "../platform/config/env.ts";
 import { finalizeImage } from "../platform/images/finalize-image.ts";
 import { MAX_INPUT_PIXELS } from "../platform/images/image-purposes.ts";
@@ -55,6 +56,7 @@ export const ADMIN_ACCOUNT = {
 
 export { DEV_CATEGORIES } from "./dev-categories.ts";
 
+const SEED_ACTOR: AuditActor = { actorId: "seed-dev", onBehalfOf: null, source: "api" };
 const DEMO_CATEGORY = "just-chatting";
 
 type Outcome = "created" | "existing";
@@ -226,6 +228,7 @@ const seedCategories = (env: Env): Promise<number> =>
         const done = await previous;
         const { slug, name, tags } = devCategory(category);
         const created = await catalog.create({
+          actor: SEED_ACTOR,
           slug,
           name,
           categoryId: randomUUID(),
@@ -246,6 +249,7 @@ const seedCategories = (env: Env): Promise<number> =>
         }
         if (current !== null && !sameTags(current.tags, tags)) {
           const tagged = await catalog.changeTags({
+            actor: SEED_ACTOR,
             categoryId: current.id,
             tags,
             outboxEventId: randomUUID(),
@@ -370,6 +374,7 @@ export const seedCategoryCovers = async (env: Env): Promise<number> => {
         throw new Error(`pochette de la catégorie ${category.slug} refusée : ${image.error}`);
       }
       const changed = await catalog.changeImage({
+        actor: SEED_ACTOR,
         categoryId: current.id,
         imageKey: image.value.key,
         outboxEventId: randomUUID(),
