@@ -1,3 +1,4 @@
+import Activity
 import Analytics
 import Auth
 import Channel
@@ -116,7 +117,7 @@ struct RootView: View {
         router: router
       )
     case .signedIn:
-      SignedInModes()
+      SignedInModes(paywall: PersonalizationPaywall(purchases: purchases, launch: launch, links: paywallLinks))
     case .updateRequired:
       UpdateRequiredScreen()
     }
@@ -124,6 +125,7 @@ struct RootView: View {
 }
 
 struct SignedInRoot: View {
+  let paywall: PersonalizationPaywall
   @Environment(Router.self) private var router
   @Environment(CreatorMode.self) private var creatorMode
   @Environment(SessionStore.self) private var session
@@ -145,6 +147,12 @@ struct SignedInRoot: View {
 
   static let trailingTabs = [
     TabBarItem(
+      tab: AppTab.activity,
+      title: String(localized: ActivityText.title),
+      glyph: ViewerTabGlyphs.activity,
+      accessibilityIdentifier: "root.activity"
+    ),
+    TabBarItem(
       tab: AppTab.profile,
       title: ProfileText.tabTitle,
       glyph: .avatar,
@@ -165,16 +173,14 @@ struct SignedInRoot: View {
       }
       .toolbar(.hidden, for: .tabBar)
       .tag(AppTab.browse)
+      NavigationStack(path: $router.activityPath) {
+        ActivityScreen().withRouteDestinations()
+      }
+      .toolbar(.hidden, for: .tabBar)
+      .tag(AppTab.activity)
       NavigationStack(path: $router.profilePath) {
-        ProfileScreen(account: account, actions: ProfileActions(
-          onOpenChannel: { router.push(.channel($0)) },
-          onAccountSaved: { session.accountSaved($0) },
-          onStreamManager: { router.create() },
-          onAnalytics: { Task { await creatorMode.switchMode(landingOn: .stats) } }
-        )) {
-          SignedInScreen()
-        }
-        .withRouteDestinations()
+        ViewerProfileTab(account: account, paywall: paywall)
+          .withRouteDestinations()
       }
       .toolbar(.hidden, for: .tabBar)
       .tag(AppTab.profile)
@@ -210,37 +216,6 @@ extension View {
         CategoryLivesScreen(heading: heading)
       }
     }
-  }
-}
-
-struct ChannelScreen: View {
-  let slug: ChannelSlug
-
-  @Environment(ChannelPlayback.self) private var channelPlayback
-  @Environment(LiveStatusChannel.self) private var liveStatus
-  @Environment(ChannelPresence.self) private var presence
-  @Environment(ChatSession.self) private var chat
-  @Environment(PreferencesStore.self) private var preferences
-  @Environment(\.scenePhase) private var scenePhase
-
-  private var watching: ChannelPresence.Watching {
-    ChannelPresence.Watching(slug: slug, status: liveStatus.status, scenePhase: scenePhase)
-  }
-
-  var body: some View {
-    VStack(alignment: .leading, spacing: 0) {
-      PlayerSurface()
-      ChannelHeader()
-      ChatList()
-      ChatComposer()
-    }
-    .environment(\.chatDisplay, ChatDisplay(preferences.current))
-    .navigationTitle(slug.rawValue)
-    .navigationBarTitleDisplayMode(.inline)
-    .task(id: slug) { await channelPlayback.open(slug) }
-    .task(id: slug) { await liveStatus.run(slug) }
-    .task(id: slug) { await chat.run(slug) }
-    .task(id: watching) { await presence.run(watching) }
   }
 }
 

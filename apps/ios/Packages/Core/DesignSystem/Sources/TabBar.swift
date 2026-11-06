@@ -16,6 +16,10 @@ public enum TabBarGlyph: Equatable, Sendable {
   }
 }
 
+public enum ViewerTabGlyphs {
+  public static let activity = TabBarGlyph.mask(outline: .bellOutline, filled: .bellFilled)
+}
+
 public struct TabBarItem<Tab: Hashable>: Identifiable {
   public let tab: Tab
   public let title: String

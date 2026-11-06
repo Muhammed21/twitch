@@ -7,6 +7,7 @@ import Profile
 import SwiftUI
 
 struct SignedInModes: View {
+  let paywall: PersonalizationPaywall
   @Environment(CreatorMode.self) private var creatorMode
   @Environment(Router.self) private var router
 
@@ -14,7 +15,7 @@ struct SignedInModes: View {
     @Bindable var router = router
     Group {
       switch creatorMode.mode {
-      case .viewer: SignedInRoot()
+      case .viewer: SignedInRoot(paywall: paywall)
       case .creator: CreatorRoot()
       }
     }
