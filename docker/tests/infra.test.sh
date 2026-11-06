@@ -237,6 +237,11 @@ check "payload démarre après la fin de payload-migrate" started_after_payload_
 check "payload-migrate a appliqué les migrations de Payload" test "$(payload_migrations)" -ge 1
 check "payload tourne sous l'utilisateur node" test "$(in_payload id -un)" = "node"
 check "l'image de payload ne contient pas les migrations" in_payload sh -c '! test -e /repo/apps/payload/src/migrations'
+admin_call_status() { in_payload node --input-type=module - "$1" <"$ROOT/docker/tests/payload-admin-call.mjs"; }
+check "payload joint l'API par PAYLOAD_API_BASE_URL" in_payload node -e 'fetch(process.env.PAYLOAD_API_BASE_URL + "/health/ready").then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))'
+check "un appel signé par payload passe le garde admin de l'API (corps vide refusé en 400)" test "$(admin_call_status signed)" = "400"
+check "un appel de payload sans X-Acting-User est refusé en 403" test "$(admin_call_status unsigned)" = "403"
+check "un appel de payload au mauvais secret est refusé en 401" test "$(admin_call_status wrong-secret)" = "401"
 check "SIGTERM arrête payload dans le délai de grâce" full stop payload
 check "payload s'est arrêté de lui-même, sans SIGKILL" stopped_by_itself payload
 full rm -sf payload payload-migrate >/dev/null 2>&1
