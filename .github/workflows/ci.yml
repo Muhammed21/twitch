@@ -146,6 +146,7 @@ jobs:
       - run: pnpm test:integration
         env:
           INTEGRATION_S3_ENDPOINT: http://127.0.0.1:8333
+          INTEGRATION_ALLOW_LOCAL_STACK: "1"
       - if: always()
         run: docker compose down -v
 
