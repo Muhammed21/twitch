@@ -1,3 +1,4 @@
+import AnalyticsTesting
 import Domain
 import Paywall
 import PurchasesTesting
@@ -29,6 +30,7 @@ private func makeStore(
     purchases: purchases,
     offeringID: offeringID,
     variant: { subscriptions.variant },
+    analytics: RecordingAnalytics(),
     onSubscribed: subscriptions.record
   )
 }

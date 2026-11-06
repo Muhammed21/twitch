@@ -57,6 +57,7 @@ export const AnalyticsEvents = {
   "paywall:viewed": onClient({ variant, offering_id: identifier, placement }),
   "paywall:dismissed": onClient({ variant, placement }),
   "purchase:started": onClient({ product_id: identifier, variant }),
+  "purchase:completed": onClient({ product_id: identifier, variant }),
   "purchase:cancelled": onClient({ product_id: identifier, variant }),
   "purchase:failed": onClient({ product_id: identifier, variant, error_code: identifier }),
   "purchase:restored": onClient({ has_active_entitlement: z.boolean() }),
