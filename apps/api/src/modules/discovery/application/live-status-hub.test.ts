@@ -306,4 +306,21 @@ describe("hub du statut des lives (canal 2, ADR 0004 §2)", () => {
       { ...liveStatus(LIVE_CHANNEL), viewerCount: 4 },
     ]);
   });
+
+  it("envoie au tick un changement de vignette d'une chaîne en live", async () => {
+    const before = "http://video.example/hls/channels/a/thumbnail.jpg";
+    const after = "http://video.example/hls/channels/b/thumbnail.jpg";
+    const projection = makeProjection([{ ...liveStatus(LIVE_CHANNEL), thumbnailUrl: before }]);
+    const hub = createLiveStatusHub(projection.reader);
+    const { received, listener } = makeListener();
+    await subscribed(hub, LIVE_CHANNEL, listener);
+
+    projection.set({ ...liveStatus(LIVE_CHANNEL), thumbnailUrl: after });
+    await hub.tick();
+
+    expect(received).toEqual([
+      { ...liveStatus(LIVE_CHANNEL), thumbnailUrl: before },
+      { ...liveStatus(LIVE_CHANNEL), thumbnailUrl: after },
+    ]);
+  });
 });

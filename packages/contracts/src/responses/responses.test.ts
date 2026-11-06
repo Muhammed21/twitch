@@ -741,6 +741,20 @@ describe("LiveStatus", () => {
     expect(responses.LiveStatus.parse(status)).toEqual(status);
   });
 
+  it("décode la vignette d'une chaîne en live, en HTTP comme en HTTPS", () => {
+    const statuses = [
+      "https://video.example/hls/channels/c/thumbnail.jpg",
+      "http://192.168.4.233:3002/hls/channels/c/thumbnail.jpg",
+    ].map((thumbnailUrl) => ({
+      channelId: CHANNEL_ID,
+      live: true,
+      startedAt: "2026-11-03T20:00:00.000Z",
+      thumbnailUrl,
+    }));
+
+    expect(statuses.map((status) => responses.LiveStatus.parse(status))).toEqual(statuses);
+  });
+
   it("décode un live sans aucun viewer", () => {
     expect(
       responses.LiveStatus.parse({ channelId: CHANNEL_ID, live: true, viewerCount: 0 }).viewerCount,
@@ -764,6 +778,10 @@ describe("LiveStatus", () => {
     [
       "avec un démarrage qui n'est pas une date ISO",
       { channelId: CHANNEL_ID, live: true, startedAt: "hier" },
+    ],
+    [
+      "avec une vignette hors HTTP",
+      { channelId: CHANNEL_ID, live: true, thumbnailUrl: "ftp://video.example/thumbnail.jpg" },
     ],
   ])("refuse un statut %s", (_name, status) => {
     expect(responses.LiveStatus.safeParse(status).success).toBe(false);

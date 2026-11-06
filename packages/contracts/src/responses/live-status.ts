@@ -8,5 +8,6 @@ export const LiveStatus = z
     live: z.boolean(),
     startedAt: z.iso.datetime().optional(),
     viewerCount: z.int().min(0).optional(),
+    thumbnailUrl: z.url({ protocol: /^https?$/ }).optional(),
   })
   .meta({ id: "LiveStatus" });
