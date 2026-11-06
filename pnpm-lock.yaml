@@ -249,6 +249,9 @@ importers:
       '@payloadcms/ui':
         specifier: 3.93.0
         version: 3.93.0(@types/react@19.2.18)(monaco-editor@0.57.0)(next@16.4.5(@babel/core@8.0.1)(@types/node@26.6.2)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.77.4))(payload@3.93.0(graphql@16.15.0)(supports-color@10.2.2)(typescript@7.0.2))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(supports-color@10.2.2)(typescript@7.0.2)
+      '@repo/api-client':
+        specifier: workspace:*
+        version: link:../../packages/api-client
       '@repo/design-tokens':
         specifier: workspace:*
         version: link:../../packages/design-tokens
