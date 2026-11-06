@@ -30,6 +30,7 @@ public struct ChatComposer: View {
             ColorRole.surfaceSecondary.color,
             in: RoundedRectangle(cornerRadius: LayoutRole.composerRadius.points)
           )
+          .accessibilityLabel(ChatText.placeholder)
           .accessibilityIdentifier("chat.composer.field")
         if ChatDraft.sendable(draft) != nil {
           Button(action: send) {
@@ -37,6 +38,7 @@ public struct ChatComposer: View {
               .font(TextRole.chatComposer.font)
               .foregroundStyle(ColorRole.textPrimary.color)
           }
+          .minimumTapTarget()
           .disabled(isSending)
           .accessibilityLabel(ChatText.send)
           .accessibilityIdentifier("chat.composer.send")
@@ -45,6 +47,7 @@ public struct ChatComposer: View {
     }
     .padding(LayoutRole.chatInset.points)
     .background(ColorRole.background.color)
+    .announcing(notice)
   }
 
   private func send() {

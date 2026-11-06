@@ -9,6 +9,8 @@ public struct ChatList: View {
   @Environment(\.chatDisplay) private var display
   @State private var unread = UnreadMarker()
   @State private var viewport = ChatViewport()
+  @State private var announcer = ChatAnnouncer()
+  @Environment(\.accessibilityVoiceOverEnabled) private var isVoiceOverRunning
 
   public init() {}
 
@@ -43,6 +45,22 @@ public struct ChatList: View {
     }
     .background(ColorRole.background.color)
     .accessibilityIdentifier("chat.list")
+    .task(id: isVoiceOverRunning) {
+      guard isVoiceOverRunning else { return }
+      while !Task.isCancelled {
+        announceNewMessages()
+        try? await Task.sleep(for: ChatAnnouncer.interval)
+      }
+    }
+  }
+
+  private func announceNewMessages() {
+    let (next, spoken) = announcer.next(session.messages)
+    announcer = next
+    guard let spoken else { return }
+    var announcement = AttributedString(spoken)
+    announcement.accessibilitySpeechAnnouncementPriority = .low
+    AccessibilityNotification.Announcement(announcement).post()
   }
 
   private func appeared(_ entry: ChatEntry) {
@@ -87,6 +105,13 @@ struct ChatEntryRow: View {
               Task { await session.timeOut(message.author) }
             }
             .accessibilityIdentifier("chat.moderation.timeOut")
+          }
+        }
+        .accessibilityActions {
+          if session.canTimeOut(message.author) {
+            Button(ChatText.timeOutAction) {
+              Task { await session.timeOut(message.author) }
+            }
           }
         }
     }
