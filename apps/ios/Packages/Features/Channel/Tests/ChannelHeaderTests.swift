@@ -29,3 +29,16 @@ struct ChannelHeaderTests {
     #expect(ChannelText.title(nil, channelNotFound: true) == shown(english: "This channel doesn't exist.", french: "Cette chaîne n'existe pas."))
   }
 }
+
+@Suite("ChannelHeader lu par VoiceOver")
+struct ChannelHeaderAccessibilityTests {
+  @Test("le badge LIVE se lit « en direct », pas lettre à lettre")
+  func liveBadgeSpoken() {
+    #expect(ChannelText.liveSpoken == shown(english: "Live", french: "En direct"))
+  }
+
+  @Test("le compteur se lit avec son unité")
+  func viewersSpoken() {
+    #expect(ChannelText.viewers("52K") == shown(english: "52K viewers", french: "52K spectateurs"))
+  }
+}

@@ -121,6 +121,11 @@
         "$value": "50px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9614) : hauteur des pilules « Gestionnaire de stream », « Statistiques » et « Essayer sans publicité » du profil (150 px à @3x)."
       },
+      "55": {
+        "$type": "dimension",
+        "$value": "55px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9615) : retrait du contenu vide de l'onglet « À propos » sous les onglets du profil (164 px à @3x)."
+      },
       "56": {
         "$type": "dimension",
         "$value": "56px",

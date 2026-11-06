@@ -33,6 +33,38 @@
         }
       }
     },
+    "player.loading" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading video"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chargement de la vidéo"
+          }
+        }
+      }
+    },
+    "player.paused" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Video paused"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vidéo en pause"
+          }
+        }
+      }
+    },
     "player.play" : {
       "localizations" : {
         "en" : {
