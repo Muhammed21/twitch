@@ -121,6 +121,26 @@ struct RouterTabTests {
     #expect(router.browsePath.isEmpty)
   }
 
+  @Test("l'onglet Activité a sa propre pile, distincte des autres, et reset la vide")
+  func activityStack() throws {
+    let router = Router()
+    router.selectedTab = .activity
+
+    #expect(router.isTabBarVisible)
+
+    try router.push(.channel(ChannelSlug("ada_lovelace")))
+
+    #expect(try router.activityPath == [.channel(ChannelSlug("ada_lovelace"))])
+    #expect(router.path.isEmpty)
+    #expect(router.browsePath.isEmpty)
+    #expect(router.profilePath.isEmpty)
+    #expect(!router.isTabBarVisible)
+
+    router.reset()
+
+    #expect(router.activityPath.isEmpty)
+  }
+
   @Test("la barre d'onglets se masque quand une page de chaîne couvre l'onglet sélectionné")
   func tabBarHiddenOverChannel() throws {
     let router = Router()

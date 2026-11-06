@@ -43,6 +43,10 @@ public struct ProfileScreen<Settings: View>: View {
           ProfileActionButton(label: String(localized: ProfileText.analytics), glyph: .statsOutline, action: actions.onAnalytics)
             .accessibilityIdentifier("profile.analytics")
         }
+        if let onTryAdFree = actions.onTryAdFree {
+          ProfileActionButton(label: String(localized: ProfileText.tryAdFree), glyph: .turboBattery, action: onTryAdFree)
+            .accessibilityIdentifier("profile.tryAdFree")
+        }
         MenuCard {
           Button {
             if case let .ready(owned) = store.phase { actions.onOpenChannel(owned.slug) }
@@ -71,17 +75,20 @@ public struct ProfileActions {
   let onAccountSaved: (Account) -> Void
   let onStreamManager: () -> Void
   let onAnalytics: () -> Void
+  let onTryAdFree: (() -> Void)?
 
   public init(
     onOpenChannel: @escaping (ChannelSlug) -> Void,
     onAccountSaved: @escaping (Account) -> Void,
     onStreamManager: @escaping () -> Void,
-    onAnalytics: @escaping () -> Void
+    onAnalytics: @escaping () -> Void,
+    onTryAdFree: (() -> Void)? = nil
   ) {
     self.onOpenChannel = onOpenChannel
     self.onAccountSaved = onAccountSaved
     self.onStreamManager = onStreamManager
     self.onAnalytics = onAnalytics
+    self.onTryAdFree = onTryAdFree
   }
 }
 

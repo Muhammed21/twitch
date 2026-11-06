@@ -42,6 +42,8 @@ public enum ColorRole: Equatable, Sendable {
   case illustrationFill
   case illustrationAccent
   case illustrationHighlight
+  case chipSelected
+  case onChipSelected
 
   public var color: Color {
     switch self {
@@ -84,6 +86,8 @@ public enum ColorRole: Equatable, Sendable {
     case .illustrationFill: .illustrationFill
     case .illustrationAccent: .illustrationAccent
     case .illustrationHighlight: .illustrationHighlight
+    case .chipSelected: .chipSelected
+    case .onChipSelected: .chipOnSelected
     }
   }
 
