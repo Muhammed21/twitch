@@ -83,10 +83,10 @@ struct CreatorRoot: View {
         .tag(DashboardTab.stats)
       NavigationStack(path: $channelPath) {
         ProfileScreen(account: account, actions: ProfileActions(
-          onOpenChannel: { channelPath.append(.channel($0)) },
           onAccountSaved: { session.accountSaved($0) },
           onStreamManager: { router.create() },
-          onAnalytics: { creatorMode.dashboardTab = .stats }
+          onAnalytics: { creatorMode.dashboardTab = .stats },
+          onRetryAccount: session.hasAccountLoadFailure ? { Task { await session.reloadAccount() } } : nil
         )) {
           SignedInScreen()
         }

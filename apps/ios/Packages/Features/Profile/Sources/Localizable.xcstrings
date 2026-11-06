@@ -1193,6 +1193,22 @@
         }
       }
     },
+    "profile.account.failed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't load your profile."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de charger votre profil."
+          }
+        }
+      }
+    },
     "profile.analytics" : {
       "localizations" : {
         "en" : {
@@ -1253,22 +1269,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dernier live il y a %@"
-          }
-        }
-      }
-    },
-    "profile.myChannel" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "My Channel"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ma chaîne"
           }
         }
       }

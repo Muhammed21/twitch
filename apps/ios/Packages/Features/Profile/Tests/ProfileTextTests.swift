@@ -49,6 +49,14 @@ struct ProfileTextTests {
     #expect(french(ProfileText.title(of: .about)) == "À propos")
   }
 
+  @Test("un compte qui ne se charge pas le dit et propose de réessayer, au lieu d'un en-tête vide")
+  func accountFailed() {
+    #expect(english(ProfileText.accountFailed) == "Couldn't load your profile.")
+    #expect(french(ProfileText.accountFailed) == "Impossible de charger votre profil.")
+    #expect(english(ProfileText.retry) == "Try Again")
+    #expect(french(ProfileText.retry) == "Réessayer")
+  }
+
   @Test("« À propos » sans bio invite à se présenter (IMG_9615)")
   func aboutEmpty() {
     #expect(english(ProfileText.aboutEmptyTitle) == "Tell us more!")

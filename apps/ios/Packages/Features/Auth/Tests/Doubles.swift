@@ -87,11 +87,19 @@ func query(of url: URL) -> [String: String] {
 }
 
 struct FakeAccounts: AccountRepository {
-  let result: Result<Account, any Error>
+  private let results: OSAllocatedUnfairLock<[Result<Account, any Error>]>
   let gate: Gate?
+
+  init(results: [Result<Account, any Error>], gate: Gate?) {
+    self.results = OSAllocatedUnfairLock(uncheckedState: results)
+    self.gate = gate
+  }
 
   func currentAccount() async throws -> Account {
     await gate?.wait()
+    let result = results.withLockUnchecked { remaining in
+      remaining.count > 1 ? remaining.removeFirst() : remaining[0]
+    }
     return try result.get()
   }
 }
@@ -164,6 +172,7 @@ struct Harness {
     clearFails: Bool = false,
     reply: @escaping FakeWebAuthenticator.Reply = approved,
     account: Result<Account, any Error> = .success(viewer),
+    thenAccount: Result<Account, any Error>? = nil,
     accountGate: Gate? = nil
   ) {
     transport = FakeTransport()
@@ -174,7 +183,7 @@ struct Harness {
     store = SessionStore(
       configuration: configuration,
       session: session,
-      accounts: FakeAccounts(result: account, gate: accountGate),
+      accounts: FakeAccounts(results: [account] + (thenAccount.map { [$0] } ?? []), gate: accountGate),
       authenticator: authenticator,
       randomBytes: sequentialRandomBytes,
       now: { now },

@@ -21,6 +21,7 @@ public final class SessionStore {
   public private(set) var phase: SessionPhase = .launching
   public private(set) var hasSignInFailure = false
   public private(set) var hasLogOutFailure = false
+  public private(set) var hasAccountLoadFailure = false
   public private(set) var isGreetingNewAccount = false
   public private(set) var isPersonalizing = false
 
@@ -122,6 +123,11 @@ public final class SessionStore {
     phase = .signedIn(account)
   }
 
+  public func reloadAccount() async {
+    guard phase == .signedIn(nil) else { return }
+    await loadAccount()
+  }
+
   private func follow() async {
     for await status in session.statusUpdates where status == .signedOut {
       if isLoggingOut {
@@ -130,6 +136,7 @@ public final class SessionStore {
       }
       analytics.reset()
       phase = .signedOut
+      hasAccountLoadFailure = false
       isGreetingNewAccount = false
       isPersonalizing = false
     }
@@ -141,10 +148,11 @@ public final class SessionStore {
       guard case .signedIn = phase else { return }
       analytics.identify(account.id)
       phase = .signedIn(account)
+      hasAccountLoadFailure = false
     } catch SessionError.signedOut {
       try? await session.signOut()
     } catch {
-      return
+      hasAccountLoadFailure = true
     }
   }
 }
