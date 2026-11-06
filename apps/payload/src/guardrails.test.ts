@@ -30,3 +30,24 @@ describe("Payload se construit une fois pour tous les environnements (ADR 0028 �
     expect(layout).toContain('export const dynamic = "force-dynamic"');
   });
 });
+
+describe("les actions d'administration métier n'écrivent rien dans Payload (ADR 0007)", () => {
+  const actionSources = () =>
+    globSync(["src/actions/**/*.ts", "src/views/**/*.{ts,tsx}"], { cwd: APP }).filter(
+      (path) => !path.endsWith(".test.ts"),
+    );
+
+  it("trouve les sources des actions et de leurs écrans", () => {
+    expect(actionSources().length).toBeGreaterThan(2);
+  });
+
+  it("n'écrivent jamais par l'API locale de Payload ni dans sa base", () => {
+    const offenders = actionSources().filter((path) =>
+      /payload\.(create|update|delete|db)\b|getPayload|@payloadcms\/db-/.test(
+        readFileSync(join(APP, path), "utf8"),
+      ),
+    );
+
+    expect(offenders).toEqual([]);
+  });
+});

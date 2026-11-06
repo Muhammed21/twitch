@@ -10,3 +10,41 @@ html[data-theme="dark"] {
 a {
   color: var(--color-text-link);
 }
+
+.ban-user {
+  display: grid;
+  gap: var(--spacing-x16);
+  max-width: var(--spacing-x300);
+}
+
+.ban-user__field {
+  display: grid;
+  gap: var(--spacing-x4);
+  color: var(--color-text-secondary);
+}
+
+.ban-user__field input,
+.ban-user__field select,
+.ban-user__field textarea {
+  padding: var(--spacing-x8);
+  border: var(--spacing-x1) solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-primary);
+  color: var(--color-text-primary);
+  font: inherit;
+}
+
+.ban-user__confirmation {
+  padding: var(--spacing-x16);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-secondary);
+  color: var(--color-text-primary);
+}
+
+.ban-user__outcome--success {
+  color: var(--color-text-primary);
+}
+
+.ban-user__outcome--failure {
+  color: var(--color-danger-default);
+}

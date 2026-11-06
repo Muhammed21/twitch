@@ -5,6 +5,7 @@
     "declaration": false,
     "declarationMap": false,
     "allowJs": true,
+    "allowImportingTsExtensions": true,
     "module": "esnext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
