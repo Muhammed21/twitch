@@ -94,7 +94,7 @@ struct PersonalizationRoot: View {
     showPaywall: () -> Void,
     close: () -> Void
   ) async {
-    guard purchases.isAvailable, await (try? purchases.isTurboActive()) != true else {
+    guard await TurboOffer.isOffered(by: purchases) else {
       complete(account: account, preferences: preferences, close: close)
       return
     }
