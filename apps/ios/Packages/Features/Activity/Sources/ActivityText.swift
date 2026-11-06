@@ -1,3 +1,4 @@
+import DesignSystem
 import Foundation
 
 public enum ActivityText {
@@ -35,12 +36,14 @@ public enum ActivityTab: CaseIterable, Hashable, Sendable {
       ActivityEmpty(
         title: ActivityText.notificationsEmptyTitle,
         message: ActivityText.notificationsEmptyMessage,
+        illustration: .notifications,
         action: nil
       )
     case .whispers:
       ActivityEmpty(
         title: ActivityText.whispersEmptyTitle,
         message: ActivityText.whispersEmptyMessage,
+        illustration: .whispers,
         action: ActivityText.startConversation
       )
     }
@@ -52,5 +55,6 @@ public struct ActivityEmpty: Sendable {
 
   public let title: LocalizedStringResource
   public let message: LocalizedStringResource
+  public let illustration: ActivityEmptyIllustration
   public let action: LocalizedStringResource?
 }

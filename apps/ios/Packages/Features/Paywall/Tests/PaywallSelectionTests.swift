@@ -1,3 +1,4 @@
+import AnalyticsTesting
 import Domain
 import Paywall
 import PurchasesTesting
@@ -9,7 +10,7 @@ private let defaultOffering = SubscriptionOffering(id: "default", packages: [mon
 
 @MainActor
 private func makeStore(_ purchases: FakePurchases) -> PaywallStore {
-  PaywallStore(purchases: purchases, offeringID: nil)
+  PaywallStore(purchases: purchases, offeringID: nil, analytics: RecordingAnalytics())
 }
 
 @MainActor

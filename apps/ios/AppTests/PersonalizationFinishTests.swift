@@ -8,6 +8,11 @@ import Testing
 @testable import Twitch
 
 @MainActor
+private struct SilentAnalytics: Analytics {
+  func capture(_: AnalyticsEvent) {}
+}
+
+@MainActor
 private final class EndingRecorder {
   private(set) var endings: [String] = []
 
@@ -116,7 +121,7 @@ private func purchaseEnding(
   recorder: EndingRecorder
 ) throws -> PaywallStore {
   try PersonalizationRoot.paywallStore(
-    PersonalizationPaywall(purchases: purchases, launch: makeLaunch(variant: "control"), links: noLinks),
+    PersonalizationPaywall(purchases: purchases, launch: makeLaunch(variant: "control"), links: noLinks, analytics: SilentAnalytics()),
     onSubscribed: PersonalizationRoot.ending(account: { account }, preferences: preferences, router: router, finish: recorder.close)
   )
 }
@@ -186,6 +191,21 @@ struct PersonalizationFinishTests {
     #expect(recorder.endings == ["home"])
   }
 
+  @Test(
+    "la pilule « Essayer sans publicité » du profil suit la même règle que le paywall du parcours (IMG_9614)",
+    arguments: [
+      (true, Result<Bool, PurchasesFailure>.success(false), true),
+      (true, .success(true), false),
+      (true, .failure(.failed(code: "networkError")), true),
+      (false, .success(false), false),
+    ]
+  )
+  func turboOffered(isAvailable: Bool, turbo: Result<Bool, PurchasesFailure>, expected: Bool) async {
+    let purchases = StubPurchases(isAvailable: isAvailable, turbo: turbo)
+
+    #expect(await TurboOffer.isOffered(by: purchases) == expected)
+  }
+
   @Test("un état Turbo illisible n'empêche pas d'ouvrir le paywall")
   func unknownTurboShowsPaywall() async {
     let recorder = EndingRecorder()
@@ -233,7 +253,7 @@ struct PersonalizationFinishTests {
     let purchases = StubPurchases(outcome: .success(.subscribed))
     let launch = try makeLaunch(variant: "variant_b")
     let store = PersonalizationRoot.paywallStore(
-      PersonalizationPaywall(purchases: purchases, launch: launch, links: noLinks),
+      PersonalizationPaywall(purchases: purchases, launch: launch, links: noLinks, analytics: SilentAnalytics()),
       onSubscribed: {}
     )
 

@@ -4,6 +4,7 @@ public enum ProfileText {
   static let myChannel = LocalizedStringResource("profile.myChannel", bundle: .module)
   public static let streamManager = LocalizedStringResource("profile.streamManager", bundle: .module)
   public static let analytics = LocalizedStringResource("profile.analytics", bundle: .module)
+  public static let tryAdFree = LocalizedStringResource("profile.tryAdFree", bundle: .module)
   static let settings = LocalizedStringResource("profile.settings", bundle: .module)
   static let noChannel = LocalizedStringResource("profile.noChannel", bundle: .module)
   static let failed = LocalizedStringResource("profile.failed", bundle: .module)
@@ -65,4 +66,17 @@ public enum ProfileText {
     (LocalizedStringResource("obs.keyframeInterval", bundle: .module), LocalizedStringResource("obs.keyframeInterval.value", bundle: .module)),
     (LocalizedStringResource("obs.maxBitrate", bundle: .module), LocalizedStringResource("obs.maxBitrate.value", bundle: .module)),
   ]
+
+  public static let aboutEmptyTitle = LocalizedStringResource("profile.about.empty.title", bundle: .module)
+  public static let aboutEmptyMessage = LocalizedStringResource("profile.about.empty.message", bundle: .module)
+
+  public static func title(of section: ProfileSection) -> LocalizedStringResource {
+    switch section {
+    case .about: LocalizedStringResource("profile.about", bundle: .module)
+    }
+  }
+}
+
+public enum ProfileSection: CaseIterable, Hashable, Sendable {
+  case about
 }

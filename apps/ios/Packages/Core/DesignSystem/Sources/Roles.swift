@@ -24,6 +24,10 @@ public enum TextRole: Sendable {
   case cardDetail
   case liveBadge
   case viewerCount
+  case feedOverlay
+  case feedChannelName
+  case feedTitle
+  case filterChip
   case tag
   case followerCount
   case followLabel
@@ -33,6 +37,8 @@ public enum TextRole: Sendable {
   case fieldText
   case profileEdit
   case profileAction
+  case profileAboutTitle
+  case profileAboutMessage
   case editSectionLabel
   case editRowTitle
   case editRowValue
@@ -64,6 +70,7 @@ public enum TextRole: Sendable {
   case dashboardHint
   case dashboardActivityEmpty
   case dashboardLink
+  case streamManagerTitle
   case activityTitle
   case activityEmptyTitle
   case activityEmptyMessage
@@ -88,11 +95,15 @@ public enum TextRole: Sendable {
     case .tabLabel: .tabLabel
     case .meta: .metaText
     case .profileDetail: .supportingText
-    case .widgetTitle: .actionLabel
+    case .widgetTitle: .liveBadge
     case .channelName: .displayText
     case .cardDetail: .supportingText
     case .liveBadge: .liveBadge
     case .viewerCount: .viewerCount
+    case .feedOverlay: .metaText
+    case .feedChannelName: .displayText
+    case .feedTitle: .viewerCount
+    case .filterChip: .headingText
     case .tag: .tagText
     case .followerCount: .viewerCount
     case .followLabel: .displayText
@@ -102,6 +113,8 @@ public enum TextRole: Sendable {
     case .fieldText: .supportingText
     case .profileEdit: .chatAuthorText
     case .profileAction: .headingText
+    case .profileAboutTitle: .actionLabel
+    case .profileAboutMessage: .supportingText
     case .editSectionLabel: .viewerCount
     case .editRowTitle: .actionLabel
     case .editRowValue: .viewerCount
@@ -133,6 +146,7 @@ public enum TextRole: Sendable {
     case .dashboardHint: .hintText
     case .dashboardActivityEmpty: .viewerCount
     case .dashboardLink: .cardAction
+    case .streamManagerTitle: .actionLabel
     case .activityTitle: .displayText
     case .activityEmptyTitle: .actionLabel
     case .activityEmptyMessage: .supportingText
@@ -222,6 +236,11 @@ public enum LayoutRole: Sendable {
   case profileActionRowGap
   case profileActionGlyph
   case profileActionGlyphGap
+  case profileTabTop
+  case profileAboutTop
+  case profileAboutIllustrationGap
+  case profileAboutTextGap
+  case profileAboutInset
   case categoryCardCoverWidth
   case categoryCardRadius
   case categoryCardBorderWidth
@@ -236,7 +255,20 @@ public enum LayoutRole: Sendable {
   case widgetHeaderHeight
   case widgetHeaderPadding
   case widgetRadius
-  case dockButtonSize
+  case widgetBorderWidth
+  case widgetFieldHeight
+  case widgetFieldRadius
+  case widgetFieldBorderWidth
+  case widgetFieldInset
+  case streamManagerHeaderHeight
+  case streamManagerHeaderBottom
+  case streamManagerTitleGap
+  case streamManagerItemGap
+  case streamManagerAvatarSize
+  case dockButtonWidth
+  case dockButtonHeight
+  case dockInset
+  case dockTop
   case dockGap
   case dockRingWidth
   case dockRingGap
@@ -251,6 +283,29 @@ public enum LayoutRole: Sendable {
   case cardAvatarGlyphInset
   case cardAvatarGap
   case cardLineGap
+  case feedBadgeInset
+  case feedBadgePaddingH
+  case feedBadgeDotGap
+  case feedViewersInset
+  case feedViewersPaddingH
+  case feedViewersRadius
+  case feedOverlayPaddingV
+  case feedInfoInset
+  case feedInfoTop
+  case feedAvatarSize
+  case feedAvatarGap
+  case feedTitleTop
+  case feedDividerTop
+  case feedDividerWidth
+  case feedDividerHeight
+  case feedDividerBottom
+  case filterChipsTop
+  case filterChipsBottom
+  case filterChipHeight
+  case filterChipPaddingH
+  case filterChipGap
+  case profileEditTop
+  case profileEditTrailing
   case editSectionLabelGap
   case editRowPadding
   case editRowLineGap
@@ -325,52 +380,6 @@ public enum LayoutRole: Sendable {
   case activityEmptyGap
   case activityActionHeight
   case activityActionPadding
-}
-
-public enum ActionButtonKind: Sendable {
-  case primary
-  case primaryOnAccent
-  case secondaryOnAccent
-  case secondary
-  case destructive
-  case cancel
-
-  public var background: ColorRole {
-    switch self {
-    case .primary: .accent
-    case .primaryOnAccent: .onAccent
-    case .secondaryOnAccent: .accentSubtle
-    case .secondary: .surfaceSecondary
-    case .destructive: .danger
-    case .cancel: .surfaceTertiary
-    }
-  }
-
-  public var foreground: ColorRole {
-    switch self {
-    case .primaryOnAccent: .onAccentStrong
-    case .primary, .secondaryOnAccent: .onAccent
-    case .secondary, .cancel: .textPrimary
-    case .destructive: .onDanger
-    }
-  }
-}
-
-public struct ActionButtonStyle: ButtonStyle {
-  private let kind: ActionButtonKind
-
-  public init(_ kind: ActionButtonKind) {
-    self.kind = kind
-  }
-
-  public func makeBody(configuration: Configuration) -> some View {
-    configuration.label
-      .font(TextRole.actionLabel.font)
-      .foregroundStyle(kind.foreground.color)
-      .frame(maxWidth: .infinity, minHeight: LayoutRole.actionHeight.points)
-      .background(
-        kind.background.color.opacity(configuration.isPressed ? 0.8 : 1),
-        in: RoundedRectangle(cornerRadius: LayoutRole.actionRadius.points)
-      )
-  }
+  case activityNotificationsIllustrationGap
+  case activityWhispersIllustrationGap
 }

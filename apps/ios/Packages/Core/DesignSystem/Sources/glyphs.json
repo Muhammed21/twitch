@@ -286,6 +286,81 @@
       }
     },
     {
+      "name": "closeCross",
+      "source": "docs/new-reference-ui/IMG_9618.PNG",
+      "rect": {
+        "x": 77,
+        "y": 191,
+        "width": 72,
+        "height": 72
+      },
+      "background": "#ffffff",
+      "opacity": {
+        "transparentAtOrBelow": 0,
+        "opaqueAtOrAbove": 721
+      }
+    },
+    {
+      "name": "streamCamera",
+      "source": "docs/new-reference-ui/IMG_9618.PNG",
+      "rect": {
+        "x": 176,
+        "y": 191,
+        "width": 72,
+        "height": 72
+      },
+      "background": "#ffffff",
+      "opacity": {
+        "transparentAtOrBelow": 0,
+        "opaqueAtOrAbove": 485
+      }
+    },
+    {
+      "name": "widgetMenu",
+      "source": "docs/new-reference-ui/IMG_9618.PNG",
+      "rect": {
+        "x": 1020,
+        "y": 337,
+        "width": 72,
+        "height": 72
+      },
+      "background": "#efeff1",
+      "opacity": {
+        "transparentAtOrBelow": 0,
+        "opaqueAtOrAbove": 675
+      }
+    },
+    {
+      "name": "emote",
+      "source": "docs/new-reference-ui/IMG_9618.PNG",
+      "rect": {
+        "x": 983,
+        "y": 2167,
+        "width": 72,
+        "height": 72
+      },
+      "background": "#ffffff",
+      "opacity": {
+        "transparentAtOrBelow": 100,
+        "opaqueAtOrAbove": 721
+      }
+    },
+    {
+      "name": "widgetChat",
+      "source": "docs/new-reference-ui/IMG_9618.PNG",
+      "rect": {
+        "x": 90,
+        "y": 2352,
+        "width": 72,
+        "height": 72
+      },
+      "background": "#ededef",
+      "opacity": {
+        "transparentAtOrBelow": 0,
+        "opaqueAtOrAbove": 669
+      }
+    },
+    {
       "name": "bellOutline",
       "source": "docs/new-reference-ui/IMG_9607.PNG",
       "rect": {
