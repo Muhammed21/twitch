@@ -11,10 +11,10 @@ struct JourneySummaryTests {
     let items = JourneySummary.items(followed: [], preferences: defaults, notifications: nil)
 
     #expect(items == [
-      SummaryItem(title: "Live language", value: "Français"),
-      SummaryItem(title: "Theme", value: "System"),
-      SummaryItem(title: "Autoplay", value: "On Wi-Fi and mobile data"),
-      SummaryItem(title: "Chat", value: "Medium"),
+      SummaryItem(title: shown(english: "Live language", french: "Langue des lives"), value: "Français"),
+      SummaryItem(title: shown(english: "Theme", french: "Thème"), value: shown(english: "System", french: "Système")),
+      SummaryItem(title: shown(english: "Autoplay", french: "Lecture automatique"), value: shown(english: "On Wi-Fi and mobile data", french: "En Wi-Fi et en données mobiles")),
+      SummaryItem(title: "Chat", value: shown(english: "Medium", french: "Moyenne")),
     ])
   }
 
@@ -31,14 +31,14 @@ struct JourneySummaryTests {
     let items = JourneySummary.items(followed: ["Fortnite", "Art"], preferences: preferences, notifications: .granted)
 
     #expect(items == [
-      SummaryItem(title: "Categories", value: "Fortnite, Art"),
-      SummaryItem(title: "Interests", value: "Cozy, RPG"),
-      SummaryItem(title: "Content", value: "2 labels hidden"),
-      SummaryItem(title: "Live language", value: "Français"),
-      SummaryItem(title: "Theme", value: "Dark"),
-      SummaryItem(title: "Autoplay", value: "Never autoplay videos"),
-      SummaryItem(title: "Notifications", value: "On"),
-      SummaryItem(title: "Chat", value: "Large, with timestamps"),
+      SummaryItem(title: shown(english: "Categories", french: "Catégories"), value: "Fortnite, Art"),
+      SummaryItem(title: shown(english: "Interests", french: "Centres d'intérêt"), value: "Cozy, RPG"),
+      SummaryItem(title: shown(english: "Content", french: "Contenu"), value: shown(english: "2 labels hidden", french: "2 étiquettes masquées")),
+      SummaryItem(title: shown(english: "Live language", french: "Langue des lives"), value: "Français"),
+      SummaryItem(title: shown(english: "Theme", french: "Thème"), value: shown(english: "Dark", french: "Sombre")),
+      SummaryItem(title: shown(english: "Autoplay", french: "Lecture automatique"), value: shown(english: "Never autoplay videos", french: "Ne jamais lire automatiquement les vidéos")),
+      SummaryItem(title: "Notifications", value: shown(english: "On", french: "Activé")),
+      SummaryItem(title: "Chat", value: shown(english: "Large, with timestamps", french: "Grande, avec horodatage")),
     ])
   }
 
@@ -47,7 +47,7 @@ struct JourneySummaryTests {
     let denied = JourneySummary.items(followed: [], preferences: defaults, notifications: .denied)
     let undecided = JourneySummary.items(followed: [], preferences: defaults, notifications: .notDetermined)
 
-    #expect(denied.contains(SummaryItem(title: "Notifications", value: "Off")))
+    #expect(denied.contains(SummaryItem(title: "Notifications", value: shown(english: "Off", french: "Désactivé"))))
     #expect(!undecided.map(\.title).contains("Notifications"))
   }
 
@@ -55,6 +55,6 @@ struct JourneySummaryTests {
   func singleLabel() {
     let preferences = defaults.applying(.content(ContentPreferences(hidden: [.gambling], blursSexualThemes: true)))
 
-    #expect(JourneySummary.items(followed: [], preferences: preferences, notifications: nil).first == SummaryItem(title: "Content", value: "1 label hidden"))
+    #expect(JourneySummary.items(followed: [], preferences: preferences, notifications: nil).first == SummaryItem(title: shown(english: "Content", french: "Contenu"), value: shown(english: "1 label hidden", french: "1 étiquette masquée")))
   }
 }

@@ -70,11 +70,13 @@ public struct CategoryTile: View {
   private let name: String
   private let viewers: String?
   private let coverURL: URL?
+  private let tag: String?
 
-  public init(name: String, viewers: String?, coverURL: URL?) {
+  public init(name: String, viewers: String?, coverURL: URL?, tag: String? = nil) {
     self.name = name
     self.viewers = viewers
     self.coverURL = coverURL
+    self.tag = tag
   }
 
   public var body: some View {
@@ -86,14 +88,19 @@ public struct CategoryTile: View {
         .foregroundStyle(ColorRole.textPrimary.color)
         .multilineTextAlignment(.leading)
       if let viewers {
-        HStack(spacing: LayoutRole.liveDotGap.points) {
+        HStack(spacing: LayoutRole.categoryTileDotGap.points) {
           Circle()
             .fill(CategoryTileStyle.liveDot.color)
             .frame(width: LayoutRole.liveDotSize.points, height: LayoutRole.liveDotSize.points)
           Text(viewers)
-            .font(TextRole.meta.font)
+            .font(TextRole.categoryViewers.font)
             .foregroundStyle(CategoryTileStyle.viewers.color)
         }
+      }
+      if let tag {
+        CategoryTag(tag)
+          .lineLimit(1)
+          .padding(.top, LayoutRole.categoryTileTagTop.points)
       }
     }
     .frame(maxWidth: .infinity, alignment: .leading)
