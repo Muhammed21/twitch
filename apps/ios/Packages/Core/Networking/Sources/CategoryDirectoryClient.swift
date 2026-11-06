@@ -34,7 +34,8 @@ extension BrowseCategory {
       name: category.name,
       imageURL: category.imageUrl.flatMap(URL.init(string:)),
       liveCount: category.liveCount,
-      viewers: try? ViewerCount(category.viewerCount)
+      viewers: try? ViewerCount(category.viewerCount),
+      tags: category.tags
     )
   }
 }

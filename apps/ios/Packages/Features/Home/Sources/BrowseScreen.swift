@@ -45,7 +45,8 @@ private struct CategoryGrid: View {
               CategoryTile(
                 name: category.name,
                 viewers: BrowseText.viewers(category.viewers, locale: locale),
-                coverURL: category.imageURL
+                coverURL: category.imageURL,
+                tag: category.tags.first
               )
             }
             .buttonStyle(.plain)
