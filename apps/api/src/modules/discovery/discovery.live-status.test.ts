@@ -234,6 +234,22 @@ describe("GET /v1/channels/{channelId}/live-status (canal 2, ADR 0004 §2)", () 
     });
   });
 
+  it("envoie la vignette d'une chaîne en live", async () => {
+    await withLiveStatus(async ({ url, projection }) => {
+      const thumbnailUrl = "http://192.168.4.233:3002/hls/channels/provider/thumbnail.jpg";
+      projection.set({ channelId: LIVE_CHANNEL, startedAt: STARTED_AT, thumbnailUrl });
+      const stream = await openStream(`${url}/${LIVE_CHANNEL}/live-status`);
+
+      expect((await stream.nextEvent())?.data).toEqual({
+        channelId: LIVE_CHANNEL,
+        live: true,
+        startedAt: STARTED_AT.toISOString(),
+        thumbnailUrl,
+      });
+      stream.abort();
+    });
+  });
+
   it("garde la connexion ouverte par un commentaire SSE périodique", async () => {
     await withLiveStatus(async ({ url }) => {
       const stream = await openStream(`${url}/${LIVE_CHANNEL}/live-status`);

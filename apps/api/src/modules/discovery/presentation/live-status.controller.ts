@@ -28,10 +28,11 @@ const toLiveStatus = ({
   channelId,
   startedAt,
   viewerCount,
+  thumbnailUrl,
 }: ChannelLiveStatus): z.input<typeof responses.LiveStatus> =>
   startedAt === undefined
     ? { channelId, live: false }
-    : { channelId, live: true, startedAt: startedAt.toISOString(), viewerCount };
+    : { channelId, live: true, startedAt: startedAt.toISOString(), viewerCount, thumbnailUrl };
 
 @Controller("channels")
 @ApiExtraModels(LiveStatus)

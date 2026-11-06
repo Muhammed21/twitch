@@ -25,6 +25,7 @@ import {
 } from "./application/list-lives.ts";
 import { withLiveCategories } from "./application/live-categories.ts";
 import { createLiveStatusHub, type LiveStatusHub } from "./application/live-status-hub.ts";
+import { withThumbnails } from "./application/live-status-thumbnails.ts";
 import { type ViewerCountReader, withViewerCounts } from "./application/live-status-viewers.ts";
 import { projectDiscoveryEvent } from "./application/project-discovery-event.ts";
 import {
@@ -170,13 +171,22 @@ export class DiscoveryModule implements OnModuleInit, OnModuleDestroy {
         {
           provide: LIVE_STATUS_HUB,
           useValue: createLiveStatusHub(
-            withViewerCounts({
-              statuses: prismaLiveStatusReader(dependencies.prisma),
-              viewerCounts: dependencies.viewerCounts,
-              onViewerCountFailure: (error) =>
+            withThumbnails({
+              statuses: withViewerCounts({
+                statuses: prismaLiveStatusReader(dependencies.prisma),
+                viewerCounts: dependencies.viewerCounts,
+                onViewerCountFailure: (error) =>
+                  writeLog(dependencies.logSink, {
+                    level: "error",
+                    msg: "lecture du nombre de viewers en échec",
+                    ...errorDetails(error),
+                  }),
+              }),
+              thumbnailUrls: dependencies.thumbnailUrls,
+              onThumbnailFailure: (error) =>
                 writeLog(dependencies.logSink, {
                   level: "error",
-                  msg: "lecture du nombre de viewers en échec",
+                  msg: "lecture de la vignette du statut de live en échec",
                   ...errorDetails(error),
                 }),
             }),
