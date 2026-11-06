@@ -20,11 +20,16 @@ public struct DashboardStatItem: Identifiable, Sendable {
   public let id: String
   public let value: String
   public let label: String
+  public let spokenValue: String
 
-  public init(id: String, value: String, label: String) {
+  public var accessibilityLabel: String { label }
+  public var accessibilityValue: String { spokenValue }
+
+  public init(id: String, value: String, label: String, spokenValue: String? = nil) {
     self.id = id
     self.value = value
     self.label = label
+    self.spokenValue = spokenValue ?? value
   }
 }
 
@@ -45,10 +50,12 @@ public struct DashboardStatsCard: View {
           Text(verbatim: item.label)
             .font(TextRole.dashboardStatLabel.font)
             .foregroundStyle(DashboardStyle.statLabel.color)
-            .lineLimit(1)
+            .readableLineLimit(1)
         }
         .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: item.accessibilityLabel))
+        .accessibilityValue(Text(verbatim: item.accessibilityValue))
       }
     }
     .padding(.horizontal, LayoutRole.dashboardStatsInset.points)
@@ -166,7 +173,7 @@ private struct DashboardCapsuleButton: View {
       Text(verbatim: label)
         .font(TextRole.dashboardStreamButton.font)
         .foregroundStyle(foreground.color)
-        .lineLimit(1)
+        .readableLineLimit(1)
         .frame(maxWidth: .infinity)
         .frame(minHeight: LayoutRole.dashboardStreamButtonHeight.points)
         .background(background.color, in: Capsule())

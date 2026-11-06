@@ -55,9 +55,18 @@ public struct DashboardHomeScreen: View {
       DashboardStatItem(
         id: "\(stat)",
         value: value(of: stat, status: status, now: now, locale: locale) ?? String(localized: DashboardText.unavailableStat),
-        label: String(localized: DashboardText.label(of: stat))
+        label: String(localized: DashboardText.label(of: stat)),
+        spokenValue: spoken(stat, status: status, now: now, locale: locale)
+          ?? String(localized: DashboardText.unavailableStatSpoken)
       )
     }
+  }
+
+  private nonisolated static func spoken(_ stat: DashboardStat, status: LiveStatus?, now: Date, locale: Locale) -> String? {
+    guard stat == .streamTime else { return value(of: stat, status: status, now: now, locale: locale) }
+    guard case let .live(_, startedAt) = status, let start = startedAt else { return nil }
+    return Duration.seconds(max(0, Int(now.timeIntervalSince(start))))
+      .formatted(.units(allowed: [.hours, .minutes, .seconds], width: .wide).locale(locale))
   }
 
   private nonisolated static func value(of stat: DashboardStat, status: LiveStatus?, now: Date, locale: Locale) -> String? {
