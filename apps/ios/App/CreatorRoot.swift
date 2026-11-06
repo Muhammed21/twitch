@@ -55,7 +55,7 @@ struct CreatorRoot: View {
         await liveFigures.follow(ownedChannel)
       }
       .sheet(isPresented: $isEditingStreamInfo) {
-        EditStreamInfoSheet(initialTitle: myChannel.title, initialCategory: myChannel.category)
+        EditStreamInfoSheet(initial: myChannel.proposedInfo)
       }
       DashboardContentScreen()
         .toolbar(.hidden, for: .tabBar)

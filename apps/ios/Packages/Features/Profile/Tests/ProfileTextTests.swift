@@ -105,7 +105,8 @@ struct ProfileTextTests {
   @Test("en français, le sélecteur de catégorie reprend les libellés de docs/new-reference-ui/IMG_9628")
   func frenchCategoryPicker() {
     #expect(french(ProfileText.category) == "Catégorie")
-    #expect(french(ProfileText.chooseCategory) == "Rechercher une catégorie")
+    #expect(french(ProfileText.chooseCategory) == "Chercher une catégorie")
+    #expect(french(ProfileText.categoryHint) == "Tout contenu doit respecter nos lignes de conduite et être catégorisé selon celles-ci.")
     #expect(french(ProfileText.searchCategories) == "Rechercher")
     #expect(french(ProfileText.resetKeyTitle) == "Réinitialiser votre clé de stream\u{00A0}?")
   }
