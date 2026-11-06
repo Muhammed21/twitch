@@ -5,7 +5,12 @@ import SwiftUI
 
 struct HeaderLine: Equatable {
   let isLive: Bool
-  let viewers: String?
+  let viewers: HeaderViewers?
+}
+
+struct HeaderViewers: Equatable {
+  let shown: String
+  let count: Int
 }
 
 extension HeaderLine {
@@ -14,7 +19,12 @@ extension HeaderLine {
       self.init(isLive: false, viewers: nil)
       return
     }
-    self.init(isLive: true, viewers: count.map { $0.value.formatted(.number.notation(.compactName).locale(locale)) })
+    self.init(
+      isLive: true,
+      viewers: count.map {
+        HeaderViewers(shown: $0.value.formatted(.number.notation(.compactName).locale(locale)), count: $0.value)
+      }
+    )
   }
 }
 
@@ -42,10 +52,10 @@ public struct ChannelHeader: View {
       }
       Spacer(minLength: 0)
       if let viewers = line.viewers {
-        Label(viewers, systemImage: "person")
+        Label(viewers.shown, systemImage: "person")
           .font(TextRole.body.font)
           .foregroundStyle(ColorRole.textSecondary.color)
-          .accessibilityLabel(ChannelText.viewers(viewers))
+          .accessibilityLabel(ChannelText.viewers(viewers.count, shown: viewers.shown))
           .accessibilityIdentifier("channel.viewers")
       }
     }
@@ -63,7 +73,7 @@ enum ChannelText {
     channelNotFound ? String(localized: "channel.notFound", bundle: .module) : title ?? ""
   }
 
-  static func viewers(_ count: String) -> String {
-    String(format: String(localized: "channel.viewers", bundle: .module), count)
+  static func viewers(_ count: Int, shown: String) -> String {
+    String(localized: "channel.viewers \(count) \(shown)", bundle: .module)
   }
 }

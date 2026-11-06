@@ -33,6 +33,10 @@ struct PersonalizationTextTests {
     #expect(PersonalizationText.retry == shown(english: "Try Again", french: "Réessayer"))
     #expect(try PersonalizationText.viewers(ViewerCount(12400), locale: Locale(identifier: "en_US")) == shown(english: "12K viewers", french: "12K spectateurs"))
     #expect(PersonalizationText.viewers(nil, locale: Locale(identifier: "en_US")) == nil)
+    #expect(
+      try PersonalizationText.viewers(ViewerCount(1), locale: Locale(identifier: "en_US"))
+        == shown(english: "1 viewer", french: "1 spectateur")
+    )
   }
 
   @Test("la page 3 propose des centres d'intérêt")

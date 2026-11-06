@@ -257,18 +257,62 @@
         }
       }
     },
-    "journey.categories.viewers" : {
+    "journey.categories.viewers %lld %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ viewers"
+            "value" : "%#@viewers@"
+          },
+          "substitutions" : {
+            "viewers" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%2$@ viewer"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%2$@ viewers"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ spectateurs"
+            "value" : "%#@viewers@"
+          },
+          "substitutions" : {
+            "viewers" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%2$@ spectateur"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%2$@ spectateurs"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }

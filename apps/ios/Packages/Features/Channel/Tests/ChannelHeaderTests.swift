@@ -12,7 +12,9 @@ struct ChannelHeaderTests {
     arguments: [(0, "0"), (42, "42"), (999, "999"), (52300, "52K"), (1_250_000, "1.2M")]
   )
   func compactCount(count: Int, expected: String) throws {
-    #expect(try HeaderLine(status: .live(viewers: ViewerCount(count)), locale: english).viewers == expected)
+    let line = try HeaderLine(status: .live(viewers: ViewerCount(count)), locale: english)
+
+    #expect(line.viewers == HeaderViewers(shown: expected, count: count))
   }
 
   @Test("en live, l'en-tête montre le badge live ; hors live ou inconnu, ni badge ni compteur")
@@ -39,6 +41,11 @@ struct ChannelHeaderAccessibilityTests {
 
   @Test("le compteur se lit avec son unité")
   func viewersSpoken() {
-    #expect(ChannelText.viewers("52K") == shown(english: "52K viewers", french: "52K spectateurs"))
+    #expect(ChannelText.viewers(52300, shown: "52K") == shown(english: "52K viewers", french: "52K spectateurs"))
+  }
+
+  @Test("un seul spectateur s'accorde au singulier")
+  func singleViewer() {
+    #expect(ChannelText.viewers(1, shown: "1") == shown(english: "1 viewer", french: "1 spectateur"))
   }
 }

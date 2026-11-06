@@ -148,7 +148,8 @@ public enum HomeCardText {
 
   public static func viewers(_ count: ViewerCount?, locale: Locale) -> String? {
     count.map {
-      String(format: String(localized: "home.live.viewers", bundle: .module), $0.value.formatted(.number.notation(.compactName).locale(locale)))
+      let shown = $0.value.formatted(.number.notation(.compactName).locale(locale))
+      return String(localized: "home.live.viewers \($0.value) \(shown)", bundle: .module)
     }
   }
 
