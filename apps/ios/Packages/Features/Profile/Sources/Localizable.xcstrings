@@ -49,6 +49,118 @@
         }
       }
     },
+    "contentLabel.drugs" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drugs, Intoxication, or Excessive Tobacco Use"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drogues, intoxication ou consommation excessive de tabac"
+          }
+        }
+      }
+    },
+    "contentLabel.gambling" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gambling"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jeux d'argent"
+          }
+        }
+      }
+    },
+    "contentLabel.mature" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mature-Rated Games"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jeux classés pour adultes"
+          }
+        }
+      }
+    },
+    "contentLabel.politics" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Politics and Sensitive Social Issues"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Politique et questions sociales sensibles"
+          }
+        }
+      }
+    },
+    "contentLabel.profanity" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Significant Profanity or Vulgarity"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grossièretés ou vulgarité marquées"
+          }
+        }
+      }
+    },
+    "contentLabel.sexualThemes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sexual Themes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thèmes sexuels"
+          }
+        }
+      }
+    },
+    "contentLabel.violent" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Violent and Graphic Depictions"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Représentations violentes et crues"
+          }
+        }
+      }
+    },
     "editProfile.about" : {
       "localizations" : {
         "en" : {
@@ -429,6 +541,38 @@
         }
       }
     },
+    "editStreamInfo.branded" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Branded Content"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contenu promotionnel"
+          }
+        }
+      }
+    },
+    "editStreamInfo.branded.hint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Let viewers know if your stream features branded content. This includes paid product placement, sponsorship or other commercial relationships."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Informez les viewers si votre stream comporte du contenu promotionnel. Il peut s'agir de placement de produit rémunéré, de sponsorship ou d'autres relations commerciales."
+          }
+        }
+      }
+    },
     "editStreamInfo.cancel" : {
       "localizations" : {
         "en" : {
@@ -472,7 +616,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rechercher une catégorie"
+            "value" : "Chercher une catégorie"
           }
         }
       }
@@ -488,7 +632,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tout contenu doit respecter nos règles et être classé dans la bonne catégorie."
+            "value" : "Tout contenu doit respecter nos lignes de conduite et être catégorisé selon celles-ci."
           }
         }
       }
@@ -509,6 +653,54 @@
         }
       }
     },
+    "editStreamInfo.classification" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Content Classification"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Classification de contenu"
+          }
+        }
+      }
+    },
+    "editStreamInfo.classification.hint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You must specify if your content isn't suitable for some viewers."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous devez préciser si votre contenu n'est pas adapté à certains viewers."
+          }
+        }
+      }
+    },
+    "editStreamInfo.classification.placeholder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select content descriptors"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sélectionner les descripteurs de contenu"
+          }
+        }
+      }
+    },
     "editStreamInfo.done" : {
       "localizations" : {
         "en" : {
@@ -525,6 +717,70 @@
         }
       }
     },
+    "editStreamInfo.language" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Language"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Langue"
+          }
+        }
+      }
+    },
+    "editStreamInfo.markers" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markers"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repères"
+          }
+        }
+      }
+    },
+    "editStreamInfo.markers.add" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Marker"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter un repère"
+          }
+        }
+      }
+    },
+    "editStreamInfo.markers.placeholder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Description (optional)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Description (facultative)"
+          }
+        }
+      }
+    },
     "editStreamInfo.navigationTitle" : {
       "localizations" : {
         "en" : {
@@ -537,6 +793,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Modifier les infos du stream"
+          }
+        }
+      }
+    },
+    "editStreamInfo.notifications" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Go Live Notification"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications de live"
+          }
+        }
+      }
+    },
+    "editStreamInfo.notifications.hint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can only send one notification per stream."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous ne pouvez envoyer qu'une notification par stream."
+          }
+        }
+      }
+    },
+    "editStreamInfo.notifications.placeholder %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ went live!"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ a commencé à diffuser en live !"
           }
         }
       }
@@ -565,6 +869,150 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "editStreamInfo.save" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistrer"
+          }
+        }
+      }
+    },
+    "editStreamInfo.share" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share link to channel"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partager le lien vers la chaîne"
+          }
+        }
+      }
+    },
+    "editStreamInfo.share.action" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partager"
+          }
+        }
+      }
+    },
+    "editStreamInfo.tags" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tags"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tags"
+          }
+        }
+      }
+    },
+    "editStreamInfo.tags.hint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add up to 10 tags. Each tag can be 25 characters max with no spaces or special characters."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoutez jusqu'à 10 tags. Chaque tag peut comporter 25 caractères maximum sans espaces ni caractères spéciaux."
+          }
+        }
+      }
+    },
+    "editStreamInfo.tags.placeholder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter your tag"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saisissez votre tag"
+          }
+        }
+      }
+    },
+    "editStreamInfo.tags.rejected" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This tag can't be added."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce tag ne peut pas être ajouté."
+          }
+        }
+      }
+    },
+    "editStreamInfo.tags.remove %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retirer %@"
+          }
+        }
+      }
+    },
+    "editStreamInfo.title.placeholder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Give your stream a title"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Donnez un titre à votre stream"
           }
         }
       }
@@ -693,6 +1141,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "H.264"
+          }
+        }
+      }
+    },
+    "profile.about" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À propos"
+          }
+        }
+      }
+    },
+    "profile.about.empty.message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're more than just a profile… tell us everything!"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous êtes plus qu'un simple profil… racontez-nous tout !"
+          }
+        }
+      }
+    },
+    "profile.about.empty.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tell us more!"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dites-nous-en plus !"
           }
         }
       }

@@ -42,6 +42,21 @@ struct ProfileTextTests {
     #expect(french(ProfileText.tryAdFree) == "Essayer sans publicité")
   }
 
+  @Test("un seul onglet sous l'en-tête, « À propos » : Accueil, Clips et Vidéos attendent le contexte media (IMG_9614 à 9617)")
+  func sections() {
+    #expect(ProfileSection.allCases == [.about])
+    #expect(english(ProfileText.title(of: .about)) == "About")
+    #expect(french(ProfileText.title(of: .about)) == "À propos")
+  }
+
+  @Test("« À propos » sans bio invite à se présenter (IMG_9615)")
+  func aboutEmpty() {
+    #expect(english(ProfileText.aboutEmptyTitle) == "Tell us more!")
+    #expect(french(ProfileText.aboutEmptyTitle) == "Dites-nous-en plus !")
+    #expect(english(ProfileText.aboutEmptyMessage) == "You're more than just a profile… tell us everything!")
+    #expect(french(ProfileText.aboutEmptyMessage) == "Vous êtes plus qu'un simple profil… racontez-nous tout !")
+  }
+
   @Test("les réglages OBS recommandés : H.264, AAC, image clé toutes les 2 s, 6 000 kb/s au plus")
   func obsSettings() {
     let rows = ProfileText.obsSettings.map { "\(english($0.label)): \(english($0.value))" }
@@ -90,7 +105,8 @@ struct ProfileTextTests {
   @Test("en français, le sélecteur de catégorie reprend les libellés de docs/new-reference-ui/IMG_9628")
   func frenchCategoryPicker() {
     #expect(french(ProfileText.category) == "Catégorie")
-    #expect(french(ProfileText.chooseCategory) == "Rechercher une catégorie")
+    #expect(french(ProfileText.chooseCategory) == "Chercher une catégorie")
+    #expect(french(ProfileText.categoryHint) == "Tout contenu doit respecter nos lignes de conduite et être catégorisé selon celles-ci.")
     #expect(french(ProfileText.searchCategories) == "Rechercher")
     #expect(french(ProfileText.resetKeyTitle) == "Réinitialiser votre clé de stream\u{00A0}?")
   }

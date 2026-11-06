@@ -30,7 +30,7 @@ public struct StreamManagerScreen: View {
     .toolbar(.hidden, for: .navigationBar)
     .task { await store.loadIfNeeded() }
     .onDisappear { store.leave() }
-    .sheet(isPresented: $isEditingTitle) { EditStreamInfoSheet(initialTitle: store.title, initialCategory: store.category) }
+    .sheet(isPresented: $isEditingTitle) { EditStreamInfoSheet(initial: store.proposedInfo) }
     .alert(Text(ProfileText.resetKeyTitle), isPresented: $isConfirmingReset) {
       Button(role: .destructive) {
         Task { await store.rotateKey() }
@@ -176,76 +176,5 @@ public struct StreamManagerScreen: View {
     Text(text)
       .font(TextRole.body.font)
       .foregroundStyle(ColorRole.textSecondary.color)
-  }
-}
-
-public struct EditStreamInfoSheet: View {
-  @Environment(MyChannelStore.self) private var store
-  @Environment(\.dismiss) private var dismiss
-  @State private var draft: String
-  @State private var chosen: ChannelCategory?
-  @State private var isSaving = false
-  @State private var saveFailed = false
-
-  public init(initialTitle: String, initialCategory: ChannelCategory?) {
-    _draft = State(initialValue: initialTitle)
-    _chosen = State(initialValue: initialCategory)
-  }
-
-  public var body: some View {
-    NavigationStack {
-      VStack(alignment: .leading, spacing: LayoutRole.chatInset.points) {
-        HStack {
-          Text(ProfileText.title)
-            .font(TextRole.display.font)
-            .foregroundStyle(ColorRole.textPrimary.color)
-          Spacer(minLength: 0)
-          Text(ProfileText.remaining(MyChannelStore.remaining(in: draft)))
-            .font(TextRole.body.font)
-            .foregroundStyle(ColorRole.textSecondary.color)
-        }
-        TextField(text: $draft) { Text(ProfileText.title) }
-          .padding(LayoutRole.composerPadding.points)
-          .background(ColorRole.surfaceSecondary.color, in: RoundedRectangle(cornerRadius: LayoutRole.composerRadius.points))
-          .accessibilityIdentifier("editStreamInfo.title")
-        if saveFailed {
-          Text(ProfileText.notice(.titleFailed))
-            .font(TextRole.body.font)
-            .foregroundStyle(ColorRole.textSecondary.color)
-            .accessibilityIdentifier("editStreamInfo.notice")
-        }
-        CategoryField(chosen: $chosen)
-          .padding(.top, LayoutRole.screenInset.points)
-        Spacer(minLength: 0)
-      }
-      .padding(LayoutRole.screenInset.points)
-      .background(ColorRole.background.color.ignoresSafeArea())
-      .navigationTitle(Text(ProfileText.editStreamInfo))
-      .navigationBarTitleDisplayMode(.inline)
-      .toolbar {
-        ToolbarItem(placement: .cancellationAction) {
-          Button(ProfileText.cancel) { dismiss() }
-        }
-        ToolbarItem(placement: .confirmationAction) {
-          Button(ProfileText.done) { save() }
-            .disabled(isSaving || MyChannelStore.remaining(in: draft) < 0)
-            .accessibilityIdentifier("editStreamInfo.done")
-        }
-      }
-    }
-  }
-
-  private func save() {
-    isSaving = true
-    saveFailed = false
-    Task {
-      var info = store.info
-      info.title = draft
-      info.category = chosen
-      let saved = await store.save(info)
-      saveFailed = !saved
-      isSaving = false
-      if saved { dismiss() }
-    }
   }
 }

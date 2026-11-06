@@ -9,25 +9,24 @@ public enum ProfileHeaderStyle {
   public static let onBannerControl = ColorRole.onMedia
   public static let action = ColorRole.surfaceSecondary
   public static let onAction = ColorRole.textPrimary
+  public static let aboutTitle = ColorRole.textSecondary
+  public static let aboutMessage = ColorRole.textSecondary
 }
 
 public struct ProfileHeader: View {
   private let name: String
   private let lastLive: String?
-  private let bio: String?
   private let settings: ProfileHeaderAction?
   private let edit: ProfileHeaderAction?
 
   public init(
     name: String,
     lastLive: String?,
-    bio: String?,
     settings: ProfileHeaderAction? = nil,
     edit: ProfileHeaderAction? = nil
   ) {
     self.name = name
     self.lastLive = lastLive
-    self.bio = bio
     self.settings = settings
     self.edit = edit
   }
@@ -55,14 +54,6 @@ public struct ProfileHeader: View {
         .padding(.top, LayoutRole.profileNameTop.points)
       }
       .padding(.horizontal, LayoutRole.screenInset.points)
-      if let bio {
-        Text(bio)
-          .font(TextRole.profileDetail.font)
-          .foregroundStyle(ProfileHeaderStyle.bio.color)
-          .padding(.top, LayoutRole.profileBioTop.points)
-          .padding(.horizontal, LayoutRole.screenInset.points)
-          .accessibilityIdentifier("profile.bio")
-      }
     }
     .padding(.bottom, LayoutRole.profileHeaderBottom.points)
     .frame(maxWidth: .infinity, alignment: .leading)
