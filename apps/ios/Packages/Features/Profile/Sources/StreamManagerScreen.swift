@@ -86,6 +86,7 @@ public struct StreamManagerScreen: View {
       }
       WidgetDock(selection: $widget, items: Self.dock)
     }
+    .announcing(StreamManagerSpoken.announcement(for: store.notice))
   }
 
   private static let dock = StreamManagerWidget.allCases.map {
@@ -108,10 +109,12 @@ public struct StreamManagerScreen: View {
 
   private var titleCard: some View {
     VStack(alignment: .leading, spacing: 0) {
-      field(ProfileText.title) {
-        Text(store.title)
-          .accessibilityIdentifier("streamManager.channelTitle")
-        Spacer(minLength: 0)
+      field(
+        ProfileText.title,
+        value: store.title,
+        spoken: StreamManagerSpoken.title(store.title),
+        identifier: "streamManager.channelTitle"
+      ) {
         Button(ProfileText.edit) { isEditingTitle = true }
           .accessibilityIdentifier("streamManager.editTitle")
       }
@@ -120,11 +123,12 @@ public struct StreamManagerScreen: View {
 
   private var keyCard: some View {
     VStack(alignment: .leading, spacing: 0) {
-      field(ProfileText.streamKey) {
-        Text(store.streamKey?.revealed ?? ProfileText.masked)
-          .textSelection(.disabled)
-          .accessibilityIdentifier("streamManager.streamKey")
-        Spacer(minLength: 0)
+      field(
+        ProfileText.streamKey,
+        value: store.streamKey?.revealed ?? ProfileText.masked,
+        spoken: StreamManagerSpoken.key(store.streamKey?.revealed),
+        identifier: "streamManager.streamKey"
+      ) {
         if store.streamKey == nil {
           Button(ProfileText.show) { Task { await store.revealKey() } }
             .accessibilityIdentifier("streamManager.showKey")
@@ -137,10 +141,7 @@ public struct StreamManagerScreen: View {
           .accessibilityIdentifier("streamManager.resetKey")
       }
       if let ingestURL = store.streamKey?.ingestURL {
-        field(ProfileText.server) {
-          Text(ingestURL.absoluteString)
-          Spacer(minLength: 0)
-        }
+        field(ProfileText.server, value: ingestURL.absoluteString) {}
       }
     }
   }
@@ -148,25 +149,34 @@ public struct StreamManagerScreen: View {
   private var obsCard: some View {
     VStack(alignment: .leading, spacing: 0) {
       ForEach(Array(ProfileText.obsSettings.enumerated()), id: \.offset) { _, setting in
-        field(setting.label) {
-          Text(setting.value)
-          Spacer(minLength: 0)
-        }
+        field(setting.label, value: String(localized: setting.value)) {}
       }
     }
   }
 
   private func field(
     _ label: LocalizedStringResource,
-    @ViewBuilder content: () -> some View
+    value: String,
+    spoken: String? = nil,
+    identifier: String? = nil,
+    @ViewBuilder actions: () -> some View
   ) -> some View {
     VStack(alignment: .leading, spacing: LayoutRole.heroRowGap.points) {
       Text(label)
         .font(TextRole.body.font)
         .foregroundStyle(ColorRole.textSecondary.color)
-      HStack(spacing: LayoutRole.chatInset.points) { content() }
-        .font(TextRole.display.font)
-        .foregroundStyle(ColorRole.textPrimary.color)
+        .accessibilityHidden(true)
+      HStack(spacing: LayoutRole.chatInset.points) {
+        Text(verbatim: value)
+          .textSelection(.disabled)
+          .accessibilityLabel(Text(label))
+          .accessibilityValue(spoken ?? value)
+          .accessibilityIdentifier(identifier ?? "")
+        Spacer(minLength: 0)
+        actions()
+      }
+      .font(TextRole.display.font)
+      .foregroundStyle(ColorRole.textPrimary.color)
     }
     .padding(.horizontal, LayoutRole.menuRowPadding.points)
     .frame(maxWidth: .infinity, minHeight: LayoutRole.menuRowHeight.points, alignment: .leading)
