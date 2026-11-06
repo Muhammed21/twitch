@@ -68,10 +68,8 @@ struct TurboPage: View {
       Text(PaywallText.legal(terms: links.terms, privacy: links.privacy))
         .tint(ColorRole.link.color)
       Text(PaywallText.billing(package.period))
-      if let notice = store.notice {
-        Text(PaywallText.notice(notice))
-          .foregroundStyle(ColorRole.danger.color)
-          .accessibilityIdentifier("paywall.notice")
+      if let notice = store.notice, !notice.isAboutRestore {
+        noticeText(notice)
       }
     }
     .font(TextRole.paywallFinePrint.font)
@@ -94,13 +92,26 @@ struct TurboPage: View {
   }
 
   private var restore: some View {
-    Button(String(localized: PaywallText.restore)) { Task { await store.restore() } }
-      .font(TextRole.paywallFinePrint.font)
-      .tint(ColorRole.link.color)
-      .disabled(store.purchasing != nil || store.isRestoring)
-      .accessibilityIdentifier("paywall.restore")
-      .padding(.top, PaywallLayout.perksTop.points)
-      .padding(.bottom, LayoutRole.screenInset.points)
+    VStack(spacing: PaywallLayout.finePrintGap.points) {
+      Button(String(localized: PaywallText.restore)) { Task { await store.restore() } }
+        .tint(ColorRole.link.color)
+        .disabled(store.purchasing != nil || store.isRestoring)
+        .accessibilityIdentifier("paywall.restore")
+      if let notice = store.notice, notice.isAboutRestore {
+        noticeText(notice)
+      }
+    }
+    .font(TextRole.paywallFinePrint.font)
+    .multilineTextAlignment(.center)
+    .padding(.top, PaywallLayout.perksTop.points)
+    .padding(.horizontal, LayoutRole.screenInset.points)
+    .padding(.bottom, LayoutRole.screenInset.points)
+  }
+
+  private func noticeText(_ notice: PaywallStore.Notice) -> some View {
+    Text(PaywallText.notice(notice))
+      .foregroundStyle(ColorRole.danger.color)
+      .accessibilityIdentifier("paywall.notice")
   }
 }
 
