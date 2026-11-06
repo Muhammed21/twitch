@@ -102,7 +102,7 @@ let package = Package(
     ),
     .testTarget(
       name: "PreferencesTests",
-      dependencies: ["Preferences", "Domain"],
+      dependencies: ["Preferences", "AnalyticsTesting", "Domain"],
       path: "Core/Preferences/Tests",
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),
@@ -193,7 +193,7 @@ let package = Package(
     ),
     .testTarget(
       name: "OnboardingTests",
-      dependencies: ["Onboarding", "Domain", "Preferences", "DesignSystem"],
+      dependencies: ["Onboarding", "AnalyticsTesting", "Domain", "Preferences", "DesignSystem"],
       path: "Features/Onboarding/Tests",
       swiftSettings: [.swiftLanguageMode(.v6)]
     ),

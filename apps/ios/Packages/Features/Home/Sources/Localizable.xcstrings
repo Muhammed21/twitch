@@ -17,6 +17,22 @@
         }
       }
     },
+    "browse.category.hint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens the category."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre la catégorie."
+          }
+        }
+      }
+    },
     "browse.empty" : {
       "localizations" : {
         "en" : {
@@ -253,6 +269,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "LIVE"
+          }
+        }
+      }
+    },
+    "home.live.hint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens the channel."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre la chaîne."
+          }
+        }
+      }
+    },
+    "home.live.spoken" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En direct"
           }
         }
       }
