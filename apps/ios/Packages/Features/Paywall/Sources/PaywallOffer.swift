@@ -6,6 +6,10 @@ public enum PaywallOffer {
     offering.packages.first { $0.period == .year } ?? offering.packages.first
   }
 
+  public static func featured(in offering: SubscriptionOffering) -> SubscriptionPackage? {
+    offering.packages.first { $0.period == .month } ?? offering.packages.first
+  }
+
   public static func annualSavings(in offering: SubscriptionOffering) -> Int? {
     guard
       let monthly = offering.packages.first(where: { $0.period == .month })?.price,

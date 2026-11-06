@@ -14,11 +14,17 @@ struct PaywallPresentationTests {
   func journey() {
     #expect(PaywallPresentation.journey.showsJourneyHeader)
     #expect(PaywallPresentation.journey.title == nil)
+    #expect(PaywallPresentation.journey.showsPlanPicker)
   }
 
   @Test("depuis le profil, une page « Turbo » poussée, avec retour et sans progression (abonnement/turbo--defaut)")
   func pushed() throws {
     #expect(!PaywallPresentation.pushed.showsJourneyHeader)
     #expect(try french(#require(PaywallPresentation.pushed.title)) == "Turbo")
+  }
+
+  @Test("la page Turbo n'a pas de choix de formule : un seul bouton sous l'accroche (abonnement/turbo--defaut)")
+  func pushedWithoutPlanPicker() {
+    #expect(!PaywallPresentation.pushed.showsPlanPicker)
   }
 }

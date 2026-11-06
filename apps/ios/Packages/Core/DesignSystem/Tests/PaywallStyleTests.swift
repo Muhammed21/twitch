@@ -10,6 +10,22 @@ private let paywallMeasures: [(PaywallLayout, CGFloat)] = [
   (.markSize, 36),
   (.savingsPaddingH, 6),
   (.savingsPaddingV, 2),
+  (.taglineTop, 16),
+  (.subscribeTop, 16),
+  (.subscribePaddingH, 12),
+  (.subscribeIconGap, 12),
+  (.subscribeIconSize, 24),
+  (.subscribeRadius, 4),
+  (.finePrintTop, 8),
+  (.finePrintGap, 8),
+  (.perksTop, 20),
+  (.perkGap, 8),
+  (.perkPaddingV, 12),
+  (.perkPaddingLeading, 6),
+  (.perkPaddingTrailing, 12),
+  (.perkIllustrationWidth, 70),
+  (.perkTitleGap, 4),
+  (.perkRadius, 6),
 ]
 
 private func hex(of color: Color, in scheme: ColorScheme) -> String? {
@@ -25,7 +41,7 @@ private func hex(of color: Color, in scheme: ColorScheme) -> String? {
 
 @Suite("Paywall Turbo : relevés sur abonnement/turbo--defaut")
 struct PaywallStyleTests {
-  @Test("les mesures de la bande, de la batterie, des mentions et du badge d'économie", arguments: paywallMeasures)
+  @Test("les mesures de la bande, du bouton, des mentions et des cartes d'avantages", arguments: paywallMeasures)
   func layout(role: PaywallLayout, points: CGFloat) {
     #expect(role.points == points)
   }
@@ -41,5 +57,10 @@ struct PaywallStyleTests {
     #expect(TextRole.paywallHeadline.font == Font.headline.weight(.semibold))
     #expect(TextRole.paywallBody.font == Font.body.weight(.regular))
     #expect(TextRole.paywallLegal.font == Font.subheadline.weight(.regular))
+  }
+
+  @Test("sur la page Turbo, les mentions, la facturation et la restauration en footnote (cap de 8,7 pt relevé)")
+  func finePrint() {
+    #expect(TextRole.paywallFinePrint.font == Font.footnote.weight(.regular))
   }
 }

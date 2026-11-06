@@ -41,4 +41,15 @@ struct PaywallOfferTests {
   func freeMonthly() {
     #expect(PaywallOffer.annualSavings(in: offering(package(.month, 0), package(.year, 0))) == nil)
   }
+
+  @Test("la page Turbo met en avant le mensuel de l'offre, comme abonnement/turbo--defaut")
+  func featuredMonthly() {
+    #expect(PaywallOffer.featured(in: offering(package(.year, 60), package(.month, 10))) == package(.month, 10))
+  }
+
+  @Test("sans mensuel, la page Turbo met en avant la première formule ; sans formule, aucune")
+  func featuredFallback() {
+    #expect(PaywallOffer.featured(in: offering(package(.year, 60))) == package(.year, 60))
+    #expect(PaywallOffer.featured(in: offering()) == nil)
+  }
 }
