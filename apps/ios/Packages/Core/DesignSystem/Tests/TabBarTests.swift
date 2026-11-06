@@ -20,4 +20,12 @@ struct TabBarTests {
     #expect(TabBarCreateStyle.accent.background == .accent)
     #expect(TabBarCreateStyle.accent.foreground == .onAccent)
   }
+
+  @Test("l'onglet Activité porte la cloche : au trait inactif (IMG_9607), pleine active (IMG_9612)")
+  func activityBell() {
+    let glyph = ViewerTabGlyphs.activity
+
+    #expect(glyph.mask(isSelected: false) == .bellOutline)
+    #expect(glyph.mask(isSelected: true) == .bellFilled)
+  }
 }

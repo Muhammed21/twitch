@@ -48,8 +48,8 @@ struct LocalizationCatalogTests {
   func everyFeatureCatalogShips() {
     let names = Set(catalogs.map(\.testDescription))
     #expect(names.isSuperset(of: [
-      "Twitch.app", "Packages_Auth.bundle", "Packages_Channel.bundle", "Packages_Chat.bundle",
-      "Packages_Dashboard.bundle", "Packages_Home.bundle", "Packages_Onboarding.bundle",
+      "Twitch.app", "Packages_Activity.bundle", "Packages_Auth.bundle", "Packages_Channel.bundle",
+      "Packages_Chat.bundle", "Packages_Dashboard.bundle", "Packages_Home.bundle", "Packages_Onboarding.bundle",
       "Packages_Paywall.bundle", "Packages_Player.bundle", "Packages_Profile.bundle",
     ]))
   }
