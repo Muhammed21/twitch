@@ -86,7 +86,7 @@ public struct StreamManagerScreen: View {
       }
       WidgetDock(selection: $widget, items: Self.dock)
     }
-    .announcing(StreamManagerSpoken.announcement(for: store.notice))
+    .announcing(StreamManagerSpoken.announcement(for: store.notice), each: store.noticeCount)
   }
 
   private static let dock = StreamManagerWidget.allCases.map {
@@ -171,7 +171,7 @@ public struct StreamManagerScreen: View {
           .textSelection(.disabled)
           .accessibilityLabel(Text(label))
           .accessibilityValue(spoken ?? value)
-          .accessibilityIdentifier(identifier ?? "")
+          .accessibilityIdentifier(identifier)
         Spacer(minLength: 0)
         actions()
       }
@@ -186,5 +186,15 @@ public struct StreamManagerScreen: View {
     Text(text)
       .font(TextRole.body.font)
       .foregroundStyle(ColorRole.textSecondary.color)
+  }
+}
+
+private extension View {
+  @ViewBuilder func accessibilityIdentifier(_ identifier: String?) -> some View {
+    if let identifier {
+      accessibilityIdentifier(identifier)
+    } else {
+      self
+    }
   }
 }

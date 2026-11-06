@@ -16,6 +16,14 @@ public extension View {
     }
   }
 
+  func announcing(_ message: String?, each occurrence: some Equatable) -> some View {
+    onChange(of: occurrence) {
+      if let message {
+        AccessibilityNotification.Announcement(message).post()
+      }
+    }
+  }
+
   func accessibilityFocusOnAppear() -> some View {
     modifier(FocusOnAppear())
   }
