@@ -6,6 +6,8 @@ import os
 @MainActor
 @Observable
 public final class MyChannelStore {
+  public typealias Wait = @Sendable (Duration) async throws -> Void
+
   public enum Phase: Equatable, Sendable {
     case loading
     case ready(OwnedChannel)
@@ -23,6 +25,7 @@ public final class MyChannelStore {
   }
 
   public static let maxTitleLength = 140
+  private static let maxRetryDelaySeconds = 30
 
   public private(set) var phase: Phase = .loading
   public private(set) var info: StreamInfo
@@ -39,19 +42,22 @@ public final class MyChannelStore {
   @ObservationIgnored private let copy: @MainActor (String) -> Void
   @ObservationIgnored private let log: @Sendable (String) -> Void
   @ObservationIgnored private let deviceLanguage: LiveLanguage
+  @ObservationIgnored private let wait: Wait
 
   public init(
     repository: any MyChannelRepository,
     channels: any ChannelRepository,
     copy: @escaping @MainActor (String) -> Void,
     log: @escaping @Sendable (String) -> Void = { Logger(subsystem: "Profile", category: "MyChannelStore").error("\($0, privacy: .public)") },
-    deviceLanguage: LiveLanguage = LiveLanguage(localeIdentifier: Locale.current.identifier)
+    deviceLanguage: LiveLanguage = LiveLanguage(localeIdentifier: Locale.current.identifier),
+    wait: @escaping Wait = { try await Task.sleep(for: $0) }
   ) {
     self.repository = repository
     self.channels = channels
     self.copy = copy
     self.log = log
     self.deviceLanguage = deviceLanguage
+    self.wait = wait
     info = Self.emptyInfo
   }
 
@@ -99,6 +105,24 @@ public final class MyChannelStore {
       return
     }
     await load()
+  }
+
+  public func keepLoaded() async {
+    await loadIfNeeded()
+    var failures = 0
+    while phase == .failed {
+      do {
+        try await wait(Self.retryDelay(after: failures))
+      } catch {
+        return
+      }
+      failures += 1
+      await load()
+    }
+  }
+
+  private static func retryDelay(after failures: Int) -> Duration {
+    .seconds(min(maxRetryDelaySeconds, 1 << min(failures, 5)))
   }
 
   public func loadForEditing() async -> Bool {

@@ -67,7 +67,7 @@ struct CreatorRoot: View {
       }
       .toolbar(.hidden, for: .tabBar)
       .tag(DashboardTab.home)
-      .task { await myChannel.loadIfNeeded() }
+      .task { await myChannel.keepLoaded() }
       .task(id: ownedChannel) {
         guard let ownedChannel else { return }
         await liveFigures.follow(ownedChannel)
