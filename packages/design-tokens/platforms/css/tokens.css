@@ -45,6 +45,8 @@
   --color-illustration-ink: #000000;
   --color-illustration-outline: #323338;
   --color-illustration-fill: #ffffff;
+  --color-illustration-accent: #9147ff;
+  --color-illustration-highlight: #f5f500;
   --color-widget-header: #efeff1;
   --color-widget-border: #e2e2e6;
   --color-widget-field-border: #808084;
@@ -194,6 +196,8 @@
     --color-illustration-ink: #000000;
     --color-illustration-outline: #323338;
     --color-illustration-fill: #ffffff;
+    --color-illustration-accent: #9147ff;
+    --color-illustration-highlight: #f5f500;
     --color-widget-header: #29282f;
     --color-widget-border: #2d2d2f;
     --color-widget-field-border: #adadb8;

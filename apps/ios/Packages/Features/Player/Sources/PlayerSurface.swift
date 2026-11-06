@@ -22,22 +22,36 @@ private struct PlayerStatus: View {
   @Environment(PlayerController.self) private var controller
 
   var body: some View {
-    switch controller.state {
+    if let status = PlayerText.status(of: controller.state) {
+      PlayerStatusContent(state: controller.state, status: status)
+    }
+  }
+}
+
+private struct PlayerStatusContent: View {
+  @Environment(PlayerController.self) private var controller
+  let state: PlayerState
+  let status: String
+
+  var body: some View {
+    switch state {
     case .idle:
       EmptyView()
     case .playing:
       Color.clear
         .allowsHitTesting(false)
         .accessibilityElement()
-        .accessibilityLabel(PlayerText.playing)
+        .accessibilityLabel(status)
         .accessibilityIdentifier("player.playing")
     case .loading, .buffering:
       ProgressView().tint(.white)
+        .accessibilityLabel(status)
     case .failed:
       VStack(spacing: LayoutRole.dialogTitleGap.points) {
-        Text(PlayerText.failed)
+        Text(status)
           .font(TextRole.body.font)
           .foregroundStyle(.white)
+          .multilineTextAlignment(.center)
         Button(PlayerText.retry) { controller.retry() }
           .buttonStyle(ActionButtonStyle(.secondary))
           .fixedSize()
@@ -49,8 +63,9 @@ private struct PlayerStatus: View {
           .foregroundStyle(.white)
       }
       .accessibilityLabel(PlayerText.play)
+      .accessibilityValue(status)
     case .ended:
-      Text(PlayerText.ended)
+      Text(status)
         .font(TextRole.body.font)
         .foregroundStyle(.white)
     }
@@ -81,4 +96,17 @@ enum PlayerText {
   static var playing: String { String(localized: "player.playing", bundle: .module) }
   static var play: String { String(localized: "player.play", bundle: .module) }
   static var ended: String { String(localized: "player.ended", bundle: .module) }
+  static var paused: String { String(localized: "player.paused", bundle: .module) }
+  static var loading: String { String(localized: "player.loading", bundle: .module) }
+
+  static func status(of state: PlayerState) -> String? {
+    switch state {
+    case .idle: nil
+    case .loading, .buffering: loading
+    case .playing: playing
+    case .paused: paused
+    case .failed: failed
+    case .ended: ended
+    }
+  }
 }

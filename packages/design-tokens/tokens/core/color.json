@@ -255,6 +255,13 @@
           "$value": "#ff2f8e",
           "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : rose de la vague de la bande en dégradé de la page Turbo, mesuré #ff2f8e (abonnement/turbo--defaut)."
         }
+      },
+      "yellow": {
+        "90": {
+          "$type": "color",
+          "$value": "#f5f500",
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9613, IMG_9615) : surlignage jaune du personnage des illustrations d'état vide, mesuré #f5f500 sur le fond #f6f6f7."
+        }
       }
     }
   }

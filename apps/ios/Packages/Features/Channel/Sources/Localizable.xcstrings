@@ -17,6 +17,22 @@
         }
       }
     },
+    "channel.live.spoken" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En direct"
+          }
+        }
+      }
+    },
     "channel.notFound" : {
       "localizations" : {
         "en" : {
