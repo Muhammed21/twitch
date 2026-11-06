@@ -45,6 +45,7 @@ public struct ProfileHeader: View {
           Text(name)
             .font(TextRole.title.font)
             .foregroundStyle(ProfileHeaderStyle.name.color)
+            .accessibilityAddTraits(.isHeader)
           if let lastLive {
             Text(lastLive)
               .font(TextRole.profileDetail.font)

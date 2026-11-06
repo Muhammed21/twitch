@@ -142,10 +142,12 @@ struct MenuRow: View {
     HStack(spacing: LayoutRole.menuLabelGap.points) {
       Image(systemName: systemImage)
         .frame(width: LayoutRole.menuIconWidth.points)
+        .accessibilityHidden(true)
       Text(label)
       Spacer(minLength: 0)
       if showsChevron {
         Image(systemName: "chevron.right")
+          .accessibilityHidden(true)
       }
     }
     .font(TextRole.display.font)

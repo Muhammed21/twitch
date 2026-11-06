@@ -128,7 +128,7 @@ public struct EditRow: View {
         Text(value)
           .font(TextRole.editRowValue.font)
           .foregroundStyle(EditProfileStyle.rowValue.color)
-          .lineLimit(2)
+          .readableLineLimit(2)
       }
       .frame(maxWidth: .infinity, alignment: .leading)
       accessoryImage
