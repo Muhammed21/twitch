@@ -87,6 +87,10 @@ struct RootView: View {
       .task { await session.run() }
   }
 
+  private var paywall: PersonalizationPaywall {
+    PersonalizationPaywall(purchases: purchases, launch: launch, links: paywallLinks, analytics: analytics)
+  }
+
   @ViewBuilder private var screen: some View {
     switch RootScreen(
       isSplashVisible: isSplashVisible,
@@ -115,11 +119,11 @@ struct RootView: View {
         session: session,
         preferences: preferences,
         sources: personalization,
-        paywall: PersonalizationPaywall(purchases: purchases, launch: launch, links: paywallLinks, analytics: analytics),
+        paywall: paywall,
         router: router
       )
     case .signedIn:
-      SignedInModes(paywall: PersonalizationPaywall(purchases: purchases, launch: launch, links: paywallLinks))
+      SignedInModes(paywall: paywall)
     case .updateRequired:
       UpdateRequiredScreen()
     }
