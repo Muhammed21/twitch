@@ -104,6 +104,7 @@ struct EditProfileSheet: View {
           .accessibilityIdentifier("editProfile.image.notice")
       }
     }
+    .announcing(EditProfileText.announcement(for: images.phase))
   }
 
   private func imageRow(
@@ -186,6 +187,7 @@ struct BioScreen: View {
         .foregroundStyle(ColorRole.textPrimary.color)
         .padding(.horizontal, LayoutRole.bioFieldPadding.points)
         .padding(.bottom, LayoutRole.bioFieldBottom.points)
+        .accessibilityLabel(Text(EditProfileText.bio))
         .accessibilityIdentifier("bio.field")
       Rectangle()
         .fill(EditProfileStyle.divider.color)
@@ -209,6 +211,7 @@ struct BioScreen: View {
     .padding(.horizontal, LayoutRole.screenInset.points)
     .padding(.top, LayoutRole.screenInset.points)
     .background(ColorRole.background.color.ignoresSafeArea())
+    .announcing(EditProfileText.bioAnnouncement(hasFailed: store.hasFailed))
     .navigationTitle(Text(EditProfileText.bio))
     .navigationBarTitleDisplayMode(.inline)
     .toolbar {
