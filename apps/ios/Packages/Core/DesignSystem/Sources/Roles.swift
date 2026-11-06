@@ -71,6 +71,7 @@ public enum TextRole: Sendable {
   case dashboardHint
   case dashboardActivityEmpty
   case dashboardLink
+  case streamManagerTitle
   case activityTitle
   case activityEmptyTitle
   case activityEmptyMessage
@@ -95,7 +96,7 @@ public enum TextRole: Sendable {
     case .tabLabel: .tabLabel
     case .meta: .metaText
     case .profileDetail: .supportingText
-    case .widgetTitle: .actionLabel
+    case .widgetTitle: .liveBadge
     case .channelName: .displayText
     case .cardDetail: .supportingText
     case .liveBadge: .liveBadge
@@ -147,6 +148,7 @@ public enum TextRole: Sendable {
     case .dashboardHint: .hintText
     case .dashboardActivityEmpty: .viewerCount
     case .dashboardLink: .cardAction
+    case .streamManagerTitle: .actionLabel
     case .activityTitle: .displayText
     case .activityEmptyTitle: .actionLabel
     case .activityEmptyMessage: .supportingText
@@ -238,6 +240,7 @@ public enum LayoutRole: Sendable {
   case profileActionGlyphGap
   case profileTabTop
   case profileAboutTop
+  case profileAboutIllustrationGap
   case profileAboutTextGap
   case profileAboutInset
   case categoryCardCoverWidth
@@ -254,7 +257,20 @@ public enum LayoutRole: Sendable {
   case widgetHeaderHeight
   case widgetHeaderPadding
   case widgetRadius
-  case dockButtonSize
+  case widgetBorderWidth
+  case widgetFieldHeight
+  case widgetFieldRadius
+  case widgetFieldBorderWidth
+  case widgetFieldInset
+  case streamManagerHeaderHeight
+  case streamManagerHeaderBottom
+  case streamManagerTitleGap
+  case streamManagerItemGap
+  case streamManagerAvatarSize
+  case dockButtonWidth
+  case dockButtonHeight
+  case dockInset
+  case dockTop
   case dockGap
   case dockRingWidth
   case dockRingGap
@@ -366,4 +382,6 @@ public enum LayoutRole: Sendable {
   case activityEmptyGap
   case activityActionHeight
   case activityActionPadding
+  case activityNotificationsIllustrationGap
+  case activityWhispersIllustrationGap
 }

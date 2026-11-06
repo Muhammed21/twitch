@@ -7,6 +7,10 @@ public enum BrowseTabsStyle {
   public static func foreground(isSelected: Bool) -> ColorRole {
     isSelected ? .navigationActive : .textPrimary
   }
+
+  public static func traits(isSelected: Bool) -> AccessibilityTraits {
+    isSelected ? [.isButton, .isSelected] : .isButton
+  }
 }
 
 public struct BrowseTabItem<Tab: Hashable>: Identifiable {
@@ -52,7 +56,7 @@ public struct BrowseTabs<Tab: Hashable>: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier(item.accessibilityIdentifier)
-        .accessibilityAddTraits(isSelected ? [.isSelected, .isHeader] : .isHeader)
+        .accessibilityAddTraits(BrowseTabsStyle.traits(isSelected: isSelected))
       }
     }
     .frame(maxWidth: .infinity, alignment: .leading)
@@ -99,7 +103,7 @@ public struct CategoryTile: View {
       }
       if let tag {
         CategoryTag(tag)
-          .lineLimit(1)
+          .readableLineLimit(1)
           .padding(.top, LayoutRole.categoryTileTagTop.points)
       }
     }

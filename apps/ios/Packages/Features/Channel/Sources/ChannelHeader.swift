@@ -30,12 +30,14 @@ public struct ChannelHeader: View {
       Text(ChannelText.title(channel.title, channelNotFound: channel.channelNotFound))
         .font(TextRole.dialogTitle.font)
         .foregroundStyle(ColorRole.textPrimary.color)
+        .accessibilityAddTraits(.isHeader)
       if line.isLive {
         Text(ChannelText.live)
           .font(TextRole.actionLabel.font)
           .foregroundStyle(ColorRole.onDanger.color)
           .padding(.horizontal, LayoutRole.dialogActionGap.points)
           .background(ColorRole.danger.color, in: .capsule)
+          .accessibilityLabel(ChannelText.liveSpoken)
           .accessibilityIdentifier("channel.live")
       }
       Spacer(minLength: 0)
@@ -55,6 +57,7 @@ public struct ChannelHeader: View {
 
 enum ChannelText {
   static var live: String { String(localized: "channel.live", bundle: .module) }
+  static var liveSpoken: String { String(localized: "channel.live.spoken", bundle: .module) }
 
   static func title(_ title: String?, channelNotFound: Bool) -> String {
     channelNotFound ? String(localized: "channel.notFound", bundle: .module) : title ?? ""

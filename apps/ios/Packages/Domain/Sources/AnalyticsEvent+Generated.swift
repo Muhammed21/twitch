@@ -17,6 +17,7 @@ public enum AnalyticsEventName: String, CaseIterable, Sendable {
   case paywallViewed = "paywall:viewed"
   case paywallDismissed = "paywall:dismissed"
   case purchaseStarted = "purchase:started"
+  case purchaseCompleted = "purchase:completed"
   case purchaseCancelled = "purchase:cancelled"
   case purchaseFailed = "purchase:failed"
   case purchaseRestored = "purchase:restored"
@@ -103,6 +104,10 @@ public struct AnalyticsEvent: Equatable, Sendable {
 
   public static func purchaseStarted(productID: String, variant: String) -> AnalyticsEvent {
     AnalyticsEvent(name: .purchaseStarted, properties: ["product_id": .string(productID), "variant": .string(variant)])
+  }
+
+  public static func purchaseCompleted(productID: String, variant: String) -> AnalyticsEvent {
+    AnalyticsEvent(name: .purchaseCompleted, properties: ["product_id": .string(productID), "variant": .string(variant)])
   }
 
   public static func purchaseCancelled(productID: String, variant: String) -> AnalyticsEvent {

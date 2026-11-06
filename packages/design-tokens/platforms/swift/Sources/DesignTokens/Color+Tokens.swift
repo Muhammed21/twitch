@@ -305,6 +305,62 @@ public extension Color {
             ? UIColor(red: 1, green: 1, blue: 1, alpha: 1)
             : UIColor(red: 1, green: 1, blue: 1, alpha: 1)
     })
+    /// Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9615) : losange violet derrière le personnage de l'onglet « À propos » vide, mesuré #9147ff. Aucune capture en thème sombre (ADR 0053 §3) : valeur claire gardée.
+    /// clair #9147FF · sombre #9147FF
+    static let illustrationAccent = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.569, green: 0.278, blue: 1, alpha: 1)
+            : UIColor(red: 0.569, green: 0.278, blue: 1, alpha: 1)
+    })
+    /// Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9613, IMG_9615) : surlignage jaune du personnage, mesuré #f5f500. Aucune capture en thème sombre (ADR 0053 §3) : valeur claire gardée.
+    /// clair #F5F500 · sombre #F5F500
+    static let illustrationHighlight = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.961, green: 0.961, blue: 0, alpha: 1)
+            : UIColor(red: 0.961, green: 0.961, blue: 0, alpha: 1)
+    })
+    /// Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9613) : losange gris derrière le personnage de l'onglet Chuchotements vide, mesuré #efeff1. Aucune capture en thème sombre (ADR 0053 §3) : valeur claire gardée.
+    /// clair #EFEFF1 · sombre #EFEFF1
+    static let illustrationBackdrop = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.937, green: 0.937, blue: 0.945, alpha: 1)
+            : UIColor(red: 0.937, green: 0.937, blue: 0.945, alpha: 1)
+    })
+    /// Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9618) : en-tête d'une carte de widget, mesuré #efeff1.
+    /// clair #EFEFF1 · sombre #29282F
+    static let widgetHeader = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.161, green: 0.157, blue: 0.184, alpha: 1)
+            : UIColor(red: 0.937, green: 0.937, blue: 0.945, alpha: 1)
+    })
+    /// Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9618) : filet de 1 pt d'une carte de widget, mesuré #e2e2e6.
+    /// clair #E2E2E6 · sombre #2D2D2F
+    static let widgetBorder = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.176, green: 0.176, blue: 0.184, alpha: 1)
+            : UIColor(red: 0.886, green: 0.886, blue: 0.902, alpha: 1)
+    })
+    /// Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9618) : filet de 1 pt du champ du widget Chat, mesuré #808084.
+    /// clair #808084 · sombre #ADADB8
+    static let widgetFieldBorder = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.678, green: 0.678, blue: 0.722, alpha: 1)
+            : UIColor(red: 0.502, green: 0.502, blue: 0.518, alpha: 1)
+    })
+    /// Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9618) : caméra de l'en-tête du gestionnaire de stream, mesurée #e91916.
+    /// clair #E91916 · sombre #E91916
+    static let streamManagerCamera = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.914, green: 0.098, blue: 0.086, alpha: 1)
+            : UIColor(red: 0.914, green: 0.098, blue: 0.086, alpha: 1)
+    })
+    /// Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9618) : filet sous l'en-tête du gestionnaire de stream, mesuré #b2b2b2.
+    /// clair #B2B2B2 · sombre #2D2D2F
+    static let streamManagerDivider = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.176, green: 0.176, blue: 0.184, alpha: 1)
+            : UIColor(red: 0.698, green: 0.698, blue: 0.698, alpha: 1)
+    })
     /// Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9607) : fond de la puce de filtre active (« Tout ») du flux de l'accueil, mesuré #000000.
     /// clair #000000 · sombre #EFEFF1
     static let chipSelected = Color(uiColor: UIColor { trait in
@@ -408,6 +464,22 @@ public extension Color {
         public static let illustrationOutlineDark = Color(.sRGB, red: 0.196, green: 0.2, blue: 0.22, opacity: 1)
         public static let illustrationFillLight = Color(.sRGB, red: 1, green: 1, blue: 1, opacity: 1)
         public static let illustrationFillDark = Color(.sRGB, red: 1, green: 1, blue: 1, opacity: 1)
+        public static let illustrationAccentLight = Color(.sRGB, red: 0.569, green: 0.278, blue: 1, opacity: 1)
+        public static let illustrationAccentDark = Color(.sRGB, red: 0.569, green: 0.278, blue: 1, opacity: 1)
+        public static let illustrationHighlightLight = Color(.sRGB, red: 0.961, green: 0.961, blue: 0, opacity: 1)
+        public static let illustrationHighlightDark = Color(.sRGB, red: 0.961, green: 0.961, blue: 0, opacity: 1)
+        public static let illustrationBackdropLight = Color(.sRGB, red: 0.937, green: 0.937, blue: 0.945, opacity: 1)
+        public static let illustrationBackdropDark = Color(.sRGB, red: 0.937, green: 0.937, blue: 0.945, opacity: 1)
+        public static let widgetHeaderLight = Color(.sRGB, red: 0.937, green: 0.937, blue: 0.945, opacity: 1)
+        public static let widgetHeaderDark = Color(.sRGB, red: 0.161, green: 0.157, blue: 0.184, opacity: 1)
+        public static let widgetBorderLight = Color(.sRGB, red: 0.886, green: 0.886, blue: 0.902, opacity: 1)
+        public static let widgetBorderDark = Color(.sRGB, red: 0.176, green: 0.176, blue: 0.184, opacity: 1)
+        public static let widgetFieldBorderLight = Color(.sRGB, red: 0.502, green: 0.502, blue: 0.518, opacity: 1)
+        public static let widgetFieldBorderDark = Color(.sRGB, red: 0.678, green: 0.678, blue: 0.722, opacity: 1)
+        public static let streamManagerCameraLight = Color(.sRGB, red: 0.914, green: 0.098, blue: 0.086, opacity: 1)
+        public static let streamManagerCameraDark = Color(.sRGB, red: 0.914, green: 0.098, blue: 0.086, opacity: 1)
+        public static let streamManagerDividerLight = Color(.sRGB, red: 0.698, green: 0.698, blue: 0.698, opacity: 1)
+        public static let streamManagerDividerDark = Color(.sRGB, red: 0.176, green: 0.176, blue: 0.184, opacity: 1)
         public static let chipSelectedLight = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 1)
         public static let chipSelectedDark = Color(.sRGB, red: 0.937, green: 0.937, blue: 0.945, opacity: 1)
         public static let chipOnSelectedLight = Color(.sRGB, red: 1, green: 1, blue: 1, opacity: 1)

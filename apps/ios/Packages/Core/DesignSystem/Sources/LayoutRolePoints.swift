@@ -86,6 +86,7 @@ public extension LayoutRole {
     case .profileActionGlyphGap: Spacing.x12
     case .profileTabTop: Spacing.x20
     case .profileAboutTop: Spacing.x55
+    case .profileAboutIllustrationGap: Spacing.x16
     case .profileAboutTextGap: Spacing.x16
     case .profileAboutInset: Spacing.x40
     case .categoryCardCoverWidth: Spacing.x72
@@ -97,15 +98,28 @@ public extension LayoutRole {
     case .categoryResultTextGap: Spacing.x8
     case .categorySearchFieldHeight: Spacing.x36
     case .categorySearchFieldRadius: Radius.lg
-    case .widgetInset: Spacing.x14
+    case .widgetInset: Spacing.x20
     case .widgetGap: Spacing.x8
-    case .widgetHeaderHeight: Spacing.x40
+    case .widgetHeaderHeight: Spacing.x35
     case .widgetHeaderPadding: Spacing.x8
-    case .widgetRadius: Radius.md
-    case .dockButtonSize: Spacing.x44
+    case .widgetRadius: Radius.lg
+    case .widgetBorderWidth: Spacing.x1
+    case .widgetFieldHeight: Spacing.x44
+    case .widgetFieldRadius: Radius.md
+    case .widgetFieldBorderWidth: Spacing.x1
+    case .widgetFieldInset: Spacing.x8
+    case .streamManagerHeaderHeight: Spacing.x32
+    case .streamManagerHeaderBottom: Spacing.x6
+    case .streamManagerTitleGap: Spacing.x3
+    case .streamManagerItemGap: Spacing.x8
+    case .streamManagerAvatarSize: Spacing.x26
+    case .dockButtonWidth: Spacing.x57
+    case .dockButtonHeight: Spacing.x40
+    case .dockInset: Spacing.x8
+    case .dockTop: Spacing.x4
     case .dockGap: Spacing.x16
     case .dockRingWidth: Spacing.x2
-    case .dockRingGap: Spacing.x3
+    case .dockRingGap: Spacing.x2
     case .mediaInset: Spacing.x8
     case .liveBadgePadding: Spacing.x5
     case .liveBadgeHeight: Spacing.x20
@@ -214,6 +228,8 @@ public extension LayoutRole {
     case .activityEmptyGap: Spacing.x16
     case .activityActionHeight: Spacing.x36
     case .activityActionPadding: Spacing.x12
+    case .activityNotificationsIllustrationGap: Spacing.x20
+    case .activityWhispersIllustrationGap: Spacing.x19
     }
   }
 }

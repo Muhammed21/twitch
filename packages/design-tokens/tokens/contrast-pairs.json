@@ -199,6 +199,42 @@
       "note": "Libellé du bouton Modifier les infos du stream, docs/new-reference-ui/IMG_9624"
     },
     {
+      "foreground": "color.widget.fieldBorder",
+      "background": "color.surface.primary",
+      "min": 3.0,
+      "note": "SC 1.4.11 — contour du champ de saisie du widget Chat (IMG_9618)"
+    },
+    {
+      "foreground": "color.streamManager.camera",
+      "background": "color.surface.primary",
+      "min": 3.0,
+      "note": "SC 1.4.11 — icône de l'en-tête du gestionnaire de stream (IMG_9618)"
+    },
+    {
+      "foreground": "color.widget.border",
+      "background": "color.surface.primary",
+      "min": 1.1,
+      "note": "Filet décoratif d'une carte de widget, exempté de SC 1.4.11 (IMG_9618)"
+    },
+    {
+      "foreground": "color.widget.header",
+      "background": "color.surface.primary",
+      "min": 1.1,
+      "note": "Fond décoratif de l'en-tête d'un widget, exempté de SC 1.4.11 (IMG_9618)"
+    },
+    {
+      "foreground": "color.streamManager.divider",
+      "background": "color.surface.primary",
+      "min": 1.1,
+      "note": "Filet décoratif sous l'en-tête, exempté de SC 1.4.11 (IMG_9618)"
+    },
+    {
+      "foreground": "color.text.primary",
+      "background": "color.widget.header",
+      "min": 4.5,
+      "note": "Titre d'un widget sur son en-tête (IMG_9618)"
+    },
+    {
       "foreground": "color.chip.onSelected",
       "background": "color.chip.selected",
       "min": 4.5,

@@ -26,17 +26,20 @@ public final class PaywallStore {
   private let purchases: any Purchases
   private let offeringID: String?
   private let variant: @MainActor () -> String?
+  private let analytics: any Analytics
   private let onSubscribed: @MainActor () -> Void
 
   public init(
     purchases: any Purchases,
     offeringID: String?,
     variant: @escaping @MainActor () -> String? = { nil },
+    analytics: any Analytics,
     onSubscribed: @escaping @MainActor () -> Void = {}
   ) {
     self.purchases = purchases
     self.offeringID = offeringID
     self.variant = variant
+    self.analytics = analytics
     self.onSubscribed = onSubscribed
   }
 
@@ -68,11 +71,13 @@ public final class PaywallStore {
     notice = nil
     purchasing = package
     defer { purchasing = nil }
-    if let variant = variant() {
+    let variant = variant()
+    if let variant {
       purchases.setAttribute(variant, for: "ph_paywall_variant")
     }
     do {
       if try await purchases.purchase(package) == .subscribed {
+        completed(package, variant: variant)
         subscribed()
       }
     } catch {
@@ -94,6 +99,11 @@ public final class PaywallStore {
     } catch {
       notice = .restoreFailed
     }
+  }
+
+  private func completed(_ package: SubscriptionPackage, variant: String?) {
+    guard let variant else { return }
+    analytics.capture(.purchaseCompleted(productID: package.id, variant: variant))
   }
 
   private func subscribed() {

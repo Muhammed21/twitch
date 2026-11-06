@@ -12,7 +12,13 @@ struct Rect: Decodable {
 
 struct Separation: Decodable {
   let pureWithin: Double
+  let minimumRegion: Int?
   let neighbourhood: Int
+}
+
+struct Tint: Decodable {
+  let name: String
+  let color: String
 }
 
 struct Entry: Decodable {
@@ -20,7 +26,7 @@ struct Entry: Decodable {
   let source: String
   let rect: Rect
   let background: String
-  let tints: [String: String]
+  let tints: [Tint]
   let separation: Separation
 }
 
@@ -29,15 +35,21 @@ struct Manifest: Decodable {
 }
 
 struct Split {
-  let lower: Int
-  let upper: Int
-  let share: Double
+  let alphas: [Int: Double]
   let error: Double
+
+  init(lower: Int, upper: Int, share: Double, error: Double) {
+    alphas = Dictionary([(lower, 1), (upper, share)]) { _, upper in upper }
+    self.error = error
+  }
+
+  init(alphas: [Int: Double], error: Double) {
+    self.alphas = alphas
+    self.error = error
+  }
 }
 
 typealias RGB = [Double]
-
-let tintOrder = ["fill", "outline", "ink"]
 
 let root = (0 ..< 4).reduce(URL(fileURLWithPath: #filePath)) { url, _ in url.deletingLastPathComponent() }
 let designSystem = root.appendingPathComponent("apps/ios/Packages/Core/DesignSystem/Sources")
@@ -83,6 +95,36 @@ func pureLabels(_ pixels: [RGB], palette: [RGB], within: Double) -> [Int?] {
   }
 }
 
+func region(from start: Int, labels: [Int?], width: Int) -> [Int] {
+  let label = labels[start]
+  var seen: Set<Int> = [start]
+  var pending = [start]
+  while let index = pending.popLast() {
+    let (row, column) = (index / width, index % width)
+    let neighbours = [
+      column > 0 ? index - 1 : nil,
+      column < width - 1 ? index + 1 : nil,
+      row > 0 ? index - width : nil,
+      index + width < labels.count ? index + width : nil,
+    ].compactMap(\.self).filter { labels[$0] == label && !seen.contains($0) }
+    seen.formUnion(neighbours)
+    pending.append(contentsOf: neighbours)
+  }
+  return Array(seen)
+}
+
+func withoutSpeckles(_ labels: [Int?], width: Int, minimumRegion: Int) -> [Int?] {
+  guard minimumRegion > 1 else { return labels }
+  var visited = Set<Int>()
+  var speckles = Set<Int>()
+  for index in labels.indices where labels[index] != nil && !visited.contains(index) {
+    let members = region(from: index, labels: labels, width: width)
+    visited.formUnion(members)
+    if members.count < minimumRegion { speckles.formUnion(members) }
+  }
+  return labels.indices.map { speckles.contains($0) ? nil : labels[$0] }
+}
+
 func neighbourCounts(at index: Int, labels: [Int?], width: Int, radius: Int) -> [Int: Int] {
   let height = labels.count / width
   let (row, column) = (index / width, index % width)
@@ -113,9 +155,42 @@ func split(_ pixel: RGB, counts: [Int: Int], palette: [RGB]) -> Split {
   return Split(lower: chosen.pair.0, upper: chosen.pair.1, share: chosen.fit.share, error: chosen.fit.error)
 }
 
+func blend(_ pixel: RGB, of tints: [Int], palette: [RGB]) -> Split? {
+  let (first, second, third) = (palette[tints[0]], palette[tints[1]], palette[tints[2]])
+  let towardSecond = zip(second, first).map { $0 - $1 }
+  let towardThird = zip(third, first).map { $0 - $1 }
+  let offset = zip(pixel, first).map { $0 - $1 }
+  let dot = { (lhs: RGB, rhs: RGB) in zip(lhs, rhs).map { $0 * $1 }.reduce(0, +) }
+  let secondSquared = dot(towardSecond, towardSecond)
+  let crossed = dot(towardSecond, towardThird)
+  let thirdSquared = dot(towardThird, towardThird)
+  let determinant = secondSquared * thirdSquared - crossed * crossed
+  guard abs(determinant) > 1e-9 else { return nil }
+  let alongSecond = dot(offset, towardSecond)
+  let alongThird = dot(offset, towardThird)
+  let secondShare = (alongSecond * thirdSquared - alongThird * crossed) / determinant
+  let thirdShare = (alongThird * secondSquared - alongSecond * crossed) / determinant
+  guard secondShare >= 0, thirdShare >= 0, secondShare + thirdShare <= 1, thirdShare < 1 else { return nil }
+  let mixed = first.indices.map { first[$0] + secondShare * towardSecond[$0] + thirdShare * towardThird[$0] }
+  let alphas = [tints[0]: 1, tints[1]: secondShare / (1 - thirdShare), tints[2]: thirdShare]
+  return Split(alphas: alphas, error: gap(pixel, mixed))
+}
+
+func junction(_ pixel: RGB, counts: [Int: Int], palette: [RGB]) -> Split? {
+  let labels = counts.keys.sorted()
+  let triples = labels.flatMap { first in
+    labels.filter { $0 > first }.flatMap { second in labels.filter { $0 > second }.map { [first, second, $0] } }
+  }
+  return triples.compactMap { blend(pixel, of: $0, palette: palette) }.min { $0.error < $1.error }
+}
+
 func splits(of entry: Entry, palette: [RGB]) throws -> [Split] {
   let pixels = try crop(entry)
-  let labels = pureLabels(pixels, palette: palette, within: entry.separation.pureWithin)
+  let labels = withoutSpeckles(
+    pureLabels(pixels, palette: palette, within: entry.separation.pureWithin),
+    width: entry.rect.width,
+    minimumRegion: entry.separation.minimumRegion ?? 1
+  )
   return pixels.indices.map { index in
     if let label = labels[index] {
       return Split(lower: 0, upper: label, share: 1, error: 0)
@@ -128,13 +203,17 @@ func splits(of entry: Entry, palette: [RGB]) throws -> [Split] {
     let local = split(pixels[index], counts: counts, palette: palette)
     guard local.error > entry.separation.pureWithin else { return local }
     let everyTint = Dictionary(uniqueKeysWithValues: palette.indices.map { ($0, counts[$0, default: 0]) })
-    return split(pixels[index], counts: everyTint, palette: palette)
+    let wide = split(pixels[index], counts: everyTint, palette: palette)
+    guard wide.error > entry.separation.pureWithin,
+          let meeting = junction(pixels[index], counts: everyTint, palette: palette),
+          meeting.error < wide.error
+    else { return wide }
+    return meeting
   }
 }
 
 func alpha(of layer: Int, in split: Split) -> Double {
-  if split.upper == layer { return split.share }
-  return split.lower == layer ? 1 : 0
+  split.alphas[layer] ?? 0
 }
 
 func writeMask(_ alphas: [Double], entry: Entry, name: String) throws {
@@ -197,9 +276,9 @@ func contents(for name: String) -> String {
 }
 
 func extract(_ entry: Entry) throws {
-  let palette = [rgb(entry.background)] + tintOrder.map { rgb(entry.tints[$0] ?? "#000000") }
+  let palette = [rgb(entry.background)] + entry.tints.map { rgb($0.color) }
   let pixels = try splits(of: entry, palette: palette)
-  for (offset, tint) in tintOrder.enumerated() {
+  for (offset, tint) in entry.tints.map(\.name).enumerated() {
     let name = entry.name + tint.prefix(1).uppercased() + tint.dropFirst()
     try writeMask(pixels.map { alpha(of: offset + 1, in: $0) }, entry: entry, name: name)
     print("\(name) : \(entry.source) \(entry.rect.x),\(entry.rect.y) \(entry.rect.width)×\(entry.rect.height)")
