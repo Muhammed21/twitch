@@ -2,6 +2,7 @@ import { type DynamicModule, Module } from "@nestjs/common";
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from "@nestjs/core";
 import { createZodValidationPipe, ZodSerializerInterceptor } from "nestjs-zod";
 
+import { noServiceCallers, SERVICE_CALLERS, type ServiceCallers } from "./admin-caller.ts";
 import {
   ACCESS_TOKEN_VERIFIER,
   AccessTokenGuard,
@@ -23,20 +24,23 @@ export class PlatformModule {
     schemaVersionCheck,
     logSink,
     accessTokenVerifier,
+    serviceCallers = noServiceCallers,
   }: {
     schemaVersionCheck: SchemaVersionCheck;
     logSink: LogSink;
     accessTokenVerifier: AccessTokenVerifier;
+    serviceCallers?: ServiceCallers;
   }): DynamicModule {
     return {
       module: PlatformModule,
       global: true,
-      exports: [ACCESS_TOKEN_VERIFIER, AccessTokenGuard],
+      exports: [ACCESS_TOKEN_VERIFIER, AccessTokenGuard, SERVICE_CALLERS, LOG_SINK],
       controllers: [HealthController],
       providers: [
         { provide: SCHEMA_VERSION_CHECK, useValue: schemaVersionCheck },
         { provide: LOG_SINK, useValue: logSink },
         { provide: ACCESS_TOKEN_VERIFIER, useValue: accessTokenVerifier },
+        { provide: SERVICE_CALLERS, useValue: serviceCallers },
         AccessTokenGuard,
         { provide: APP_FILTER, useClass: ProblemFilter },
         {

@@ -10,6 +10,11 @@ const WEBHOOK_SECRET = "w".repeat(32);
 
 const SERVICE_SECRET = "v".repeat(32);
 
+const PAYLOAD_SERVICE_SECRET = "p".repeat(32);
+
+const PAYLOAD_PUBLIC_KEY =
+  '{"kty":"OKP","crv":"Ed25519","x":"AcnuZlKYdRfCeGSTQ8GfQpcyp77p76sqeQ03rsoFaus"}';
+
 const VIDEO_SERVICE = {
   VIDEO_PROVIDER: "video",
   VIDEO_SERVICE_URL: "http://127.0.0.1:3002",
@@ -71,7 +76,46 @@ describe("loadEnv", () => {
       trustedProxyCount: 0,
       images: S3_STORAGE,
       revenueCat: { webhookAuthorization: undefined, secretApiKey: undefined },
+      payloadAdmin: undefined,
     });
+  });
+
+  it("lit le secret du compte de service de Payload et la clé publique de X-Acting-User", () => {
+    expect(
+      loadEnv(
+        makeEnv({
+          PAYLOAD_SERVICE_SECRET: PAYLOAD_SERVICE_SECRET,
+          PAYLOAD_ACTING_USER_PUBLIC_KEY: PAYLOAD_PUBLIC_KEY,
+        }),
+      ).payloadAdmin,
+    ).toEqual({ serviceSecret: PAYLOAD_SERVICE_SECRET, actingUserPublicKey: PAYLOAD_PUBLIC_KEY });
+  });
+
+  it("laisse Payload sans accès quand ses deux variables sont vides", () => {
+    expect(
+      loadEnv(makeEnv({ PAYLOAD_SERVICE_SECRET: "", PAYLOAD_ACTING_USER_PUBLIC_KEY: "" }))
+        .payloadAdmin,
+    ).toBeUndefined();
+  });
+
+  it.each([
+    ["le secret sans la clé", { PAYLOAD_SERVICE_SECRET: "p".repeat(32) }],
+    ["la clé sans le secret", { PAYLOAD_ACTING_USER_PUBLIC_KEY: '{"kty":"OKP"}' }],
+  ])("refuse %s de Payload", (_case, overrides) => {
+    expect(() => loadEnv(makeEnv(overrides))).toThrow(
+      /PAYLOAD_SERVICE_SECRET, PAYLOAD_ACTING_USER_PUBLIC_KEY/,
+    );
+  });
+
+  it("refuse un secret de compte de service de moins de 32 caractères", () => {
+    expect(() =>
+      loadEnv(
+        makeEnv({
+          PAYLOAD_SERVICE_SECRET: "p".repeat(31),
+          PAYLOAD_ACTING_USER_PUBLIC_KEY: PAYLOAD_PUBLIC_KEY,
+        }),
+      ),
+    ).toThrow(/PAYLOAD_SERVICE_SECRET/);
   });
 
   it("lit la valeur attendue de l'en-tête Authorization du webhook RevenueCat", () => {

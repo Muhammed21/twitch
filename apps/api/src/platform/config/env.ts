@@ -54,7 +54,25 @@ const baseSchema = z.object({
   REVENUECAT_SECRET_API_KEY: optionalSecret,
 });
 
-const envSchema = baseSchema.and(videoSchema).and(featureFlagsSchema);
+const payloadAdminComplete = ({
+  PAYLOAD_SERVICE_SECRET,
+  PAYLOAD_ACTING_USER_PUBLIC_KEY,
+}: {
+  PAYLOAD_SERVICE_SECRET?: string | undefined;
+  PAYLOAD_ACTING_USER_PUBLIC_KEY?: string | undefined;
+}) => (PAYLOAD_SERVICE_SECRET === undefined) === (PAYLOAD_ACTING_USER_PUBLIC_KEY === undefined);
+
+const payloadAdminSchema = z
+  .object({
+    PAYLOAD_SERVICE_SECRET: optionalSecret.pipe(
+      z.string().min(SERVICE_SECRET_MIN_LENGTH).optional(),
+    ),
+    PAYLOAD_ACTING_USER_PUBLIC_KEY: optionalSecret,
+  })
+  .refine(payloadAdminComplete, { path: ["PAYLOAD_SERVICE_SECRET"] })
+  .refine(payloadAdminComplete, { path: ["PAYLOAD_ACTING_USER_PUBLIC_KEY"] });
+
+const envSchema = baseSchema.and(videoSchema).and(featureFlagsSchema).and(payloadAdminSchema);
 
 export type VideoProviderConfig =
   | { readonly provider: "fake" }
@@ -91,6 +109,11 @@ export type RevenueCatConfig = {
   readonly secretApiKey: string | undefined;
 };
 
+export type PayloadAdminConfig = {
+  readonly serviceSecret: string;
+  readonly actingUserPublicKey: string;
+};
+
 export type AppConfig = {
   readonly port: number;
   readonly databaseUrlHealth: string;
@@ -106,6 +129,7 @@ export type AppConfig = {
   readonly trustedProxyCount: number;
   readonly images: ImageStorageConfig;
   readonly revenueCat: RevenueCatConfig;
+  readonly payloadAdmin: PayloadAdminConfig | undefined;
 };
 
 export const loadEnv = (env: Readonly<Record<string, string | undefined>>): AppConfig => {
@@ -150,5 +174,13 @@ export const loadEnv = (env: Readonly<Record<string, string | undefined>>): AppC
       webhookAuthorization: variables.REVENUECAT_WEBHOOK_AUTHORIZATION,
       secretApiKey: variables.REVENUECAT_SECRET_API_KEY,
     },
+    payloadAdmin:
+      variables.PAYLOAD_SERVICE_SECRET === undefined ||
+      variables.PAYLOAD_ACTING_USER_PUBLIC_KEY === undefined
+        ? undefined
+        : {
+            serviceSecret: variables.PAYLOAD_SERVICE_SECRET,
+            actingUserPublicKey: variables.PAYLOAD_ACTING_USER_PUBLIC_KEY,
+          },
   };
 };

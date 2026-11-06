@@ -16,6 +16,7 @@ import {
 } from "./modules/identity/identity.module.ts";
 import { createSmtpMailer } from "./modules/identity/infrastructure/smtp-mailer.ts";
 import { createPresenceRedis } from "./modules/stream/stream.module.ts";
+import { serviceCallersFor } from "./platform/admin-caller.ts";
 import { type AppConfig, loadEnv } from "./platform/config/env.ts";
 import { configureApp } from "./platform/configure-app.ts";
 import { createS3ImageStorage } from "./platform/images/infrastructure/s3-image-storage.ts";
@@ -83,6 +84,7 @@ export const createApp = async ({
         redis,
         baseURL: config.authBaseUrl,
       }),
+      serviceCallers: await serviceCallersFor(config.payloadAdmin),
       identity: { prisma, redis },
       channel: {
         prisma: createContextClient({ context: "channel", env }),

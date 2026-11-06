@@ -11,25 +11,27 @@ API NestJS 11 (ADR 0002, 0009). Architecture et découpage : [plan de l'API](../
 | `pnpm test:integration` | Sondes contre une base migrée (`pnpm infra:up` puis `pnpm migrate`). Les variables du shell priment sur le `.env` : surchargez `DATABASE_URL_*`, `PAYLOAD_DATABASE_URL` et `REDIS_URL` pour viser une pile isolée (turbo les laisse passer). Les tests refusent de tourner contre la pile locale (Postgres `127.0.0.1:5432`, Redis `127.0.0.1:6379`) sans `INTEGRATION_ALLOW_LOCAL_STACK=1` dans le shell, qu'ils videraient en partie. S3 vise `http://s3.integration.invalid` et ses tests sont sautés, sauf avec `INTEGRATION_S3_ENDPOINT` dans le shell (la CI y met le S3 de sa propre pile) |
 | `pnpm seed:dev`         | Enregistre les clients OAuth et les comptes de dev listés dans `.env.example` (viewer, et administrateur de la plateforme), les dix catégories de Browse, et donne Just Chatting aux chaînes sans catégorie de ces comptes ; idempotent, refusé si `BETTER_AUTH_URL` ne vise pas la machine locale (loopback, ou son adresse réseau pour tester depuis un iPhone)                                                                                                                                                                                                                                 |
 
-| Variable                           | Rôle                                                                                                                                                             |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `API_PORT`                         | Port d'écoute, 3000 par défaut                                                                                                                                   |
-| `API_TRUSTED_PROXY_COUNT`          | Nombre de reverse proxys de confiance devant l'API, de 0 à 10, requis : à 0, l'IP du client est celle de la connexion et `X-Forwarded-For` est ignoré (ADR 0042) |
-| `DATABASE_URL_HEALTH`              | Rôle `app_health`, lecture de la version du schéma, requis                                                                                                       |
-| `DATABASE_URL_IDENTITY`            | Rôle `app_identity`, tables de better-auth, requis                                                                                                               |
-| `DATABASE_URL_CHANNEL`             | Rôle `app_channel`, chaînes et attributions, requis                                                                                                              |
-| `DATABASE_URL_STREAM`              | Rôle `app_stream`, sessions de diffusion, requis                                                                                                                 |
-| `DATABASE_URL_MODERATION`          | Rôle `app_moderation`, sanctions, requis                                                                                                                         |
-| `DATABASE_URL_MONETIZATION`        | Rôle `app_monetization`, entitlements et webhooks reçus, requis                                                                                                  |
-| `REVENUECAT_WEBHOOK_AUTHORIZATION` | Valeur exacte de l'en-tête `Authorization` du webhook RevenueCat ; absente ou vide, `POST /v1/webhooks/revenuecat` répond 503                                    |
-| `REVENUECAT_SECRET_API_KEY`        | Clé secrète v1 de l'API REST RevenueCat ; absente ou vide, `POST /v1/me/entitlements/sync` répond 503                                                            |
-| `BETTER_AUTH_SECRET`               | Secret de better-auth, au moins 32 caractères, requis                                                                                                            |
-| `BETTER_AUTH_URL`                  | URL publique de l'API, origine de confiance de better-auth, requis                                                                                               |
-| `REDIS_URL`                        | Redis (`redis://` ou `rediss://`) : liste de révocation des sessions et Pub/Sub, requis                                                                          |
-| `VIDEO_WEBHOOK_SECRET`             | Secret partagé des webhooks du provider vidéo (ADR 0031), au moins 32 caractères, requis                                                                         |
-| `VIDEO_PLAYBACK_BASE_URL`          | Base publique (`http` ou `https`) des playlists HLS d'`apps/video`, requis                                                                                       |
-| `SMTP_HOST`, `SMTP_PORT`           | Serveur SMTP des e-mails (codes de vérification), sans authentification ni TLS : Mailpit en local ; un relais authentifié arrive avec l'hébergement. Requis      |
-| `SMTP_FROM`                        | Expéditeur des e-mails, `Twitch <no-reply@twitch.local>` par défaut                                                                                              |
+| Variable                           | Rôle                                                                                                                                                                                        |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `API_PORT`                         | Port d'écoute, 3000 par défaut                                                                                                                                                              |
+| `API_TRUSTED_PROXY_COUNT`          | Nombre de reverse proxys de confiance devant l'API, de 0 à 10, requis : à 0, l'IP du client est celle de la connexion et `X-Forwarded-For` est ignoré (ADR 0042)                            |
+| `DATABASE_URL_HEALTH`              | Rôle `app_health`, lecture de la version du schéma, requis                                                                                                                                  |
+| `DATABASE_URL_IDENTITY`            | Rôle `app_identity`, tables de better-auth, requis                                                                                                                                          |
+| `DATABASE_URL_CHANNEL`             | Rôle `app_channel`, chaînes et attributions, requis                                                                                                                                         |
+| `DATABASE_URL_STREAM`              | Rôle `app_stream`, sessions de diffusion, requis                                                                                                                                            |
+| `DATABASE_URL_MODERATION`          | Rôle `app_moderation`, sanctions, requis                                                                                                                                                    |
+| `DATABASE_URL_MONETIZATION`        | Rôle `app_monetization`, entitlements et webhooks reçus, requis                                                                                                                             |
+| `REVENUECAT_WEBHOOK_AUTHORIZATION` | Valeur exacte de l'en-tête `Authorization` du webhook RevenueCat ; absente ou vide, `POST /v1/webhooks/revenuecat` répond 503                                                               |
+| `REVENUECAT_SECRET_API_KEY`        | Clé secrète v1 de l'API REST RevenueCat ; absente ou vide, `POST /v1/me/entitlements/sync` répond 503                                                                                       |
+| `PAYLOAD_SERVICE_SECRET`           | Secret du compte de service `svc:payload-admin`, au moins 32 caractères ; avec `PAYLOAD_ACTING_USER_PUBLIC_KEY`, ou aucune des deux : vides, tout appel `Authorization: Service` répond 401 |
+| `PAYLOAD_ACTING_USER_PUBLIC_KEY`   | Clé publique Ed25519 en JWK qui vérifie `X-Acting-User`, signé par Payload (ADR 0007)                                                                                                       |
+| `BETTER_AUTH_SECRET`               | Secret de better-auth, au moins 32 caractères, requis                                                                                                                                       |
+| `BETTER_AUTH_URL`                  | URL publique de l'API, origine de confiance de better-auth, requis                                                                                                                          |
+| `REDIS_URL`                        | Redis (`redis://` ou `rediss://`) : liste de révocation des sessions et Pub/Sub, requis                                                                                                     |
+| `VIDEO_WEBHOOK_SECRET`             | Secret partagé des webhooks du provider vidéo (ADR 0031), au moins 32 caractères, requis                                                                                                    |
+| `VIDEO_PLAYBACK_BASE_URL`          | Base publique (`http` ou `https`) des playlists HLS d'`apps/video`, requis                                                                                                                  |
+| `SMTP_HOST`, `SMTP_PORT`           | Serveur SMTP des e-mails (codes de vérification), sans authentification ni TLS : Mailpit en local ; un relais authentifié arrive avec l'hébergement. Requis                                 |
+| `SMTP_FROM`                        | Expéditeur des e-mails, `Twitch <no-reply@twitch.local>` par défaut                                                                                                                         |
 
 Une variable invalide arrête le démarrage avec le nom de la variable, jamais sa valeur.
 
@@ -85,6 +87,19 @@ Une route protégée porte `@UseGuards(AccessTokenGuard)` et lit l'identité par
 Une inscription est une transaction (`transaction: true` de l'adapter Prisma) : compte, mot de passe et event `identity.account.registered` (`@repo/contracts`, `events.identity`) dans `identity.IdentityOutbox`, ou rien. L'event est écrit par le plugin `identityOutbox` dans un hook `user.create.before`, avec l'adapter de la transaction (`getCurrentAdapter`), et porte l'identifiant du compte. `payload` est déclaré `string` auprès de better-auth : un champ `json` y serait écrit en texte.
 
 Sans paramètre `resource`, le jeton d'accès est opaque : l'app iOS l'envoie toujours. Un client OAuth n'obtient de jeton pour `/v1` que s'il est lié à cette ressource (`IdentityOAuthClientResource`).
+
+## Appels d'administration depuis Payload (ADR 0007)
+
+Une route d'administration porte `@UseGuards(adminCallerGuard(<scope>))` et lit l'acteur par `@CurrentActor()` (`platform/admin-caller.ts`) : `{ actorId, onBehalfOf, source }`. Deux appelants :
+
+| Appelant                              | Preuves                                                                                                                             | Acteur                                                         |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Utilisateur                           | `Authorization: Bearer <jeton d'accès>` portant le scope                                                                            | le titulaire du jeton, `onBehalfOf` nul, `source` `api`        |
+| Compte de service `svc:payload-admin` | `Authorization: Service <PAYLOAD_SERVICE_SECRET>`, comparé à temps constant, et `X-Acting-User` : JWT de l'humain signé par Payload | l'humain, `onBehalfOf` `svc:payload-admin`, `source` `payload` |
+
+`svc:payload-admin` porte le seul scope `admin:category.manage` (`platform/service-accounts.ts`), jamais `*`. `X-Acting-User` est vérifié par `@repo/auth-verifier` (`acting-user.ts`) : `EdDSA`, `typ` `acting-user+jwt`, émetteur `payload`, audience `twitch-api:admin`, `sub` un identifiant de compte, 60 s au plus entre `iat` et `exp`, ni expiré ni émis dans le futur. Sans en-tête, avec un en-tête invalide, ou quand le compte de service n'a pas le scope : `403`. Les deux conditions sont cumulatives : le use-case applique ensuite les permissions de l'humain (ADR 0006), et un humain sans le droit reçoit aussi `403`. Un secret inconnu répond `401` avec `WWW-Authenticate: Service`.
+
+Chaque appel du compte de service écrit à la fin de la réponse une ligne `admin.acting_user` : `actorId` (l'humain, nul s'il n'a pas pu être résolu), `onBehalfOf`, `scope`, `method`, `path`, `status`, `outcome` (`allowed` ou `refused`) et, pour un refus de la garde, `reason` (`missing_acting_user`, `expired`, `invalid` ou `missing_scope`).
 
 ## Relais de l'outbox (ADR 0034)
 
