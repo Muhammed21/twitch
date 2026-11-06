@@ -1,6 +1,8 @@
+import { networkInterfaces } from "node:os";
+
 import { describe, expect, it } from "vitest";
 
-import { isLocalHost } from "./local-host.ts";
+import { isLocalApi, isLocalHost } from "./local-host.ts";
 
 const machineAddresses = [
   "127.0.0.1",
@@ -72,4 +74,31 @@ describe("hôte local pour seed:dev (ADR 0039, §6)", () => {
       expect(local(hostname)).toBe(false);
     },
   );
+});
+
+describe("API locale, jugée sur les adresses de ce poste", () => {
+  it.each(["http://127.0.0.1:3100", "http://localhost:3000", "http://[::1]:3000"])(
+    "accepte %s",
+    (url) => {
+      expect(isLocalApi(url)).toBe(true);
+    },
+  );
+
+  const lanAddress = Object.values(networkInterfaces())
+    .flatMap((addresses) => addresses ?? [])
+    .find(
+      ({ internal, family, address }) =>
+        !internal && family === "IPv4" && /^(10|192\.168)\./.test(address),
+    )?.address;
+
+  it.skipIf(lanAddress === undefined)(
+    "accepte l'adresse privée de ce poste sur le réseau local",
+    () => {
+      expect(isLocalApi(`http://${lanAddress}:3100`)).toBe(true);
+    },
+  );
+
+  it("refuse une API distante", () => {
+    expect(isLocalApi("https://api.twitch.example")).toBe(false);
+  });
 });

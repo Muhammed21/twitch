@@ -10,6 +10,7 @@
     "start:outbox-relay": "node --env-file-if-exists=../../.env dist/outbox-relay/main.js",
     "discovery:rebuild": "node --env-file-if-exists=../../.env dist/discovery-rebuild/main.js",
     "seed:dev": "node --env-file-if-exists=../../.env dist/seed-dev/main.js",
+    "dev:end-lives": "node --env-file-if-exists=../../.env dist/dev-end-lives/main.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
