@@ -32,13 +32,14 @@ struct CreatorRoot: View {
   @Environment(SessionStore.self) private var session
   @Environment(Router.self) private var router
   @Environment(MyChannelStore.self) private var myChannel
+  @Environment(DashboardLiveFigures.self) private var liveFigures
   @State private var channelPath: [Route] = []
   @State private var isEditingStreamInfo = false
 
   var body: some View {
     @Bindable var creatorMode = creatorMode
     TabView(selection: $creatorMode.dashboardTab) {
-      DashboardHomeScreen {
+      DashboardHomeScreen(status: liveFigures.status) {
         Task { await creatorMode.switchMode() }
       } onStreamManager: {
         router.create()
@@ -47,6 +48,11 @@ struct CreatorRoot: View {
       }
       .toolbar(.hidden, for: .tabBar)
       .tag(DashboardTab.home)
+      .task { await myChannel.loadIfNeeded() }
+      .task(id: ownedChannel) {
+        guard let ownedChannel else { return }
+        await liveFigures.follow(ownedChannel)
+      }
       .sheet(isPresented: $isEditingStreamInfo) {
         EditStreamInfoSheet(initial: myChannel.proposedInfo)
       }
@@ -57,11 +63,12 @@ struct CreatorRoot: View {
         .toolbar(.hidden, for: .tabBar)
         .tag(DashboardTab.stats)
       NavigationStack(path: $channelPath) {
-        ProfileScreen(account: account) { slug in
-          channelPath.append(.channel(slug))
-        } onAccountSaved: { saved in
-          session.accountSaved(saved)
-        } settings: {
+        ProfileScreen(account: account, actions: ProfileActions(
+          onOpenChannel: { channelPath.append(.channel($0)) },
+          onAccountSaved: { session.accountSaved($0) },
+          onStreamManager: { router.create() },
+          onAnalytics: { creatorMode.dashboardTab = .stats }
+        )) {
           SignedInScreen()
         }
         .withRouteDestinations()
@@ -83,6 +90,11 @@ struct CreatorRoot: View {
         )
       }
     }
+  }
+
+  private var ownedChannel: ChannelID? {
+    guard case let .ready(owned) = myChannel.phase else { return nil }
+    return owned.id
   }
 
   private var account: Account? {

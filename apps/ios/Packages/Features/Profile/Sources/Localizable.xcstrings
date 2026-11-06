@@ -1129,6 +1129,22 @@
         }
       }
     },
+    "profile.analytics" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Analytics"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Statistiques"
+          }
+        }
+      }
+    },
     "profile.edit" : {
       "localizations" : {
         "en" : {

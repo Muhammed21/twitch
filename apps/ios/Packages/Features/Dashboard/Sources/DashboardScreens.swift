@@ -1,4 +1,6 @@
 import DesignSystem
+import Domain
+import Foundation
 import Navigation
 import SwiftUI
 
@@ -42,25 +44,44 @@ public enum DashboardTabs {
 }
 
 public struct DashboardHomeScreen: View {
+  @Environment(\.locale) private var locale
+  private let status: LiveStatus?
   private let onWatch: () -> Void
   private let onStreamManager: () -> Void
   private let onEditStreamInfo: () -> Void
 
-  public nonisolated static var statItems: [DashboardStatItem] {
+  public nonisolated static func statItems(status: LiveStatus?, now: Date, locale: Locale) -> [DashboardStatItem] {
     DashboardStat.allCases.map { stat in
       DashboardStatItem(
         id: "\(stat)",
-        value: String(localized: DashboardText.unavailableStat),
+        value: value(of: stat, status: status, now: now, locale: locale) ?? String(localized: DashboardText.unavailableStat),
         label: String(localized: DashboardText.label(of: stat))
       )
     }
   }
 
+  private nonisolated static func value(of stat: DashboardStat, status: LiveStatus?, now: Date, locale: Locale) -> String? {
+    guard case let .live(viewers, startedAt) = status else { return nil }
+    switch stat {
+    case .streamTime:
+      return startedAt.map { start in
+        Duration.seconds(max(0, Int(now.timeIntervalSince(start))))
+          .formatted(.time(pattern: .hourMinuteSecond).locale(locale))
+      }
+    case .viewers:
+      return viewers.map { $0.value.formatted(.number.locale(locale)) }
+    case .followers:
+      return nil
+    }
+  }
+
   public init(
+    status: LiveStatus?,
     onWatch: @escaping () -> Void,
     onStreamManager: @escaping () -> Void,
     onEditStreamInfo: @escaping () -> Void
   ) {
+    self.status = status
     self.onWatch = onWatch
     self.onStreamManager = onStreamManager
     self.onEditStreamInfo = onEditStreamInfo
@@ -74,8 +95,10 @@ public struct DashboardHomeScreen: View {
       }
       ScrollView {
         VStack(spacing: 0) {
-          DashboardStatsCard(items: Self.statItems)
-            .padding(.horizontal, LayoutRole.screenInset.points)
+          TimelineView(.periodic(from: .now, by: 1)) { context in
+            DashboardStatsCard(items: Self.statItems(status: status, now: context.date, locale: locale))
+          }
+          .padding(.horizontal, LayoutRole.screenInset.points)
           DashboardStreamCard(
             offlineLabel: String(localized: DashboardText.offline),
             primaryLabel: String(localized: DashboardText.streamManager),
@@ -112,7 +135,7 @@ public struct DashboardStatsScreen: View {
         }
         .padding(.trailing, -LayoutRole.dashboardIconOverhang.points)
       }
-      DashboardEmptyState(message: String(localized: DashboardText.statsEmpty))
+      DashboardEmptyState(message: String(localized: DashboardText.statsEmpty), illustration: .stats)
     }
     .background(ColorRole.background.color.ignoresSafeArea())
   }
@@ -131,7 +154,7 @@ public struct DashboardContentScreen: View {
           .foregroundStyle(ColorRole.textPrimary.color)
       }
       DashboardSearchField(text: $query, prompt: String(localized: DashboardText.search))
-      DashboardEmptyState(message: String(localized: DashboardText.contentEmpty))
+      DashboardEmptyState(message: String(localized: DashboardText.contentEmpty), illustration: .content)
     }
     .background(ColorRole.background.color.ignoresSafeArea())
   }

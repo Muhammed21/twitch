@@ -110,6 +110,11 @@
       "$value": "{core.dimension.49}",
       "$description": "Hauteur de la barre d'onglets, relevée sur l'app iOS Twitch (49 pt)."
     },
+    "x50": {
+      "$type": "dimension",
+      "$value": "{core.dimension.50}",
+      "$description": "Hauteur des pilules d'action de l'en-tête du profil, relevée sur l'app iOS Twitch (50 pt, docs/new-reference-ui/IMG_9614)."
+    },
     "x56": {
       "$type": "dimension",
       "$value": "{core.dimension.56}",

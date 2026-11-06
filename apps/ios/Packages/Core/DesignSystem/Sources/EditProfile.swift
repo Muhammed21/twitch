@@ -1,7 +1,6 @@
 import SwiftUI
 
 public enum EditProfileStyle {
-  public static let editButton = ColorRole.onMedia
   public static let sectionLabel = ColorRole.textSecondary
   public static let rowTitle = ColorRole.textPrimary
   public static let rowValue = ColorRole.textSecondary
@@ -26,12 +25,34 @@ struct ProfileEditButton: View {
     Button(action: edit.action) {
       Text(edit.label)
         .font(TextRole.profileEdit.font)
-        .foregroundStyle(EditProfileStyle.editButton.color)
+        .foregroundStyle(ProfileHeaderStyle.onBannerControl.color)
+        .padding(.horizontal, LayoutRole.profileEditPadding.points)
+        .frame(height: LayoutRole.profileEditHeight.points)
+        .background(ProfileHeaderStyle.bannerControl.color, in: Capsule())
+        .contentShape(Capsule())
     }
     .buttonStyle(.plain)
-    .padding(.top, LayoutRole.profileEditTop.points)
-    .padding(.trailing, LayoutRole.profileEditTrailing.points)
     .accessibilityIdentifier("profile.edit")
+  }
+}
+
+struct ProfileSettingsButton: View {
+  let settings: ProfileHeaderAction
+
+  var body: some View {
+    Button(action: settings.action) {
+      Image(systemName: "gearshape")
+        .resizable()
+        .scaledToFit()
+        .frame(width: LayoutRole.profileBannerGlyph.points, height: LayoutRole.profileBannerGlyph.points)
+        .foregroundStyle(ProfileHeaderStyle.onBannerControl.color)
+        .frame(width: LayoutRole.profileBannerControlSize.points, height: LayoutRole.profileBannerControlSize.points)
+        .background(ProfileHeaderStyle.bannerControl.color, in: Circle())
+        .contentShape(Circle())
+    }
+    .buttonStyle(.plain)
+    .accessibilityLabel(settings.label)
+    .accessibilityIdentifier("profile.settings")
   }
 }
 

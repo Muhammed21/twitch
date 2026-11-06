@@ -10,7 +10,7 @@ struct HeaderLine: Equatable {
 
 extension HeaderLine {
   init(status: LiveStatus?, locale: Locale) {
-    guard case let .live(count) = status else {
+    guard case let .live(count, _) = status else {
       self.init(isLive: false, viewers: nil)
       return
     }

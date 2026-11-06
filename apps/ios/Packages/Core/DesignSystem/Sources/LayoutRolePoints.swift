@@ -53,6 +53,8 @@ public extension LayoutRole {
     case .categoryNameTop: Spacing.x4
     case .liveDotSize: Spacing.x8
     case .liveDotGap: Spacing.x6
+    case .categoryTileDotGap: Spacing.x8
+    case .categoryTileTagTop: Spacing.x4
     case .categoryTagPaddingH: Spacing.x8
     case .categoryTagPaddingV: Spacing.x3
     case .categoryTagGap: Spacing.x4
@@ -71,7 +73,17 @@ public extension LayoutRole {
     case .profileAvatarGap: Spacing.x8
     case .profileNameTop: Spacing.x8
     case .profileBioTop: Spacing.x20
-    case .profileHeaderBottom: Spacing.x16
+    case .profileHeaderBottom: Spacing.x20
+    case .profileBannerControlSize: Spacing.x40
+    case .profileBannerControlCenter: Spacing.x16
+    case .profileBannerGlyph: Spacing.x22
+    case .profileEditHeight: Spacing.x30
+    case .profileEditPadding: Spacing.x12
+    case .profileActionHeight: Spacing.x50
+    case .profileActionGap: Spacing.x8
+    case .profileActionRowGap: Spacing.x16
+    case .profileActionGlyph: Spacing.x24
+    case .profileActionGlyphGap: Spacing.x12
     case .categoryCardCoverWidth: Spacing.x72
     case .categoryCardRadius: Radius.xl
     case .categoryCardBorderWidth: Spacing.x1
@@ -101,8 +113,6 @@ public extension LayoutRole {
     case .cardAvatarGlyphInset: Spacing.x10
     case .cardAvatarGap: Spacing.x8
     case .cardLineGap: Spacing.x2
-    case .profileEditTop: Spacing.x8
-    case .profileEditTrailing: Spacing.x24
     case .editSectionLabelGap: Spacing.x8
     case .editRowPadding: Spacing.x8
     case .editRowLineGap: Spacing.x2
@@ -152,6 +162,8 @@ public extension LayoutRole {
     case .dashboardFieldGlyphGap: Spacing.x6
     case .dashboardEmptyTop: Spacing.x256
     case .dashboardEmptyWidth: Spacing.x256
+    case .dashboardEmptyClapperboardGap: Spacing.x12
+    case .dashboardEmptyBarChartGap: Spacing.x8
     case .dashboardPillHeight: Spacing.x40
     case .dashboardPillLeading: Spacing.x10
     case .dashboardPillTrailing: Spacing.x12
