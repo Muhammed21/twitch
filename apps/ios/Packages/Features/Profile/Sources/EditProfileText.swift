@@ -22,6 +22,15 @@ public enum EditProfileText {
     LocalizedStringResource("editProfile.bio.remaining \(count)", bundle: .module)
   }
 
+  public static func bioAnnouncement(hasFailed: Bool) -> String? {
+    hasFailed ? String(localized: bioFailed) : nil
+  }
+
+  @MainActor
+  public static func announcement(for phase: ProfileImageStore.Phase) -> String? {
+    notice(for: phase).map { String(localized: $0) }
+  }
+
   @MainActor
   public static func notice(for phase: ProfileImageStore.Phase) -> LocalizedStringResource? {
     guard case let .failed(purpose, failure) = phase else { return nil }
