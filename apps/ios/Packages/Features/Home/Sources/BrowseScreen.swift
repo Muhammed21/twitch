@@ -48,6 +48,7 @@ private struct CategoryGrid: View {
                 coverURL: category.imageURL,
                 tag: category.tags.first
               )
+              .accessibleCard(BrowseText.card(for: category, locale: locale))
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("browse.category.\(category.slug.rawValue)")
@@ -58,6 +59,7 @@ private struct CategoryGrid: View {
       }
     }
     .refreshable { await store.loadFirstPage() }
+    .announcing(BrowseText.announcement(for: store.phase))
   }
 
   @ViewBuilder private var footer: some View {
@@ -122,6 +124,17 @@ public enum BrowseText {
 
   static func viewers(_ count: ViewerCount?, locale: Locale) -> String? {
     count.map { $0.value.formatted(.number.notation(.compactName).locale(locale)) }
+  }
+
+  static func card(for category: BrowseCategory, locale: Locale) -> AccessibleCard {
+    AccessibleCard(
+      parts: [category.name, HomeCardText.viewers(category.viewers, locale: locale), category.tags.first],
+      hint: localized("browse.category.hint")
+    )
+  }
+
+  static func announcement(for phase: BrowsePhase) -> String? {
+    phase == .failed ? failed : nil
   }
 
   static func followers(_ count: Int, locale: Locale) -> AttributedString {

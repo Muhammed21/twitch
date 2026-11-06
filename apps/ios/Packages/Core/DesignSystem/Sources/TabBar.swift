@@ -118,6 +118,9 @@ public struct TabBar<Tab: Hashable>: View {
     }
     .buttonStyle(.plain)
     .accessibilityAddTraits(item.tab == selection ? .isSelected : [])
+    .accessibilityShowsLargeContentViewer {
+      TabBarCell(item: item, isSelected: item.tab == selection)
+    }
     .accessibilityIdentifier(item.accessibilityIdentifier)
   }
 }
@@ -137,6 +140,10 @@ private struct CreateButton: View {
     }
     .buttonStyle(.plain)
     .accessibilityLabel(create.label)
+    .accessibilityShowsLargeContentViewer {
+      Glyph.plus.image
+      Text(verbatim: create.label)
+    }
     .accessibilityIdentifier(create.accessibilityIdentifier)
   }
 }
