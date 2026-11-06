@@ -236,6 +236,7 @@ public enum LayoutRole: Sendable {
   case profileActionGlyphGap
   case profileTabTop
   case profileAboutTop
+  case profileAboutIllustrationGap
   case profileAboutTextGap
   case profileAboutInset
   case categoryCardCoverWidth
