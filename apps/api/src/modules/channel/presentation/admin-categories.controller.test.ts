@@ -29,6 +29,8 @@ const makeIdentity = (scopes: readonly string[]): AccessTokenIdentity => ({
   revocation: "checked",
 });
 
+const TOKEN_HOLDER = { actorId: ADMIN_ID, onBehalfOf: null, source: "api" };
+
 const PAYLOAD_SECRET = "secret-du-compte-de-service-payload-admin";
 const HUMAN_ID = "8b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e";
 
@@ -167,7 +169,7 @@ describe("POST /v1/admin/categories", () => {
       expect(calls).toEqual([
         {
           name: "create",
-          request: { actorId: ADMIN_ID, slug: "just-chatting", name: "Just Chatting" },
+          request: { actor: TOKEN_HOLDER, slug: "just-chatting", name: "Just Chatting" },
         },
       ]);
     });
@@ -238,7 +240,7 @@ describe("POST /v1/admin/categories/{slug}/merge", () => {
       expect(calls).toEqual([
         {
           name: "merge",
-          request: { actorId: ADMIN_ID, sourceSlug: "irl", targetSlug: "just-chatting" },
+          request: { actor: TOKEN_HOLDER, sourceSlug: "irl", targetSlug: "just-chatting" },
         },
       ]);
     });
@@ -292,7 +294,7 @@ describe("POST /v1/admin/categories/{slug}/retire", () => {
       expect(response.status).toBe(200);
       expect(await response.json()).toEqual({ ...JUST_CHATTING_RESPONSE, status: "retired" });
       expect(calls).toEqual([
-        { name: "retire", request: { actorId: ADMIN_ID, slug: "just-chatting" } },
+        { name: "retire", request: { actor: TOKEN_HOLDER, slug: "just-chatting" } },
       ]);
     });
   });
@@ -348,7 +350,7 @@ describe("PUT /v1/admin/categories/{slug}/image", () => {
       expect(calls).toEqual([
         {
           name: "image",
-          request: { actorId: ADMIN_ID, slug: "just-chatting", uploadId: UPLOAD_ID },
+          request: { actor: TOKEN_HOLDER, slug: "just-chatting", uploadId: UPLOAD_ID },
         },
       ]);
     });
@@ -418,7 +420,7 @@ describe("PUT /v1/admin/categories/{slug}/tags (ADR 0050)", () => {
       expect(calls).toEqual([
         {
           name: "tags",
-          request: { actorId: ADMIN_ID, slug: "just-chatting", tags: ["IRL", "Discussion"] },
+          request: { actor: TOKEN_HOLDER, slug: "just-chatting", tags: ["IRL", "Discussion"] },
         },
       ]);
     });
@@ -485,7 +487,11 @@ describe("administration des catégories depuis Payload (ADR 0007)", () => {
       expect(calls).toEqual([
         {
           name: "create",
-          request: { actorId: HUMAN_ID, slug: "just-chatting", name: "Just Chatting" },
+          request: {
+            actor: { actorId: HUMAN_ID, onBehalfOf: "svc:payload-admin", source: "payload" },
+            slug: "just-chatting",
+            name: "Just Chatting",
+          },
         },
       ]);
     });

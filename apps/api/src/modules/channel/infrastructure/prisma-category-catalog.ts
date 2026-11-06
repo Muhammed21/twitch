@@ -4,6 +4,7 @@ import { events } from "@repo/contracts";
 import { appendToOutbox } from "@repo/db";
 import type { Result } from "@repo/result";
 
+import type { AuditActor } from "../../../platform/audit-actor.ts";
 import type {
   CategoryCatalog,
   CategoryStatus,
@@ -77,9 +78,44 @@ const publishUpdated = (
   });
 };
 
+type AuditState = { readonly [key: string]: string | null | readonly string[] };
+
+const audit = (
+  tx: Transaction,
+  {
+    actor,
+    action,
+    categoryId,
+    stateBefore,
+    stateAfter,
+    occurredAt,
+  }: {
+    actor: AuditActor;
+    action: string;
+    categoryId: string;
+    stateBefore?: AuditState;
+    stateAfter: AuditState;
+    occurredAt: Date;
+  },
+) =>
+  tx.auditEntry.create({
+    data: {
+      occurredAt,
+      actorId: actor.actorId,
+      onBehalfOf: actor.onBehalfOf,
+      source: actor.source,
+      action,
+      scopeType: "platform",
+      scopeId: "platform",
+      targetId: categoryId,
+      ...(stateBefore === undefined ? {} : { stateBefore }),
+      stateAfter,
+    },
+  });
+
 export const prismaCategoryCatalog = (prisma: ChannelPrisma): CategoryCatalog => ({
   findBySlug: (slug) => prisma.channelCategory.findUnique({ where: { slug }, select: VIEW }),
-  create: ({ categoryId, slug, name, outboxEventId, occurredAt }) =>
+  create: ({ actor, categoryId, slug, name, outboxEventId, occurredAt }) =>
     prisma.$transaction(async (tx) => {
       const { count } = await tx.channelCategory.createMany({
         data: [{ id: categoryId, slug, name }],
@@ -88,6 +124,13 @@ export const prismaCategoryCatalog = (prisma: ChannelPrisma): CategoryCatalog =>
       if (count === 0) {
         return { ok: false, error: "slug_taken" } as const;
       }
+      await audit(tx, {
+        actor,
+        action: channelCategoryCreated.name,
+        categoryId,
+        stateAfter: { slug, name },
+        occurredAt,
+      });
       const payload = { categoryId, slug, name } satisfies z.input<
         typeof channelCategoryCreated.payload
       >;
@@ -106,7 +149,7 @@ export const prismaCategoryCatalog = (prisma: ChannelPrisma): CategoryCatalog =>
         value: { id: categoryId, slug, name, status: "active", imageKey: null, tags: [] },
       } as const;
     }),
-  merge: ({ sourceId, targetId, outboxEventId, occurredAt }) =>
+  merge: ({ actor, sourceId, targetId, outboxEventId, occurredAt }) =>
     prisma.$transaction(async (tx) => {
       const locked = await lockCategories(tx, [sourceId, targetId]);
       if (!isActive(locked, sourceId) || !isActive(locked, targetId)) {
@@ -121,6 +164,14 @@ export const prismaCategoryCatalog = (prisma: ChannelPrisma): CategoryCatalog =>
       await tx.channelCategory.update({
         where: { id: sourceId },
         data: { status: "merged", mergedIntoId: targetId },
+      });
+      await audit(tx, {
+        actor,
+        action: channelCategoryMerged.name,
+        categoryId: sourceId,
+        stateBefore: { status: "active" },
+        stateAfter: { status: "merged", mergedIntoId: targetId },
+        occurredAt,
       });
       const payload = {
         sourceCategoryId: sourceId,
@@ -142,7 +193,7 @@ export const prismaCategoryCatalog = (prisma: ChannelPrisma): CategoryCatalog =>
       });
       return { ok: true, value: target } as const;
     }),
-  retire: ({ categoryId, outboxEventId, occurredAt }) =>
+  retire: ({ actor, categoryId, outboxEventId, occurredAt }) =>
     prisma.$transaction(async (tx) => {
       const locked = await lockCategories(tx, [categoryId]);
       if (!isActive(locked, categoryId)) {
@@ -157,6 +208,14 @@ export const prismaCategoryCatalog = (prisma: ChannelPrisma): CategoryCatalog =>
         data: { status: "retired" },
         select: VIEW,
       });
+      await audit(tx, {
+        actor,
+        action: channelCategoryRetired.name,
+        categoryId,
+        stateBefore: { status: "active" },
+        stateAfter: { status: "retired" },
+        occurredAt,
+      });
       const payload = { categoryId } satisfies z.input<typeof channelCategoryRetired.payload>;
       await appendToOutbox(tx, {
         outbox: OUTBOX,
@@ -170,7 +229,7 @@ export const prismaCategoryCatalog = (prisma: ChannelPrisma): CategoryCatalog =>
       });
       return { ok: true, value: retired } as const;
     }),
-  changeImage: ({ categoryId, imageKey, outboxEventId, occurredAt }) =>
+  changeImage: ({ actor, categoryId, imageKey, outboxEventId, occurredAt }) =>
     prisma.$transaction(async (tx) => {
       const locked = await lockCategories(tx, [categoryId]);
       if (!isActive(locked, categoryId)) {
@@ -182,19 +241,39 @@ export const prismaCategoryCatalog = (prisma: ChannelPrisma): CategoryCatalog =>
         data: { imageKey },
         select: VIEW,
       });
+      await audit(tx, {
+        actor,
+        action: "channel.category.image_changed",
+        categoryId,
+        stateBefore: { imageKey: replacedImageKey },
+        stateAfter: { imageKey },
+        occurredAt,
+      });
       await publishUpdated(tx, { category: updated, outboxEventId, occurredAt });
       return { ok: true, value: { category: updated, replacedImageKey } } as const;
     }),
-  changeTags: ({ categoryId, tags, outboxEventId, occurredAt }) =>
+  changeTags: ({ actor, categoryId, tags, outboxEventId, occurredAt }) =>
     prisma.$transaction(async (tx) => {
       const locked = await lockCategories(tx, [categoryId]);
       if (!isActive(locked, categoryId)) {
         return { ok: false, error: "category_inactive" } as const;
       }
+      const before = await tx.channelCategory.findUniqueOrThrow({
+        where: { id: categoryId },
+        select: { tags: true },
+      });
       const updated = await tx.channelCategory.update({
         where: { id: categoryId },
         data: { tags: [...tags] },
         select: VIEW,
+      });
+      await audit(tx, {
+        actor,
+        action: "channel.category.tags_changed",
+        categoryId,
+        stateBefore: { tags: before.tags },
+        stateAfter: { tags: [...tags] },
+        occurredAt,
       });
       await publishUpdated(tx, { category: updated, outboxEventId, occurredAt });
       return { ok: true, value: updated } as const;

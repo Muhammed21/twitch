@@ -4,6 +4,7 @@ import { afterAll, describe, expect, it } from "vitest";
 
 import { createContextClient } from "@repo/db";
 
+import type { AuditActor } from "../../platform/audit-actor.ts";
 import {
   type CategoryName,
   type CategorySlug,
@@ -17,6 +18,11 @@ import {
 } from "./infrastructure/prisma-category-catalog.ts";
 import { prismaChannelDirectory } from "./infrastructure/prisma-channel-directory.ts";
 
+const API_ACTOR: AuditActor = {
+  actorId: "4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b",
+  onBehalfOf: null,
+  source: "api",
+};
 const NOW = new Date("2026-11-04T12:00:00.000Z");
 
 const prisma = createContextClient({ context: "channel", env: process.env });
@@ -48,6 +54,7 @@ const seedCategory = async () => {
   const categoryId = randomUUID();
   const slug = slugOf(`test-${randomUUID().slice(0, 8)}`);
   const created = await catalog.create({
+    actor: API_ACTOR,
     categoryId,
     slug,
     name: nameOf(`Test ${slug}`),
@@ -77,6 +84,7 @@ describe("catalogue des catégories dans channel (ADR 0045)", () => {
     const slug = slugOf(`test-${randomUUID().slice(0, 8)}`);
 
     const created = await catalog.create({
+      actor: API_ACTOR,
       categoryId,
       slug,
       name: nameOf("Just Chatting"),
@@ -118,6 +126,7 @@ describe("catalogue des catégories dans channel (ADR 0045)", () => {
     const outboxEventId = randomUUID();
 
     const created = await catalog.create({
+      actor: API_ACTOR,
       categoryId: randomUUID(),
       slug: slugOf(existing.slug),
       name: nameOf("Doublon"),
@@ -136,6 +145,7 @@ describe("catalogue des catégories dans channel (ADR 0045)", () => {
     const outboxEventId = randomUUID();
 
     const merged = await catalog.merge({
+      actor: API_ACTOR,
       sourceId: source.id,
       targetId: target.id,
       outboxEventId,
@@ -162,6 +172,7 @@ describe("catalogue des catégories dans channel (ADR 0045)", () => {
     const merged = await seedCategory();
     const target = await seedCategory();
     await catalog.merge({
+      actor: API_ACTOR,
       sourceId: merged.id,
       targetId: target.id,
       outboxEventId: randomUUID(),
@@ -170,6 +181,7 @@ describe("catalogue des catégories dans channel (ADR 0045)", () => {
     const channelId = await seedChannelIn(source.id);
 
     const outcome = await catalog.merge({
+      actor: API_ACTOR,
       sourceId: source.id,
       targetId: merged.id,
       outboxEventId: randomUUID(),
@@ -187,6 +199,7 @@ describe("catalogue des catégories dans channel (ADR 0045)", () => {
     await seedChannelIn(category.id);
 
     const outcome = await catalog.retire({
+      actor: API_ACTOR,
       categoryId: category.id,
       outboxEventId: randomUUID(),
       occurredAt: NOW,
@@ -201,11 +214,13 @@ describe("catalogue des catégories dans channel (ADR 0045)", () => {
     const outboxEventId = randomUUID();
 
     const retired = await catalog.retire({
+      actor: API_ACTOR,
       categoryId: category.id,
       outboxEventId,
       occurredAt: NOW,
     });
     const again = await catalog.retire({
+      actor: API_ACTOR,
       categoryId: category.id,
       outboxEventId: randomUUID(),
       occurredAt: NOW,
@@ -226,6 +241,7 @@ describe("catalogue des catégories dans channel (ADR 0045)", () => {
     const outboxEventId = randomUUID();
 
     const changed = await catalog.changeImage({
+      actor: API_ACTOR,
       categoryId: category.id,
       imageKey,
       outboxEventId,
@@ -233,13 +249,20 @@ describe("catalogue des catégories dans channel (ADR 0045)", () => {
     });
     const replacement = `images/category/${randomUUID()}.webp`;
     const replaced = await catalog.changeImage({
+      actor: API_ACTOR,
       categoryId: category.id,
       imageKey: replacement,
       outboxEventId: randomUUID(),
       occurredAt: NOW,
     });
-    await catalog.retire({ categoryId: category.id, outboxEventId: randomUUID(), occurredAt: NOW });
+    await catalog.retire({
+      actor: API_ACTOR,
+      categoryId: category.id,
+      outboxEventId: randomUUID(),
+      occurredAt: NOW,
+    });
     const afterRetire = await catalog.changeImage({
+      actor: API_ACTOR,
       categoryId: category.id,
       imageKey,
       outboxEventId: randomUUID(),
@@ -267,13 +290,20 @@ describe("catalogue des catégories dans channel (ADR 0045)", () => {
     const outboxEventId = randomUUID();
 
     const changed = await catalog.changeTags({
+      actor: API_ACTOR,
       categoryId: category.id,
       tags: ["Shooter", "RPG"],
       outboxEventId,
       occurredAt: NOW,
     });
-    await catalog.retire({ categoryId: category.id, outboxEventId: randomUUID(), occurredAt: NOW });
+    await catalog.retire({
+      actor: API_ACTOR,
+      categoryId: category.id,
+      outboxEventId: randomUUID(),
+      occurredAt: NOW,
+    });
     const afterRetire = await catalog.changeTags({
+      actor: API_ACTOR,
       categoryId: category.id,
       tags: ["IRL"],
       outboxEventId: randomUUID(),
@@ -307,7 +337,12 @@ describe("nom d'une catégorie", () => {
       outboxEventId,
       occurredAt: NOW,
     });
-    await catalog.retire({ categoryId: category.id, outboxEventId: randomUUID(), occurredAt: NOW });
+    await catalog.retire({
+      actor: API_ACTOR,
+      categoryId: category.id,
+      outboxEventId: randomUUID(),
+      occurredAt: NOW,
+    });
     const afterRetire = await renameCategory(prisma)({
       categoryId: category.id,
       name: nameOf("GTA V"),
@@ -350,7 +385,12 @@ describe("catégorie posée sur une chaîne (ADR 0045, §5)", () => {
 
   it("refuse une catégorie retirée, sans event", async () => {
     const category = await seedCategory();
-    await catalog.retire({ categoryId: category.id, outboxEventId: randomUUID(), occurredAt: NOW });
+    await catalog.retire({
+      actor: API_ACTOR,
+      categoryId: category.id,
+      outboxEventId: randomUUID(),
+      occurredAt: NOW,
+    });
     const channelId = await seedChannelIn(null);
     const outboxEventId = randomUUID();
 
@@ -388,13 +428,19 @@ describe("recherche dans le catalogue (ADR 0045, §5)", () => {
     const covered = await seedCategory();
     const imageKey = `images/category/${randomUUID()}.webp`;
     await catalog.changeImage({
+      actor: API_ACTOR,
       categoryId: covered.id,
       imageKey,
       outboxEventId: randomUUID(),
       occurredAt: NOW,
     });
     const retired = await seedCategory();
-    await catalog.retire({ categoryId: retired.id, outboxEventId: randomUUID(), occurredAt: NOW });
+    await catalog.retire({
+      actor: API_ACTOR,
+      categoryId: retired.id,
+      outboxEventId: randomUUID(),
+      occurredAt: NOW,
+    });
 
     const found = await search.search({ nameContains: active.slug.toUpperCase(), limit: 10 });
     const notFound = await search.search({ nameContains: retired.slug, limit: 10 });
@@ -408,5 +454,173 @@ describe("recherche dans le catalogue (ADR 0045, §5)", () => {
       { id: covered.id, slug: covered.slug, name: covered.name, imageKey },
     ]);
     expect(notFound).toEqual([]);
+  });
+});
+
+const PAYLOAD_ACTOR: AuditActor = {
+  actorId: "8b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e",
+  onBehalfOf: "svc:payload-admin",
+  source: "payload",
+};
+
+const auditOf = (targetId: string) =>
+  prisma.auditEntry.findMany({
+    where: { targetId },
+    orderBy: { occurredAt: "asc" },
+    select: {
+      actorId: true,
+      onBehalfOf: true,
+      source: true,
+      action: true,
+      scopeType: true,
+      scopeId: true,
+      stateBefore: true,
+      stateAfter: true,
+    },
+  });
+
+const BY_PAYLOAD = {
+  actorId: PAYLOAD_ACTOR.actorId,
+  onBehalfOf: "svc:payload-admin",
+  source: "payload",
+  scopeType: "platform",
+  scopeId: "platform",
+};
+
+describe("audit des actions d'administration des catégories (ADR 0006 §7, ADR 0007)", () => {
+  it("audite la création au nom de l'humain, pour le compte de service", async () => {
+    const categoryId = randomUUID();
+    const slug = slugOf(`test-${randomUUID().slice(0, 8)}`);
+
+    await catalog.create({
+      actor: PAYLOAD_ACTOR,
+      categoryId,
+      slug,
+      name: nameOf("Audit"),
+      outboxEventId: randomUUID(),
+      occurredAt: NOW,
+    });
+
+    expect(await auditOf(categoryId)).toEqual([
+      {
+        ...BY_PAYLOAD,
+        action: "channel.category.created",
+        stateBefore: null,
+        stateAfter: { slug, name: "Audit" },
+      },
+    ]);
+  });
+
+  it("audite une action venue de l'API avec la source api et sans compte de service", async () => {
+    const categoryId = randomUUID();
+
+    await catalog.create({
+      actor: API_ACTOR,
+      categoryId,
+      slug: slugOf(`test-${randomUUID().slice(0, 8)}`),
+      name: nameOf("Audit"),
+      outboxEventId: randomUUID(),
+      occurredAt: NOW,
+    });
+
+    expect(await auditOf(categoryId)).toEqual([
+      expect.objectContaining({
+        actorId: API_ACTOR.actorId,
+        onBehalfOf: null,
+        source: "api",
+      }),
+    ]);
+  });
+
+  it("n'audite rien quand la création est refusée", async () => {
+    const existing = await seedCategory();
+    const categoryId = randomUUID();
+
+    await catalog.create({
+      actor: PAYLOAD_ACTOR,
+      categoryId,
+      slug: slugOf(existing.slug),
+      name: nameOf("Doublon"),
+      outboxEventId: randomUUID(),
+      occurredAt: NOW,
+    });
+
+    expect(await auditOf(categoryId)).toEqual([]);
+  });
+
+  it("audite la fusion sur la catégorie source", async () => {
+    const source = await seedCategory();
+    const target = await seedCategory();
+
+    await catalog.merge({
+      actor: PAYLOAD_ACTOR,
+      sourceId: source.id,
+      targetId: target.id,
+      outboxEventId: randomUUID(),
+      occurredAt: NOW,
+    });
+
+    expect((await auditOf(source.id)).at(-1)).toEqual({
+      ...BY_PAYLOAD,
+      action: "channel.category.merged",
+      stateBefore: { status: "active" },
+      stateAfter: { status: "merged", mergedIntoId: target.id },
+    });
+  });
+
+  it("audite le retrait", async () => {
+    const category = await seedCategory();
+
+    await catalog.retire({
+      actor: PAYLOAD_ACTOR,
+      categoryId: category.id,
+      outboxEventId: randomUUID(),
+      occurredAt: NOW,
+    });
+
+    expect((await auditOf(category.id)).at(-1)).toEqual({
+      ...BY_PAYLOAD,
+      action: "channel.category.retired",
+      stateBefore: { status: "active" },
+      stateAfter: { status: "retired" },
+    });
+  });
+
+  it("audite le changement d'image, avec l'image remplacée", async () => {
+    const category = await seedCategory();
+
+    await catalog.changeImage({
+      actor: PAYLOAD_ACTOR,
+      categoryId: category.id,
+      imageKey: "images/category/audit.webp",
+      outboxEventId: randomUUID(),
+      occurredAt: NOW,
+    });
+
+    expect((await auditOf(category.id)).at(-1)).toEqual({
+      ...BY_PAYLOAD,
+      action: "channel.category.image_changed",
+      stateBefore: { imageKey: null },
+      stateAfter: { imageKey: "images/category/audit.webp" },
+    });
+  });
+
+  it("audite le changement de tags", async () => {
+    const category = await seedCategory();
+
+    await catalog.changeTags({
+      actor: PAYLOAD_ACTOR,
+      categoryId: category.id,
+      tags: ["IRL"],
+      outboxEventId: randomUUID(),
+      occurredAt: NOW,
+    });
+
+    expect((await auditOf(category.id)).at(-1)).toEqual({
+      ...BY_PAYLOAD,
+      action: "channel.category.tags_changed",
+      stateBefore: { tags: [] },
+      stateAfter: { tags: ["IRL"] },
+    });
   });
 });

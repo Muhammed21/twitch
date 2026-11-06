@@ -1,6 +1,7 @@
 import type { AuthzContext } from "@repo/authorization";
 import { err, ok, type Result } from "@repo/result";
 
+import type { AuditActor } from "../../../platform/audit-actor.ts";
 import type { FinalizeImage, ImageRejection } from "../../../platform/images/finalize-image.ts";
 import {
   type CategoryName,
@@ -22,6 +23,7 @@ export type CategoryView = {
 };
 
 export type CategoryCreation = {
+  readonly actor: AuditActor;
   readonly categoryId: string;
   readonly slug: CategorySlug;
   readonly name: CategoryName;
@@ -30,6 +32,7 @@ export type CategoryCreation = {
 };
 
 export type CategoryMerge = {
+  readonly actor: AuditActor;
   readonly sourceId: string;
   readonly targetId: string;
   readonly outboxEventId: string;
@@ -37,12 +40,14 @@ export type CategoryMerge = {
 };
 
 export type CategoryRetirement = {
+  readonly actor: AuditActor;
   readonly categoryId: string;
   readonly outboxEventId: string;
   readonly occurredAt: Date;
 };
 
 export type CategoryImageChange = {
+  readonly actor: AuditActor;
   readonly categoryId: string;
   readonly imageKey: string;
   readonly outboxEventId: string;
@@ -50,6 +55,7 @@ export type CategoryImageChange = {
 };
 
 export type CategoryTagsChange = {
+  readonly actor: AuditActor;
   readonly categoryId: string;
   readonly tags: readonly string[];
   readonly outboxEventId: string;
@@ -89,15 +95,15 @@ export type CategoryCreationError = "forbidden" | "invalid_slug" | "invalid_name
 export const createCategory =
   ({ catalog, authz, newId, now }: Dependencies) =>
   async ({
-    actorId,
+    actor,
     slug,
     name,
   }: {
-    actorId: string;
+    actor: AuditActor;
     slug: string;
     name: string;
   }): Promise<Result<CategoryView, CategoryCreationError>> => {
-    if (!(await isAdmin(authz, actorId))) {
+    if (!(await isAdmin(authz, actor.actorId))) {
       return err("forbidden");
     }
     const parsedSlug = parseCategorySlug(slug);
@@ -109,6 +115,7 @@ export const createCategory =
       return parsedName;
     }
     return catalog.create({
+      actor,
       categoryId: newId(),
       slug: parsedSlug.value,
       name: parsedName.value,
@@ -122,15 +129,15 @@ export type CategoryMergeError = "forbidden" | "category_not_found" | "invalid_m
 export const mergeCategory =
   ({ catalog, authz, newId, now }: Dependencies) =>
   async ({
-    actorId,
+    actor,
     sourceSlug,
     targetSlug,
   }: {
-    actorId: string;
+    actor: AuditActor;
     sourceSlug: string;
     targetSlug: string;
   }): Promise<Result<CategoryView, CategoryMergeError>> => {
-    if (!(await isAdmin(authz, actorId))) {
+    if (!(await isAdmin(authz, actor.actorId))) {
       return err("forbidden");
     }
     const source = await catalog.findBySlug(sourceSlug);
@@ -142,6 +149,7 @@ export const mergeCategory =
       return err("invalid_merge");
     }
     return catalog.merge({
+      actor,
       sourceId: source.id,
       targetId: target.id,
       outboxEventId: newId(),
@@ -158,20 +166,25 @@ export type CategoryRetirementError =
 export const retireCategory =
   ({ catalog, authz, newId, now }: Dependencies) =>
   async ({
-    actorId,
+    actor,
     slug,
   }: {
-    actorId: string;
+    actor: AuditActor;
     slug: string;
   }): Promise<Result<CategoryView, CategoryRetirementError>> => {
-    if (!(await isAdmin(authz, actorId))) {
+    if (!(await isAdmin(authz, actor.actorId))) {
       return err("forbidden");
     }
     const category = await catalog.findBySlug(slug);
     if (category === null) {
       return err("category_not_found");
     }
-    return catalog.retire({ categoryId: category.id, outboxEventId: newId(), occurredAt: now() });
+    return catalog.retire({
+      actor,
+      categoryId: category.id,
+      outboxEventId: newId(),
+      occurredAt: now(),
+    });
   };
 
 export type CategoryImageError =
@@ -195,15 +208,15 @@ export const changeCategoryImage =
     onDiscardFailure: (failure: { imageKey: string; error: unknown }) => void;
   }) =>
   async ({
-    actorId,
+    actor,
     slug,
     uploadId,
   }: {
-    actorId: string;
+    actor: AuditActor;
     slug: string;
     uploadId: string;
   }): Promise<Result<CategoryView, CategoryImageError>> => {
-    if (!(await isAdmin(authz, actorId))) {
+    if (!(await isAdmin(authz, actor.actorId))) {
       return err("forbidden");
     }
     const category = await catalog.findBySlug(slug);
@@ -215,12 +228,13 @@ export const changeCategoryImage =
     }
     const discard = (imageKey: string) =>
       discardImage(imageKey).catch((error: unknown) => onDiscardFailure({ imageKey, error }));
-    const image = await finalizeImage({ uploadId, purpose: "category", userId: actorId });
+    const image = await finalizeImage({ uploadId, purpose: "category", userId: actor.actorId });
     if (!image.ok) {
       return image;
     }
     const changed = await catalog
       .changeImage({
+        actor,
         categoryId: category.id,
         imageKey: image.value.key,
         outboxEventId: newId(),
@@ -253,15 +267,15 @@ export type CategoryTagsError =
 export const changeCategoryTags =
   ({ catalog, authz, newId, now }: Dependencies) =>
   async ({
-    actorId,
+    actor,
     slug,
     tags,
   }: {
-    actorId: string;
+    actor: AuditActor;
     slug: string;
     tags: readonly string[];
   }): Promise<Result<CategoryView, CategoryTagsError>> => {
-    if (!(await isAdmin(authz, actorId))) {
+    if (!(await isAdmin(authz, actor.actorId))) {
       return err("forbidden");
     }
     const parsed = parseCategoryTags(tags);
@@ -273,6 +287,7 @@ export const changeCategoryTags =
       return err("category_not_found");
     }
     return catalog.changeTags({
+      actor,
       categoryId: category.id,
       tags: parsed.value,
       outboxEventId: newId(),
