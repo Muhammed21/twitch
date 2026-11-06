@@ -57,9 +57,33 @@ public struct BrowseTabs<Tab: Hashable>: View {
         .buttonStyle(.plain)
         .accessibilityIdentifier(item.accessibilityIdentifier)
         .accessibilityAddTraits(BrowseTabsStyle.traits(isSelected: isSelected))
+        .id(item.tab)
       }
     }
     .frame(maxWidth: .infinity, alignment: .leading)
+  }
+}
+
+public struct ScrollingBrowseTabs<Tab: Hashable>: View {
+  @Binding private var selection: Tab
+  private let items: [BrowseTabItem<Tab>]
+
+  public init(selection: Binding<Tab>, items: [BrowseTabItem<Tab>]) {
+    _selection = selection
+    self.items = items
+  }
+
+  public var body: some View {
+    ScrollViewReader { proxy in
+      ScrollView(.horizontal, showsIndicators: false) {
+        BrowseTabs(selection: $selection, items: items)
+          .padding(.horizontal, LayoutRole.screenInset.points)
+      }
+      .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+      .onChange(of: selection) { _, current in
+        proxy.scrollTo(current, anchor: .center)
+      }
+    }
   }
 }
 

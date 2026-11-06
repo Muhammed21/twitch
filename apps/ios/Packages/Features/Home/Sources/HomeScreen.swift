@@ -14,7 +14,7 @@ public struct HomeScreen: View {
 
   public var body: some View {
     LiveList(store: page?.store ?? store) {
-      FilterChips(selection: $filter, items: HomeFilter.chips(for: browse.categories))
+      ScrollingBrowseTabs(selection: $filter, items: HomeFilter.tabs(for: browse.categories))
         .padding(.top, LayoutRole.filterChipsTop.points)
         .padding(.bottom, LayoutRole.filterChipsBottom.points)
     } row: { live, generation in

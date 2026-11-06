@@ -21,14 +21,11 @@ private let feedMeasures: [(LayoutRole, CGFloat)] = [
   (.feedDividerBottom, 20),
   (.filterChipsTop, 12),
   (.filterChipsBottom, 24),
-  (.filterChipHeight, 32),
-  (.filterChipPaddingH, 12),
-  (.filterChipGap, 8),
 ]
 
 @Suite("Flux de lives de l'accueil : relevé sur docs/new-reference-ui/IMG_9607")
 struct FeedLiveCardTests {
-  @Test("les mesures du flux, des puces et des étiquettes posées sur la vidéo", arguments: feedMeasures)
+  @Test("les mesures du flux, de la rangée de filtres et des étiquettes posées sur la vidéo", arguments: feedMeasures)
   func layoutRoles(role: LayoutRole, points: CGFloat) {
     #expect(role.points == points)
   }
@@ -38,7 +35,6 @@ struct FeedLiveCardTests {
     #expect(TextRole.feedOverlay.font == Font.footnote.weight(.regular))
     #expect(TextRole.feedChannelName.font == Font.headline.weight(.semibold))
     #expect(TextRole.feedTitle.font == Font.subheadline.weight(.regular))
-    #expect(TextRole.filterChip.font == Font.subheadline.weight(.semibold))
   }
 
   @Test("« Live » sur une pilule voilée avec un point rouge, les spectateurs en blanc sur le voile")
@@ -56,13 +52,5 @@ struct FeedLiveCardTests {
     #expect(FeedLiveCardStyle.titleLineLimit == 2)
     #expect(FeedLiveCardStyle.divider == .surfaceSecondary)
     #expect(FeedLiveCardStyle.placeholder == .surfaceSecondary)
-  }
-
-  @Test("la puce active est noire à libellé blanc, les autres grises à libellé principal")
-  func chipColors() {
-    #expect(FilterChipStyle.background(isSelected: true) == .chipSelected)
-    #expect(FilterChipStyle.foreground(isSelected: true) == .onChipSelected)
-    #expect(FilterChipStyle.background(isSelected: false) == .surfaceSecondary)
-    #expect(FilterChipStyle.foreground(isSelected: false) == .textPrimary)
   }
 }

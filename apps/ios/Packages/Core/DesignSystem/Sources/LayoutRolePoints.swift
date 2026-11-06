@@ -149,9 +149,6 @@ public extension LayoutRole {
     case .feedDividerBottom: Spacing.x20
     case .filterChipsTop: Spacing.x12
     case .filterChipsBottom: Spacing.x24
-    case .filterChipHeight: Spacing.x32
-    case .filterChipPaddingH: Spacing.x12
-    case .filterChipGap: Spacing.x8
     case .profileEditTop: Spacing.x8
     case .profileEditTrailing: Spacing.x24
     case .editSectionLabelGap: Spacing.x8
