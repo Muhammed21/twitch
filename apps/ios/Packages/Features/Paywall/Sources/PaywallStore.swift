@@ -15,6 +15,10 @@ public final class PaywallStore {
     case purchaseFailed
     case nothingToRestore
     case restoreFailed
+
+    public var isAboutRestore: Bool {
+      self != .purchaseFailed
+    }
   }
 
   public private(set) var phase: Phase = .loading

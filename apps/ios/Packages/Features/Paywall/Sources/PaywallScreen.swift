@@ -17,6 +17,10 @@ public enum PaywallPresentation {
     }
   }
 
+  public var showsPlanPicker: Bool {
+    showsJourneyHeader
+  }
+
   public var title: LocalizedStringResource? {
     switch self {
     case .journey: nil
@@ -75,7 +79,11 @@ public struct PaywallScreen: View {
     case .subscribed:
       ScrollView { pitch(PaywallText.subscribedTitle, PaywallText.subscribedMessage) }
     case let .ready(offering):
-      offer(offering)
+      if presentation.showsPlanPicker {
+        offer(offering)
+      } else {
+        TurboPage(offering: offering, store: store, links: links)
+      }
     }
   }
 
@@ -150,16 +158,7 @@ public struct PaywallScreen: View {
 
   private func pitch(_ title: LocalizedStringResource, _ detail: LocalizedStringResource) -> some View {
     VStack(spacing: 0) {
-      TurboBand()
-        .overlay(alignment: .top) {
-          Glyph.turboBattery.image
-            .resizable()
-            .scaledToFit()
-            .frame(width: PaywallLayout.markSize.points)
-            .foregroundStyle(ColorRole.onAccent.color)
-            .padding(.top, PaywallLayout.headlineTop.points)
-            .accessibilityHidden(true)
-        }
+      TurboMarkBand()
       Text(title)
         .font(TextRole.journeyTitle.font)
         .foregroundStyle(JourneyStyle.title.color)

@@ -54,6 +54,7 @@ public enum TextRole: Sendable {
   case paywallHeadline
   case paywallBody
   case paywallLegal
+  case paywallFinePrint
   case sheetHero
   case sheetHeroDetail
   case sheetRowTitle
@@ -130,6 +131,7 @@ public enum TextRole: Sendable {
     case .paywallHeadline: .displayText
     case .paywallBody: .supportingText
     case .paywallLegal: .viewerCount
+    case .paywallFinePrint: .metaText
     case .sheetHero: .sheetHeroText
     case .sheetHeroDetail: .supportingText
     case .sheetRowTitle: .sheetRowTitle

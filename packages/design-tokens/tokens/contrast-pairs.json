@@ -103,6 +103,12 @@
       "note": "Libellé du bouton Cancel de la modale de déconnexion"
     },
     {
+      "foreground": "color.text.secondary",
+      "background": "color.surface.tertiary",
+      "min": 3,
+      "note": "Chevron d'une carte d'avantage repliable de la page Turbo (abonnement/turbo--defaut)"
+    },
+    {
       "foreground": "color.chat.name.blue",
       "background": "color.background.primary",
       "min": 4.5,

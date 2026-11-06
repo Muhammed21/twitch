@@ -46,6 +46,22 @@ public enum PaywallLayout: CaseIterable, Sendable {
   case markSize
   case savingsPaddingH
   case savingsPaddingV
+  case taglineTop
+  case subscribeTop
+  case subscribePaddingH
+  case subscribeIconGap
+  case subscribeIconSize
+  case subscribeRadius
+  case finePrintTop
+  case finePrintGap
+  case perksTop
+  case perkGap
+  case perkPaddingV
+  case perkPaddingLeading
+  case perkPaddingTrailing
+  case perkIllustrationWidth
+  case perkTitleGap
+  case perkRadius
 
   public var points: CGFloat {
     switch self {
@@ -55,6 +71,22 @@ public enum PaywallLayout: CaseIterable, Sendable {
     case .markSize: Spacing.x36
     case .savingsPaddingH: Spacing.x6
     case .savingsPaddingV: Spacing.x2
+    case .taglineTop: Spacing.x16
+    case .subscribeTop: Spacing.x16
+    case .subscribePaddingH: Spacing.x12
+    case .subscribeIconGap: Spacing.x12
+    case .subscribeIconSize: Spacing.x24
+    case .subscribeRadius: Radius.md
+    case .finePrintTop: Spacing.x8
+    case .finePrintGap: Spacing.x8
+    case .perksTop: Spacing.x20
+    case .perkGap: Spacing.x8
+    case .perkPaddingV: Spacing.x12
+    case .perkPaddingLeading: Spacing.x6
+    case .perkPaddingTrailing: Spacing.x12
+    case .perkIllustrationWidth: Spacing.x70
+    case .perkTitleGap: Spacing.x4
+    case .perkRadius: Radius.lg
     }
   }
 }

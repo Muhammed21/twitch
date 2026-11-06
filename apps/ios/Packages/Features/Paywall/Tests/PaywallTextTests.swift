@@ -82,6 +82,18 @@ struct PaywallTextTests {
     #expect(english(PaywallText.notice(notice)) == expected)
   }
 
+  @Test(
+    "le message de restauration s'affiche près du bouton Restaurer, celui d'achat près du bouton S'abonner",
+    arguments: [
+      (PaywallStore.Notice.purchaseFailed, false),
+      (.nothingToRestore, true),
+      (.restoreFailed, true),
+    ]
+  )
+  func noticePlacement(notice: PaywallStore.Notice, aboutRestore: Bool) {
+    #expect(notice.isAboutRestore == aboutRestore)
+  }
+
   @Test("l'état abonné et l'état indisponible")
   func states() {
     #expect(english(PaywallText.subscribedTitle) == "You're a Turbo subscriber")

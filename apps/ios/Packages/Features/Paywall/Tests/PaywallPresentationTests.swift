@@ -22,6 +22,7 @@ struct PaywallPresentationTests {
     let presentation = PaywallPresentation.journey(onClose: {})
     #expect(presentation.showsJourneyHeader)
     #expect(presentation.title == nil)
+    #expect(presentation.showsPlanPicker)
   }
 
   @Test("« Plus tard » appelle la fermeture portée par le parcours")
@@ -37,5 +38,10 @@ struct PaywallPresentationTests {
     #expect(!PaywallPresentation.pushed.showsJourneyHeader)
     #expect(try french(#require(PaywallPresentation.pushed.title)) == "Turbo")
     #expect(PaywallPresentation.pushed.onClose == nil)
+  }
+
+  @Test("la page Turbo n'a pas de choix de formule : un seul bouton sous l'accroche (abonnement/turbo--defaut)")
+  func pushedWithoutPlanPicker() {
+    #expect(!PaywallPresentation.pushed.showsPlanPicker)
   }
 }

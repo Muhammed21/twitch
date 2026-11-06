@@ -211,6 +211,22 @@
         }
       }
     },
+    "paywall.perk.badge.description" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show the Battery Chat Badge next to your username in every chat. Other viewers see it on each of your messages, in every channel you visit."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Affichez le badge batterie à côté de votre pseudo dans tous les chats. Les autres viewers le voient sur chacun de vos messages, sur toutes les chaînes."
+          }
+        }
+      }
+    },
     "paywall.perk.badge.detail" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -224,6 +240,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Affiché à côté de votre pseudo dans tous les chats."
+          }
+        }
+      }
+    },
+    "paywall.perk.collapsed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collapsed"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Replié"
           }
         }
       }
@@ -245,6 +277,22 @@
         }
       }
     },
+    "paywall.perk.color.description" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick the color of your username in chat. Everyone in the channel sees your messages under the color you chose, in every chat."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez la couleur de votre pseudo dans le chat. Tout le monde voit vos messages sous la couleur choisie, dans tous les chats."
+          }
+        }
+      }
+    },
     "paywall.perk.color.detail" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -258,6 +306,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choisissez la couleur de votre pseudo dans le chat."
+          }
+        }
+      }
+    },
+    "paywall.perk.expanded" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expanded"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Déplié"
           }
         }
       }
