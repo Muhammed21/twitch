@@ -8,6 +8,7 @@
     "migrate": "pnpm --filter @repo/db migrate",
     "migrate:dev": "pnpm --filter @repo/db migrate:dev",
     "seed:dev": "pnpm --filter @repo/api build && pnpm --filter @repo/api seed:dev",
+    "dev:end-lives": "pnpm --filter @repo/api build && pnpm --filter @repo/api dev:end-lives",
     "lint": "oxlint --type-aware . && pnpm --filter @repo/ios-imports check",
     "fmt": "oxfmt --write .",
     "fmt:check": "oxfmt --check .",

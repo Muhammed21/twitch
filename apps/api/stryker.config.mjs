@@ -18,6 +18,7 @@ export default {
     "!src/outbox-relay/outbox-relay.ts",
     "!src/outbox-relay/main.ts",
     "!src/discovery-rebuild/main.ts",
+    "!src/dev-end-lives/main.ts",
     "!src/platform/testing/**",
     "!src/platform/stream-consumer.ts",
     "!src/platform/redis-window-counter.ts",

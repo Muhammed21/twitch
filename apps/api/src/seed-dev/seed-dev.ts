@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-import { networkInterfaces } from "node:os";
 
 import { Client } from "pg";
 import type { z } from "zod";
@@ -22,7 +21,7 @@ import {
 import { createIdentityRedis } from "../modules/identity/infrastructure/redis-session-revocation.ts";
 import { createSmtpMailer } from "../modules/identity/infrastructure/smtp-mailer.ts";
 import { loadEnv } from "../platform/config/env.ts";
-import { isLocalHost } from "./local-host.ts";
+import { isLocalApi } from "./local-host.ts";
 
 export const DEV_CLIENT_ID = "twitch-ios-dev";
 export const DEV_REDIRECT_URI = "twitch://oauth/callback";
@@ -293,16 +292,9 @@ const categorizeDemoChannels = (env: Env, ownerIds: readonly string[]): Promise<
     }),
   );
 
-const machineAddresses = (): readonly string[] =>
-  Object.values(networkInterfaces())
-    .flatMap((addresses) => addresses ?? [])
-    .map(({ address }) => address);
-
 export const seedDevelopment = async (env: Env): Promise<Result<SeedReport, "not_local">> => {
   const { authBaseUrl } = loadEnv(env);
-  if (
-    !isLocalHost({ hostname: new URL(authBaseUrl).hostname, machineAddresses: machineAddresses() })
-  ) {
+  if (!isLocalApi(authBaseUrl)) {
     return err("not_local");
   }
   const client = new Client({ connectionString: migratorUrlOf(env) });

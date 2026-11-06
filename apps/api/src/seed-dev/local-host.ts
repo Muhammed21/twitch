@@ -1,4 +1,5 @@
 import { BlockList, isIPv6 } from "node:net";
+import { networkInterfaces } from "node:os";
 
 const LOOPBACK_HOSTS: ReadonlySet<string> = new Set(["localhost", "127.0.0.1", "[::1]"]);
 
@@ -23,3 +24,11 @@ export const isLocalHost = ({
   const address = hostname.replace(/^\[(.*)\]$/, "$1");
   return LOOPBACK_HOSTS.has(hostname) || (machineAddresses.includes(address) && isPrivate(address));
 };
+
+const machineAddresses = (): readonly string[] =>
+  Object.values(networkInterfaces())
+    .flatMap((addresses) => addresses ?? [])
+    .map(({ address }) => address);
+
+export const isLocalApi = (url: string): boolean =>
+  isLocalHost({ hostname: new URL(url).hostname, machineAddresses: machineAddresses() });
