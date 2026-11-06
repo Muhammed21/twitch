@@ -2,24 +2,48 @@ import DesignSystem
 import Domain
 import SwiftUI
 
+public enum PaywallPresentation: Sendable {
+  case journey
+  case pushed
+
+  public var showsJourneyHeader: Bool {
+    self == .journey
+  }
+
+  public var title: LocalizedStringResource? {
+    switch self {
+    case .journey: nil
+    case .pushed: PaywallText.title
+    }
+  }
+}
+
 public struct PaywallScreen: View {
   @State private var store: PaywallStore
   private let links: PaywallLinks
+  private let presentation: PaywallPresentation
   private let onClose: () -> Void
 
-  public init(store: PaywallStore, links: PaywallLinks, onClose: @escaping () -> Void) {
+  public init(
+    store: PaywallStore,
+    links: PaywallLinks,
+    presentation: PaywallPresentation = .journey,
+    onClose: @escaping () -> Void = {}
+  ) {
     _store = State(initialValue: store)
     self.links = links
+    self.presentation = presentation
     self.onClose = onClose
   }
 
   public var body: some View {
     VStack(spacing: 0) {
-      header
+      if presentation.showsJourneyHeader { header }
       content
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     .background(ColorRole.background.color.ignoresSafeArea())
+    .modifier(PaywallNavigation(title: presentation.title))
     .task { await store.load() }
   }
 
@@ -154,5 +178,20 @@ public struct PaywallScreen: View {
       .multilineTextAlignment(.center)
       .padding(.horizontal, LayoutRole.screenInset.points)
       .accessibilityIdentifier("paywall.unavailable")
+  }
+}
+
+private struct PaywallNavigation: ViewModifier {
+  let title: LocalizedStringResource?
+
+  func body(content: Content) -> some View {
+    if let title {
+      content
+        .navigationTitle(Text(title))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.visible, for: .navigationBar)
+    } else {
+      content
+    }
   }
 }
