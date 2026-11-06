@@ -249,6 +249,33 @@
         "$type": "color",
         "$value": "{core.color.neutral.100}",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9625, IMG_9626) : remplissage des illustrations d'état vide du tableau de bord, mesuré #ffffff. Aucune capture en thème sombre (ADR 0052 §4) : valeur claire gardée."
+      },
+      "accent": {
+        "$type": "color",
+        "$value": "{core.color.purple.60}",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9615) : losange violet derrière le personnage de l'onglet « À propos » vide, mesuré #9147ff. Aucune capture en thème sombre (ADR 0053 §3) : valeur claire gardée."
+      },
+      "highlight": {
+        "$type": "color",
+        "$value": "{core.color.yellow.90}",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9613, IMG_9615) : surlignage jaune du personnage, mesuré #f5f500. Aucune capture en thème sombre (ADR 0053 §3) : valeur claire gardée."
+      },
+      "backdrop": {
+        "$type": "color",
+        "$value": "{core.color.neutral.90}",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9613) : losange gris derrière le personnage de l'onglet Chuchotements vide, mesuré #efeff1. Aucune capture en thème sombre (ADR 0053 §3) : valeur claire gardée."
+      }
+    },
+    "chip": {
+      "selected": {
+        "$type": "color",
+        "$value": "{core.color.neutral.90}",
+        "$description": "Puce de filtre active en thème sombre : aucune capture des puces en sombre ; reprend le soulignement clair de l'onglet actif de l'accueil en sombre (docs/reference-ui/accueil/flux-live--theme-sombre)."
+      },
+      "onSelected": {
+        "$type": "color",
+        "$value": "{core.color.neutral.0}",
+        "$description": "Libellé de la puce de filtre active en thème sombre, inverse du thème clair (docs/new-reference-ui/IMG_9607)."
       }
     }
   }

@@ -61,6 +61,11 @@
         "$value": "16px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : marge latérale des écrans."
       },
+      "19": {
+        "$type": "dimension",
+        "$value": "19px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9613) : écart entre le bas du personnage de l'onglet Chuchotements vide et le cadre du titre, 65 px à @3x jusqu'à la capitale, moins les 7 px qui séparent le haut du cadre de la capitale."
+      },
       "20": {
         "$type": "dimension",
         "$value": "20px",
@@ -116,10 +121,20 @@
         "$value": "50px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9614) : hauteur des pilules « Gestionnaire de stream », « Statistiques » et « Essayer sans publicité » du profil (150 px à @3x)."
       },
+      "55": {
+        "$type": "dimension",
+        "$value": "55px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9615) : retrait du contenu vide de l'onglet « À propos » sous les onglets du profil (164 px à @3x)."
+      },
       "56": {
         "$type": "dimension",
         "$value": "56px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : hauteur des lignes du menu du compte."
+      },
+      "63": {
+        "$type": "dimension",
+        "$value": "63px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9607) : largeur du filet qui sépare deux lives du flux de l'accueil, 189 px à @3x."
       },
       "70": {
         "$type": "dimension",

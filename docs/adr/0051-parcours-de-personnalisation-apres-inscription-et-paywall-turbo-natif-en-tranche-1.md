@@ -289,3 +289,13 @@ Les sons du parcours se jouent comme sons système (`AudioServicesPlaySystemSoun
 
 - **Raison.** Une session `.ambient` avec `.mixWithOthers` change la catégorie audio de toute l'app. Un live ouvert après le parcours se mélangeait alors à la musique de l'utilisateur, au lieu de l'interrompre.
 - **Effet.** Un son système se tait en mode silencieux et se mélange à la musique en cours, sans toucher à la session audio de l'app. Le lecteur du live garde sa propre catégorie.
+
+## Amendement du 2026-11-06 — achat réussi dans le funnel
+
+Proposé par la PR #345, à valider par l'utilisateur. Le statut reste Accepté.
+
+Le tableau des événements du §7 gagne `purchase:completed`, avec les propriétés `product_id` et `variant`, émis par le client quand RevenueCat confirme l'achat.
+
+- **Raison.** Le funnel du paywall s'arrêtait au tap (`purchase:started`) : aucun événement de notre taxonomie ne disait que l'achat avait abouti.
+- **Limite.** L'événement n'a ni montant ni devise, et le schéma les refuse : il ne compte pas le revenu, qui reste celui de l'intégration RevenueCat → PostHog (ADR 0012 §3).
+- **Variante.** Comme `paywall:viewed`, il n'est émis que si une variante existe.

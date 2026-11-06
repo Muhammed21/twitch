@@ -84,6 +84,16 @@ struct ColorRoleTests {
       (ColorRole.illustrationOutline, ColorScheme.dark, "323338"),
       (ColorRole.illustrationFill, ColorScheme.light, "FFFFFF"),
       (ColorRole.illustrationFill, ColorScheme.dark, "FFFFFF"),
+      (ColorRole.illustrationAccent, ColorScheme.light, "9147FF"),
+      (ColorRole.illustrationAccent, ColorScheme.dark, "9147FF"),
+      (ColorRole.illustrationHighlight, ColorScheme.light, "F5F500"),
+      (ColorRole.illustrationHighlight, ColorScheme.dark, "F5F500"),
+      (ColorRole.illustrationBackdrop, ColorScheme.light, "EFEFF1"),
+      (ColorRole.illustrationBackdrop, ColorScheme.dark, "EFEFF1"),
+      (ColorRole.chipSelected, ColorScheme.light, "000000"),
+      (ColorRole.chipSelected, ColorScheme.dark, "EFEFF1"),
+      (ColorRole.onChipSelected, ColorScheme.light, "FFFFFF"),
+      (ColorRole.onChipSelected, ColorScheme.dark, "000000"),
     ]
   )
   func resolvesToken(role: ColorRole, scheme: ColorScheme, expected: String) {
