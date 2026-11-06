@@ -5,8 +5,12 @@ import SwiftUI
 
 struct HeaderLine: Equatable {
   let isLive: Bool
-  let viewers: String?
-  var count: Int?
+  let viewers: HeaderViewers?
+}
+
+struct HeaderViewers: Equatable {
+  let shown: String
+  let count: Int
 }
 
 extension HeaderLine {
@@ -17,8 +21,9 @@ extension HeaderLine {
     }
     self.init(
       isLive: true,
-      viewers: count.map { $0.value.formatted(.number.notation(.compactName).locale(locale)) },
-      count: count?.value
+      viewers: count.map {
+        HeaderViewers(shown: $0.value.formatted(.number.notation(.compactName).locale(locale)), count: $0.value)
+      }
     )
   }
 }
@@ -46,11 +51,11 @@ public struct ChannelHeader: View {
           .accessibilityIdentifier("channel.live")
       }
       Spacer(minLength: 0)
-      if let viewers = line.viewers, let count = line.count {
-        Label(viewers, systemImage: "person")
+      if let viewers = line.viewers {
+        Label(viewers.shown, systemImage: "person")
           .font(TextRole.body.font)
           .foregroundStyle(ColorRole.textSecondary.color)
-          .accessibilityLabel(ChannelText.viewers(count, shown: viewers))
+          .accessibilityLabel(ChannelText.viewers(viewers.count, shown: viewers.shown))
           .accessibilityIdentifier("channel.viewers")
       }
     }
