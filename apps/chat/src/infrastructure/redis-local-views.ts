@@ -20,6 +20,13 @@ export const sanctionsKey = (userId: string): string => `${chatterKey(userId)}:s
 
 const SanctionEnd = z.string().regex(/^\d+$/).transform(Number);
 
+export const PERMANENT = "permanent";
+
+const SanctionExpiry = z.union([
+  z.literal(PERMANENT).transform(() => null),
+  SanctionEnd.transform((end) => new Date(end)),
+]);
+
 export const TURBO_EXPIRES_AT = "turboExpiresAt";
 
 export const CHAT_COLOR = "chatColor";
@@ -51,8 +58,8 @@ export const redisChatterProfiles = (redis: HashReader): ChatterProfiles => ({
   avatarKeyOf: (userId) => redis.hGet(chatterKey(userId), "avatarKey"),
   sanctionsOf: async (userId) =>
     Object.entries(await redis.hGetAll(sanctionsKey(userId))).flatMap(([channelId, end]) => {
-      const parsed = SanctionEnd.safeParse(end);
-      return parsed.success ? [{ channelId, expiresAt: new Date(parsed.data) }] : [];
+      const parsed = SanctionExpiry.safeParse(end);
+      return parsed.success ? [{ channelId, expiresAt: parsed.data }] : [];
     }),
 });
 

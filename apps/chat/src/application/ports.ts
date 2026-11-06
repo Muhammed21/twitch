@@ -13,10 +13,13 @@ export type ChatterProfiles = {
 export type ChatterSanction = {
   readonly userId: string;
   readonly channelId: string;
-  readonly expiresAt: Date;
+  readonly expiresAt: Date | null;
 };
 
-export type SanctionedSockets = { sanction(sanction: ChatterSanction): void };
+export type SanctionedSockets = {
+  sanction(sanction: ChatterSanction): void;
+  ban(sanction: ChatterSanction): void;
+};
 
 export type SanctionMetrics = { sanctionApplied(sanctionedAt: Date): void };
 

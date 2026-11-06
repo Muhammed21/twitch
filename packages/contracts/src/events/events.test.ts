@@ -490,3 +490,48 @@ describe("moderation.user.timed_out", () => {
     );
   });
 });
+
+describe("moderation.user.banned", () => {
+  const USER_ID = "2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e";
+
+  const makeBan = (overrides: Record<string, unknown> = {}) => ({
+    channelId: CHANNEL_ID,
+    userId: USER_ID,
+    expiresAt: "2026-10-16T20:00:00.000Z",
+    ...overrides,
+  });
+
+  it("porte son nom et sa version", () => {
+    expect(events.moderation.userBanned).toMatchObject({
+      name: "moderation.user.banned",
+      version: 1,
+    });
+  });
+
+  it("décode la chaîne, l'utilisateur banni et la fin du bannissement", () => {
+    expect(events.moderation.userBanned.payload.parse(makeBan())).toEqual(makeBan());
+  });
+
+  it("décode un bannissement définitif, sans fin", () => {
+    expect(events.moderation.userBanned.payload.parse(makeBan({ expiresAt: null }))).toEqual(
+      makeBan({ expiresAt: null }),
+    );
+  });
+
+  it("garde un champ ajouté plus tard par l'émetteur", () => {
+    expect(events.moderation.userBanned.payload.parse(makeBan({ reason: "spam" }))).toMatchObject({
+      reason: "spam",
+    });
+  });
+
+  it.each([
+    ["sans chaîne", { channelId: undefined }],
+    ["avec une chaîne qui n'est pas un UUID", { channelId: "chaine-1" }],
+    ["sans utilisateur", { userId: undefined }],
+    ["avec un utilisateur qui n'est pas un UUID", { userId: "viewer" }],
+    ["sans fin, même nulle", { expiresAt: undefined }],
+    ["avec une fin sans fuseau", { expiresAt: "2026-10-16T20:00:00" }],
+  ])("refuse un event %s", (_name, overrides) => {
+    expect(events.moderation.userBanned.payload.safeParse(makeBan(overrides)).success).toBe(false);
+  });
+});

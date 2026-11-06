@@ -213,6 +213,32 @@ describe("écriture des vues locales du chat, contre le Redis de Compose", () =>
 
     expect(await redis.pExpireTime(sanctionsKey(userId))).toBe(later.getTime());
   });
+  it("garde un bannissement définitif malgré un timeout lu ensuite, et ne l'expire pas", async () => {
+    const { redis, writer, channelId } = await setup();
+    const userId = `test-chat-${randomUUID()}`;
+    onTestFinished(async () => {
+      await redis.del(sanctionsKey(userId));
+    });
+
+    await writer.sanctionChatter({
+      userId,
+      channelId: randomUUID(),
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    await writer.sanctionChatter({ userId, channelId, expiresAt: null });
+    await writer.sanctionChatter({
+      userId,
+      channelId,
+      expiresAt: new Date(Date.now() + 20 * 60_000),
+    });
+
+    expect(await redisChatterProfiles(redis).sanctionsOf(userId)).toContainEqual({
+      channelId,
+      expiresAt: null,
+    });
+    expect(await redis.pExpireTime(sanctionsKey(userId))).toBe(-1);
+  });
+
   it("tient l'échéance Turbo d'un abonné", async () => {
     const { redis, writer } = await setup();
     const userId = await makeChatter(redis);
