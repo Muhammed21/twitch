@@ -70,7 +70,7 @@
       "foreground": "color.accent.onAccentStrong",
       "background": "color.accent.default",
       "min": 4.5,
-      "note": "Slogan de l'accueil"
+      "note": "Texte fort posé sur l'accent"
     },
     {
       "foreground": "color.accent.onAccentStrong",

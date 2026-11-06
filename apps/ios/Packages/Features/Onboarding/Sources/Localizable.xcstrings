@@ -1285,6 +1285,23 @@
         }
       }
     },
+    "welcome.heading" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welcome to Twitch"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bienvenue sur Twitch"
+          }
+        }
+      }
+    },
     "welcome.logIn" : {
       "localizations" : {
         "en" : {

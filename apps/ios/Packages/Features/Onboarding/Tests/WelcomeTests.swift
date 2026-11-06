@@ -69,6 +69,11 @@ struct WelcomeTests {
     #expect(WelcomeText.logIn == shown(english: "Log In", french: "Se connecter"))
     #expect(WelcomeText.signUp == shown(english: "Sign Up", french: "S'inscrire"))
   }
+
+  @Test("VoiceOver annonce un titre d'écran avant les boutons, les catégories animées restent muettes")
+  func spokenHeading() {
+    #expect(WelcomeText.heading == shown(english: "Welcome to Twitch", french: "Bienvenue sur Twitch"))
+  }
 }
 
 @Suite("Entrée animée des catégories")

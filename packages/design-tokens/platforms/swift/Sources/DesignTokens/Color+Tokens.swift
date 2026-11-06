@@ -81,7 +81,7 @@ public extension Color {
             ? UIColor(red: 0.569, green: 0.278, blue: 1, alpha: 1)
             : UIColor(red: 0.569, green: 0.278, blue: 1, alpha: 1)
     })
-    /// Texte fort posé sur l'accent, ou sur un bouton blanc posé sur l'accent : slogan et libellé Sign Up de l'accueil.
+    /// Texte fort posé sur l'accent, ou sur un bouton blanc posé sur l'accent : libellé Sign Up de l'accueil.
     /// clair #000000 · sombre #000000
     static let accentOnAccentStrong = Color(uiColor: UIColor { trait in
         trait.userInterfaceStyle == .dark

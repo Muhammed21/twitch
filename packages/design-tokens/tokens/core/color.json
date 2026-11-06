@@ -5,7 +5,7 @@
         "0": {
           "$type": "color",
           "$value": "#000000",
-          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : slogan et libellé du bouton blanc de l'accueil (onboarding/accueil-bienvenue--defaut)."
+          "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : libellé du bouton blanc de l'accueil (onboarding/accueil-bienvenue--defaut)."
         },
         "5": {
           "$type": "color",

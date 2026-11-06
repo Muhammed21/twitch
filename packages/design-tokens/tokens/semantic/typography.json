@@ -30,7 +30,7 @@
         "textStyle": "largeTitle",
         "fontWeight": 700
       },
-      "$description": "Catégories et slogan de l'accueil. Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : hauteur de capitale 24 pt, soit 34 pt, text style iOS largeTitle."
+      "$description": "Catégories de l'accueil. Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : hauteur de capitale 24 pt, soit 34 pt, text style iOS largeTitle."
     },
     "actionLabel": {
       "$type": "iosTextStyle",

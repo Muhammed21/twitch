@@ -7,7 +7,6 @@ public extension LayoutRole {
     case .heroInset: Spacing.x40
     case .heroRowGap: Spacing.x4
     case .sloganGap: Spacing.x12
-    case .sloganBottom: Spacing.x12
     case .actionInset: Spacing.x20
     case .actionGap: Spacing.x16
     case .actionHeight: Spacing.x44
