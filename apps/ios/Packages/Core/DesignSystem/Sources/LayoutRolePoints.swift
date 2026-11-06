@@ -186,6 +186,11 @@ public extension LayoutRole {
     case .dashboardHintInset: Spacing.x22
     case .dashboardHintTop: Spacing.x8
     case .dashboardActivityHeight: Spacing.x132
+    case .activityHeaderHeight: Spacing.x32
+    case .activityEmptyInset: Spacing.x40
+    case .activityEmptyGap: Spacing.x16
+    case .activityActionHeight: Spacing.x36
+    case .activityActionPadding: Spacing.x12
     }
   }
 }
