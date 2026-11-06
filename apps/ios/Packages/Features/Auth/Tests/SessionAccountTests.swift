@@ -103,6 +103,21 @@ struct SessionAccountTests {
     #expect(!harness.store.hasAccountLoadFailure)
   }
 
+  @Test("une déconnexion pendant un chargement qui échoue ne signale pas d'échec")
+  func signedOutWhileFailing() async {
+    let gate = Gate()
+    let harness = Harness(tokens: storedTokens, account: .failure(NetworkDown()), accountGate: gate)
+    let running = await harness.launch()
+    defer { running.cancel() }
+
+    await harness.store.resolveLogOut(.logOut)
+    #expect(await eventually { harness.store.phase == .signedOut })
+    await gate.open()
+    try? await Task.sleep(for: .milliseconds(50))
+
+    #expect(!harness.store.hasAccountLoadFailure)
+  }
+
   @Test("déconnectée, un nouvel essai ne reconnecte pas la session")
   func reloadWhileSignedOut() async {
     let harness = Harness(tokens: nil)

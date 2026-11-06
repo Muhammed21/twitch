@@ -152,6 +152,7 @@ public final class SessionStore {
     } catch SessionError.signedOut {
       try? await session.signOut()
     } catch {
+      guard case .signedIn(nil) = phase else { return }
       hasAccountLoadFailure = true
     }
   }
