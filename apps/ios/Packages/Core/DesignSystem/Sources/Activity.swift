@@ -20,7 +20,7 @@ public struct ActivityHeader: View {
       .foregroundStyle(ActivityStyle.title.color)
       .accessibilityAddTraits(.isHeader)
       .frame(maxWidth: .infinity)
-      .frame(height: LayoutRole.activityHeaderHeight.points)
+      .frame(minHeight: LayoutRole.activityHeaderHeight.points)
   }
 }
 
@@ -53,6 +53,7 @@ public struct ActivityEmptyState: View {
     VStack(spacing: LayoutRole.activityEmptyGap.points) {
       Text(verbatim: title)
         .font(TextRole.activityEmptyTitle.font)
+        .accessibilityAddTraits(.isHeader)
       Text(verbatim: message)
         .font(TextRole.activityEmptyMessage.font)
       if let action {
@@ -61,10 +62,11 @@ public struct ActivityEmptyState: View {
             .font(TextRole.activityEmptyAction.font)
             .foregroundStyle(ActivityStyle.actionForeground.color)
             .padding(.horizontal, LayoutRole.activityActionPadding.points)
-            .frame(height: LayoutRole.activityActionHeight.points)
+            .frame(minHeight: LayoutRole.activityActionHeight.points)
             .background(ActivityStyle.actionBackground.color, in: Capsule())
         }
         .buttonStyle(.plain)
+        .expandedTapTarget(visibleHeight: LayoutRole.activityActionHeight.points)
         .disabled(!action.isEnabled)
         .accessibilityIdentifier(action.accessibilityIdentifier)
       }

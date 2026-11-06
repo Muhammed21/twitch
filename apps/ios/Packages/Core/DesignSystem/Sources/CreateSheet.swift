@@ -100,7 +100,7 @@ public struct CreateSheetRow: View {
           }
           Text(verbatim: title)
             .font(TextRole.sheetRowTitle.font)
-            .lineLimit(1)
+            .readableLineLimit(1)
             .minimumScaleFactor(CreateSheetStyle.titleMinimumScale)
         }
         Text(verbatim: detail)

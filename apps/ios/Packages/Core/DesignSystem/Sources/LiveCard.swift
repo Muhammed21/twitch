@@ -109,7 +109,7 @@ public struct LiveCard: View {
           .foregroundStyle(LiveCardStyle.detail.color)
       }
     }
-    .lineLimit(1)
+    .readableLineLimit(1)
     .frame(maxWidth: .infinity, alignment: .leading)
   }
 }

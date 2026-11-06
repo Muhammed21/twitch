@@ -27,7 +27,7 @@ struct ProfileEditButton: View {
         .font(TextRole.profileEdit.font)
         .foregroundStyle(ProfileHeaderStyle.onBannerControl.color)
         .padding(.horizontal, LayoutRole.profileEditPadding.points)
-        .frame(height: LayoutRole.profileEditHeight.points)
+        .frame(minHeight: LayoutRole.profileEditHeight.points)
         .background(ProfileHeaderStyle.bannerControl.color, in: Capsule())
         .contentShape(Capsule())
     }
