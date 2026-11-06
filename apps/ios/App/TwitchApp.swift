@@ -219,7 +219,6 @@ struct ChannelScreen: View {
   @Environment(LiveStatusChannel.self) private var liveStatus
   @Environment(ChannelPresence.self) private var presence
   @Environment(ChatSession.self) private var chat
-  @Environment(PreferencesStore.self) private var preferences
   @Environment(\.scenePhase) private var scenePhase
 
   private var watching: ChannelPresence.Watching {
@@ -233,7 +232,7 @@ struct ChannelScreen: View {
       ChatList()
       ChatComposer()
     }
-    .environment(\.chatDisplay, ChatDisplay(preferences.current))
+    .chatPreferences()
     .navigationTitle(slug.rawValue)
     .navigationBarTitleDisplayMode(.inline)
     .task(id: slug) { await channelPlayback.open(slug) }

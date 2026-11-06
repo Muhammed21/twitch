@@ -40,6 +40,7 @@ struct StreamManagerChat: View {
         .padding(.horizontal, LayoutRole.chatInset.points)
       ChatComposer(style: .widget)
     }
+    .chatPreferences()
     .task(id: slug) { await chat.run(slug) }
   }
 }
