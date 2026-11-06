@@ -73,7 +73,17 @@ public extension LayoutRole {
     case .profileAvatarGap: Spacing.x8
     case .profileNameTop: Spacing.x8
     case .profileBioTop: Spacing.x20
-    case .profileHeaderBottom: Spacing.x16
+    case .profileHeaderBottom: Spacing.x20
+    case .profileBannerControlSize: Spacing.x40
+    case .profileBannerControlCenter: Spacing.x16
+    case .profileBannerGlyph: Spacing.x22
+    case .profileEditHeight: Spacing.x30
+    case .profileEditPadding: Spacing.x12
+    case .profileActionHeight: Spacing.x50
+    case .profileActionGap: Spacing.x8
+    case .profileActionRowGap: Spacing.x16
+    case .profileActionGlyph: Spacing.x24
+    case .profileActionGlyphGap: Spacing.x12
     case .categoryCardCoverWidth: Spacing.x72
     case .categoryCardRadius: Radius.xl
     case .categoryCardBorderWidth: Spacing.x1
@@ -195,6 +205,11 @@ public extension LayoutRole {
     case .dashboardHintInset: Spacing.x22
     case .dashboardHintTop: Spacing.x8
     case .dashboardActivityHeight: Spacing.x132
+    case .activityHeaderHeight: Spacing.x32
+    case .activityEmptyInset: Spacing.x40
+    case .activityEmptyGap: Spacing.x16
+    case .activityActionHeight: Spacing.x36
+    case .activityActionPadding: Spacing.x12
     }
   }
 }

@@ -1,3 +1,5 @@
+import Foundation
+
 public enum ChannelSlugError: Error, Equatable, Sendable {
   case malformed
 }
@@ -22,5 +24,15 @@ public struct ChannelSlug: Hashable, Sendable {
     (UInt8(ascii: "a") ... UInt8(ascii: "z")).contains(byte)
       || (UInt8(ascii: "0") ... UInt8(ascii: "9")).contains(byte)
       || byte == UInt8(ascii: "_")
+  }
+}
+
+public extension ChannelSlug {
+  var appLink: URL {
+    var components = URLComponents()
+    components.scheme = "twitch"
+    components.host = "channel"
+    components.path = "/\(rawValue)"
+    return components.url ?? URL(fileURLWithPath: "/")
   }
 }

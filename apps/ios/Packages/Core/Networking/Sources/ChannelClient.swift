@@ -30,7 +30,11 @@ extension Channel {
       title: body.title,
       ownerID: body.ownerId,
       category: body.category.map(ChannelCategory.init),
-      bannerURL: body.bannerUrl.flatMap { URL(webAddress: $0) }
+      bannerURL: body.bannerUrl.flatMap { URL(webAddress: $0) },
+      tags: body.tags,
+      language: body.language.flatMap { LiveLanguage(rawValue: $0.value1?.rawValue ?? $0.value2 ?? "") },
+      contentLabels: Set(body.contentLabels.compactMap { ContentLabel(rawValue: $0.value1?.rawValue ?? $0.value2 ?? "") }),
+      isBrandedContent: body.isBrandedContent
     )
   }
 }
