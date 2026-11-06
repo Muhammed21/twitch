@@ -197,7 +197,8 @@ struct SignedInRoot: View {
           selection: $router.selectedTab,
           leading: Self.leadingTabs,
           create: TabBarCreate(
-            label: ProfileText.streamManagerTitle,
+            label: String(localized: DashboardText.createButton),
+            hint: String(localized: DashboardText.createButtonHint),
             accessibilityIdentifier: "root.create"
           ) { creatorMode.showActions() },
           trailing: Self.trailingTabs

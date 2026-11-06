@@ -38,17 +38,20 @@ public struct TabBarItem<Tab: Hashable>: Identifiable {
 
 public struct TabBarCreate {
   public let label: String
+  public let hint: String?
   public let accessibilityIdentifier: String
   public let style: TabBarCreateStyle
   public let action: () -> Void
 
   public init(
     label: String,
+    hint: String? = nil,
     accessibilityIdentifier: String,
     style: TabBarCreateStyle = .neutral,
     action: @escaping () -> Void
   ) {
     self.label = label
+    self.hint = hint
     self.accessibilityIdentifier = accessibilityIdentifier
     self.style = style
     self.action = action
@@ -137,6 +140,7 @@ private struct CreateButton: View {
     }
     .buttonStyle(.plain)
     .accessibilityLabel(create.label)
+    .accessibilityHint(create.hint ?? "")
     .accessibilityIdentifier(create.accessibilityIdentifier)
   }
 }

@@ -101,7 +101,8 @@ struct CreatorRoot: View {
           selection: $creatorMode.dashboardTab,
           leading: DashboardTabs.leading,
           create: TabBarCreate(
-            label: ProfileText.streamManagerTitle,
+            label: String(localized: DashboardText.createButton),
+            hint: String(localized: DashboardText.createButtonHint),
             accessibilityIdentifier: "dashboard.create",
             style: DashboardTabs.createStyle
           ) { creatorMode.showActions() },
