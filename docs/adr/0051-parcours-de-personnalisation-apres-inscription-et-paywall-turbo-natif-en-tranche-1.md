@@ -202,13 +202,11 @@ Convention de l'ADR 0012 : `objet:action_au_passé`, propriétés en `snake_case
 | `paywall:viewed`                   | `variant`, `offering_id`, `placement` (`onboarding`)       | Exposition à l'offre, seulement si une variante existe |
 | `paywall:dismissed`                | `variant`, `placement`                                     | Fermeture sans achat                                   |
 | `purchase:started`                 | `product_id`, `variant`                                    | Tap sur l'achat                                        |
-| `purchase:completed`               | `product_id`, `variant`                                    | Achat confirmé par RevenueCat                          |
 | `purchase:cancelled`               | `product_id`, `variant`                                    | Annulation dans la feuille StoreKit                    |
 | `purchase:failed`                  | `product_id`, `variant`, `error_code`                      | Échec de l'achat                                       |
 | `purchase:restored`                | `has_active_entitlement`                                   | Fin d'une restauration                                 |
 
 - `step` est un enum fermé : `intro`, `categories`, `interests`, `content_preferences`, `live_language`, `appearance`, `video_autoplay`, `notifications`, `chat`, `summary`. `preference` aussi : `appearance`, `video_autoplay`, `chat_text_size`, `chat_timestamps`, `live_language`, `content_filters`, `interests`. `step_count` vaut 10 ; le paywall se mesure par `paywall:*` avec `placement: onboarding`.
-- `purchase:completed` ferme le funnel côté client : sans montant ni devise, il ne compte pas le revenu. Comme les autres `purchase:*`, il porte la variante et n'est émis qu'avec elle.
 - Le revenu ne part jamais du client (ADR 0012 §3). Il arrive par l'intégration native RevenueCat → PostHog, serveur à serveur, sans réémission par notre webhook (ADR 0016, Notes).
 - Suivre une catégorie est un fait métier, donc capturé côté serveur (ADR 0012 §3) avec l'`AnalyticsPort` de `channel` (PR 29 du plan). Le parcours en porte le compte dans `selection_count`.
 - `identify()` à la transition vers « connecté », une fois ; `reset()` à la déconnexion (ADR 0012 §2). Les deux vivent dans `Core/Analytics`.
@@ -291,3 +289,13 @@ Les sons du parcours se jouent comme sons système (`AudioServicesPlaySystemSoun
 
 - **Raison.** Une session `.ambient` avec `.mixWithOthers` change la catégorie audio de toute l'app. Un live ouvert après le parcours se mélangeait alors à la musique de l'utilisateur, au lieu de l'interrompre.
 - **Effet.** Un son système se tait en mode silencieux et se mélange à la musique en cours, sans toucher à la session audio de l'app. Le lecteur du live garde sa propre catégorie.
+
+## Amendement du 2026-11-06 — achat réussi dans le funnel
+
+Proposé par la PR #345, à valider par l'utilisateur. Le statut reste Accepté.
+
+Le tableau des événements du §7 gagne `purchase:completed`, avec les propriétés `product_id` et `variant`, émis par le client quand RevenueCat confirme l'achat.
+
+- **Raison.** Le funnel du paywall s'arrêtait au tap (`purchase:started`) : aucun événement de notre taxonomie ne disait que l'achat avait abouti.
+- **Limite.** L'événement n'a ni montant ni devise, et le schéma les refuse : il ne compte pas le revenu, qui reste celui de l'intégration RevenueCat → PostHog (ADR 0012 §3).
+- **Variante.** Comme `paywall:viewed`, il n'est émis que si une variante existe.
