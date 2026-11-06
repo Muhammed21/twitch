@@ -191,6 +191,18 @@
       "background": "color.surface.raised",
       "min": 4.5,
       "note": "Libellé du bouton Modifier les infos du stream, docs/new-reference-ui/IMG_9624"
+    },
+    {
+      "foreground": "color.chip.onSelected",
+      "background": "color.chip.selected",
+      "min": 4.5,
+      "note": "Libellé de la puce de filtre active du flux de l'accueil, docs/new-reference-ui/IMG_9607"
+    },
+    {
+      "foreground": "color.chip.selected",
+      "background": "color.background.primary",
+      "min": 3,
+      "note": "SC 1.4.11 : puce de filtre active sur le fond de l'accueil, docs/new-reference-ui/IMG_9607"
     }
   ]
 }

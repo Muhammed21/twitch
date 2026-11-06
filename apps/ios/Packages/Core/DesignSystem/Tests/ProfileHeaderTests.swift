@@ -21,6 +21,10 @@ private let headerMeasures: [(LayoutRole, CGFloat)] = [
   (.profileActionRowGap, 16),
   (.profileActionGlyph, 24),
   (.profileActionGlyphGap, 12),
+  (.profileTabTop, 20),
+  (.profileAboutTop, 55),
+  (.profileAboutTextGap, 16),
+  (.profileAboutInset, 40),
 ]
 
 @Suite("En-tête du profil relevé sur docs/new-reference-ui/IMG_9614 à IMG_9617 et profil/menu-compte--theme-sombre")
@@ -51,5 +55,13 @@ struct ProfileHeaderTests {
     #expect(ProfileHeaderStyle.action == .surfaceSecondary)
     #expect(ProfileHeaderStyle.onAction == .textPrimary)
     #expect(TextRole.profileAction.font == Font.subheadline.weight(.semibold))
+  }
+
+  @Test("« À propos » vide : titre en headline gras et texte en body, tous deux en texte secondaire (IMG_9615)")
+  func aboutEmptyState() {
+    #expect(ProfileHeaderStyle.aboutTitle == .textSecondary)
+    #expect(ProfileHeaderStyle.aboutMessage == .textSecondary)
+    #expect(TextRole.profileAboutTitle.font == Font.headline.weight(.bold))
+    #expect(TextRole.profileAboutMessage.font == Font.body.weight(.regular))
   }
 }
