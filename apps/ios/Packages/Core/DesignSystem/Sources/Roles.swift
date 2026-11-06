@@ -27,7 +27,6 @@ public enum TextRole: Sendable {
   case feedOverlay
   case feedChannelName
   case feedTitle
-  case filterChip
   case tag
   case followerCount
   case followLabel
@@ -104,7 +103,6 @@ public enum TextRole: Sendable {
     case .feedOverlay: .metaText
     case .feedChannelName: .displayText
     case .feedTitle: .viewerCount
-    case .filterChip: .headingText
     case .tag: .tagText
     case .followerCount: .viewerCount
     case .followLabel: .displayText
@@ -303,9 +301,6 @@ public enum LayoutRole: Sendable {
   case feedDividerBottom
   case filterChipsTop
   case filterChipsBottom
-  case filterChipHeight
-  case filterChipPaddingH
-  case filterChipGap
   case profileEditTop
   case profileEditTrailing
   case editSectionLabelGap

@@ -14,11 +14,11 @@ public enum HomeFilter: Hashable, Sendable {
     }
   }
 
-  public static func chips(for categories: [BrowseCategory]) -> [FilterChipItem<HomeFilter>] {
-    [FilterChipItem(value: .all, title: HomeText.allFilter, accessibilityIdentifier: "home.filter.all")]
+  public static func tabs(for categories: [BrowseCategory]) -> [BrowseTabItem<HomeFilter>] {
+    [BrowseTabItem(tab: .all, title: HomeText.allFilter, accessibilityIdentifier: "home.filter.all")]
       + categories.map {
-        FilterChipItem(
-          value: .category($0.slug),
+        BrowseTabItem(
+          tab: .category($0.slug),
           title: $0.name,
           accessibilityIdentifier: "home.filter.\($0.slug.rawValue)"
         )
