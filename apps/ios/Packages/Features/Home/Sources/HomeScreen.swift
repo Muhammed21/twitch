@@ -45,6 +45,7 @@ extension LiveList where Row == LiveRow {
 }
 
 struct LiveList<Header: View, Row: View>: View {
+  @Environment(\.scenePhase) private var scenePhase
   let store: HomeStore
   @ViewBuilder let header: Header
   @ViewBuilder let row: (LiveChannel, Int) -> Row
@@ -66,8 +67,10 @@ struct LiveList<Header: View, Row: View>: View {
     .background(ColorRole.background.color.ignoresSafeArea())
     .refreshable { await store.loadFirstPage() }
     .announcing(HomeText.announcement(for: store.phase))
-    .task(id: ObjectIdentifier(store)) {
-      if store.phase == .idle { await store.loadFirstPage() }
+    .task(id: ObjectIdentifier(store)) { await store.appeared() }
+    .onChange(of: scenePhase) { _, phase in
+      guard phase == .active else { return }
+      Task { await store.appeared() }
     }
   }
 

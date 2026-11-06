@@ -28,12 +28,22 @@ public final class HomeStore {
   public private(set) var phase: HomePhase = .idle
   public private(set) var thumbnailGeneration = 0
 
+  private static let freshness: TimeInterval = 30
+
   private var nextCursor: LiveCursor?
   private var failedRequest: PageRequest?
+  private var firstPageLoadedAt: Date?
   private let directory: any LiveDirectory
+  private let now: @Sendable () -> Date
 
-  public init(directory: any LiveDirectory) {
+  public init(directory: any LiveDirectory, now: @escaping @Sendable () -> Date = { Date.now }) {
     self.directory = directory
+    self.now = now
+  }
+
+  public func appeared() async {
+    if let firstPageLoadedAt, now().timeIntervalSince(firstPageLoadedAt) <= Self.freshness { return }
+    await loadFirstPage()
   }
 
   public func loadFirstPage() async {
@@ -59,7 +69,10 @@ public final class HomeStore {
       lives = Self.appending(page.lives, to: request.cursor == nil ? [] : lives)
       nextCursor = page.nextCursor
       failedRequest = nil
-      if request.cursor == nil { thumbnailGeneration += 1 }
+      if request.cursor == nil {
+        thumbnailGeneration += 1
+        firstPageLoadedAt = now()
+      }
       phase = .loaded(hasMore: page.nextCursor != nil)
     } catch where Self.isCancellation(error) {
       phase = previous

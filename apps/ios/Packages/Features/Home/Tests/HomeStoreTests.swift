@@ -1,6 +1,7 @@
 import Domain
 import Foundation
 import Home
+import os
 import Testing
 
 private struct DirectoryDown: Error {}
@@ -46,6 +47,82 @@ private struct InterruptedDirectory: LiveDirectory {
   func lives(after cursor: LiveCursor?) async throws -> LivePage {
     guard cursor == nil, let first else { throw error }
     return first
+  }
+}
+
+private final class TestClock: Sendable {
+  private let current = OSAllocatedUnfairLock(initialState: Date(timeIntervalSince1970: 1_800_000_000))
+
+  var now: Date {
+    current.withLock { $0 }
+  }
+
+  func advance(by seconds: TimeInterval) {
+    current.withLock { $0 = $0.addingTimeInterval(seconds) }
+  }
+}
+
+@MainActor
+@Suite("Accueil : lives démarrés après le premier chargement")
+struct HomeStoreFreshnessTests {
+  @Test("au retour sur l'accueil, la liste chargée il y a plus de 30 s est redemandée et montre le nouveau live")
+  func staleListReloads() async throws {
+    let clock = TestClock()
+    let directory = FakeDirectory(pages: [nil: .success(LivePage(lives: [], nextCursor: nil))])
+    let store = HomeStore(directory: directory, now: { clock.now })
+    await store.appeared()
+    let started = try live("muhammed", id: 1)
+    await directory.serve(nil, with: .success(LivePage(lives: [started], nextCursor: nil)))
+
+    clock.advance(by: 31)
+    await store.appeared()
+
+    #expect(store.lives == [started])
+    #expect(await directory.requested == [nil, nil])
+  }
+
+  @Test("revenir sur l'accueil moins de 30 s après le chargement ne redemande rien et garde la pagination")
+  func freshListKept() async throws {
+    let clock = TestClock()
+    let directory = try FakeDirectory(pages: [
+      nil: .success(LivePage(lives: [live("jean_dupont", id: 1)], nextCursor: LiveCursor("c2"))),
+      LiveCursor("c2"): .success(LivePage(lives: [live("marie_curie", id: 2)], nextCursor: nil)),
+    ])
+    let store = HomeStore(directory: directory, now: { clock.now })
+    await store.appeared()
+    await store.loadNextPage()
+
+    clock.advance(by: 30)
+    await store.appeared()
+
+    #expect(store.lives.map(\.slug.rawValue) == ["jean_dupont", "marie_curie"])
+    #expect(await directory.requested == [nil, LiveCursor("c2")])
+  }
+
+  @Test("tirer pour rafraîchir repart l'horloge : le retour suivant ne redemande rien")
+  func pullToRefreshCountsAsFresh() async {
+    let clock = TestClock()
+    let directory = FakeDirectory(pages: [nil: .success(LivePage(lives: [], nextCursor: nil))])
+    let store = HomeStore(directory: directory, now: { clock.now })
+    await store.appeared()
+
+    clock.advance(by: 25)
+    await store.loadFirstPage()
+    clock.advance(by: 25)
+    await store.appeared()
+
+    #expect(await directory.requested == [nil, nil])
+  }
+
+  @Test("après un échec, revenir sur l'accueil redemande la première page")
+  func failedListReloads() async {
+    let directory = FakeDirectory(pages: [:])
+    let store = HomeStore(directory: directory)
+    await store.appeared()
+
+    await store.appeared()
+
+    #expect(await directory.requested == [nil, nil])
   }
 }
 
