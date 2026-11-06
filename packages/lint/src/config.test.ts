@@ -122,6 +122,30 @@ describe("règles d'architecture, avec la vraie configuration", () => {
       "twitch(no-volatile)",
     ],
     [
+      "Payload qui importe @repo/db",
+      "apps/payload/src/collections/bad.ts",
+      'import { contexts } from "@repo/db";\nexport const a = contexts;\n',
+      "no-restricted-imports",
+    ],
+    [
+      "Payload qui importe @repo/db par un sous-chemin",
+      "apps/payload/src/app/bad.tsx",
+      'import { a } from "@repo/db/src/client.ts";\nexport const b = a;\n',
+      "no-restricted-imports",
+    ],
+    [
+      "une image sans texte alternatif dans Payload",
+      "apps/payload/src/components/bad.tsx",
+      'export const Logo = () => <img src="/logo.svg" />;\n',
+      "jsx-a11y(alt-text)",
+    ],
+    [
+      "une balise <img> plutôt que next/image dans Payload",
+      "apps/payload/src/components/bad.tsx",
+      'export const Logo = () => <img alt="Twitch" src="/logo.svg" />;\n',
+      "next(no-img-element)",
+    ],
+    [
       "un commentaire de désactivation",
       `${IDENTITY}/domain/bad.ts`,
       "// oxlint-disable-next-line twitch/layer-dependencies\nexport const a = 1;\n",

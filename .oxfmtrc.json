@@ -10,7 +10,12 @@
     "docs/CATALOG.md",
     "apps/api/openapi.json",
     "apps/ios/Packages/Core/Networking/Sources/openapi.json",
-    "packages/docs-catalog/reports/**"
+    "packages/docs-catalog/reports/**",
+    "apps/payload/src/migrations/**",
+    "apps/payload/src/app/(payload)/admin/importMap.js",
+    "apps/payload/.next/**",
+    "apps/payload/next-env.d.ts",
+    "apps/payload/src/payload-types.ts"
   ],
   "sortImports": {
     "ignoreCase": true,
