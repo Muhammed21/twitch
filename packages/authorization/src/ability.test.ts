@@ -230,8 +230,25 @@ describe("rôles de plateforme", () => {
     const ability = abilityOf(onPlatform(role));
 
     expect(ability.can("update", channel(CHANNEL_A))).toBe(false);
-    expect(ability.can("ban", ORDINARY_MEMBER)).toBe(false);
+    expect(ability.can("timeout", ORDINARY_MEMBER)).toBe(false);
     expect(ability.can("grant", channelRole(CHANNEL_A, "moderator"))).toBe(false);
+  });
+
+  it("admin bannit sur n'importe quelle chaîne", () => {
+    const ability = abilityOf(onPlatform("admin"));
+    const memberOfB = channelMember({ channelId: CHANNEL_B, targetAssignments: [], now: NOW });
+
+    expect(ability.can("ban", ORDINARY_MEMBER)).toBe(true);
+    expect(ability.can("ban", memberOfB)).toBe(true);
+    expect(ability.can("ban", memberWith(onChannel("moderator")))).toBe(true);
+  });
+
+  it("admin ne bannit pas le owner de sa propre chaîne", () => {
+    expect(abilityOf(onPlatform("admin")).can("ban", memberWith(onChannel("owner")))).toBe(false);
+  });
+
+  it.each(["staff", "support"] as const)("refuse le bannissement à %s", (role) => {
+    expect(abilityOf(onPlatform(role)).can("ban", ORDINARY_MEMBER)).toBe(false);
   });
 
   it.each([

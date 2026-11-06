@@ -222,6 +222,30 @@ describe("bannissement depuis Payload sur l'API assemblée (jalon P2)", () => {
     });
   });
 
+  it("bannit au nom de l'administrateur de la plateforme, sur une chaîne où il n'a aucun rôle", async () => {
+    const channelId = randomUUID();
+    const targetId = randomUUID();
+    const adminId = await seedPlatformAdmin();
+
+    await withBanApi(async (banUser) => {
+      const response = await banUser({
+        channelId,
+        targetId,
+        headers: await fromPayload({ userId: adminId }),
+      });
+
+      expect(response.status).toBe(201);
+      expect(await banAuditOf(targetId)).toEqual([
+        {
+          actorId: adminId,
+          onBehalfOf: "svc:payload-admin",
+          source: "payload",
+          reason: "Harcèlement",
+        },
+      ]);
+    });
+  });
+
   it("refuse en 403 un humain sans droit sur la chaîne, même si le compte de service a le scope", async () => {
     const channelId = randomUUID();
     const targetId = randomUUID();
@@ -231,7 +255,7 @@ describe("bannissement depuis Payload sur l'API assemblée (jalon P2)", () => {
       const response = await banUser({
         channelId,
         targetId,
-        headers: await fromPayload({ userId: await seedPlatformAdmin() }),
+        headers: await fromPayload({ userId: randomUUID() }),
       });
 
       expect(response.status).toBe(403);
