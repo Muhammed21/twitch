@@ -7,9 +7,14 @@ public struct WelcomeRow: Sendable, Equatable {
   public let trailing: String
 
   init(_ name: String) {
-    leading = String(localized: String.LocalizationValue("welcome.row.\(name).leading"), bundle: .module)
-    main = String(localized: String.LocalizationValue("welcome.row.\(name).main"), bundle: .module)
-    trailing = String(localized: String.LocalizationValue("welcome.row.\(name).trailing"), bundle: .module)
+    leading = Self.text(name, "leading")
+    main = Self.text(name, "main")
+    trailing = Self.text(name, "trailing")
+  }
+
+  private static func text(_ name: String, _ part: String) -> String {
+    let key = "welcome.row.\(name).\(part)"
+    return String(localized: String.LocalizationValue(key), bundle: .module)
   }
 }
 
