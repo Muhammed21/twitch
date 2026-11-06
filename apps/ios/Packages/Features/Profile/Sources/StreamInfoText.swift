@@ -13,6 +13,7 @@ public enum StreamInfoText {
   public static let chooseCategory = ProfileText.chooseCategory
   public static let tags = LocalizedStringResource("editStreamInfo.tags", bundle: .module)
   public static let tagsPlaceholder = LocalizedStringResource("editStreamInfo.tags.placeholder", bundle: .module)
+  public static let tagRejected = LocalizedStringResource("editStreamInfo.tags.rejected", bundle: .module)
   public static let tagsHint = LocalizedStringResource("editStreamInfo.tags.hint", bundle: .module)
   public static let classification = LocalizedStringResource("editStreamInfo.classification", bundle: .module)
   public static let classificationPlaceholder = LocalizedStringResource("editStreamInfo.classification.placeholder", bundle: .module)

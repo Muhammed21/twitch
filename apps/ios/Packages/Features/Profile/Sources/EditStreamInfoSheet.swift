@@ -9,6 +9,7 @@ public struct EditStreamInfoSheet: View {
   @State private var tagEntry = ""
   @State private var isSaving = false
   @State private var saveFailed = false
+  @State private var tagRejected = false
 
   public init(initial: StreamInfo) {
     _draft = State(initialValue: initial)
@@ -77,7 +78,12 @@ public struct EditStreamInfoSheet: View {
         .textInputAutocapitalization(.never)
         .submitLabel(.done)
         .onSubmit(addTag)
+        .onChange(of: tagEntry) { tagRejected = false }
         .accessibilityIdentifier("editStreamInfo.tagField")
+      if tagRejected {
+        hint(StreamInfoText.tagRejected)
+          .accessibilityIdentifier("editStreamInfo.tagRejected")
+      }
       if !draft.tags.isEmpty {
         ScrollView(.horizontal, showsIndicators: false) {
           HStack(spacing: LayoutRole.categoryTagGap.points) {
@@ -226,16 +232,24 @@ public struct EditStreamInfoSheet: View {
   }
 
   private func addTag() {
-    guard let added = draft.adding(tag: tagEntry) else { return }
-    draft = added
+    guard let committed = draft.committing(tagEntry: tagEntry) else { return rejectTag() }
+    draft = committed
     tagEntry = ""
   }
 
+  private func rejectTag() {
+    tagRejected = true
+    AccessibilityNotification.Announcement(String(localized: StreamInfoText.tagRejected)).post()
+  }
+
   private func save() {
+    guard let committed = draft.committing(tagEntry: tagEntry) else { return rejectTag() }
+    draft = committed
+    tagEntry = ""
     isSaving = true
     saveFailed = false
     Task {
-      let saved = await store.save(draft)
+      let saved = await store.save(committed)
       saveFailed = !saved
       isSaving = false
       if saved { dismiss() }

@@ -969,6 +969,22 @@
         }
       }
     },
+    "editStreamInfo.tags.rejected" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This tag can't be added."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce tag ne peut pas être ajouté."
+          }
+        }
+      }
+    },
     "editStreamInfo.tags.remove %@" : {
       "localizations" : {
         "en" : {

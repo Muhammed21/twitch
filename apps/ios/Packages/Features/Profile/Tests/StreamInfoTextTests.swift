@@ -25,6 +25,7 @@ struct StreamInfoTextTests {
       (StreamInfoText.chooseCategory, "Chercher une catégorie", "Search for a category"),
       (StreamInfoText.tags, "Tags", "Tags"),
       (StreamInfoText.tagsPlaceholder, "Saisissez votre tag", "Enter your tag"),
+      (StreamInfoText.tagRejected, "Ce tag ne peut pas être ajouté.", "This tag can't be added."),
       (StreamInfoText.classification, "Classification de contenu", "Content Classification"),
       (StreamInfoText.classificationPlaceholder, "Sélectionner les descripteurs de contenu", "Select content descriptors"),
       (StreamInfoText.language, "Langue", "Language"),
