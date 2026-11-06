@@ -250,6 +250,18 @@
         "$value": "{core.color.neutral.100}",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9625, IMG_9626) : remplissage des illustrations d'état vide du tableau de bord, mesuré #ffffff. Aucune capture en thème sombre (ADR 0052 §4) : valeur claire gardée."
       }
+    },
+    "chip": {
+      "selected": {
+        "$type": "color",
+        "$value": "{core.color.neutral.0}",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9607) : fond de la puce de filtre active (« Tout ») du flux de l'accueil, mesuré #000000."
+      },
+      "onSelected": {
+        "$type": "color",
+        "$value": "{core.color.neutral.100}",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9607) : libellé de la puce de filtre active, mesuré #ffffff."
+      }
     }
   }
 }
