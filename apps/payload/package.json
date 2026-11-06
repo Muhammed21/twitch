@@ -1,0 +1,37 @@
+{
+  "name": "@repo/payload",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --env-file-if-exists=../../.env node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port 3200",
+    "build": "next build",
+    "payload": "node --env-file-if-exists=../../.env node_modules/payload/bin.js",
+    "migrate": "node --env-file-if-exists=../../.env node_modules/payload/bin.js migrate",
+    "migrate:create": "node --env-file-if-exists=../../.env node_modules/payload/bin.js migrate:create",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check-types": "tsc --noEmit",
+    "generate:importmap": "node --env-file-if-exists=../../.env node_modules/payload/bin.js generate:importmap"
+  },
+  "dependencies": {
+    "@payloadcms/db-postgres": "3.93.0",
+    "@payloadcms/next": "3.93.0",
+    "@payloadcms/ui": "3.93.0",
+    "@repo/design-tokens": "workspace:*",
+    "graphql": "16.15.0",
+    "next": "16.4.5",
+    "payload": "3.93.0",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "^26.6.2",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
+    "typescript": "7.0.2",
+    "vitest": "4.1.12"
+  }
+}

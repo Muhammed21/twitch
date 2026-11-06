@@ -5,6 +5,7 @@ packages:
 allowBuilds:
   "@prisma/engines": true
   "@scarf/scarf": false
+  esbuild: false
   prisma: true
 
 # Dépendances du CLI prisma 7.10.0 corrigées par GHSA-3f6p-5ww8-9rcr et GHSA-ggr8-5vv4-36mx.
