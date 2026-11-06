@@ -311,7 +311,7 @@ export const startChatServer = async ({
     const now = Date.now();
     const sanction = { channelId, expiresAt };
     recentSanctions.forEach((recent, user) => {
-      if (recent.every((entry) => Number(entry.expiresAt) <= now)) {
+      if (recent.every((entry) => entry.expiresAt !== null && entry.expiresAt.getTime() <= now)) {
         recentSanctions.delete(user);
       }
     });
@@ -322,6 +322,19 @@ export const startChatServer = async ({
       }
     });
     io.local.to(roomOf(channelId)).emit("chat:user_cleared", { channelId, userId });
+  };
+
+  const ban = (sanction: ChatterSanction) => {
+    applySanction(sanction);
+    io.sockets.sockets.forEach((socket) => {
+      if (
+        socket.data.author.id === sanction.userId &&
+        socket.rooms.has(roomOf(sanction.channelId))
+      ) {
+        socket.emit("chat:rejected", { reason: "banned" });
+        socket.disconnect(true);
+      }
+    });
   };
 
   const guarded = (socket: ChatSocket) => ({
@@ -364,6 +377,7 @@ export const startChatServer = async ({
       revoked.disconnectSockets(true);
     },
     sanction: applySanction,
+    ban,
     pendingSanctionCount: () => recentSanctions.size,
     sanctionApplied: (sanctionedAt: Date) => {
       sanctionDelays.observe((Date.now() - sanctionedAt.getTime()) / 1000);

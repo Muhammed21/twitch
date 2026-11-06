@@ -53,6 +53,7 @@ const setup = (rooms: readonly RoomState[] = []) => {
   });
   const logs: Readonly<Record<string, unknown>>[] = [];
   const applied: unknown[] = [];
+  const banned: unknown[] = [];
   const sanctionedAt: Date[] = [];
   const log = (entry: Readonly<Record<string, unknown>>) => {
     logs.push(entry);
@@ -62,6 +63,9 @@ const setup = (rooms: readonly RoomState[] = []) => {
     sockets: {
       sanction: (sanction) => {
         applied.push(sanction);
+      },
+      ban: (sanction) => {
+        banned.push(sanction);
       },
     },
     metrics: {
@@ -95,6 +99,7 @@ const setup = (rooms: readonly RoomState[] = []) => {
     applyToSockets: dispatch(socketHandlers),
     writes,
     applied,
+    banned,
     sanctionedAt,
     registry,
     logs,
@@ -104,7 +109,7 @@ const setup = (rooms: readonly RoomState[] = []) => {
 const { channelCreated } = events.channel;
 const { streamStarted, streamEnded } = events.stream;
 const { accountRegistered, avatarChanged, chatColorChanged } = events.identity;
-const { userTimedOut } = events.moderation;
+const { userBanned, userTimedOut } = events.moderation;
 const { entitlementGranted, entitlementRevoked } = events.monetization;
 
 describe("projection des events dans les vues locales du chat", () => {
@@ -114,6 +119,7 @@ describe("projection des events dans les vues locales du chat", () => {
       "identity.account.registered",
       "identity.avatar.changed",
       "identity.chat_color.changed",
+      "moderation.user.banned",
       "moderation.user.timed_out",
       "monetization.entitlement.granted",
       "monetization.entitlement.revoked",
@@ -157,10 +163,63 @@ describe("projection des events dans les vues locales du chat", () => {
       payload: { ...sanction, expiresAt: sanction.expiresAt.toISOString() },
     });
 
-    expect(Object.keys(socketHandlers)).toEqual(["moderation.user.timed_out"]);
+    expect(Object.keys(socketHandlers).toSorted()).toEqual([
+      "moderation.user.banned",
+      "moderation.user.timed_out",
+    ]);
     expect(applied).toEqual([sanction]);
     expect(sanctionedAt).toEqual([occurredAt]);
     expect(writes).toEqual([]);
+  });
+
+  it.each([
+    ["temporaire", new Date("2026-11-04T20:00:00.000Z")],
+    ["définitif", null],
+  ])("enregistre le bannissement %s d'un chatter dans la vue locale", async (_name, expiresAt) => {
+    const { handle, writes, banned } = setup();
+    const sanction = { userId: randomUUID(), channelId: randomUUID(), expiresAt };
+
+    await handle({
+      name: userBanned.name,
+      version: 1,
+      payload: { ...sanction, expiresAt: expiresAt?.toISOString() ?? null },
+    });
+
+    expect(writes).toEqual([{ sanctionChatter: sanction }]);
+    expect(banned).toEqual([]);
+  });
+
+  it.each([
+    ["temporaire", new Date("2026-11-04T20:00:00.000Z")],
+    ["définitif", null],
+  ])(
+    "bannit des sockets ouvertes le chatter banni (%s), puis mesure le délai",
+    async (_name, expiresAt) => {
+      const { applyToSockets, writes, applied, banned, sanctionedAt } = setup();
+      const occurredAt = new Date("2026-11-03T20:00:00.000Z");
+      const sanction = { userId: randomUUID(), channelId: randomUUID(), expiresAt };
+
+      await applyToSockets({
+        name: userBanned.name,
+        version: 1,
+        occurredAt,
+        payload: { ...sanction, expiresAt: expiresAt?.toISOString() ?? null },
+      });
+
+      expect(banned).toEqual([sanction]);
+      expect(applied).toEqual([]);
+      expect(sanctionedAt).toEqual([occurredAt]);
+      expect(writes).toEqual([]);
+    },
+  );
+
+  it("écarte un bannissement hors contrat sans toucher aux sockets", async () => {
+    const { applyToSockets, banned, sanctionedAt } = setup();
+
+    await applyToSockets({ name: userBanned.name, version: 1, payload: { userId: 1 } });
+
+    expect(banned).toEqual([]);
+    expect(sanctionedAt).toEqual([]);
   });
 
   it("écarte un timeout hors contrat sans toucher aux sockets", async () => {

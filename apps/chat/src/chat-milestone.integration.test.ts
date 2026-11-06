@@ -148,6 +148,15 @@ const startChat = async () => {
     });
   };
 
+  const ban = async ({ channelId, userId }: { channelId: string; userId: string }) => {
+    keys.push(sanctionsKey(userId));
+    await publish(streams.moderation, events.moderation.userBanned, {
+      channelId,
+      userId,
+      expiresAt: null,
+    });
+  };
+
   const subscribeToTurbo = async ({
     userId,
     expiresAt,
@@ -200,6 +209,7 @@ const startChat = async () => {
     createChannel,
     startLive,
     timeOut,
+    ban,
     subscribeToTurbo,
     connectAs,
   };
@@ -331,5 +341,33 @@ describe("jalon C2, contre le Redis de Compose", () => {
     viewerSocket.emit("room:join", { channelId });
 
     expect(await send(viewerSocket, channelId, "me revoilà")).toEqual({ reason: "timed_out" });
+  });
+});
+
+describe("jalon P2 côté chat, contre le Redis de Compose", () => {
+  it("un bannissement publié ferme la socket du banni en moins d'une seconde, et il ne peut plus poster", async () => {
+    const chat = await startChat();
+    const owner = await chat.registerAccount("Alice");
+    const viewer = await chat.registerAccount("Bob");
+    const channelId = await chat.createChannel(owner);
+    const ownerSocket = await chat.connectAs(owner);
+    const viewerSocket = await chat.connectAs(viewer);
+    await joinWhenOpen(ownerSocket, channelId);
+    await joinWhenOpen(viewerSocket, channelId);
+    const closed = new Promise<string>((resolve) => {
+      viewerSocket.once("disconnect", resolve);
+    });
+
+    const publishedAt = Date.now();
+    await chat.ban({ channelId, userId: viewer });
+
+    expect(await closed).toBe("io server disconnect");
+    expect(Date.now() - publishedAt).toBeLessThan(1000);
+    expect(await send(ownerSocket, channelId, "toujours là")).toBeUndefined();
+    const returning = await chat.connectAs(viewer);
+    returning.emit("room:join", { channelId });
+    await vi.waitFor(async () =>
+      expect(await send(returning, channelId, "me revoilà")).toEqual({ reason: "banned" }),
+    );
   });
 });

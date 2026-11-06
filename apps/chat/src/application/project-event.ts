@@ -25,7 +25,7 @@ type EventContract<T> = {
 const { channelCreated } = events.channel;
 const { streamStarted, streamEnded } = events.stream;
 const { accountRegistered, avatarChanged, chatColorChanged } = events.identity;
-const { userTimedOut } = events.moderation;
+const { userBanned, userTimedOut } = events.moderation;
 const { entitlementGranted, entitlementRevoked } = events.monetization;
 
 const PLATFORM = "platform";
@@ -55,8 +55,8 @@ const sanctionOf = ({
 }: {
   userId: string;
   channelId: string;
-  expiresAt: string;
-}) => ({ userId, channelId, expiresAt: new Date(expiresAt) });
+  expiresAt: string | null;
+}) => ({ userId, channelId, expiresAt: expiresAt === null ? null : new Date(expiresAt) });
 
 export const chatEventHandlers = ({
   views,
@@ -88,6 +88,7 @@ export const chatEventHandlers = ({
     [userTimedOut.name]: handle(userTimedOut, (payload) =>
       views.sanctionChatter(sanctionOf(payload)),
     ),
+    [userBanned.name]: handle(userBanned, (payload) => views.sanctionChatter(sanctionOf(payload))),
     [entitlementGranted.name]: handle(
       entitlementGranted,
       async ({ userId, scope, expiresAt }, occurredAt) => {
@@ -119,6 +120,10 @@ export const socketSanctionHandlers = ({
 }): Readonly<Record<string, ChatEventHandler>> => ({
   [userTimedOut.name]: handlerFor(log)(userTimedOut, (payload, occurredAt) => {
     sockets.sanction(sanctionOf(payload));
+    metrics.sanctionApplied(occurredAt);
+  }),
+  [userBanned.name]: handlerFor(log)(userBanned, (payload, occurredAt) => {
+    sockets.ban(sanctionOf(payload));
     metrics.sanctionApplied(occurredAt);
   }),
 });

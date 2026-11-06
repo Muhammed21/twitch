@@ -269,3 +269,97 @@ describe("sanctions des chatters connectés", () => {
     expect(server.pendingSanctionCount()).toBe(2);
   });
 });
+
+const disconnection = (socket: Socket) =>
+  new Promise<string>((resolve) => {
+    socket.once("disconnect", resolve);
+  });
+
+const rejectionsAt = (socket: Socket) => {
+  const rejected: unknown[] = [];
+  socket.on("chat:rejected", (payload: unknown) => {
+    rejected.push(payload);
+  });
+  return rejected;
+};
+
+describe("bannissement des chatters connectés", () => {
+  it("dit banned au chatter banni puis ferme ses sockets du salon", async () => {
+    const room = makeRoom();
+    const { server, connectAs } = await startServer({ rooms: [room] });
+    const alice = await joinedAs(() => connectAs(ALICE), room.channelId);
+    const rejected = rejectionsAt(alice);
+    const closed = disconnection(alice);
+
+    server.ban({ userId: ALICE, channelId: room.channelId, expiresAt: null });
+
+    expect(await closed).toBe("io server disconnect");
+    expect(rejected).toEqual([{ reason: "banned" }]);
+    await vi.waitFor(() => {
+      expect(server.connectionCount()).toBe(0);
+    });
+  });
+
+  it("efface les messages du chatter banni chez les connectés du salon, qui restent connectés", async () => {
+    const room = makeRoom();
+    const { server, connectAs } = await startServer({ rooms: [room] });
+    await joinedAs(() => connectAs(ALICE), room.channelId);
+    const bob = await joinedAs(() => connectAs(BOB), room.channelId);
+    const clearedAtBob = clearsAt(bob);
+
+    server.ban({ userId: ALICE, channelId: room.channelId, expiresAt: null });
+
+    await vi.waitFor(() => {
+      expect(clearedAtBob).toEqual([{ channelId: room.channelId, userId: ALICE }]);
+    });
+    expect(await send(bob, room.channelId)).toBeUndefined();
+  });
+
+  it("laisse ouverte la socket du chatter banni qui n'est pas dans ce salon", async () => {
+    const bannedRoom = makeRoom();
+    const otherRoom = makeRoom();
+    const { server, connectAs } = await startServer({ rooms: [bannedRoom, otherRoom] });
+    const elsewhere = await joinedAs(() => connectAs(ALICE), otherRoom.channelId);
+    const inRoom = await joinedAs(() => connectAs(ALICE), bannedRoom.channelId);
+    const closed = disconnection(inRoom);
+
+    server.ban({ userId: ALICE, channelId: bannedRoom.channelId, expiresAt: null });
+
+    await closed;
+    expect(elsewhere.connected).toBe(true);
+    expect(await send(elsewhere, otherRoom.channelId)).toBeUndefined();
+  });
+
+  it("refuse banned le message du chatter banni définitivement qui se reconnecte pendant sa connexion", async () => {
+    const room = makeRoom();
+    const reading = deferred<void>();
+    const profile = deferred<string>();
+    const { server, connectAs } = await startServer({
+      rooms: [room],
+      displayNameOf: () => {
+        reading.resolve();
+        return profile.promise;
+      },
+    });
+    const connecting = connectAs(ALICE);
+    await reading.promise;
+
+    server.ban({ userId: ALICE, channelId: room.channelId, expiresAt: null });
+    profile.resolve("Alice");
+    const alice = await connecting;
+    alice.emit("room:join", { channelId: room.channelId });
+
+    expect(await send(alice, room.channelId)).toEqual({ reason: "banned" });
+  });
+
+  it("retient un bannissement définitif pour les chatters en cours de connexion", async () => {
+    const room = makeRoom();
+    const { server } = await startServer({ rooms: [room] });
+
+    server.ban({ userId: ALICE, channelId: room.channelId, expiresAt: null });
+    server.sanction({ userId: BOB, channelId: room.channelId, expiresAt: minutesFromNow(-1) });
+    server.sanction({ userId: CAROL, channelId: room.channelId, expiresAt: minutesFromNow(10) });
+
+    expect(server.pendingSanctionCount()).toBe(2);
+  });
+});

@@ -100,6 +100,16 @@ describe("vue locale des sanctions", () => {
     ]);
   });
 
+  it("lit sans fin le bannissement définitif d'un chatter", async () => {
+    const userId = randomUUID();
+    const channelId = randomUUID();
+    const profiles = redisChatterProfiles(
+      makeHashes({ [sanctionsKey(userId)]: { [channelId]: "permanent" } }),
+    );
+
+    expect(await profiles.sanctionsOf(userId)).toEqual([{ channelId, expiresAt: null }]);
+  });
+
   it("range les sanctions sous chat:chatter:<userId>:sanctions", () => {
     expect(sanctionsKey("u1")).toBe("chat:chatter:u1:sanctions");
   });

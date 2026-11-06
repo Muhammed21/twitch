@@ -4,6 +4,7 @@ import type { LiveSession, LocalViewWriter } from "../application/ports.ts";
 import {
   CHAT_COLOR,
   chatterKey,
+  PERMANENT,
   roomKey,
   sanctionsKey,
   toRoomState,
@@ -38,9 +39,15 @@ return redis.call('HGET', KEYS[1], 'sessionId')
 `;
 
 const SANCTION_CHATTER = `
-local current = tonumber(redis.call('HGET', KEYS[1], ARGV[1]) or '0')
-if tonumber(ARGV[2]) > current then
+local current = redis.call('HGET', KEYS[1], ARGV[1])
+if current ~= ARGV[3] and (ARGV[2] == ARGV[3] or tonumber(ARGV[2]) > tonumber(current or '0')) then
   redis.call('HSET', KEYS[1], ARGV[1], ARGV[2])
+end
+for _, value in ipairs(redis.call('HVALS', KEYS[1])) do
+  if value == ARGV[3] then
+    redis.call('PERSIST', KEYS[1])
+    return 1
+  end
 end
 redis.call('PEXPIREAT', KEYS[1], ARGV[2], 'NX')
 redis.call('PEXPIREAT', KEYS[1], ARGV[2], 'GT')
@@ -113,7 +120,11 @@ export const redisLocalViewWriter = (redis: HashWriter): LocalViewWriter => ({
   sanctionChatter: async ({ userId, channelId, expiresAt }) => {
     await redis.eval(SANCTION_CHATTER, {
       keys: [sanctionsKey(userId)],
-      arguments: [channelId, String(expiresAt.getTime())],
+      arguments: [
+        channelId,
+        expiresAt === null ? PERMANENT : String(expiresAt.getTime()),
+        PERMANENT,
+      ],
     });
   },
   changeTurbo: ({ userId, expiresAt, changedAt }) =>
