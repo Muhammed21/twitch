@@ -13,6 +13,7 @@ import {
 import {
   prismaCategoryCatalog,
   prismaCategorySearch,
+  renameCategory,
 } from "./infrastructure/prisma-category-catalog.ts";
 import { prismaChannelDirectory } from "./infrastructure/prisma-channel-directory.ts";
 
@@ -291,6 +292,35 @@ describe("catalogue des catégories dans channel (ADR 0045)", () => {
         imageKey: null,
         tags: ["Shooter", "RPG"],
       },
+    });
+  });
+});
+
+describe("nom d'une catégorie", () => {
+  it("renomme une catégorie active, avec l'état complet dans channel.category.updated, et refuse une fois retirée", async () => {
+    const category = await seedCategory();
+    const outboxEventId = randomUUID();
+
+    const renamed = await renameCategory(prisma)({
+      categoryId: category.id,
+      name: nameOf("Grand Theft Auto V"),
+      outboxEventId,
+      occurredAt: NOW,
+    });
+    await catalog.retire({ categoryId: category.id, outboxEventId: randomUUID(), occurredAt: NOW });
+    const afterRetire = await renameCategory(prisma)({
+      categoryId: category.id,
+      name: nameOf("GTA V"),
+      outboxEventId: randomUUID(),
+      occurredAt: NOW,
+    });
+
+    expect(renamed).toEqual({ ok: true, value: { ...category, name: "Grand Theft Auto V" } });
+    expect(afterRetire).toEqual({ ok: false, error: "category_inactive" });
+    expect(await outboxEvent(outboxEventId)).toMatchObject({
+      name: "channel.category.updated",
+      version: 1,
+      payload: { categoryId: category.id, name: "Grand Theft Auto V", imageKey: null, tags: [] },
     });
   });
 });
