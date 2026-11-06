@@ -86,6 +86,7 @@ public extension LayoutRole {
     case .profileActionGlyphGap: Spacing.x12
     case .profileTabTop: Spacing.x20
     case .profileAboutTop: Spacing.x55
+    case .profileAboutIllustrationGap: Spacing.x16
     case .profileAboutTextGap: Spacing.x16
     case .profileAboutInset: Spacing.x40
     case .categoryCardCoverWidth: Spacing.x72

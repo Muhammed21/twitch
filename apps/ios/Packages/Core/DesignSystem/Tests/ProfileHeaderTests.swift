@@ -24,6 +24,7 @@ private let headerMeasures: [(LayoutRole, CGFloat)] = [
   (.profileActionGlyphGap, 12),
   (.profileTabTop, 20),
   (.profileAboutTop, 55),
+  (.profileAboutIllustrationGap, 16),
   (.profileAboutTextGap, 16),
   (.profileAboutInset, 40),
 ]
@@ -77,5 +78,12 @@ struct ProfileHeaderTests {
     #expect(ProfileHeaderStyle.aboutMessage == .textSecondary)
     #expect(TextRole.profileAboutTitle.font == Font.headline.weight(.bold))
     #expect(TextRole.profileAboutMessage.font == Font.body.weight(.regular))
+  }
+
+  @Test("« À propos » vide : le personnage sur losange violet, 55 pt sous les onglets et 16 pt au-dessus du titre (IMG_9615)")
+  func aboutEmptyIllustration() {
+    #expect(ProfileAboutEmpty.illustration == .characterOnPurple)
+    #expect(LayoutRole.profileAboutTop.points == 55)
+    #expect(LayoutRole.profileAboutIllustrationGap.points == 16)
   }
 }
