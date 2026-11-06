@@ -84,6 +84,9 @@ export class OptionalAccessTokenGuard implements CanActivate {
   }
 }
 
+export const identityOf = (request: Request): AccessTokenIdentity | undefined =>
+  identities.get(request);
+
 export const CurrentIdentity = createParamDecorator(
   (_data: unknown, context: ExecutionContext): AccessTokenIdentity | undefined =>
     identities.get(context.switchToHttp().getRequest<Request>()),

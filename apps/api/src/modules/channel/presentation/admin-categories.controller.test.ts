@@ -4,9 +4,11 @@ import { describe, expect, it } from "vitest";
 import type { AccessTokenIdentity } from "@repo/auth-verifier";
 import { err, ok } from "@repo/result";
 
+import type { ServiceCallers } from "../../../platform/admin-caller.ts";
 import type { AccessTokenVerifier } from "../../../platform/authentication.ts";
 import { configureApp } from "../../../platform/configure-app.ts";
 import { PlatformModule } from "../../../platform/platform.module.ts";
+import { PAYLOAD_ADMIN_ACCOUNT } from "../../../platform/service-accounts.ts";
 import type { CategoryView } from "../application/category-admin.ts";
 import {
   AdminCategoriesController,
@@ -26,6 +28,18 @@ const makeIdentity = (scopes: readonly string[]): AccessTokenIdentity => ({
   amr: [],
   revocation: "checked",
 });
+
+const PAYLOAD_SECRET = "secret-du-compte-de-service-payload-admin";
+const HUMAN_ID = "8b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e";
+
+const PAYLOAD_CALLERS: ServiceCallers = {
+  accounts: [{ ...PAYLOAD_ADMIN_ACCOUNT, secret: PAYLOAD_SECRET }],
+  actingUser: {
+    verify: async (header) =>
+      header.startsWith("humain:") ? ok({ userId: header.slice(7) }) : err("invalid"),
+  },
+  now: () => new Date(),
+};
 
 const verifierWith = (scopes: readonly string[]): AccessTokenVerifier => ({
   verify: async () => ok(makeIdentity(scopes)),
@@ -106,6 +120,7 @@ const withAdmin = async (
         schemaVersionCheck: async () => {},
         logSink: () => {},
         accessTokenVerifier: verifierWith(scopes),
+        serviceCallers: PAYLOAD_CALLERS,
       }),
     ],
     controllers: [AdminCategoriesController],
@@ -447,6 +462,56 @@ describe("PUT /v1/admin/categories/{slug}/tags (ADR 0050)", () => {
     await withAdmin({}, async (base, calls) => {
       expect((await put(base, { body })).status).toBe(400);
       expect(calls).toEqual([]);
+    });
+  });
+});
+
+describe("administration des catégories depuis Payload (ADR 0007)", () => {
+  const fromPayload = (headers: Record<string, string>) => ({
+    "content-type": "application/json",
+    authorization: `Service ${PAYLOAD_SECRET}`,
+    ...headers,
+  });
+
+  it("agit au nom de l'humain de X-Acting-User, jamais du compte de service", async () => {
+    await withAdmin({}, async (base, calls) => {
+      const response = await fetch(base, {
+        method: "POST",
+        headers: fromPayload({ "x-acting-user": `humain:${HUMAN_ID}` }),
+        body: JSON.stringify({ slug: "just-chatting", name: "Just Chatting" }),
+      });
+
+      expect(response.status).toBe(201);
+      expect(calls).toEqual([
+        {
+          name: "create",
+          request: { actorId: HUMAN_ID, slug: "just-chatting", name: "Just Chatting" },
+        },
+      ]);
+    });
+  });
+
+  it("répond 403 sans X-Acting-User, sans rien créer", async () => {
+    await withAdmin({}, async (base, calls) => {
+      const response = await fetch(base, {
+        method: "POST",
+        headers: fromPayload({}),
+        body: JSON.stringify({ slug: "just-chatting", name: "Just Chatting" }),
+      });
+
+      expect(response.status).toBe(403);
+      expect(calls).toEqual([]);
+    });
+  });
+
+  it("répond 403 quand l'humain n'a pas le droit, même si le compte de service a le scope", async () => {
+    await withAdmin({ answers: { retire: err("forbidden") } }, async (base) => {
+      const response = await fetch(`${base}/irl/retire`, {
+        method: "POST",
+        headers: fromPayload({ "x-acting-user": `humain:${HUMAN_ID}` }),
+      });
+
+      expect(response.status).toBe(403);
     });
   });
 });

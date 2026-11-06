@@ -2,16 +2,11 @@ import { Body, Controller, HttpCode, Inject, Param, Post, Put, UseGuards } from 
 import { createZodDto, ZodResponse } from "nestjs-zod";
 import { z } from "zod";
 
-import type { AccessTokenIdentity } from "@repo/auth-verifier";
 import { responses, Uuid } from "@repo/contracts";
 import type { Result } from "@repo/result";
 
 import { responseDto } from "../../../openapi/response-dto.ts";
-import {
-  AccessTokenGuard,
-  CurrentIdentity,
-  requiredScopeGuard,
-} from "../../../platform/authentication.ts";
+import { type AdminActor, adminCallerGuard, CurrentActor } from "../../../platform/admin-caller.ts";
 import type { ImageRejection } from "../../../platform/images/finalize-image.ts";
 import { imageRejected } from "../../../platform/images/image-problems.ts";
 import { ProblemException } from "../../../platform/problem.ts";
@@ -146,7 +141,7 @@ const unwrap = <Error extends string>(
 };
 
 @Controller("admin/categories")
-@UseGuards(AccessTokenGuard, requiredScopeGuard(CATEGORY_MANAGE_SCOPE))
+@UseGuards(adminCallerGuard(CATEGORY_MANAGE_SCOPE))
 export class AdminCategoriesController {
   constructor(
     @Inject(CATEGORY_ADMIN) private readonly admin: CategoryAdmin,
@@ -168,11 +163,11 @@ export class AdminCategoriesController {
   @ZodResponse({ status: 201, type: Category })
   async create(
     @Body() body: CreateCategoryRequest,
-    @CurrentIdentity() identity: AccessTokenIdentity,
+    @CurrentActor() actor: AdminActor,
   ): Promise<CategoryResponse> {
     return this.present(
       unwrap(
-        await this.admin.create({ actorId: identity.userId, slug: body.slug, name: body.name }),
+        await this.admin.create({ actorId: actor.actorId, slug: body.slug, name: body.name }),
         PROBLEMS,
       ),
     );
@@ -184,12 +179,12 @@ export class AdminCategoriesController {
   async merge(
     @Param("slug") slug: string,
     @Body() body: MergeCategoryRequest,
-    @CurrentIdentity() identity: AccessTokenIdentity,
+    @CurrentActor() actor: AdminActor,
   ): Promise<CategoryResponse> {
     return this.present(
       unwrap(
         await this.admin.merge({
-          actorId: identity.userId,
+          actorId: actor.actorId,
           sourceSlug: slug,
           targetSlug: body.targetSlug,
         }),
@@ -203,10 +198,10 @@ export class AdminCategoriesController {
   @ZodResponse({ status: 200, type: Category })
   async retire(
     @Param("slug") slug: string,
-    @CurrentIdentity() identity: AccessTokenIdentity,
+    @CurrentActor() actor: AdminActor,
   ): Promise<CategoryResponse> {
     return this.present(
-      unwrap(await this.admin.retire({ actorId: identity.userId, slug }), PROBLEMS),
+      unwrap(await this.admin.retire({ actorId: actor.actorId, slug }), PROBLEMS),
     );
   }
 
@@ -215,11 +210,11 @@ export class AdminCategoriesController {
   async image(
     @Param("slug") slug: string,
     @Body() body: CategoryImageRequest,
-    @CurrentIdentity() identity: AccessTokenIdentity,
+    @CurrentActor() actor: AdminActor,
   ): Promise<CategoryResponse> {
     return this.present(
       unwrap(
-        await this.admin.image({ actorId: identity.userId, slug, uploadId: body.uploadId }),
+        await this.admin.image({ actorId: actor.actorId, slug, uploadId: body.uploadId }),
         IMAGE_PROBLEMS,
       ),
     );
@@ -230,11 +225,11 @@ export class AdminCategoriesController {
   async tags(
     @Param("slug") slug: string,
     @Body() body: CategoryTagsRequest,
-    @CurrentIdentity() identity: AccessTokenIdentity,
+    @CurrentActor() actor: AdminActor,
   ): Promise<CategoryResponse> {
     return this.present(
       unwrap(
-        await this.admin.tags({ actorId: identity.userId, slug, tags: body.tags }),
+        await this.admin.tags({ actorId: actor.actorId, slug, tags: body.tags }),
         TAGS_PROBLEMS,
       ),
     );

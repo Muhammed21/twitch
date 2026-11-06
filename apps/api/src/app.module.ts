@@ -30,6 +30,7 @@ import {
   StreamModule,
   type StreamPrisma,
 } from "./modules/stream/stream.module.ts";
+import type { ServiceCallers } from "./platform/admin-caller.ts";
 import type { AccessTokenVerifier } from "./platform/authentication.ts";
 import type { FeatureFlagsConfig, VideoProviderConfig } from "./platform/config/env.ts";
 import {
@@ -71,6 +72,7 @@ export class AppModule {
     schemaVersionCheck: SchemaVersionCheck;
     logSink: LogSink;
     accessTokenVerifier: AccessTokenVerifier;
+    serviceCallers?: ServiceCallers;
     identity: { prisma: IdentityPrisma; redis: IdentityRedis };
     channel: {
       prisma: ChannelPrisma;
