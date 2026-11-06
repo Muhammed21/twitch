@@ -62,6 +62,11 @@ public struct ChatLine: Equatable, Sendable {
     self.nameColor = nameColor
   }
 
+  public func spoken(_ style: ChatLineStyle) -> String {
+    let message = "\(author) \(body)"
+    return style.showsTimestamps ? "\(message), \(time)" : message
+  }
+
   public func styled(_ style: ChatLineStyle) -> AttributedString {
     timeStyled(style) + messageStyled(style)
   }
@@ -95,6 +100,8 @@ public struct ChatLineRow: View {
     Text("\(Text(line.timeStyled(style)))\(badges)\(Text(line.messageStyled(style)))")
       .font(style.messageRole.font)
       .frame(maxWidth: .infinity, alignment: .leading)
+      .accessibilityElement(children: .ignore)
+      .accessibilityLabel(Text(verbatim: line.spoken(style)))
   }
 
   private var badges: Text {

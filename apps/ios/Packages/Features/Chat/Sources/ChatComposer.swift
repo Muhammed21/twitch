@@ -50,6 +50,7 @@ public struct ChatComposer: View {
               .font(TextRole.chatComposer.font)
               .foregroundStyle(ColorRole.textPrimary.color)
           }
+          .minimumTapTarget()
           .disabled(isSending)
           .accessibilityLabel(ChatText.send)
           .accessibilityIdentifier("chat.composer.send")
@@ -58,6 +59,7 @@ public struct ChatComposer: View {
     }
     .padding(style == .widget ? LayoutRole.widgetFieldInset.points : LayoutRole.chatInset.points)
     .background(style.background.color)
+    .announcing(notice)
   }
 
   @ViewBuilder private var field: some View {
@@ -110,6 +112,7 @@ public struct ChatComposer: View {
       .foregroundStyle(ColorRole.textPrimary.color)
       .submitLabel(.send)
       .onSubmit(send)
+      .accessibilityLabel(ChatText.placeholder)
       .accessibilityIdentifier("chat.composer.field")
   }
 

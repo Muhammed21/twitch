@@ -1,6 +1,22 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "chat.announcement.many" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld new messages. Latest, %2$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld nouveaux messages. Dernier, %2$@"
+          }
+        }
+      }
+    },
     "chat.color.blue" : {
       "localizations" : {
         "en" : {
