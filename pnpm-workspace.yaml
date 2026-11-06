@@ -21,3 +21,6 @@ overrides:
   "@nestjs/platform-express>express": 5.3.0
   # vitest 4.1.12 accepte vite ^8 mais le lockfile restait sur 8.3.0, vulnérable ; 8.3.5 corrige.
   "vite@>=8.3.0 <8.3.3": 8.3.5
+  # monaco-editor (admin de Payload, via @payloadcms/ui) épingle dompurify 3.4.15, vulnérable
+  # (GHSA-mrv2-3pqr-j5jr) ; 3.4.17 corrige, même branche. À retirer quand monaco-editor l'embarque.
+  "monaco-editor>dompurify": 3.4.17

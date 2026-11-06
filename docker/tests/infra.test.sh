@@ -57,7 +57,11 @@ check "app_channel se connecte à app" psql_as app_channel "$PG_PASSWORD_APP_CHA
 check_not "app_channel ne se connecte pas à payload" psql_as app_channel "$PG_PASSWORD_APP_CHANNEL" payload "SELECT 1"
 check "payload se connecte à payload" psql_as payload "$PG_PASSWORD_PAYLOAD" payload "SELECT 1"
 check_not "payload ne se connecte pas à app" psql_as payload "$PG_PASSWORD_PAYLOAD" app "SELECT 1"
-denied_on_app() { psql_as "$1" "$2" app "SELECT 1" 2>&1 | grep -q 'permission denied for database "app"'; }
+denied_on_app() {
+  local output
+  output="$(psql_as "$1" "$2" app "SELECT 1" 2>&1)"
+  grep -q 'permission denied for database "app"' <<<"$output"
+}
 check "payload est refusé sur app pour droit insuffisant (42501), pas pour une autre cause" denied_on_app payload "$PG_PASSWORD_PAYLOAD"
 check "migrator se connecte à app" psql_as migrator "$PG_PASSWORD_MIGRATOR" app "SELECT 1"
 check_not "migrator ne se connecte pas à payload" psql_as migrator "$PG_PASSWORD_MIGRATOR" payload "SELECT 1"
