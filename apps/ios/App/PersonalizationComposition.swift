@@ -70,7 +70,7 @@ struct PersonalizationRoot: View {
   var body: some View {
     ZStack {
       if presentation.isShown {
-        PaywallScreen(store: paywall, links: links, onClose: onClose)
+        PaywallScreen(store: paywall, links: links, presentation: .journey(onClose: onClose))
           .transition(PaywallStepTransition(reduceMotion: reduceMotion))
       } else {
         PersonalizationScreen()

@@ -66,4 +66,17 @@ public enum ProfileText {
     (LocalizedStringResource("obs.keyframeInterval", bundle: .module), LocalizedStringResource("obs.keyframeInterval.value", bundle: .module)),
     (LocalizedStringResource("obs.maxBitrate", bundle: .module), LocalizedStringResource("obs.maxBitrate.value", bundle: .module)),
   ]
+
+  public static let aboutEmptyTitle = LocalizedStringResource("profile.about.empty.title", bundle: .module)
+  public static let aboutEmptyMessage = LocalizedStringResource("profile.about.empty.message", bundle: .module)
+
+  public static func title(of section: ProfileSection) -> LocalizedStringResource {
+    switch section {
+    case .about: LocalizedStringResource("profile.about", bundle: .module)
+    }
+  }
+}
+
+public enum ProfileSection: CaseIterable, Hashable, Sendable {
+  case about
 }
