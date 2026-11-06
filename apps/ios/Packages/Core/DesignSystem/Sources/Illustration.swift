@@ -3,36 +3,45 @@ import SwiftUI
 public enum Illustration: String, CaseIterable, Sendable {
   case clapperboard
   case barChart
+  case characterOnPurple
 
   var layers: [IllustrationLayer] {
-    IllustrationTint.allCases.map { IllustrationLayer(illustration: self, tint: $0) }
+    tints.map { IllustrationLayer(illustration: self, tint: $0) }
+  }
+
+  private var tints: [IllustrationTint] {
+    switch self {
+    case .clapperboard, .barChart: [.fill, .outline, .ink]
+    case .characterOnPurple: [.accent, .fill, .outline, .highlight, .ink]
+    }
   }
 
   var size: CGSize {
     switch self {
     case .clapperboard: CGSize(width: 140, height: 128)
     case .barChart: CGSize(width: 137, height: 138)
+    case .characterOnPurple: CGSize(width: 162, height: 178)
     }
   }
 }
 
 enum IllustrationTint: String, CaseIterable, Sendable {
+  case accent
   case fill
   case outline
+  case highlight
   case ink
 
   var maskSuffix: String {
-    switch self {
-    case .fill: "Fill"
-    case .outline: "Outline"
-    case .ink: "Ink"
-    }
+    rawValue.prefix(1).uppercased() + rawValue.dropFirst()
   }
 
   var role: ColorRole {
     switch self {
+    case .accent: .illustrationAccent
     case .fill: .illustrationFill
     case .outline: .illustrationOutline
+    case .highlight: .illustrationHighlight
     case .ink: .illustrationInk
     }
   }

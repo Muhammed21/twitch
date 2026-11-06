@@ -17,12 +17,17 @@ private struct IllustrationControl: Decodable {
   let scrim: Double
 }
 
+private struct IllustrationTintEntry: Decodable {
+  let name: String
+  let color: String
+}
+
 private struct IllustrationEntry: Decodable {
   let name: String
   let source: String
   let rect: IllustrationRect
   let background: String
-  let tints: [String: String]
+  let tints: [IllustrationTintEntry]
   let control: IllustrationControl?
 }
 
@@ -98,7 +103,7 @@ private func maskURL(_ name: String) -> URL {
 
 private func recomposed(_ entry: IllustrationEntry, layers: [IllustrationLayer]) throws -> [[Double]] {
   let masks = try layers.map { try pixels(of: maskURL($0.mask)) }
-  let tints = try layers.map { try rgb(#require(entry.tints[$0.tint.rawValue])) }
+  let tints = try layers.map { layer in try rgb(#require(entry.tints.first { $0.name == layer.tint.rawValue }).color) }
   let background = rgb(entry.background)
   return (0 ..< entry.rect.width * entry.rect.height).map { index in
     zip(masks, tints).reduce(background) { below, layer in
@@ -114,7 +119,7 @@ private func largestGap(between expected: Pixels, and actual: [[Double]], veil: 
   }.max() ?? .infinity
 }
 
-@Suite("Illustrations d'état vide extraites des captures (ADR 0052)")
+@Suite("Illustrations d'état vide extraites des captures (ADR 0052, ADR 0053)")
 struct IllustrationTests {
   @Test("chaque illustration a son entrée dans le manifeste, qui cite une capture de docs/new-reference-ui/")
   func manifestCoversEveryIllustration() throws {
@@ -122,7 +127,13 @@ struct IllustrationTests {
 
     #expect(Set(entries.map(\.name)) == Set(Illustration.allCases.map(\.rawValue)))
     #expect(entries.allSatisfy { $0.source.hasPrefix("docs/new-reference-ui/") })
-    #expect(entries.allSatisfy { Set($0.tints.keys) == Set(IllustrationTint.allCases.map(\.rawValue)) })
+  }
+
+  @Test("le manifeste donne les teintes de chaque illustration dans son ordre d'empilement (ADR 0053 §2)", arguments: Illustration.allCases)
+  func manifestListsTintsInStackingOrder(illustration: Illustration) throws {
+    let tints = try entry(of: illustration).tints.map(\.name)
+
+    #expect(tints == illustration.layers.map(\.tint.rawValue))
   }
 
   @Test("chaque masque du catalogue a son entrée dans le manifeste, et l'inverse")
@@ -144,7 +155,20 @@ struct IllustrationTests {
 
     #expect(layers.map(\.tint) == [.fill, .outline, .ink])
     #expect(layers.map(\.mask) == ["clapperboardFill", "clapperboardOutline", "clapperboardInk"])
-    #expect(IllustrationTint.allCases.map(\.role) == [.illustrationFill, .illustrationOutline, .illustrationInk])
+    #expect(IllustrationTint.allCases.map(\.role) == [
+      .illustrationAccent, .illustrationFill, .illustrationOutline, .illustrationHighlight, .illustrationInk,
+    ])
+  }
+
+  @Test("le personnage de l'onglet « À propos » empile le losange violet, le remplissage, le contour, le jaune puis l'encre (IMG_9615)")
+  func stacksCharacterOnPurple() {
+    let layers = Illustration.characterOnPurple.layers
+
+    #expect(layers.map(\.tint) == [.accent, .fill, .outline, .highlight, .ink])
+    #expect(layers.map(\.mask) == [
+      "characterOnPurpleAccent", "characterOnPurpleFill", "characterOnPurpleOutline",
+      "characterOnPurpleHighlight", "characterOnPurpleInk",
+    ])
   }
 
   @Test("chaque masque est un gabarit @3x à la taille de la découpe", arguments: Illustration.allCases)

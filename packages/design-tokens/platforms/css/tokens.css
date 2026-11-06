@@ -45,6 +45,8 @@
   --color-illustration-ink: #000000;
   --color-illustration-outline: #323338;
   --color-illustration-fill: #ffffff;
+  --color-illustration-accent: #9147ff;
+  --color-illustration-highlight: #f5f500;
   --color-chip-selected: #000000;
   --color-chip-on-selected: #ffffff;
   --typography-display-text-font: -apple-system-headline;
@@ -186,6 +188,8 @@
     --color-illustration-ink: #000000;
     --color-illustration-outline: #323338;
     --color-illustration-fill: #ffffff;
+    --color-illustration-accent: #9147ff;
+    --color-illustration-highlight: #f5f500;
     --color-chip-selected: #efeff1;
     --color-chip-on-selected: #000000;
   }

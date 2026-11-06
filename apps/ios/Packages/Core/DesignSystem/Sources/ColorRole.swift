@@ -40,6 +40,8 @@ public enum ColorRole: Equatable, Sendable {
   case illustrationInk
   case illustrationOutline
   case illustrationFill
+  case illustrationAccent
+  case illustrationHighlight
   case chipSelected
   case onChipSelected
 
@@ -82,6 +84,8 @@ public enum ColorRole: Equatable, Sendable {
     case .illustrationInk: .illustrationInk
     case .illustrationOutline: .illustrationOutline
     case .illustrationFill: .illustrationFill
+    case .illustrationAccent: .illustrationAccent
+    case .illustrationHighlight: .illustrationHighlight
     case .chipSelected: .chipSelected
     case .onChipSelected: .chipOnSelected
     }
