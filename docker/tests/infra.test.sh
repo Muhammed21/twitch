@@ -229,6 +229,7 @@ check "payload a été créé mais jamais démarré" test "$(state_of payload St
 check "aucune migration de Payload n'est appliquée" test "$(psql_as payload "$PG_PASSWORD_PAYLOAD" payload "SELECT to_regclass('public.payload_migrations') IS NULL")" = "t"
 full rm -sf payload payload-migrate >/dev/null 2>&1
 check "payload démarre après payload-migrate et une API saine, et devient sain" full up -d --build --wait --wait-timeout 600 payload
+if [ "$(state_of payload Running 2>/dev/null)" != "true" ]; then full logs --no-color --tail 80 payload-migrate payload; fi
 check "/health/ready de Payload répond 200 depuis l'hôte" curl -sf "$PAYLOAD_HTTP/health/ready"
 check "/health/live de Payload répond 200 depuis l'hôte" curl -sf "$PAYLOAD_HTTP/health/live"
 check "l'admin de Payload répond depuis l'hôte" curl -sf -o /dev/null "$PAYLOAD_HTTP/admin/login"
