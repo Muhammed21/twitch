@@ -72,14 +72,14 @@ public final class CreatorMode {
     isShowingActions = false
   }
 
-  public func switchMode() async {
+  public func switchMode(landingOn tab: DashboardTab = .home) async {
     guard transition == nil else { return }
     let target = mode.other
     isShowingActions = false
     transition = target
     await sleep(hold)
     guard transition == target else { return }
-    dashboardTab = .home
+    dashboardTab = tab
     mode = target
     storage.save(target)
     transition = nil

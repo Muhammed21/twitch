@@ -89,6 +89,17 @@ struct CreatorModeTests {
     #expect(mode.dashboardTab == .home)
   }
 
+  @Test("le bouton « Statistiques » du profil ouvre le tableau de bord sur l'onglet Statistiques (IMG_9614 puis IMG_9626)")
+  func entersOnRequestedTab() async {
+    let (mode, storage) = makeSwitch()
+
+    await mode.switchMode(landingOn: .stats)
+
+    #expect(mode.mode == .creator)
+    #expect(mode.dashboardTab == .stats)
+    #expect(storage.saved == [.creator])
+  }
+
   @Test("le tableau de bord a quatre onglets : Accueil et Contenu à gauche du « + », Statistiques et Chaîne à droite")
   func dashboardTabs() {
     #expect(DashboardTab.leading == [.home, .content])
