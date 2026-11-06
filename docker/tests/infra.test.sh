@@ -2,8 +2,8 @@
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-ENV_FILE="$ROOT/.env.example"
-export COMPOSE_PROJECT_NAME="twitch-infra-test"
+ENV_FILE="${ENV_FILE:-$ROOT/.env.example}"
+export COMPOSE_PROJECT_NAME="${INFRA_TEST_PROJECT:-twitch-infra-test}"
 compose() { docker compose --project-directory "$ROOT" --env-file "$ENV_FILE" "$@"; }
 
 set -a
@@ -57,6 +57,8 @@ check "app_channel se connecte à app" psql_as app_channel "$PG_PASSWORD_APP_CHA
 check_not "app_channel ne se connecte pas à payload" psql_as app_channel "$PG_PASSWORD_APP_CHANNEL" payload "SELECT 1"
 check "payload se connecte à payload" psql_as payload "$PG_PASSWORD_PAYLOAD" payload "SELECT 1"
 check_not "payload ne se connecte pas à app" psql_as payload "$PG_PASSWORD_PAYLOAD" app "SELECT 1"
+denied_on_app() { psql_as "$1" "$2" app "SELECT 1" 2>&1 | grep -q 'permission denied for database "app"'; }
+check "payload est refusé sur app pour droit insuffisant (42501), pas pour une autre cause" denied_on_app payload "$PG_PASSWORD_PAYLOAD"
 check "migrator se connecte à app" psql_as migrator "$PG_PASSWORD_MIGRATOR" app "SELECT 1"
 check_not "migrator ne se connecte pas à payload" psql_as migrator "$PG_PASSWORD_MIGRATOR" payload "SELECT 1"
 
@@ -104,6 +106,8 @@ check "la base n'est pas touchée quand un rôle manque" test "$(psql_admin "SEL
 check "db-init relancé recrée le rôle manquant" env ENV_FILE="$ENV_FILE" "$ROOT/docker/up.sh"
 check "migrate applique les migrations sur une base neuve" migrate
 check "les 11 schémas existent après migrate" test "$(psql_admin "SELECT count(*) FROM pg_namespace WHERE nspname IN ('identity','channel','stream','chat','moderation','discovery','monetization','notification','video','authz','audit')")" = "11"
+payload_schemas() { psql_admin "SELECT count(*) FROM pg_namespace WHERE nspname NOT LIKE 'pg\\_%' AND nspname NOT IN ('information_schema', 'public') AND (has_schema_privilege('payload', oid, 'USAGE') OR has_schema_privilege('payload', oid, 'CREATE'))"; }
+check "payload n'a aucun droit sur les schémas de app après migrate" test "$(payload_schemas)" = "0"
 applied="$(applied_migrations)"
 check "au moins une migration appliquée" test "$applied" -ge 1
 check "migrate rejoué réussit" migrate
