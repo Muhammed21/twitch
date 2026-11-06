@@ -54,7 +54,7 @@ struct ChatPreviewTests {
   func linesInFrench() {
     let lines = ChatPreview.lines(locale: french)
 
-    #expect(lines.map(\.body) == ["Ce clutch était irréel !", "GG, à la prochaine !", "Cette taille de texte se lit bien"])
+    #expect(lines.map(\.body) == ["Ce clutch était irréel\u{00A0}!", "GG, à la prochaine\u{00A0}!", "Cette taille de texte se lit bien"])
     #expect(lines.map(\.author) == ChatPreview.lines(locale: english).map(\.author))
     #expect(lines.map(\.time) == ChatPreview.lines(locale: english).map(\.time))
   }

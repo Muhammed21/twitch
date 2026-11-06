@@ -133,20 +133,48 @@ public struct DashboardSearchField: View {
   }
 }
 
+public enum DashboardEmptyIllustration: Sendable {
+  case content
+  case stats
+
+  var illustration: Illustration {
+    switch self {
+    case .content: .clapperboard
+    case .stats: .barChart
+    }
+  }
+
+  var gap: LayoutRole {
+    switch self {
+    case .content: .dashboardEmptyClapperboardGap
+    case .stats: .dashboardEmptyBarChartGap
+    }
+  }
+
+  var top: CGFloat {
+    LayoutRole.dashboardEmptyTop.points - illustration.size.height - gap.points
+  }
+}
+
 public struct DashboardEmptyState: View {
   private let message: String
+  private let illustration: DashboardEmptyIllustration
 
-  public init(message: String) {
+  public init(message: String, illustration: DashboardEmptyIllustration) {
     self.message = message
+    self.illustration = illustration
   }
 
   public var body: some View {
-    Text(verbatim: message)
-      .font(TextRole.dashboardEmpty.font)
-      .foregroundStyle(DashboardStyle.emptyForeground.color)
-      .multilineTextAlignment(.center)
-      .frame(maxWidth: LayoutRole.dashboardEmptyWidth.points)
-      .padding(.top, LayoutRole.dashboardEmptyTop.points)
-      .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    VStack(spacing: illustration.gap.points) {
+      IllustrationImage(illustration.illustration)
+      Text(verbatim: message)
+        .font(TextRole.dashboardEmpty.font)
+        .foregroundStyle(DashboardStyle.emptyForeground.color)
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: LayoutRole.dashboardEmptyWidth.points)
+    }
+    .padding(.top, illustration.top)
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
   }
 }
