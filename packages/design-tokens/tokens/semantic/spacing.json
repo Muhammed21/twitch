@@ -115,6 +115,11 @@
       "$value": "{core.dimension.50}",
       "$description": "Hauteur des pilules d'action de l'en-tête du profil, relevée sur l'app iOS Twitch (50 pt, docs/new-reference-ui/IMG_9614)."
     },
+    "x55": {
+      "$type": "dimension",
+      "$value": "{core.dimension.55}",
+      "$description": "Retrait du contenu vide de l'onglet « À propos » du profil, relevé sur l'app iOS Twitch (55 pt, docs/new-reference-ui/IMG_9615)."
+    },
     "x56": {
       "$type": "dimension",
       "$value": "{core.dimension.56}",
