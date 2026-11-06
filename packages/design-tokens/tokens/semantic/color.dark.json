@@ -250,6 +250,18 @@
         "$value": "{core.color.neutral.100}",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9625, IMG_9626) : remplissage des illustrations d'état vide du tableau de bord, mesuré #ffffff. Aucune capture en thème sombre (ADR 0052 §4) : valeur claire gardée."
       }
+    },
+    "chip": {
+      "selected": {
+        "$type": "color",
+        "$value": "{core.color.neutral.90}",
+        "$description": "Puce de filtre active en thème sombre : aucune capture des puces en sombre ; reprend le soulignement clair de l'onglet actif de l'accueil en sombre (docs/reference-ui/accueil/flux-live--theme-sombre)."
+      },
+      "onSelected": {
+        "$type": "color",
+        "$value": "{core.color.neutral.0}",
+        "$description": "Libellé de la puce de filtre active en thème sombre, inverse du thème clair (docs/new-reference-ui/IMG_9607)."
+      }
     }
   }
 }

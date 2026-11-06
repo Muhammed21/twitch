@@ -34,6 +34,21 @@ private actor FakeDirectory: LiveDirectory {
   }
 }
 
+private struct InterruptedDirectory: LiveDirectory {
+  let first: LivePage?
+  let error: any Error
+
+  init(first: LivePage? = nil, error: any Error) {
+    self.first = first
+    self.error = error
+  }
+
+  func lives(after cursor: LiveCursor?) async throws -> LivePage {
+    guard cursor == nil, let first else { throw error }
+    return first
+  }
+}
+
 @MainActor
 @Suite("Accueil : lives en cours paginés par curseur")
 struct HomeStoreTests {
@@ -123,6 +138,36 @@ struct HomeStoreTests {
 
     #expect(store.lives.isEmpty)
     #expect(store.phase == .failed)
+  }
+
+  @Test("une tâche annulée remet l'accueil à charger, sans erreur")
+  func cancelledTaskIsNotAFailure() async {
+    let store = HomeStore(directory: InterruptedDirectory(error: CancellationError()))
+
+    await store.loadFirstPage()
+
+    #expect(store.phase == .idle)
+  }
+
+  @Test("une requête réseau annulée remet l'accueil à charger, sans erreur")
+  func cancelledRequestIsNotAFailure() async {
+    let store = HomeStore(directory: InterruptedDirectory(error: URLError(.cancelled)))
+
+    await store.loadFirstPage()
+
+    #expect(store.phase == .idle)
+  }
+
+  @Test("une page suivante annulée garde la liste prête à reprendre la pagination")
+  func cancelledNextPageKeepsPagination() async throws {
+    let first = try LivePage(lives: [live("jean_dupont", id: 1)], nextCursor: LiveCursor("c2"))
+    let store = HomeStore(directory: InterruptedDirectory(first: first, error: URLError(.cancelled)))
+    await store.loadFirstPage()
+
+    await store.loadNextPage()
+
+    #expect(store.phase == .loaded(hasMore: true))
+    #expect(store.lives.map(\.slug.rawValue) == ["jean_dupont"])
   }
 
   @Test("réessayer après l'échec de la première page la redemande")

@@ -52,6 +52,8 @@ public enum Spacing {
     public static let x50: CGFloat = 50
     /// Hauteur des lignes du menu du compte, relevée sur l'app iOS Twitch (56 pt, profil/menu-compte--defaut).
     public static let x56: CGFloat = 56
+    /// Largeur du filet entre deux lives du flux de l'accueil, relevée sur l'app iOS Twitch (63 pt, docs/new-reference-ui/IMG_9607).
+    public static let x63: CGFloat = 63
     /// Hauteur de la bannière du profil, relevée sur l'app iOS Twitch (70 pt).
     public static let x70: CGFloat = 70
     /// Largeur du bouton « + » de la barre d'onglets, relevée sur l'app iOS Twitch (72 pt).

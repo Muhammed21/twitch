@@ -113,6 +113,29 @@ public extension LayoutRole {
     case .cardAvatarGlyphInset: Spacing.x10
     case .cardAvatarGap: Spacing.x8
     case .cardLineGap: Spacing.x2
+    case .feedBadgeInset: Spacing.x12
+    case .feedBadgePaddingH: Spacing.x6
+    case .feedBadgeDotGap: Spacing.x4
+    case .feedViewersInset: Spacing.x10
+    case .feedViewersPaddingH: Spacing.x5
+    case .feedViewersRadius: Radius.md
+    case .feedOverlayPaddingV: Spacing.x1
+    case .feedInfoInset: Spacing.x10
+    case .feedInfoTop: Spacing.x8
+    case .feedAvatarSize: Spacing.x32
+    case .feedAvatarGap: Spacing.x8
+    case .feedTitleTop: Spacing.x8
+    case .feedDividerTop: Spacing.x20
+    case .feedDividerWidth: Spacing.x63
+    case .feedDividerHeight: Spacing.x2
+    case .feedDividerBottom: Spacing.x20
+    case .filterChipsTop: Spacing.x12
+    case .filterChipsBottom: Spacing.x24
+    case .filterChipHeight: Spacing.x32
+    case .filterChipPaddingH: Spacing.x12
+    case .filterChipGap: Spacing.x8
+    case .profileEditTop: Spacing.x8
+    case .profileEditTrailing: Spacing.x24
     case .editSectionLabelGap: Spacing.x8
     case .editRowPadding: Spacing.x8
     case .editRowLineGap: Spacing.x2

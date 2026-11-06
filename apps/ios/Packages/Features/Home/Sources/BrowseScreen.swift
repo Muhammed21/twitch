@@ -16,7 +16,7 @@ public struct BrowseScreen: View {
         .padding(.top, LayoutRole.screenInset.points)
       switch tab {
       case .categories: CategoryGrid()
-      case .liveChannels: HomeScreen()
+      case .liveChannels: LiveChannelList()
       }
     }
     .background(ColorRole.background.color.ignoresSafeArea())
