@@ -4,6 +4,7 @@ public enum ProfileText {
   static let myChannel = LocalizedStringResource("profile.myChannel", bundle: .module)
   public static let streamManager = LocalizedStringResource("profile.streamManager", bundle: .module)
   public static let analytics = LocalizedStringResource("profile.analytics", bundle: .module)
+  public static let tryAdFree = LocalizedStringResource("profile.tryAdFree", bundle: .module)
   static let settings = LocalizedStringResource("profile.settings", bundle: .module)
   static let noChannel = LocalizedStringResource("profile.noChannel", bundle: .module)
   static let failed = LocalizedStringResource("profile.failed", bundle: .module)

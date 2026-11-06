@@ -857,6 +857,22 @@
         }
       }
     },
+    "profile.tryAdFree" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try Ad-Free"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Essayer sans publicité"
+          }
+        }
+      }
+    },
     "streamManager.close" : {
       "localizations" : {
         "en" : {
