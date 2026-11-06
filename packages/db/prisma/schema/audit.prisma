@@ -8,6 +8,8 @@ model AuditEntry {
   /// Compte de service qui agit pour l'humain, le cas échéant.
   /// @personal
   onBehalfOf  String?
+  /// Origine de l'action : api, ou payload pour le back-office (ADR 0007).
+  source      String   @default("api")
   action      String
   scopeType   String?
   scopeId     String?

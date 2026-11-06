@@ -101,6 +101,8 @@ Une route d'administration porte `@UseGuards(adminCallerGuard(<scope>))` et lit 
 
 Chaque appel du compte de service écrit à la fin de la réponse une ligne `admin.acting_user` : `actorId` (l'humain, nul s'il n'a pas pu être résolu), `onBehalfOf`, `scope`, `method`, `path`, `status`, `outcome` (`allowed` ou `refused`) et, pour un refus de la garde, `reason` (`missing_acting_user`, `expired`, `invalid` ou `missing_scope`).
 
+Chaque action d'administration des catégories (`POST /v1/admin/categories`, `merge`, `retire`, `PUT …/image`, `PUT …/tags`) écrit, dans la transaction de son effet, une entrée de `audit.AuditEntry` : `actorId` l'humain, `onBehalfOf` et `source` de l'acteur (`api` par défaut, `payload` pour le compte de service), portée `platform`, `targetId` la catégorie (la source pour une fusion), `action` `channel.category.created`, `.merged`, `.retired`, `.image_changed` ou `.tags_changed`, avec l'état avant et après. Une action refusée n'écrit rien.
+
 ## Relais de l'outbox (ADR 0034)
 
 `pnpm --filter @repo/api start:outbox-relay` lance le process `outbox-relay` (`src/outbox-relay/main.ts`), sur la même image que l'API (ADR 0028). Il lit `DATABASE_URL_OUTBOX_RELAY` (rôle `app_outbox_relay`), `REDIS_URL` et `OUTBOX_RELAY_INTERVAL_MS` (1000 par défaut), puis, à chaque passe, relaie chaque outbox de `OUTBOXES` avec `relayOutboxBatch` (`@repo/db`) :
