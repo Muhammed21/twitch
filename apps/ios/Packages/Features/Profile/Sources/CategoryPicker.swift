@@ -19,12 +19,16 @@ struct CategoryField: View {
         NavigationLink {
           CategorySearchScreen(chosen: $chosen)
         } label: {
-          Text(ProfileText.chooseCategory)
-            .font(TextRole.fieldText.font)
-            .foregroundStyle(ColorRole.textSecondary.color)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(LayoutRole.composerPadding.points)
-            .background(ColorRole.surfaceSecondary.color, in: RoundedRectangle(cornerRadius: LayoutRole.composerRadius.points))
+          HStack(spacing: LayoutRole.heroRowGap.points) {
+            Image(systemName: "magnifyingglass")
+              .foregroundStyle(ColorRole.textPrimary.color)
+            Text(ProfileText.chooseCategory)
+              .foregroundStyle(ColorRole.textSecondary.color)
+          }
+          .font(TextRole.fieldText.font)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(LayoutRole.composerPadding.points)
+          .background(ColorRole.surfaceSecondary.color, in: RoundedRectangle(cornerRadius: LayoutRole.composerRadius.points))
         }
         .accessibilityIdentifier("editStreamInfo.chooseCategory")
       }

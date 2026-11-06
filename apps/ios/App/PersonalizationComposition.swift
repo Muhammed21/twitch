@@ -70,7 +70,7 @@ struct PersonalizationRoot: View {
   var body: some View {
     ZStack {
       if presentation.isShown {
-        PaywallScreen(store: paywall, links: links, onClose: onClose)
+        PaywallScreen(store: paywall, links: links, presentation: .journey(onClose: onClose))
           .transition(PaywallStepTransition(reduceMotion: reduceMotion))
       } else {
         PersonalizationScreen()
@@ -94,7 +94,7 @@ struct PersonalizationRoot: View {
     showPaywall: () -> Void,
     close: () -> Void
   ) async {
-    guard purchases.isAvailable, await (try? purchases.isTurboActive()) != true else {
+    guard await TurboOffer.isOffered(by: purchases) else {
       complete(account: account, preferences: preferences, close: close)
       return
     }
@@ -126,7 +126,13 @@ struct PersonalizationRoot: View {
 
   @MainActor
   static func paywallStore(_ paywall: PersonalizationPaywall, onSubscribed: @escaping @MainActor () -> Void) -> PaywallStore {
-    PaywallStore(purchases: paywall.purchases, offeringID: nil, variant: paywall.variant, onSubscribed: onSubscribed)
+    PaywallStore(
+      purchases: paywall.purchases,
+      offeringID: nil,
+      variant: paywall.variant,
+      analytics: paywall.analytics,
+      onSubscribed: onSubscribed
+    )
   }
 
   @MainActor
@@ -155,11 +161,13 @@ struct PersonalizationPaywall {
   let purchases: any Purchases
   let variant: @MainActor () -> String?
   let links: PaywallLinks
+  let analytics: any Analytics
 
-  init(purchases: any Purchases, launch: LaunchStore, links: PaywallLinks) {
+  init(purchases: any Purchases, launch: LaunchStore, links: PaywallLinks, analytics: any Analytics) {
     self.purchases = purchases
     variant = { launch.flags.paywallVariant }
     self.links = links
+    self.analytics = analytics
   }
 }
 

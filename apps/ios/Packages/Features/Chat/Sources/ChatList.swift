@@ -11,15 +11,20 @@ public struct ChatList: View {
   @State private var viewport = ChatViewport()
   @State private var announcer = ChatAnnouncer()
   @Environment(\.accessibilityVoiceOverEnabled) private var isVoiceOverRunning
+  private let welcome: ChatWelcome
+  private let style: ChatStyle
 
-  public init() {}
+  public init(welcome: ChatWelcome = .room, style: ChatStyle = .channel) {
+    self.welcome = welcome
+    self.style = style
+  }
 
   public var body: some View {
     ScrollView {
       LazyVStack(alignment: .leading, spacing: LayoutRole.chatRowGap.points) {
         let entries = ChatFeed.entries(session.messages, status: session.status, unread: unread)
         ForEach(entries) { entry in
-          ChatEntryRow(entry: entry)
+          ChatEntryRow(entry: entry, welcome: welcome)
             .onAppear { appeared(entry) }
             .onDisappear { disappeared(entry) }
         }
@@ -43,7 +48,7 @@ public struct ChatList: View {
     .onChange(of: session.messages) { previous, messages in
       unread = unread.arrived(messages, after: previous, isAtEnd: viewport.isAtEnd(after: previous))
     }
-    .background(ColorRole.background.color)
+    .background(style.background.color)
     .accessibilityIdentifier("chat.list")
     .task(id: isVoiceOverRunning) {
       guard isVoiceOverRunning else { return }
@@ -87,11 +92,12 @@ struct ChatEntryRow: View {
   @Environment(\.timeZone) private var timeZone
   @Environment(\.chatDisplay) private var display
   let entry: ChatEntry
+  let welcome: ChatWelcome
 
   var body: some View {
     switch entry {
     case .welcome:
-      Text(ChatText.welcome)
+      Text(ChatText.welcome(welcome))
         .font(display.line.messageRole.font)
         .foregroundStyle(ColorRole.textSecondary.color)
         .accessibilityIdentifier("chat.welcome")

@@ -2,28 +2,56 @@ import DesignSystem
 import Domain
 import SwiftUI
 
+public enum PaywallPresentation {
+  case journey(onClose: () -> Void)
+  case pushed
+
+  public var showsJourneyHeader: Bool {
+    onClose != nil
+  }
+
+  public var onClose: (() -> Void)? {
+    switch self {
+    case let .journey(onClose): onClose
+    case .pushed: nil
+    }
+  }
+
+  public var title: LocalizedStringResource? {
+    switch self {
+    case .journey: nil
+    case .pushed: PaywallText.title
+    }
+  }
+}
+
 public struct PaywallScreen: View {
   @State private var store: PaywallStore
   private let links: PaywallLinks
-  private let onClose: () -> Void
+  private let presentation: PaywallPresentation
 
-  public init(store: PaywallStore, links: PaywallLinks, onClose: @escaping () -> Void) {
+  public init(
+    store: PaywallStore,
+    links: PaywallLinks,
+    presentation: PaywallPresentation
+  ) {
     _store = State(initialValue: store)
     self.links = links
-    self.onClose = onClose
+    self.presentation = presentation
   }
 
   public var body: some View {
     VStack(spacing: 0) {
-      header
+      if let onClose = presentation.onClose { header(onClose: onClose) }
       content
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     .background(ColorRole.background.color.ignoresSafeArea())
+    .modifier(PaywallNavigation(title: presentation.title))
     .task { await store.load() }
   }
 
-  private var header: some View {
+  private func header(onClose: @escaping () -> Void) -> some View {
     HStack(spacing: LayoutRole.journeyHeaderGap.points) {
       Color.clear
         .frame(width: LayoutRole.journeyControlSize.points, height: LayoutRole.journeyControlSize.points)
@@ -154,5 +182,20 @@ public struct PaywallScreen: View {
       .multilineTextAlignment(.center)
       .padding(.horizontal, LayoutRole.screenInset.points)
       .accessibilityIdentifier("paywall.unavailable")
+  }
+}
+
+private struct PaywallNavigation: ViewModifier {
+  let title: LocalizedStringResource?
+
+  func body(content: Content) -> some View {
+    if let title {
+      content
+        .navigationTitle(Text(title))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.visible, for: .navigationBar)
+    } else {
+      content
+    }
   }
 }

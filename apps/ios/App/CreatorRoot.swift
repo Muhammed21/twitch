@@ -1,4 +1,5 @@
 import Auth
+import Chat
 import Dashboard
 import DesignSystem
 import Domain
@@ -7,23 +8,41 @@ import Profile
 import SwiftUI
 
 struct SignedInModes: View {
+  let paywall: PersonalizationPaywall
   @Environment(CreatorMode.self) private var creatorMode
   @Environment(Router.self) private var router
+  @Environment(DashboardLiveFigures.self) private var liveFigures
 
   var body: some View {
     @Bindable var router = router
     Group {
       switch creatorMode.mode {
-      case .viewer: SignedInRoot()
+      case .viewer: SignedInRoot(paywall: paywall)
       case .creator: CreatorRoot()
       }
     }
     .fullScreenCover(isPresented: $router.isShowingStreamManager) {
       NavigationStack {
-        StreamManagerScreen { router.isShowingStreamManager = false }
+        StreamManagerScreen(status: liveFigures.status) { router.isShowingStreamManager = false }
       }
     }
     .creatorModePresentation { router.create() }
+    .environment(\.streamManagerChat, StreamManagerChatSlot { AnyView(StreamManagerChat(slug: $0)) })
+  }
+}
+
+struct StreamManagerChat: View {
+  let slug: ChannelSlug
+  @Environment(ChatSession.self) private var chat
+
+  var body: some View {
+    VStack(spacing: 0) {
+      ChatList(welcome: .channel(slug.rawValue), style: .widget)
+        .padding(.horizontal, LayoutRole.chatInset.points)
+      ChatComposer(style: .widget)
+    }
+    .chatPreferences()
+    .task(id: slug) { await chat.run(slug) }
   }
 }
 
@@ -54,7 +73,7 @@ struct CreatorRoot: View {
         await liveFigures.follow(ownedChannel)
       }
       .sheet(isPresented: $isEditingStreamInfo) {
-        EditStreamInfoSheet(initialTitle: myChannel.title, initialCategory: myChannel.category)
+        EditStreamInfoSheet(initial: myChannel.proposedInfo)
       }
       DashboardContentScreen()
         .toolbar(.hidden, for: .tabBar)

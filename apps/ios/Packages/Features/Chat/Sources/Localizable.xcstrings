@@ -177,6 +177,22 @@
         }
       }
     },
+    "chat.composer.emotes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Emotes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Émoticônes"
+          }
+        }
+      }
+    },
     "chat.composer.placeholder" : {
       "localizations" : {
         "en" : {
@@ -237,6 +253,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bienvenue sur le chat !"
+          }
+        }
+      }
+    },
+    "chat.feed.welcome.channel" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welcome to %@'s chat!"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bienvenue sur le chat de %@ !"
           }
         }
       }
