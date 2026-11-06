@@ -2,12 +2,19 @@ import DesignSystem
 import Domain
 import SwiftUI
 
-public enum PaywallPresentation: Sendable {
-  case journey
+public enum PaywallPresentation {
+  case journey(onClose: () -> Void)
   case pushed
 
   public var showsJourneyHeader: Bool {
-    self == .journey
+    onClose != nil
+  }
+
+  public var onClose: (() -> Void)? {
+    switch self {
+    case let .journey(onClose): onClose
+    case .pushed: nil
+    }
   }
 
   public var title: LocalizedStringResource? {
@@ -22,23 +29,20 @@ public struct PaywallScreen: View {
   @State private var store: PaywallStore
   private let links: PaywallLinks
   private let presentation: PaywallPresentation
-  private let onClose: () -> Void
 
   public init(
     store: PaywallStore,
     links: PaywallLinks,
-    presentation: PaywallPresentation = .journey,
-    onClose: @escaping () -> Void = {}
+    presentation: PaywallPresentation
   ) {
     _store = State(initialValue: store)
     self.links = links
     self.presentation = presentation
-    self.onClose = onClose
   }
 
   public var body: some View {
     VStack(spacing: 0) {
-      if presentation.showsJourneyHeader { header }
+      if let onClose = presentation.onClose { header(onClose: onClose) }
       content
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -47,7 +51,7 @@ public struct PaywallScreen: View {
     .task { await store.load() }
   }
 
-  private var header: some View {
+  private func header(onClose: @escaping () -> Void) -> some View {
     HStack(spacing: LayoutRole.journeyHeaderGap.points) {
       Color.clear
         .frame(width: LayoutRole.journeyControlSize.points, height: LayoutRole.journeyControlSize.points)
