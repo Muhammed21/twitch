@@ -70,6 +70,12 @@ jobs:
           key: dd-app-v1-${{ runner.os }}-${{ steps.xcode.outputs.build }}-${{ hashFiles('apps/ios/App/**', 'apps/ios/AppTests/**', 'apps/ios/App.xcodeproj/**', 'apps/ios/Info.plist', 'apps/ios/Packages/**', '!apps/ios/Packages/.build/**', 'packages/design-tokens/platforms/swift/**') }}
           restore-keys: dd-app-v1-${{ runner.os }}-${{ steps.xcode.outputs.build }}-
 
+      # Le cache de modules Clang note la date des en-têtes du SDK : une nouvelle image du runner
+      # les réinstalle et le cache restauré casse le build (« has been modified since the module
+      # file was built »). Il se reconstruit en quelques secondes.
+      - name: Cache de modules Clang vidé
+        run: rm -rf ~/ci-cache/DerivedData/*/ModuleCache.noindex
+
       - uses: ./.github/actions/install
 
       - name: Imports (ADR 0010 règle 4, ADR 0019 règle 5 bis)
@@ -189,6 +195,12 @@ jobs:
           path: ~/ci-cache/DerivedData/App
           key: dd-app-v1-${{ runner.os }}-${{ steps.xcode.outputs.build }}-${{ hashFiles('apps/ios/App/**', 'apps/ios/AppTests/**', 'apps/ios/App.xcodeproj/**', 'apps/ios/Info.plist', 'apps/ios/Packages/**', '!apps/ios/Packages/.build/**', 'packages/design-tokens/platforms/swift/**') }}
           restore-keys: dd-app-v1-${{ runner.os }}-${{ steps.xcode.outputs.build }}-
+
+      # Le cache de modules Clang note la date des en-têtes du SDK : une nouvelle image du runner
+      # les réinstalle et le cache restauré casse le build (« has been modified since the module
+      # file was built »). Il se reconstruit en quelques secondes.
+      - name: Cache de modules Clang vidé
+        run: rm -rf ~/ci-cache/DerivedData/*/ModuleCache.noindex
 
       - uses: ./.github/actions/install
 
