@@ -1,6 +1,6 @@
 # 0053 — Les illustrations d'état vide de la page Activité et du Profil sont des masques extraits des captures, comme celles du tableau de bord
 
-- Statut : Proposé
+- Statut : Accepté
 - Date : 2026-11-06
 - Décideurs : Muhammed Cavus
 - Amende : ADR 0052 (§1, liste fermée des illustrations ; §2 et §4, trois teintes par illustration)
