@@ -21,6 +21,7 @@ public struct PaywallScreen: View {
     }
     .background(ColorRole.background.color.ignoresSafeArea())
     .task { await store.load() }
+    .onDisappear { store.dismiss() }
   }
 
   private var header: some View {

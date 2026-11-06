@@ -53,6 +53,7 @@ public enum AnalyticsSource: String, CaseIterable, Sendable {
 
 public enum AnalyticsPlacement: String, CaseIterable, Sendable {
   case onboarding
+  case profile
 }
 
 public struct AnalyticsEvent: Equatable, Sendable {

@@ -299,3 +299,13 @@ Le tableau des événements du §7 gagne `purchase:completed`, avec les proprié
 - **Raison.** Le funnel du paywall s'arrêtait au tap (`purchase:started`) : aucun événement de notre taxonomie ne disait que l'achat avait abouti.
 - **Limite.** L'événement n'a ni montant ni devise, et le schéma les refuse : il ne compte pas le revenu, qui reste celui de l'intégration RevenueCat → PostHog (ADR 0012 §3).
 - **Variante.** Comme `paywall:viewed`, il n'est émis que si une variante existe.
+
+## Amendement du 2026-11-06 — paywall ouvert depuis le profil
+
+Proposé par la PR du funnel du paywall, à valider par l'utilisateur. Le statut reste Accepté.
+
+La propriété `placement` de `paywall:viewed` et `paywall:dismissed` gagne la valeur `profile`, à côté de `onboarding`.
+
+- **Raison.** La pilule « Essayer sans publicité » du profil (PR #337) ouvre le même paywall hors du parcours. Mesuré avec `placement: onboarding`, il gonflerait le funnel de fin de parcours ; non mesuré, il échapperait au tableau de bord.
+- **Effet.** Le funnel de fin de parcours se lit toujours avec `placement: onboarding` ; l'offre du profil se lit avec `placement: profile`. Les événements `purchase:*` n'ont pas d'emplacement, comme avant.
+- **Ce qui ne change pas.** `paywall:viewed`, `paywall:dismissed` et `purchase:*` ne partent qu'avec une variante (ADR 0016). `purchase:restored` n'a pas de variante et part à chaque fin de restauration réussie.

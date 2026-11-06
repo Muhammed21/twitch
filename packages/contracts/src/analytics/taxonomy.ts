@@ -33,7 +33,7 @@ const preference = z.enum([
   "interests",
 ]);
 
-const placement = z.enum(["onboarding"]);
+const placement = z.enum(["onboarding", "profile"]);
 
 export const AnalyticsEvents = {
   "account:signed_up": onClient({}),
