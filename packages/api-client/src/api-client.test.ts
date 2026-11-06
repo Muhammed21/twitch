@@ -248,3 +248,88 @@ describe("client de l'API pour Payload (ADR 0007)", () => {
     expect(iat).toBeLessThanOrEqual(Math.floor(Date.now() / 1000));
   });
 });
+
+const CHANNEL_ID = "9b8a7f6e-5d4c-4b3a-8f10-1e2d3c4b5a69";
+const VIEWER_ID = "2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e";
+
+const BAN = {
+  channelId: CHANNEL_ID,
+  userId: VIEWER_ID,
+  expiresAt: "2026-11-06T13:00:00.000Z",
+  reason: "Harcèlement",
+};
+
+describe("bannissement par le client de l'API (ADR 0007)", () => {
+  it("bannit pour une durée par la route d'administration, au nom de l'humain signé", async () => {
+    const { client, sent } = await makeClient({ respond: () => jsonResponse(201, BAN) });
+
+    const outcome = await client.moderation.banUser({
+      actingUserId: ADMIN_ID,
+      channelId: CHANNEL_ID,
+      targetId: VIEWER_ID,
+      durationMinutes: 60,
+      reason: "Harcèlement",
+    });
+
+    expect(outcome).toEqual({ ok: true, value: BAN });
+    expect(sent.map(({ method, url, body }) => ({ method, url, body }))).toEqual([
+      {
+        method: "POST",
+        url: `${BASE_URL}/v1/admin/channels/${CHANNEL_ID}/bans`,
+        body: { userId: VIEWER_ID, durationMinutes: 60, reason: "Harcèlement" },
+      },
+    ]);
+    expect(sent[0]?.headers.get("authorization")).toBe(`Service ${SERVICE_SECRET}`);
+    expect(await humanOf(sent[0]?.headers ?? new Headers())).toEqual({
+      ok: true,
+      value: { userId: ADMIN_ID },
+    });
+  });
+
+  it("bannit définitivement sans durée dans le corps, et rend le ban sans fin", async () => {
+    const { expiresAt: _end, ...definitive } = BAN;
+    const { client, sent } = await makeClient({ respond: () => jsonResponse(201, definitive) });
+
+    const outcome = await client.moderation.banUser({
+      actingUserId: ADMIN_ID,
+      channelId: CHANNEL_ID,
+      targetId: VIEWER_ID,
+      durationMinutes: null,
+      reason: "Harcèlement",
+    });
+
+    expect(outcome).toEqual({ ok: true, value: definitive });
+    expect(sent[0]?.body).toEqual({ userId: VIEWER_ID, reason: "Harcèlement" });
+  });
+
+  it("encode la chaîne dans le chemin", async () => {
+    const { client, sent } = await makeClient({ respond: () => jsonResponse(201, BAN) });
+
+    await client.moderation.banUser({
+      actingUserId: ADMIN_ID,
+      channelId: "a/b",
+      targetId: VIEWER_ID,
+      durationMinutes: 60,
+      reason: "Harcèlement",
+    });
+
+    expect(sent[0]?.url).toBe(`${BASE_URL}/v1/admin/channels/a%2Fb/bans`);
+  });
+
+  it("rend un refus de l'API comme un échec, avec son problème", async () => {
+    const problem = { type: "about:blank", title: "Action non autorisée", status: 403 };
+    const { client } = await makeClient({
+      respond: () => jsonResponse(403, problem, "application/problem+json"),
+    });
+
+    expect(
+      await client.moderation.banUser({
+        actingUserId: ADMIN_ID,
+        channelId: CHANNEL_ID,
+        targetId: VIEWER_ID,
+        durationMinutes: 60,
+        reason: "Harcèlement",
+      }),
+    ).toEqual({ ok: false, error: { kind: "problem", problem } });
+  });
+});

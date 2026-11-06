@@ -7,6 +7,7 @@ import { err, ok, type Result } from "@repo/result";
 type CryptoKey = Parameters<typeof signActingUser>[0]["privateKey"];
 
 export type Category = z.infer<typeof responses.Category>;
+export type Ban = z.infer<typeof responses.Ban>;
 export type Problem = z.infer<typeof responses.Problem>;
 
 export type ApiFailure =
@@ -17,6 +18,13 @@ export type ApiFailure =
 export type ApiResult<T> = Promise<Result<T, ApiFailure>>;
 
 type Acting = { readonly actingUserId: string };
+
+export type BanUserRequest = Acting & {
+  readonly channelId: string;
+  readonly targetId: string;
+  readonly durationMinutes: number | null;
+  readonly reason: string;
+};
 
 export type ApiClient = {
   readonly admin: {
@@ -33,6 +41,9 @@ export type ApiClient = {
         request: Acting & { slug: string; tags: readonly string[] },
       ) => ApiResult<Category>;
     };
+  };
+  readonly moderation: {
+    readonly banUser: (request: BanUserRequest) => ApiResult<Ban>;
   };
 };
 
@@ -144,6 +155,20 @@ export const createApiClient = ({
             schema: responses.Category,
           }),
       },
+    },
+    moderation: {
+      banUser: ({ actingUserId, channelId, targetId, durationMinutes, reason }) =>
+        call({
+          actingUserId,
+          method: "POST",
+          path: `/admin/channels/${encodeURIComponent(channelId)}/bans`,
+          body: {
+            userId: targetId,
+            ...(durationMinutes === null ? {} : { durationMinutes }),
+            reason,
+          },
+          schema: responses.Ban,
+        }),
     },
   };
 };
