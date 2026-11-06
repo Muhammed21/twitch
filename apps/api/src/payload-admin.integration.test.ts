@@ -52,6 +52,15 @@ const seedPlatformAdmin = async (): Promise<string> => {
   return userId;
 };
 
+const auditOf = (targetId: string) =>
+  asMigrator(async (client) => {
+    const { rows } = await client.query(
+      `SELECT "actorId", "onBehalfOf", "source" FROM "audit"."AuditEntry" WHERE "targetId" = $1`,
+      [targetId],
+    );
+    return rows;
+  });
+
 const withApi = async (
   run: (createCategory: (headers: Record<string, string>) => Promise<Response>) => Promise<void>,
 ) => {
@@ -95,11 +104,17 @@ const fromPayload = async ({
 });
 
 describe("administration depuis Payload sur l'API assemblée (ADR 0007)", () => {
-  it("crée une catégorie au nom d'un administrateur de la plateforme", async () => {
+  it("crée une catégorie au nom d'un administrateur, audité au nom de l'humain", async () => {
     const adminId = await seedPlatformAdmin();
 
     await withApi(async (createCategory) => {
-      expect((await createCategory(await fromPayload({ userId: adminId }))).status).toBe(201);
+      const response = await createCategory(await fromPayload({ userId: adminId }));
+      const { id } = (await response.json()) as { id: string };
+
+      expect(response.status).toBe(201);
+      expect(await auditOf(id)).toEqual([
+        { actorId: adminId, onBehalfOf: "svc:payload-admin", source: "payload" },
+      ]);
     });
   });
 

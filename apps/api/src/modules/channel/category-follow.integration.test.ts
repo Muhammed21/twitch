@@ -6,6 +6,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import { createContextClient } from "@repo/db";
 import { err, ok } from "@repo/result";
 
+import type { AuditActor } from "../../platform/audit-actor.ts";
 import { followCategory, unfollowCategory } from "./application/category-follow.ts";
 import {
   type CategoryName,
@@ -16,6 +17,11 @@ import {
 import { prismaCategoryCatalog } from "./infrastructure/prisma-category-catalog.ts";
 import { prismaCategoryFollows } from "./infrastructure/prisma-category-follows.ts";
 
+const API_ACTOR: AuditActor = {
+  actorId: "4f2a9c1e-7b3d-4e8a-9f10-2c5d6e7f8a9b",
+  onBehalfOf: null,
+  source: "api",
+};
 const CREATED_AT = new Date("2026-11-04T12:00:00.000Z");
 const FIRST_FOLLOW_AT = new Date("2026-11-04T12:01:00.000Z");
 const LATER = new Date("2026-11-04T12:05:00.000Z");
@@ -47,6 +53,7 @@ const nameOf = (raw: string): CategoryName => {
 const seedCategory = async () => {
   const slug = slugOf(`test-${randomUUID().slice(0, 8)}`);
   const created = await catalog.create({
+    actor: API_ACTOR,
     categoryId: randomUUID(),
     slug,
     name: nameOf(`Test ${slug}`),
@@ -190,12 +197,14 @@ describe("suivi d'une catégorie dans channel (ADR 0049)", () => {
     const middle = await seedCategory();
     const target = await seedCategory();
     await catalog.merge({
+      actor: API_ACTOR,
       sourceId: source.id,
       targetId: middle.id,
       outboxEventId: randomUUID(),
       occurredAt: CREATED_AT,
     });
     await catalog.merge({
+      actor: API_ACTOR,
       sourceId: middle.id,
       targetId: target.id,
       outboxEventId: randomUUID(),
@@ -212,6 +221,7 @@ describe("suivi d'une catégorie dans channel (ADR 0049)", () => {
   it("rend category_not_found pour une catégorie retirée, sans rien écrire", async () => {
     const category = await seedCategory();
     await catalog.retire({
+      actor: API_ACTOR,
       categoryId: category.id,
       outboxEventId: randomUUID(),
       occurredAt: CREATED_AT,
@@ -268,7 +278,13 @@ const followEventsOf = async (categoryId: string) =>
   ).filter(({ occurredAt }) => occurredAt.getTime() === MERGED_AT.getTime());
 
 const mergeInto = (sourceId: string, targetId: string) =>
-  catalog.merge({ sourceId, targetId, outboxEventId: randomUUID(), occurredAt: MERGED_AT });
+  catalog.merge({
+    actor: API_ACTOR,
+    sourceId,
+    targetId,
+    outboxEventId: randomUUID(),
+    occurredAt: MERGED_AT,
+  });
 
 describe("fusion d'une catégorie suivie (ADR 0049 §4)", () => {
   it("passe le suivi de la source sur la cible, avec le followedAt de la source", async () => {
@@ -388,6 +404,7 @@ describe("fusion d'une catégorie suivie (ADR 0049 §4)", () => {
     const source = await seedCategory();
     const retiredTarget = await seedCategory();
     await catalog.retire({
+      actor: API_ACTOR,
       categoryId: retiredTarget.id,
       outboxEventId: randomUUID(),
       occurredAt: CREATED_AT,
@@ -412,6 +429,7 @@ describe("retrait d'une catégorie suivie (ADR 0049 §5)", () => {
     await at(FIRST_FOLLOW_AT).unfollow({ userId: former, slug: category.slug });
 
     await catalog.retire({
+      actor: API_ACTOR,
       categoryId: category.id,
       outboxEventId: randomUUID(),
       occurredAt: MERGED_AT,
@@ -457,6 +475,7 @@ describe("retrait d'une catégorie suivie (ADR 0049 §5)", () => {
 
     expect(
       await catalog.retire({
+        actor: API_ACTOR,
         categoryId: category.id,
         outboxEventId: randomUUID(),
         occurredAt: MERGED_AT,

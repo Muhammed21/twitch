@@ -164,7 +164,7 @@ jobs:
       - name: Detect changes that reach this job
         id: changes
         run: |
-          if [ "${{ github.event_name }}" != pull_request ] || ! git diff --quiet HEAD^1 -- docker compose.yaml compose.lan.yaml .env.example .github/workflows/ci.yml packages/db pnpm-lock.yaml apps/api apps/chat apps/video packages; then
+          if [ "${{ github.event_name }}" != pull_request ] || ! git diff --quiet HEAD^1 -- docker compose.yaml compose.lan.yaml .env.example .github/workflows/ci.yml packages/db pnpm-lock.yaml apps/api apps/chat apps/video apps/payload packages; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           fi
       - name: Install ffmpeg to publish to apps/video from the host

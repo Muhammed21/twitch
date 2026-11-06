@@ -7,6 +7,7 @@ import type { Result } from "@repo/result";
 
 import { responseDto } from "../../../openapi/response-dto.ts";
 import { type AdminActor, adminCallerGuard, CurrentActor } from "../../../platform/admin-caller.ts";
+import type { AuditActor } from "../../../platform/audit-actor.ts";
 import type { ImageRejection } from "../../../platform/images/finalize-image.ts";
 import { imageRejected } from "../../../platform/images/image-problems.ts";
 import { ProblemException } from "../../../platform/problem.ts";
@@ -26,26 +27,26 @@ export const CATEGORY_MANAGE_SCOPE = "admin:category.manage";
 
 export type CategoryAdmin = {
   readonly create: (request: {
-    actorId: string;
+    actor: AuditActor;
     slug: string;
     name: string;
   }) => Promise<Result<CategoryView, CategoryCreationError>>;
   readonly merge: (request: {
-    actorId: string;
+    actor: AuditActor;
     sourceSlug: string;
     targetSlug: string;
   }) => Promise<Result<CategoryView, CategoryMergeError>>;
   readonly retire: (request: {
-    actorId: string;
+    actor: AuditActor;
     slug: string;
   }) => Promise<Result<CategoryView, CategoryRetirementError>>;
   readonly image: (request: {
-    actorId: string;
+    actor: AuditActor;
     slug: string;
     uploadId: string;
   }) => Promise<Result<CategoryView, CategoryImageError>>;
   readonly tags: (request: {
-    actorId: string;
+    actor: AuditActor;
     slug: string;
     tags: readonly string[];
   }) => Promise<Result<CategoryView, CategoryTagsError>>;
@@ -166,10 +167,7 @@ export class AdminCategoriesController {
     @CurrentActor() actor: AdminActor,
   ): Promise<CategoryResponse> {
     return this.present(
-      unwrap(
-        await this.admin.create({ actorId: actor.actorId, slug: body.slug, name: body.name }),
-        PROBLEMS,
-      ),
+      unwrap(await this.admin.create({ actor, slug: body.slug, name: body.name }), PROBLEMS),
     );
   }
 
@@ -184,7 +182,7 @@ export class AdminCategoriesController {
     return this.present(
       unwrap(
         await this.admin.merge({
-          actorId: actor.actorId,
+          actor,
           sourceSlug: slug,
           targetSlug: body.targetSlug,
         }),
@@ -200,9 +198,7 @@ export class AdminCategoriesController {
     @Param("slug") slug: string,
     @CurrentActor() actor: AdminActor,
   ): Promise<CategoryResponse> {
-    return this.present(
-      unwrap(await this.admin.retire({ actorId: actor.actorId, slug }), PROBLEMS),
-    );
+    return this.present(unwrap(await this.admin.retire({ actor, slug }), PROBLEMS));
   }
 
   @Put(":slug/image")
@@ -213,10 +209,7 @@ export class AdminCategoriesController {
     @CurrentActor() actor: AdminActor,
   ): Promise<CategoryResponse> {
     return this.present(
-      unwrap(
-        await this.admin.image({ actorId: actor.actorId, slug, uploadId: body.uploadId }),
-        IMAGE_PROBLEMS,
-      ),
+      unwrap(await this.admin.image({ actor, slug, uploadId: body.uploadId }), IMAGE_PROBLEMS),
     );
   }
 
@@ -228,10 +221,7 @@ export class AdminCategoriesController {
     @CurrentActor() actor: AdminActor,
   ): Promise<CategoryResponse> {
     return this.present(
-      unwrap(
-        await this.admin.tags({ actorId: actor.actorId, slug, tags: body.tags }),
-        TAGS_PROBLEMS,
-      ),
+      unwrap(await this.admin.tags({ actor, slug, tags: body.tags }), TAGS_PROBLEMS),
     );
   }
 }
