@@ -52,6 +52,7 @@ public struct PaywallScreen: View {
     }
     .background(ColorRole.background.color.ignoresSafeArea())
     .modifier(PaywallNavigation(title: presentation.title))
+    .announcing(PaywallText.announcement(for: store.notice).map { String(localized: $0) })
     .task { await store.load() }
     .onDisappear { store.dismiss() }
   }
@@ -146,6 +147,7 @@ public struct PaywallScreen: View {
       }
       .buttonStyle(ActionButtonStyle(.primary))
       .disabled(isBusy)
+      .subscribeAccessibility(package, isPurchasing: store.purchasing != nil)
       .accessibilityIdentifier("paywall.subscribe.\(package.id)")
       Text(PaywallText.billing(package.period))
         .font(TextRole.paywallLegal.font)

@@ -53,6 +53,14 @@ public enum PaywallText {
       : LocalizedStringResource("paywall.perk.collapsed", bundle: .module)
   }
 
+  public static func announcement(for notice: PaywallStore.Notice?) -> LocalizedStringResource? {
+    notice.map(Self.notice)
+  }
+
+  public static func purchasing(_ isPurchasing: Bool) -> LocalizedStringResource? {
+    isPurchasing ? LocalizedStringResource("paywall.subscribe.inProgress", bundle: .module) : nil
+  }
+
   public static func notice(_ notice: PaywallStore.Notice) -> LocalizedStringResource {
     switch notice {
     case .purchaseFailed: LocalizedStringResource("paywall.notice.purchaseFailed", bundle: .module)

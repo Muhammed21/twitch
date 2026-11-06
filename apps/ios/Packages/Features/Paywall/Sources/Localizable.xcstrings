@@ -426,6 +426,22 @@
         }
       }
     },
+    "paywall.subscribe.inProgress" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Purchase in progress"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Achat en cours"
+          }
+        }
+      }
+    },
     "paywall.subscribe.month %@" : {
       "localizations" : {
         "en" : {
