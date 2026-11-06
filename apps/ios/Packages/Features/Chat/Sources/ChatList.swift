@@ -52,6 +52,7 @@ public struct ChatList: View {
     .accessibilityIdentifier("chat.list")
     .task(id: isVoiceOverRunning) {
       guard isVoiceOverRunning else { return }
+      announcer = ChatAnnouncer()
       while !Task.isCancelled {
         announceNewMessages()
         try? await Task.sleep(for: ChatAnnouncer.interval)
