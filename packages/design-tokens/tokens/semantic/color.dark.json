@@ -259,6 +259,11 @@
         "$type": "color",
         "$value": "{core.color.yellow.90}",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9613, IMG_9615) : surlignage jaune du personnage, mesuré #f5f500. Aucune capture en thème sombre (ADR 0053 §3) : valeur claire gardée."
+      },
+      "backdrop": {
+        "$type": "color",
+        "$value": "{core.color.neutral.90}",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9613) : losange gris derrière le personnage de l'onglet Chuchotements vide, mesuré #efeff1. Aucune capture en thème sombre (ADR 0053 §3) : valeur claire gardée."
       }
     },
     "widget": {

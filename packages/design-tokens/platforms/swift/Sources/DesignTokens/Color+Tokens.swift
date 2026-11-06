@@ -319,6 +319,13 @@ public extension Color {
             ? UIColor(red: 0.961, green: 0.961, blue: 0, alpha: 1)
             : UIColor(red: 0.961, green: 0.961, blue: 0, alpha: 1)
     })
+    /// Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9613) : losange gris derrière le personnage de l'onglet Chuchotements vide, mesuré #efeff1. Aucune capture en thème sombre (ADR 0053 §3) : valeur claire gardée.
+    /// clair #EFEFF1 · sombre #EFEFF1
+    static let illustrationBackdrop = Color(uiColor: UIColor { trait in
+        trait.userInterfaceStyle == .dark
+            ? UIColor(red: 0.937, green: 0.937, blue: 0.945, alpha: 1)
+            : UIColor(red: 0.937, green: 0.937, blue: 0.945, alpha: 1)
+    })
     /// Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9618) : en-tête d'une carte de widget, mesuré #efeff1.
     /// clair #EFEFF1 · sombre #29282F
     static let widgetHeader = Color(uiColor: UIColor { trait in
@@ -461,6 +468,8 @@ public extension Color {
         public static let illustrationAccentDark = Color(.sRGB, red: 0.569, green: 0.278, blue: 1, opacity: 1)
         public static let illustrationHighlightLight = Color(.sRGB, red: 0.961, green: 0.961, blue: 0, opacity: 1)
         public static let illustrationHighlightDark = Color(.sRGB, red: 0.961, green: 0.961, blue: 0, opacity: 1)
+        public static let illustrationBackdropLight = Color(.sRGB, red: 0.937, green: 0.937, blue: 0.945, opacity: 1)
+        public static let illustrationBackdropDark = Color(.sRGB, red: 0.937, green: 0.937, blue: 0.945, opacity: 1)
         public static let widgetHeaderLight = Color(.sRGB, red: 0.937, green: 0.937, blue: 0.945, opacity: 1)
         public static let widgetHeaderDark = Color(.sRGB, red: 0.161, green: 0.157, blue: 0.184, opacity: 1)
         public static let widgetBorderLight = Color(.sRGB, red: 0.886, green: 0.886, blue: 0.902, opacity: 1)

@@ -28,6 +28,8 @@ public enum Spacing {
     public static let x15: CGFloat = 15
     /// Marge latérale des écrans, relevée sur l'app iOS Twitch (16 pt).
     public static let x16: CGFloat = 16
+    /// Page Activité, onglet Chuchotements vide : écart entre le personnage et le titre, relevé sur l'app iOS Twitch (19 pt).
+    public static let x19: CGFloat = 19
     /// Marges latérales et basse des boutons de l'accueil, relevées sur l'app iOS Twitch (20 pt).
     public static let x20: CGFloat = 20
     /// Accueil du tableau de bord des créateurs : première carte sous l'en-tête, marge du texte d'aide, relevés sur l'app iOS Twitch (22 pt).

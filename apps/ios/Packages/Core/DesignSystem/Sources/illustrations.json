@@ -100,6 +100,88 @@
         "neighbourhood": 2
       },
       "control": null
+    },
+    {
+      "name": "character",
+      "source": "docs/new-reference-ui/IMG_9613.PNG",
+      "rect": {
+        "x": 335,
+        "y": 883,
+        "width": 510,
+        "height": 531
+      },
+      "background": "#f7f7f8",
+      "tints": [
+        {
+          "name": "backdrop",
+          "color": "#efeff1"
+        },
+        {
+          "name": "fill",
+          "color": "#ffffff"
+        },
+        {
+          "name": "outline",
+          "color": "#323239"
+        },
+        {
+          "name": "highlight",
+          "color": "#f5f500"
+        },
+        {
+          "name": "ink",
+          "color": "#000000"
+        }
+      ],
+      "separation": {
+        "pureWithin": 2,
+        "neighbourhood": 2
+      },
+      "control": null
+    },
+    {
+      "name": "glasses",
+      "source": "docs/reference-ui/creer/notifications-createur--vide.png",
+      "rect": {
+        "x": 311,
+        "y": 933,
+        "width": 558,
+        "height": 492
+      },
+      "background": "#f7f7f7",
+      "tints": [
+        {
+          "name": "accent",
+          "color": "#9047ff"
+        },
+        {
+          "name": "fill",
+          "color": "#ffffff"
+        },
+        {
+          "name": "outline",
+          "color": "#323337"
+        },
+        {
+          "name": "highlight",
+          "color": "#f6f600"
+        },
+        {
+          "name": "ink",
+          "color": "#000000"
+        }
+      ],
+      "separation": {
+        "pureWithin": 6,
+        "neighbourhood": 2,
+        "minimumRegion": 50
+      },
+      "control": null,
+      "dark": {
+        "source": "docs/reference-ui/activite/notifications--vide-theme-sombre.png",
+        "background": "#0e0e10"
+      },
+      "tolerance": 20
     }
   ]
 }

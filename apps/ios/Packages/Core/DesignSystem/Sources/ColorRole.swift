@@ -47,6 +47,7 @@ public enum ColorRole: Equatable, Sendable {
   case streamManagerDivider
   case illustrationAccent
   case illustrationHighlight
+  case illustrationBackdrop
   case chipSelected
   case onChipSelected
 
@@ -96,6 +97,7 @@ public enum ColorRole: Equatable, Sendable {
     case .streamManagerDivider: .streamManagerDivider
     case .illustrationAccent: .illustrationAccent
     case .illustrationHighlight: .illustrationHighlight
+    case .illustrationBackdrop: .illustrationBackdrop
     case .chipSelected: .chipSelected
     case .onChipSelected: .chipOnSelected
     }

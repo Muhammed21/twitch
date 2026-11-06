@@ -98,6 +98,8 @@ struct ColorRoleTests {
       (ColorRole.illustrationAccent, ColorScheme.dark, "9147FF"),
       (ColorRole.illustrationHighlight, ColorScheme.light, "F5F500"),
       (ColorRole.illustrationHighlight, ColorScheme.dark, "F5F500"),
+      (ColorRole.illustrationBackdrop, ColorScheme.light, "EFEFF1"),
+      (ColorRole.illustrationBackdrop, ColorScheme.dark, "EFEFF1"),
       (ColorRole.chipSelected, ColorScheme.light, "000000"),
       (ColorRole.chipSelected, ColorScheme.dark, "EFEFF1"),
       (ColorRole.onChipSelected, ColorScheme.light, "FFFFFF"),
