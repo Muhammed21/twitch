@@ -28,6 +28,7 @@ public enum TextRole: Sendable {
   case followerCount
   case followLabel
   case categoryName
+  case categoryViewers
   case fieldHint
   case fieldText
   case profileEdit
@@ -92,6 +93,7 @@ public enum TextRole: Sendable {
     case .followerCount: .viewerCount
     case .followLabel: .displayText
     case .categoryName: .actionLabel
+    case .categoryViewers: .viewerCount
     case .fieldHint: .hintText
     case .fieldText: .supportingText
     case .profileEdit: .chatAuthorText
@@ -181,6 +183,8 @@ public enum LayoutRole: Sendable {
   case categoryNameTop
   case liveDotSize
   case liveDotGap
+  case categoryTileDotGap
+  case categoryTileTagTop
   case categoryTagPaddingH
   case categoryTagPaddingV
   case categoryTagGap
@@ -288,6 +292,8 @@ public enum LayoutRole: Sendable {
   case dashboardFieldGlyphGap
   case dashboardEmptyTop
   case dashboardEmptyWidth
+  case dashboardEmptyClapperboardGap
+  case dashboardEmptyBarChartGap
   case dashboardPillHeight
   case dashboardPillLeading
   case dashboardPillTrailing
