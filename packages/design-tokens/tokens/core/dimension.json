@@ -61,6 +61,11 @@
         "$value": "16px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : marge latérale des écrans."
       },
+      "19": {
+        "$type": "dimension",
+        "$value": "19px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9613) : écart entre le bas du personnage de l'onglet Chuchotements vide et le cadre du titre, 65 px à @3x jusqu'à la capitale, moins les 7 px qui séparent le haut du cadre de la capitale."
+      },
       "20": {
         "$type": "dimension",
         "$value": "20px",
@@ -76,6 +81,11 @@
         "$value": "24px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : avatar de l'onglet Profile (profil/menu-compte--defaut)."
       },
+      "26": {
+        "$type": "dimension",
+        "$value": "26px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9618) : avatar de l'en-tête du gestionnaire de stream."
+      },
       "30": {
         "$type": "dimension",
         "$value": "30px",
@@ -85,6 +95,11 @@
         "$type": "dimension",
         "$value": "32px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : écart entre les onglets Categories et Live Channels de Browse (parcourir/liste-categories--defaut)."
+      },
+      "35": {
+        "$type": "dimension",
+        "$value": "35px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9618) : en-tête d'une carte de widget."
       },
       "36": {
         "$type": "dimension",
@@ -116,10 +131,20 @@
         "$value": "50px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9614) : hauteur des pilules « Gestionnaire de stream », « Statistiques » et « Essayer sans publicité » du profil (150 px à @3x)."
       },
+      "55": {
+        "$type": "dimension",
+        "$value": "55px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9615) : retrait du contenu vide de l'onglet « À propos » sous les onglets du profil (164 px à @3x)."
+      },
       "56": {
         "$type": "dimension",
         "$value": "56px",
         "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : hauteur des lignes du menu du compte."
+      },
+      "57": {
+        "$type": "dimension",
+        "$value": "57px",
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/new-reference-ui/IMG_9618) : pilule du widget affiché dans le dock du gestionnaire de stream."
       },
       "63": {
         "$type": "dimension",

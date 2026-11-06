@@ -40,6 +40,14 @@ public enum ColorRole: Equatable, Sendable {
   case illustrationInk
   case illustrationOutline
   case illustrationFill
+  case widgetHeader
+  case widgetBorder
+  case widgetFieldBorder
+  case streamManagerCamera
+  case streamManagerDivider
+  case illustrationAccent
+  case illustrationHighlight
+  case illustrationBackdrop
   case chipSelected
   case onChipSelected
 
@@ -82,6 +90,14 @@ public enum ColorRole: Equatable, Sendable {
     case .illustrationInk: .illustrationInk
     case .illustrationOutline: .illustrationOutline
     case .illustrationFill: .illustrationFill
+    case .widgetHeader: .widgetHeader
+    case .widgetBorder: .widgetBorder
+    case .widgetFieldBorder: .widgetFieldBorder
+    case .streamManagerCamera: .streamManagerCamera
+    case .streamManagerDivider: .streamManagerDivider
+    case .illustrationAccent: .illustrationAccent
+    case .illustrationHighlight: .illustrationHighlight
+    case .illustrationBackdrop: .illustrationBackdrop
     case .chipSelected: .chipSelected
     case .onChipSelected: .chipOnSelected
     }

@@ -30,7 +30,8 @@ struct TwitchApp: App {
       RootView(
         personalization: stores.personalization,
         purchases: stores.purchases,
-        paywallLinks: PaywallLinks(info: Bundle.main.infoDictionary ?? [:])
+        paywallLinks: PaywallLinks(info: Bundle.main.infoDictionary ?? [:]),
+        analytics: stores.analytics
       )
       .environment(stores.session)
       .environment(stores.launch)
@@ -60,6 +61,7 @@ struct RootView: View {
   let personalization: PersonalizationSources
   let purchases: any Purchases
   let paywallLinks: PaywallLinks
+  let analytics: any Analytics
   @Environment(SessionStore.self) private var session
   @Environment(LaunchStore.self) private var launch
   @Environment(Router.self) private var router
@@ -83,6 +85,10 @@ struct RootView: View {
       }
       .task(id: session.accountID) { await launch.run(accountID: session.accountID) }
       .task { await session.run() }
+  }
+
+  private var paywall: PersonalizationPaywall {
+    PersonalizationPaywall(purchases: purchases, launch: launch, links: paywallLinks, analytics: analytics)
   }
 
   @ViewBuilder private var screen: some View {
@@ -113,11 +119,11 @@ struct RootView: View {
         session: session,
         preferences: preferences,
         sources: personalization,
-        paywall: PersonalizationPaywall(purchases: purchases, launch: launch, links: paywallLinks),
+        paywall: paywall,
         router: router
       )
     case .signedIn:
-      SignedInModes(paywall: PersonalizationPaywall(purchases: purchases, launch: launch, links: paywallLinks))
+      SignedInModes(paywall: paywall)
     case .updateRequired:
       UpdateRequiredScreen()
     }

@@ -15,6 +15,7 @@ public struct ActivityScreen: View {
       ActivityEmptyState(
         title: String(localized: tab.empty.title),
         message: String(localized: tab.empty.message),
+        illustration: tab.empty.illustration,
         action: tab.empty.action.map { label in
           ActivityEmptyAction(
             label: String(localized: label),

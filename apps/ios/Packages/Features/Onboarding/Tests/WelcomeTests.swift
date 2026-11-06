@@ -3,36 +3,52 @@ import Foundation
 import Onboarding
 import Testing
 
-private let captureLeadingEnds = ["NT", "ve", "ws", "all", "dly", "ng", "ng", "als"]
-private let captureTrailingStarts = [
-  "Call of Duty: Mo", "Electronic Punk A", "History Edu", "Baseball Soccer",
-  "Anim", "News Me", "Social Eat", "Sports C",
-]
-
 private func isClose(_ lhs: CGFloat, _ rhs: CGFloat) -> Bool {
   abs(lhs - rhs) < 1e-9
 }
 
 @Suite("Accueil, fidèle à onboarding/accueil-bienvenue--defaut")
 struct WelcomeTests {
-  @Test("montre les huit catégories principales de la capture, dans l'ordre")
+  @Test("montre les huit catégories principales de la capture, dans l'ordre, en anglais et en français")
   func mainCategories() {
     #expect(WelcomeContent.rows.map(\.main) == [
-      "Games", "Music", "Talk Shows", "Sports",
-      "Travel & Outdoors", "Just Chatting", "Food & Drink", "Special Events",
+      shown(english: "Games", french: "Jeux"),
+      shown(english: "Music", french: "Musique"),
+      shown(english: "Talk Shows", french: "Talk-shows"),
+      shown(english: "Sports", french: "Sports"),
+      shown(english: "Travel & Outdoors", french: "Voyages"),
+      shown(english: "Just Chatting", french: "Discussions"),
+      shown(english: "Food & Drink", french: "Cuisine"),
+      shown(english: "Special Events", french: "Événements"),
     ])
   }
 
-  @Test("les catégories coupées à gauche finissent comme sur la capture")
-  func leadingFragments() {
-    #expect(WelcomeContent.rows.count == captureLeadingEnds.count)
-    #expect(zip(WelcomeContent.rows, captureLeadingEnds).allSatisfy { $0.leading.hasSuffix($1) })
+  @Test("les catégories coupées à gauche reprennent la capture, traduites en français")
+  func leadingCategories() {
+    #expect(WelcomeContent.rows.map(\.leading) == [
+      shown(english: "Fortnite VALORANT", french: "Fortnite VALORANT"),
+      shown(english: "Art Creative", french: "Art Créatif"),
+      shown(english: "Podcasts Interviews", french: "Podcasts Interviews"),
+      shown(english: "Basketball Football", french: "Basket Football américain"),
+      shown(english: "Kids Family Friendly", french: "Enfants Tout public"),
+      shown(english: "ASMR Co-working", french: "ASMR Coworking"),
+      shown(english: "Baking Cooking", french: "Pâtisserie Recettes"),
+      shown(english: "Esports Festivals", french: "E-sport Festivals"),
+    ])
   }
 
-  @Test("les catégories coupées à droite commencent comme sur la capture")
-  func trailingFragments() {
-    #expect(WelcomeContent.rows.count == captureTrailingStarts.count)
-    #expect(zip(WelcomeContent.rows, captureTrailingStarts).allSatisfy { $0.trailing.hasPrefix($1) })
+  @Test("les catégories coupées à droite reprennent la capture, traduites en français")
+  func trailingCategories() {
+    #expect(WelcomeContent.rows.map(\.trailing) == [
+      shown(english: "Call of Duty: Modern Warfare III", french: "Call of Duty: Modern Warfare III"),
+      shown(english: "Electronic Punk Ambient", french: "Électro Punk Ambient"),
+      shown(english: "History Education Science", french: "Histoire Éducation Sciences"),
+      shown(english: "Baseball Soccer Tennis", french: "Baseball Football Tennis"),
+      shown(english: "Animals Aquariums", french: "Animaux Aquariums"),
+      shown(english: "News Media Politics", french: "Actualités Médias Politique"),
+      shown(english: "Social Eating Wine", french: "Repas partagés Vin"),
+      shown(english: "Sports Cards Charity", french: "Cartes de sport Caritatif"),
+    ])
   }
 
   @Test("Log In, à gauche sur violet clair, demande la connexion ; Sign Up, à droite sur blanc, l'inscription")

@@ -7,41 +7,40 @@ public struct StreamManagerScreen: View {
   @State private var isEditingTitle = false
   @State private var isConfirmingReset = false
   @State private var widget = StreamManagerWidget.initial
+  @Environment(\.dismiss) private var dismiss
+  @Environment(\.streamManagerChat) private var chat
+  private let status: LiveStatus?
   private let onClose: (() -> Void)?
 
-  public init(onClose: (() -> Void)? = nil) {
+  public init(status: LiveStatus? = nil, onClose: (() -> Void)? = nil) {
+    self.status = status
     self.onClose = onClose
   }
 
   public var body: some View {
-    content
-      .background(ColorRole.background.color.ignoresSafeArea())
-      .navigationTitle(Text(ProfileText.streamManager))
-      .navigationBarTitleDisplayMode(.inline)
-      .task { await store.loadIfNeeded() }
-      .toolbar {
-        if let onClose {
-          ToolbarItem(placement: .topBarLeading) {
-            Button(action: onClose) {
-              Image(systemName: "xmark")
-            }
-            .accessibilityLabel(Text(ProfileText.close))
-            .accessibilityIdentifier("streamManager.close")
-          }
-        }
+    VStack(spacing: 0) {
+      StreamManagerHeader(
+        title: String(localized: StreamManagerHeaderText.title),
+        offlineLabel: StreamManagerHeaderText.offline(status: status).map { String(localized: $0) },
+        closeLabel: String(localized: ProfileText.close)
+      ) { onClose.map { $0() } ?? dismiss() }
+      content
+    }
+    .background(StreamManagerStyle.background.color.ignoresSafeArea())
+    .toolbar(.hidden, for: .navigationBar)
+    .task { await store.loadIfNeeded() }
+    .onDisappear { store.leave() }
+    .sheet(isPresented: $isEditingTitle) { EditStreamInfoSheet(initial: store.proposedInfo) }
+    .alert(Text(ProfileText.resetKeyTitle), isPresented: $isConfirmingReset) {
+      Button(role: .destructive) {
+        Task { await store.rotateKey() }
+      } label: {
+        Text(ProfileText.resetKey)
       }
-      .onDisappear { store.leave() }
-      .sheet(isPresented: $isEditingTitle) { EditStreamInfoSheet(initialTitle: store.title, initialCategory: store.category) }
-      .alert(Text(ProfileText.resetKeyTitle), isPresented: $isConfirmingReset) {
-        Button(role: .destructive) {
-          Task { await store.rotateKey() }
-        } label: {
-          Text(ProfileText.resetKey)
-        }
-        Button(role: .cancel) {} label: { Text(ProfileText.cancel) }
-      } message: {
-        Text(ProfileText.resetKeyMessage)
-      }
+      Button(role: .cancel) {} label: { Text(ProfileText.cancel) }
+    } message: {
+      Text(ProfileText.resetKeyMessage)
+    }
   }
 
   @ViewBuilder private var content: some View {
@@ -60,19 +59,21 @@ public struct StreamManagerScreen: View {
       }
       .padding(LayoutRole.screenInset.points)
       .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-    case .ready:
-      widgets
+    case let .ready(owned):
+      widgets(owned)
     }
   }
 
-  private var widgets: some View {
-    VStack(spacing: LayoutRole.widgetGap.points) {
-      StreamPreview()
-        .padding(.horizontal, LayoutRole.widgetInset.points)
+  private func widgets(_ owned: OwnedChannel) -> some View {
+    VStack(spacing: 0) {
       TabView(selection: $widget) {
         ForEach(StreamManagerWidget.allCases, id: \.self) { widget in
-          WidgetCard(title: String(localized: widget.title)) { widgetContent(widget) }
+          WidgetCard(
+            title: String(localized: widget.title),
+            menuLabel: String(localized: StreamManagerHeaderText.widgetMenu)
+          ) { widgetContent(widget, owned: owned) }
             .padding(.horizontal, LayoutRole.widgetInset.points)
+            .padding(.top, LayoutRole.widgetGap.points)
             .tag(widget)
         }
       }
@@ -85,20 +86,20 @@ public struct StreamManagerScreen: View {
       }
       WidgetDock(selection: $widget, items: Self.dock)
     }
-    .padding(.bottom, LayoutRole.widgetGap.points)
   }
 
   private static let dock = StreamManagerWidget.allCases.map {
     WidgetDockItem(
       widget: $0,
       label: String(localized: $0.title),
-      systemImage: $0.systemImage,
+      icon: $0.icon,
       accessibilityIdentifier: $0.accessibilityIdentifier
     )
   }
 
-  @ViewBuilder private func widgetContent(_ widget: StreamManagerWidget) -> some View {
+  @ViewBuilder private func widgetContent(_ widget: StreamManagerWidget, owned: OwnedChannel) -> some View {
     switch widget {
+    case .chat: chat.view(for: owned.slug)
     case .streamInfo: titleCard
     case .streamKey: keyCard
     case .obs: obsCard
@@ -175,76 +176,5 @@ public struct StreamManagerScreen: View {
     Text(text)
       .font(TextRole.body.font)
       .foregroundStyle(ColorRole.textSecondary.color)
-  }
-}
-
-public struct EditStreamInfoSheet: View {
-  @Environment(MyChannelStore.self) private var store
-  @Environment(\.dismiss) private var dismiss
-  @State private var draft: String
-  @State private var chosen: ChannelCategory?
-  @State private var isSaving = false
-  @State private var saveFailed = false
-
-  public init(initialTitle: String, initialCategory: ChannelCategory?) {
-    _draft = State(initialValue: initialTitle)
-    _chosen = State(initialValue: initialCategory)
-  }
-
-  public var body: some View {
-    NavigationStack {
-      VStack(alignment: .leading, spacing: LayoutRole.chatInset.points) {
-        HStack {
-          Text(ProfileText.title)
-            .font(TextRole.display.font)
-            .foregroundStyle(ColorRole.textPrimary.color)
-          Spacer(minLength: 0)
-          Text(ProfileText.remaining(MyChannelStore.remaining(in: draft)))
-            .font(TextRole.body.font)
-            .foregroundStyle(ColorRole.textSecondary.color)
-        }
-        TextField(text: $draft) { Text(ProfileText.title) }
-          .padding(LayoutRole.composerPadding.points)
-          .background(ColorRole.surfaceSecondary.color, in: RoundedRectangle(cornerRadius: LayoutRole.composerRadius.points))
-          .accessibilityIdentifier("editStreamInfo.title")
-        if saveFailed {
-          Text(ProfileText.notice(.titleFailed))
-            .font(TextRole.body.font)
-            .foregroundStyle(ColorRole.textSecondary.color)
-            .accessibilityIdentifier("editStreamInfo.notice")
-        }
-        CategoryField(chosen: $chosen)
-          .padding(.top, LayoutRole.screenInset.points)
-        Spacer(minLength: 0)
-      }
-      .padding(LayoutRole.screenInset.points)
-      .background(ColorRole.background.color.ignoresSafeArea())
-      .navigationTitle(Text(ProfileText.editStreamInfo))
-      .navigationBarTitleDisplayMode(.inline)
-      .toolbar {
-        ToolbarItem(placement: .cancellationAction) {
-          Button(ProfileText.cancel) { dismiss() }
-        }
-        ToolbarItem(placement: .confirmationAction) {
-          Button(ProfileText.done) { save() }
-            .disabled(isSaving || MyChannelStore.remaining(in: draft) < 0)
-            .accessibilityIdentifier("editStreamInfo.done")
-        }
-      }
-    }
-  }
-
-  private func save() {
-    isSaving = true
-    saveFailed = false
-    Task {
-      var info = store.info
-      info.title = draft
-      info.category = chosen
-      let saved = await store.save(info)
-      saveFailed = !saved
-      isSaving = false
-      if saved { dismiss() }
-    }
   }
 }
