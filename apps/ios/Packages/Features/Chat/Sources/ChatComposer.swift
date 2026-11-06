@@ -63,7 +63,7 @@ public struct ChatComposer: View {
   @ViewBuilder private var field: some View {
     switch style {
     case .channel:
-      textField
+      fieldContent
         .padding(.horizontal, LayoutRole.composerPadding.points)
         .frame(minHeight: LayoutRole.composerHeight.points)
         .background(
@@ -71,27 +71,37 @@ public struct ChatComposer: View {
           in: RoundedRectangle(cornerRadius: LayoutRole.composerRadius.points)
         )
     case .widget:
-      HStack(spacing: LayoutRole.chatInset.points) {
-        textField
-        WidgetChatFieldStyle.emoteGlyph.image
-          .foregroundStyle(ColorRole.textPrimary.color)
-          .accessibilityRepresentation {
-            Button(ChatText.emotes) {}
-              .disabled(!style.isEmoteEnabled)
-          }
-          .accessibilityIdentifier("chat.composer.emotes")
-      }
-      .padding(.horizontal, LayoutRole.composerPadding.points)
-      .frame(minHeight: LayoutRole.widgetFieldHeight.points)
-      .background(
-        WidgetChatFieldStyle.background.color,
-        in: RoundedRectangle(cornerRadius: LayoutRole.widgetFieldRadius.points)
-      )
-      .overlay {
-        RoundedRectangle(cornerRadius: LayoutRole.widgetFieldRadius.points)
-          .strokeBorder(WidgetChatFieldStyle.border.color, lineWidth: LayoutRole.widgetFieldBorderWidth.points)
+      fieldContent
+        .padding(.horizontal, LayoutRole.composerPadding.points)
+        .frame(minHeight: LayoutRole.widgetFieldHeight.points)
+        .background(
+          WidgetChatFieldStyle.background.color,
+          in: RoundedRectangle(cornerRadius: LayoutRole.widgetFieldRadius.points)
+        )
+        .overlay {
+          RoundedRectangle(cornerRadius: LayoutRole.widgetFieldRadius.points)
+            .strokeBorder(WidgetChatFieldStyle.border.color, lineWidth: LayoutRole.widgetFieldBorderWidth.points)
+        }
+    }
+  }
+
+  private var fieldContent: some View {
+    HStack(spacing: LayoutRole.chatInset.points) {
+      textField
+      if style.showsEmote {
+        emoteButton
       }
     }
+  }
+
+  private var emoteButton: some View {
+    WidgetChatFieldStyle.emoteGlyph.image
+      .foregroundStyle(ColorRole.textPrimary.color)
+      .accessibilityRepresentation {
+        Button(ChatText.emotes) {}
+          .disabled(!style.isEmoteEnabled)
+      }
+      .accessibilityIdentifier("chat.composer.emotes")
   }
 
   private var textField: some View {
