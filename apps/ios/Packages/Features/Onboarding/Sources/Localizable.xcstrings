@@ -1285,6 +1285,23 @@
         }
       }
     },
+    "welcome.heading" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welcome to Twitch"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bienvenue sur Twitch"
+          }
+        }
+      }
+    },
     "welcome.logIn" : {
       "localizations" : {
         "en" : {
@@ -1697,22 +1714,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "S'inscrire"
-          }
-        }
-      }
-    },
-    "welcome.slogan" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "There's something\nfor you on Twitch"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il y a forcément quelque chose\npour vous sur Twitch"
           }
         }
       }

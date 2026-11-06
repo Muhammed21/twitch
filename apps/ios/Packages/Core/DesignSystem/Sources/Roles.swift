@@ -159,7 +159,6 @@ public enum LayoutRole: Sendable {
   case heroInset
   case heroRowGap
   case sloganGap
-  case sloganBottom
   case actionInset
   case actionGap
   case actionHeight

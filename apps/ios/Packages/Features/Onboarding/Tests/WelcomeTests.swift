@@ -64,11 +64,15 @@ struct WelcomeTests {
     #expect(WelcomeContent.actions.map(\.accessibilityIdentifier) == ["welcome.logIn", "welcome.signUp"])
   }
 
-  @Test("le slogan et les boutons reprennent les textes de la capture, en anglais et en français")
+  @Test("les boutons reprennent les textes de la capture, en anglais et en français")
   func texts() {
-    #expect(WelcomeText.slogan == shown(english: "There's something\nfor you on Twitch", french: "Il y a forcément quelque chose\npour vous sur Twitch"))
     #expect(WelcomeText.logIn == shown(english: "Log In", french: "Se connecter"))
     #expect(WelcomeText.signUp == shown(english: "Sign Up", french: "S'inscrire"))
+  }
+
+  @Test("VoiceOver annonce un titre d'écran avant les boutons, les catégories animées restent muettes")
+  func spokenHeading() {
+    #expect(WelcomeText.heading == shown(english: "Welcome to Twitch", french: "Bienvenue sur Twitch"))
   }
 }
 

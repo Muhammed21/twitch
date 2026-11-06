@@ -109,7 +109,7 @@
       "40": {
         "$type": "dimension",
         "$value": "40px",
-        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : retrait du contenu de l'accueil (catégories et slogan)."
+        "$description": "Relevé sur les captures de l'app iOS Twitch (docs/reference-ui/) : retrait du contenu de l'accueil (catégories)."
       },
       "44": {
         "$type": "dimension",

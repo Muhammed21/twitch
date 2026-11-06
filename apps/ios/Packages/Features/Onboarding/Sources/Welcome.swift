@@ -57,9 +57,9 @@ public extension WelcomeContent {
 }
 
 public enum WelcomeText {
-  public static var slogan: String { String(localized: "welcome.slogan", bundle: .module) }
   public static var logIn: String { String(localized: "welcome.logIn", bundle: .module) }
   public static var signUp: String { String(localized: "welcome.signUp", bundle: .module) }
+  public static var heading: String { String(localized: "welcome.heading", bundle: .module) }
 }
 
 public enum WelcomeEntrance {
@@ -111,14 +111,9 @@ public struct WelcomeScreen: View {
         TimelineView(.animation(paused: !isEntering)) { context in
           categories(at: context.date.timeIntervalSince(start), distance: proxy.size.width)
         }
-        .accessibilityHidden(true)
-        Text(WelcomeText.slogan)
-          .font(TextRole.hero.font)
-          .foregroundStyle(ColorRole.onAccentStrong.color)
-          .accessibilityAddTraits(.isHeader)
-          .padding(.top, LayoutRole.sloganGap.points)
-          .padding(.bottom, LayoutRole.sloganBottom.points)
-          .padding(.leading, LayoutRole.heroInset.points)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(WelcomeText.heading)
+        .accessibilityAddTraits(.isHeader)
         Spacer(minLength: 0)
         HStack(spacing: LayoutRole.actionGap.points) {
           ForEach(WelcomeContent.actions, id: \.title) { action in

@@ -65,7 +65,7 @@
       "onAccentStrong": {
         "$type": "color",
         "$value": "{core.color.neutral.0}",
-        "$description": "Texte fort posé sur l'accent, ou sur un bouton blanc posé sur l'accent : slogan et libellé Sign Up de l'accueil."
+        "$description": "Texte fort posé sur l'accent, ou sur un bouton blanc posé sur l'accent : libellé Sign Up de l'accueil."
       },
       "onAccentMuted": {
         "$type": "color",

@@ -6,7 +6,6 @@ private let welcomeMeasures: [(LayoutRole, CGFloat)] = [
   (.heroInset, 40),
   (.heroRowGap, 4),
   (.sloganGap, 12),
-  (.sloganBottom, 12),
   (.actionInset, 20),
   (.actionGap, 16),
   (.actionHeight, 44),
@@ -85,7 +84,7 @@ private let liveCardMeasures: [(LayoutRole, CGFloat)] = [
 
 @Suite("Rôles de texte, de mise en page et de bouton")
 struct RolesTests {
-  @Test("les catégories et le slogan de l'accueil sont en largeTitle gras, les boutons en headline gras")
+  @Test("les catégories de l'accueil sont en largeTitle gras, les boutons en headline gras")
   func textRoles() {
     #expect(TextRole.hero.font == Font.largeTitle.weight(.bold))
     #expect(TextRole.actionLabel.font == Font.headline.weight(.bold))
