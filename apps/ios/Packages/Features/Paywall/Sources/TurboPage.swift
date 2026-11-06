@@ -148,7 +148,15 @@ struct TurboSubscribeButton: View {
     }
     .buttonStyle(.plain)
     .disabled(store.purchasing != nil || store.isRestoring)
+    .subscribeAccessibility(package, isPurchasing: store.purchasing != nil)
     .padding(.horizontal, LayoutRole.screenInset.points)
     .accessibilityIdentifier("paywall.subscribe.\(package.id)")
+  }
+}
+
+extension View {
+  func subscribeAccessibility(_ package: SubscriptionPackage, isPurchasing: Bool) -> some View {
+    accessibilityLabel(Text(PaywallText.subscribe(package)))
+      .accessibilityValue(PaywallText.purchasing(isPurchasing).map { Text($0) } ?? Text(verbatim: ""))
   }
 }
