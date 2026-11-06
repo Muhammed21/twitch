@@ -1268,7 +1268,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pâtisserie Cuisine"
+            "value" : "Pâtisserie Recettes"
           }
         }
       }
@@ -1284,7 +1284,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nourriture et boissons"
+            "value" : "Cuisine"
           }
         }
       }
@@ -1476,7 +1476,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Événements spéciaux"
+            "value" : "Événements"
           }
         }
       }
@@ -1620,7 +1620,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Voyages et plein air"
+            "value" : "Voyages"
           }
         }
       }

@@ -16,10 +16,10 @@ struct WelcomeTests {
       shown(english: "Music", french: "Musique"),
       shown(english: "Talk Shows", french: "Talk-shows"),
       shown(english: "Sports", french: "Sports"),
-      shown(english: "Travel & Outdoors", french: "Voyages et plein air"),
+      shown(english: "Travel & Outdoors", french: "Voyages"),
       shown(english: "Just Chatting", french: "Discussions"),
-      shown(english: "Food & Drink", french: "Nourriture et boissons"),
-      shown(english: "Special Events", french: "Événements spéciaux"),
+      shown(english: "Food & Drink", french: "Cuisine"),
+      shown(english: "Special Events", french: "Événements"),
     ])
   }
 
@@ -32,7 +32,7 @@ struct WelcomeTests {
       shown(english: "Basketball Football", french: "Basket Football américain"),
       shown(english: "Kids Family Friendly", french: "Enfants Tout public"),
       shown(english: "ASMR Co-working", french: "ASMR Coworking"),
-      shown(english: "Baking Cooking", french: "Pâtisserie Cuisine"),
+      shown(english: "Baking Cooking", french: "Pâtisserie Recettes"),
       shown(english: "Esports Festivals", french: "E-sport Festivals"),
     ])
   }
